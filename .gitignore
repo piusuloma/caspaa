@@ -1,0 +1,19 @@
+# Local Claude Code settings
+.claude/
+
+# Internal docs (PRDs, meeting notes, etc.)
+*.pdf
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
+
+# Env files
+.env
+.env.local
+.env.*.local
