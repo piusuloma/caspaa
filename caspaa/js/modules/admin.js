@@ -1462,21 +1462,25 @@ function view_adm_dashboard() {
     }
     const gctx = document.getElementById('genderChart');
     if (gctx) {
-      const classes = DB.get('classes').slice(0, 6);
-      const stuAll = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
       new Chart(gctx, {
-        type: 'bar',
+        type: 'doughnut',
         data: {
-          labels: classes.map(c => c.name.replace('Primary ','Pry ').replace('Junior Secondary ','JSS ').replace('Senior Secondary ','SSS ')),
-          datasets: [
-            { label: 'Boys', data: classes.map(c => stuAll.filter(s => s.classId === c.id && /^m/i.test(s.gender||'')).length), backgroundColor: '#2563eb', borderRadius: 4 },
-            { label: 'Girls', data: classes.map(c => stuAll.filter(s => s.classId === c.id && /^f/i.test(s.gender||'')).length), backgroundColor: '#db2777', borderRadius: 4 }
-          ]
+          labels: ['Boys', 'Girls'],
+          datasets: [{
+            data: [maleCount, femaleCount],
+            backgroundColor: ['#2563eb', '#db2777'],
+            borderColor: ['#ffffff', '#ffffff'],
+            borderWidth: 3,
+            hoverOffset: 6
+          }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { position: 'top', labels: { boxWidth: 12, padding: 10 } } },
-          scales: { x: { stacked: false }, y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          cutout: '65%',
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 16, font: { size: 12 } } },
+            tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed/(maleCount+femaleCount||1)*100)}%)` } }
+          }
         }
       });
     }
@@ -1601,9 +1605,8 @@ function view_adm_dashboard() {
           </div>
           <div class="flex justify-between text-xs text-slate-500 mt-1"><span>Boys</span><span>Girls</span></div>
         </div>
-        <div class="card p-5 lg:col-span-2 flex flex-col justify-center">
-          <h3 class="font-bold text-slate-900 mb-3">Gender Distribution by Class</h3>
-          <div style="height: 160px;"><canvas id="genderChart"></canvas></div>
+        <div class="card p-5 lg:col-span-2 flex flex-col justify-center items-center">
+          <div style="height: 200px; width: 200px;"><canvas id="genderChart"></canvas></div>
         </div>
       </div>
 
@@ -2183,6 +2186,34 @@ function addStudentModal(editingId) {
         </div>
       </div>
 
+      ${(() => {
+        const allActs = DB.query('activities', a => a.schoolId === currentSchoolId());
+        if (!allActs.length) return '';
+        const existingEnrolled = existing ? DB.query('studentActivities', sa => sa.studentId === existing.id).map(sa => sa.activityId) : [];
+        const actTotal = existingEnrolled.reduce((sum, aid) => { const a = DB.find('activities', aid); return sum + (a ? a.price : 0); }, 0);
+        return `<details class="mt-4 bg-slate-50 rounded-xl" open>
+          <summary class="cursor-pointer p-3 font-semibold text-sm flex items-center justify-between">
+            <span>${icon('book','w-4 h-4 inline mr-1')} Extracurricular Activities</span>
+            <span id="act_total_preview" class="text-xs font-normal text-brand-700">${actTotal ? money(actTotal) + '/term' : ''}</span>
+          </summary>
+          <div class="p-3 pt-1 space-y-2">
+            <p class="text-xs text-slate-500 mb-2">Select any activities for this student. The fee will be added as a line item on their invoice automatically.</p>
+            ${allActs.map(a => {
+              const checked = existingEnrolled.includes(a.id);
+              return `<label class="flex items-center gap-3 p-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 transition has-[:checked]:border-brand-400 has-[:checked]:bg-brand-50">
+                <input type="checkbox" class="act_enroll_cb" value="${a.id}" data-price="${a.price}" ${checked ? 'checked' : ''} onchange="updateNewStudentActTotal()" />
+                <span class="text-xl">${a.icon}</span>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm text-slate-900">${a.name}</div>
+                  <div class="text-xs text-slate-500">${a.description || ''}</div>
+                </div>
+                <div class="text-sm font-semibold text-brand-700 font-mono flex-shrink-0">${money(a.price)}<span class="text-xs font-normal text-slate-400">/term</span></div>
+              </label>`;
+            }).join('')}
+          </div>
+        </details>`;
+      })()}
+
       <details class="mt-4 bg-slate-50 rounded-xl" open>
         <summary class="cursor-pointer p-3 font-semibold text-sm">${icon('paperclip','w-4 h-4 inline mr-1')} Upload Documents</summary>
         <div class="p-3 pt-0 grid grid-cols-2 gap-2">
@@ -2259,6 +2290,13 @@ function clearStudentDoc(key) {
   setTimeout(() => addStudentModal(editingId), 50);
 }
 
+function updateNewStudentActTotal() {
+  const cbs = document.querySelectorAll('.act_enroll_cb:checked');
+  const total = [...cbs].reduce((s, cb) => s + (parseInt(cb.dataset.price) || 0), 0);
+  const el = document.getElementById('act_total_preview');
+  if (el) el.textContent = total ? money(total) + '/term' : '';
+}
+
 function saveStudent(editingId) {
   const name = document.getElementById('sf_name').value.trim();
   const admNo = document.getElementById('sf_admno').value.trim();
@@ -2328,15 +2366,24 @@ function saveStudent(editingId) {
     documents: Object.assign({}, _studentDocsBuffer),
     ...extras
   };
+  // Capture selected activities BEFORE inserting (checkboxes are still in the DOM)
+  const selectedActIds = [...(document.querySelectorAll('.act_enroll_cb:checked') || [])].map(cb => cb.value);
+
   DB.insert('students', newStudent);
   DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'added_student', target: name, timestamp: now() });
 
-  // Auto-create first invoice from the class's fee structure
+  // Enroll in selected activities
   const fs = DB.query('feeStructures', f => f.classId === classId)[0];
+  if (selectedActIds.length && fs) {
+    selectedActIds.forEach(actId => {
+      DB.insert('studentActivities', { id: uid('sa'), schoolId: currentSchoolId(), studentId: newStudent.id, activityId: actId, enrolledAt: now(), term: fs.term });
+    });
+  }
+
+  // Auto-create first invoice from the class's fee structure
   let invoiceCreated = null;
   if (fs) {
-    const stuActs = DB.query('studentActivities', sa => sa.studentId === newStudent.id && sa.term === fs.term);
-    const actLines = stuActs.map(sa => { const a = DB.find('activities', sa.activityId); return a ? { name: a.icon + ' ' + a.name, amount: a.price } : null; }).filter(Boolean);
+    const actLines = selectedActIds.map(aid => { const a = DB.find('activities', aid); return a ? { name: a.icon + ' ' + a.name, amount: a.price } : null; }).filter(Boolean);
     const total = fs.tuition + fs.books + fs.uniform + fs.pta + actLines.reduce((s, l) => s + l.amount, 0);
     invoiceCreated = {
       id: uid('inv'),

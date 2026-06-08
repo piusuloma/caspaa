@@ -598,14 +598,20 @@ function view_par_fees() {
           </div>
 
           <div class="space-y-1 mb-3">
-            ${inv.lineItems.map(l => `<div class="flex justify-between text-sm">
-              <span class="text-slate-600">${l.name}</span>
-              <span class="font-mono">${money(l.amount)}</span>
-            </div>`).join('')}
-            <div class="flex justify-between text-sm font-semibold border-t border-slate-100 pt-1 mt-1">
-              <span>Total</span>
-              <span class="font-mono">${money(inv.total)}</span>
-            </div>
+            ${(() => {
+              const standard = inv.lineItems.filter(l => l.amount > 0 && !l.name.includes('🏊') && !l.name.includes('🩰') && !l.name.includes('🎹') && !l.name.includes('⚽') && !l.name.includes('♟') && !l.name.includes('🎤') && !l.name.includes('🏃'));
+              const activities = inv.lineItems.filter(l => l.amount > 0 && !standard.includes(l));
+              const discounts = inv.lineItems.filter(l => l.amount < 0);
+              return `
+                ${standard.map(l => `<div class="flex justify-between text-sm"><span class="text-slate-600">${l.name}</span><span class="font-mono">${money(l.amount)}</span></div>`).join('')}
+                ${activities.length ? `<div class="mt-1.5 pt-1.5 border-t border-dashed border-slate-200">
+                  <div class="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-1">Extracurricular</div>
+                  ${activities.map(l => `<div class="flex justify-between text-sm"><span class="text-slate-600">${l.name}</span><span class="font-mono">${money(l.amount)}</span></div>`).join('')}
+                </div>` : ''}
+                ${discounts.map(l => `<div class="flex justify-between text-sm text-emerald-700"><span>🎓 ${l.name}</span><span class="font-mono">-${money(Math.abs(l.amount))}</span></div>`).join('')}
+                <div class="flex justify-between text-sm font-bold border-t border-slate-200 pt-1.5 mt-1"><span>Total</span><span class="font-mono">${money(inv.total)}</span></div>
+              `;
+            })()}
           </div>
 
           <div class="space-y-2">
@@ -656,7 +662,23 @@ function viewInvoice(invoiceId) {
         <table class="w-full text-sm border-t">
           <thead><tr class="border-b"><th class="text-left py-2">Description</th><th class="text-right py-2">Amount</th></tr></thead>
           <tbody>
-            ${inv.lineItems.map(l => `<tr class="border-b"><td class="py-2 ${l.amount < 0 ? 'text-emerald-700' : ''}">${l.amount < 0 ? '🎓 ' : ''}${l.name}</td><td class="text-right font-mono py-2 ${l.amount < 0 ? 'text-emerald-700' : ''}">${l.amount < 0 ? '-' : ''}${money(Math.abs(l.amount))}</td></tr>`).join('')}
+            ${(() => {
+              // Detect activity items by emoji prefix — activities catalog uses emoji icons
+              const emojiRe = /^[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}♟]/u;
+              const standard = inv.lineItems.filter(l => l.amount > 0 && !emojiRe.test(l.name));
+              const activities = inv.lineItems.filter(l => l.amount > 0 && emojiRe.test(l.name));
+              const discounts = inv.lineItems.filter(l => l.amount < 0);
+              const actTotal = activities.reduce((s, l) => s + l.amount, 0);
+              return `
+                ${standard.map(l => `<tr class="border-b"><td class="py-2 text-slate-700">${l.name}</td><td class="text-right font-mono py-2">${money(l.amount)}</td></tr>`).join('')}
+                ${activities.length ? `
+                  <tr><td colspan="2" class="pt-3 pb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Extracurricular Activities</td></tr>
+                  ${activities.map(l => `<tr class="border-b border-dashed border-slate-100"><td class="py-2 text-slate-700 pl-2">${l.name}</td><td class="text-right font-mono py-2">${money(l.amount)}</td></tr>`).join('')}
+                  <tr class="border-b"><td class="py-1 text-xs text-slate-500 pl-2">Activities subtotal</td><td class="text-right font-mono py-1 text-xs text-slate-500">${money(actTotal)}</td></tr>
+                ` : ''}
+                ${discounts.map(l => `<tr class="border-b border-emerald-100 bg-emerald-50"><td class="py-2 text-emerald-700">🎓 ${l.name}</td><td class="text-right font-mono py-2 text-emerald-700">-${money(Math.abs(l.amount))}</td></tr>`).join('')}
+              `;
+            })()}
           </tbody>
           <tfoot>
             <tr><td class="pt-3 font-bold">Total</td><td class="text-right font-bold pt-3 font-mono">${money(inv.total)}</td></tr>
