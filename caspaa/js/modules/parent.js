@@ -11,11 +11,29 @@ function parentChildren() {
 function view_par_dashboard() {
   const parent = DB.find('parents', AUTH.current.id) || { name: AUTH.current.name || 'Parent' };
   const children = parentChildren();
+  // First-login welcome flow
+  if (parent.firstLogin) {
+    setTimeout(() => { if (!document.getElementById('modalBackdrop')?.innerHTML) parentWelcomeWizard(); }, 200);
+  }
   const totalOutstanding = children.reduce((s, c) => {
     const inv = COMPUTE.studentInvoice(c.id);
     return s + (inv ? inv.balance : 0);
   }, 0);
+  const totalPaid = children.reduce((s, c) => {
+    const inv = COMPUTE.studentInvoice(c.id);
+    return s + (inv ? inv.paid : 0);
+  }, 0);
+  const totalBilled = totalPaid + totalOutstanding;
+  const paidPct = totalBilled ? Math.round((totalPaid / totalBilled) * 100) : 0;
   const announcements = DB.query('announcements', a => a.audience === 'all' || a.audience === 'parents').slice(0, 3);
+  // Pending digital-consent requests across this parent's children
+  const childClassIds = children.map(c => c.classId);
+  const consentForms = DB.query('consentForms', f => f.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && (f.classId === 'all' || childClassIds.includes(f.classId)));
+  let pendingConsent = 0;
+  consentForms.forEach(f => {
+    const kids = f.classId === 'all' ? children : children.filter(c => c.classId === f.classId);
+    kids.forEach(k => { if (!DB.query('consentResponses', x => x.formId === f.id && x.studentId === k.id)[0]) pendingConsent++; });
+  });
 
   return `
     <div class="space-y-5">
@@ -25,17 +43,42 @@ function view_par_dashboard() {
         <h1 class="text-2xl lg:text-3xl font-extrabold">${parent.name.split(' ').slice(-1)}</h1>
         <p class="text-brand-100 text-sm mt-1">${children.length} ${children.length === 1 ? 'child' : 'children'} at Bright Lights Academy</p>
 
-        ${totalOutstanding > 0 ? `<div class="mt-4 bg-white/15 backdrop-blur rounded-xl p-3 flex items-center justify-between">
-          <div>
-            <div class="text-xs text-brand-100">Outstanding Fees</div>
-            <div class="text-xl font-bold">${money(totalOutstanding)}</div>
+        ${totalBilled > 0 ? `<div class="mt-4 bg-white/15 backdrop-blur rounded-xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <div class="text-xs text-brand-100">Term fees · ${money(totalBilled)} total</div>
+              <div class="text-xs text-brand-100 mt-0.5">${paidPct}% paid · ${children.length} child${children.length !== 1 ? 'ren' : ''}</div>
+            </div>
+            ${totalOutstanding > 0 ? `<button class="bg-white text-brand-700 px-4 py-2 rounded-lg font-bold text-sm" onclick="APP.go('par_fees')">Pay Now</button>` : `<span class="badge badge-success">${icon('check','w-3 h-3')} All Paid</span>`}
           </div>
-          <button class="bg-white text-brand-700 px-4 py-2 rounded-lg font-bold text-sm" onclick="APP.go('par_fees')">Pay Now</button>
-        </div>` : `<div class="mt-4 bg-emerald-500/30 rounded-xl p-3 flex items-center gap-3">
-          ${icon('check', 'w-6 h-6 text-emerald-200')}
-          <div class="text-sm font-medium">All fees paid. Thank you!</div>
+          <div class="grid grid-cols-2 gap-3 mb-2">
+            <div>
+              <div class="text-xs text-emerald-200">Paid</div>
+              <div class="text-lg font-bold text-emerald-200">${money(totalPaid)}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs ${totalOutstanding > 0 ? 'text-amber-200' : 'text-brand-100'}">${totalOutstanding > 0 ? 'Outstanding' : 'Cleared'}</div>
+              <div class="text-lg font-bold ${totalOutstanding > 0 ? 'text-amber-200' : 'text-emerald-200'}">${money(totalOutstanding)}</div>
+            </div>
+          </div>
+          <div class="h-2 bg-white/20 rounded-full overflow-hidden">
+            <div class="h-full bg-emerald-300 rounded-full transition-all" style="width: ${paidPct}%"></div>
+          </div>
+        </div>` : `<div class="mt-4 bg-white/15 rounded-xl p-3 flex items-center gap-3">
+          ${icon('bell','w-5 h-5 text-amber-200')}
+          <div class="text-sm">No invoices have been issued yet for this term.</div>
         </div>`}
       </div>
+
+      <!-- Pending consent alert -->
+      ${pendingConsent ? `<button class="w-full flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-left hover:bg-amber-100 transition" onclick="APP.go('par_consent')">
+        <span class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">${icon('check','w-5 h-5')}</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-amber-900">${pendingConsent} consent form${pendingConsent !== 1 ? 's' : ''} awaiting your approval</div>
+          <div class="text-sm text-amber-700">Tap to review and sign — no paperwork needed.</div>
+        </div>
+        <span class="text-amber-700">${icon('arrow_left','w-4 h-4 rotate-180')}</span>
+      </button>` : ''}
 
       <!-- Children cards -->
       <div>
@@ -49,7 +92,7 @@ function view_par_dashboard() {
       </div>
 
       <!-- Quick actions -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <button class="card card-hover p-4 text-center" onclick="APP.go('par_fees')">
           <div class="w-12 h-12 mx-auto rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center mb-2">${icon('fees','w-6 h-6')}</div>
           <div class="font-semibold text-sm text-slate-900">Pay Fees</div>
@@ -57,6 +100,11 @@ function view_par_dashboard() {
         <button class="card card-hover p-4 text-center" onclick="APP.go('par_loans')">
           <div class="w-12 h-12 mx-auto rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-2">${icon('loan','w-6 h-6')}</div>
           <div class="font-semibold text-sm text-slate-900">Apply for Loan</div>
+        </button>
+        <button class="card card-hover p-4 text-center relative" onclick="APP.go('par_consent')">
+          ${pendingConsent ? `<span class="absolute top-2 right-2 badge badge-warn">${pendingConsent}</span>` : ''}
+          <div class="w-12 h-12 mx-auto rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2">${icon('check','w-6 h-6')}</div>
+          <div class="font-semibold text-sm text-slate-900">Consent</div>
         </button>
         <button class="card card-hover p-4 text-center" onclick="APP.go('par_messages')">
           <div class="w-12 h-12 mx-auto rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-2">${icon('chat','w-6 h-6')}</div>
@@ -85,6 +133,134 @@ function view_par_dashboard() {
   `;
 }
 
+/* ---------- First-login welcome wizard ---------- */
+function parentWelcomeWizard() {
+  const parent = DB.find('parents', AUTH.current.id);
+  if (!parent) return;
+  const step = APP.params.welcomeStep || 1;
+  const children = parentChildren();
+  const totalOutstanding = children.reduce((s, c) => { const i = COMPUTE.studentInvoice(c.id); return s + (i ? i.balance : 0); }, 0);
+
+  const stepIndicator = `
+    <div class="flex items-center gap-2 mb-4">
+      ${[1,2,3].map(n => `
+        <div class="flex-1 flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full ${n < step ? 'bg-emerald-500 text-white' : n === step ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-xs font-bold">${n < step ? icon('check','w-3 h-3') : n}</div>
+          ${n < 3 ? `<div class="flex-1 h-0.5 ${n < step ? 'bg-emerald-500' : 'bg-slate-200'}"></div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  let bodyContent = '';
+  let footerContent = '';
+
+  if (step === 1) {
+    bodyContent = `
+      <div class="text-center mb-3">
+        <div class="w-16 h-16 mx-auto rounded-full bg-brand-100 text-brand-700 flex items-center justify-center mb-3">${icon('user','w-8 h-8')}</div>
+        <h2 class="text-xl font-bold text-slate-900">Welcome, ${parent.name.split(' ').slice(-1)}!</h2>
+        <p class="text-sm text-slate-500 mt-1">First, let's change your temporary password to something secure.</p>
+      </div>
+      <div class="space-y-3">
+        <div><label class="input-label">Temporary password (we sent this)</label>
+          <input id="pw_old" type="password" class="input" placeholder="${parent.credentials ? parent.credentials.tempPassword : ''}" />
+          <p class="text-xs text-slate-400 mt-1">${parent.credentials ? 'Pre-fill hint: ' + parent.credentials.tempPassword : ''}</p>
+        </div>
+        <div><label class="input-label">New password</label><input id="pw_new" type="password" class="input" placeholder="At least 8 characters" /></div>
+        <div><label class="input-label">Confirm new password</label><input id="pw_new2" type="password" class="input" /></div>
+      </div>
+    `;
+    footerContent = `<button class="btn btn-primary w-full" onclick="parentWelcomeStep1Next()">Set password →</button>`;
+  } else if (step === 2) {
+    bodyContent = `
+      <div class="text-center mb-3">
+        <div class="w-16 h-16 mx-auto rounded-full bg-brand-100 text-brand-700 flex items-center justify-center mb-3">${icon('chat','w-8 h-8')}</div>
+        <h2 class="text-xl font-bold text-slate-900">Confirm your contact</h2>
+        <p class="text-sm text-slate-500 mt-1">We'll send WhatsApp and email updates here. You can change later in your profile.</p>
+      </div>
+      <div class="space-y-3">
+        <div><label class="input-label">Phone (WhatsApp)</label><input id="cnt_phone" class="input" value="${parent.phone || ''}" /></div>
+        <div><label class="input-label">Email</label><input id="cnt_email" type="email" class="input" value="${parent.email || ''}" /></div>
+        <label class="flex items-center gap-2 text-sm p-3 bg-slate-50 rounded-xl"><input type="checkbox" checked /> <span>Send me WhatsApp alerts for absences, fee reminders, and announcements</span></label>
+        <label class="flex items-center gap-2 text-sm p-3 bg-slate-50 rounded-xl"><input type="checkbox" checked /> <span>Email me termly report cards</span></label>
+      </div>
+    `;
+    footerContent = `
+      <button class="btn btn-secondary" onclick="APP.params.welcomeStep = 1; parentWelcomeWizard()">← Back</button>
+      <button class="btn btn-primary" onclick="parentWelcomeStep2Next()">Continue →</button>
+    `;
+  } else {
+    bodyContent = `
+      <div class="text-center mb-3">
+        <div class="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">${icon('check','w-8 h-8')}</div>
+        <h2 class="text-xl font-bold text-slate-900">You're all set</h2>
+        <p class="text-sm text-slate-500 mt-1">Here's what's on your dashboard right now.</p>
+      </div>
+      <div class="space-y-2">
+        ${children.map(c => {
+          const cls = DB.find('classes', c.classId);
+          const inv = COMPUTE.studentInvoice(c.id);
+          return `<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+            ${avatar(c, 'md')}
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold">${c.name}</div>
+              <div class="text-xs text-slate-500">${cls ? cls.name : ''}</div>
+            </div>
+            ${inv ? `<div class="text-right"><div class="text-xs text-slate-500">Outstanding</div><div class="font-mono font-bold ${inv.balance > 0 ? 'text-rose-700' : 'text-emerald-700'}">${money(inv.balance)}</div></div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+      ${totalOutstanding > 0 ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900 mt-3">
+        ${icon('fees','w-4 h-4 inline')} Your first invoice (<strong>${money(totalOutstanding)} outstanding</strong>) is ready. We made paying easy — card, transfer, USSD, or visit the school office.
+      </div>` : ''}
+    `;
+    footerContent = `
+      <button class="btn btn-secondary" onclick="APP.params.welcomeStep = 2; parentWelcomeWizard()">← Back</button>
+      <button class="btn btn-primary" onclick="parentWelcomeFinish()">${totalOutstanding > 0 ? 'View fees →' : 'Take me to my dashboard →'}</button>
+    `;
+  }
+
+  modal({
+    title: `Welcome to CASPAA · Step ${step} of 3`,
+    body: stepIndicator + bodyContent,
+    footer: footerContent
+  });
+}
+
+function parentWelcomeStep1Next() {
+  const pw = document.getElementById('pw_new').value;
+  const pw2 = document.getElementById('pw_new2').value;
+  if (!pw || pw.length < 8) { toast('Password must be at least 8 characters', 'danger'); return; }
+  if (pw !== pw2) { toast('Passwords do not match', 'danger'); return; }
+  const parent = DB.find('parents', AUTH.current.id);
+  DB.update('parents', parent.id, { credentials: Object.assign({}, parent.credentials, { tempPassword: null, passwordChangedAt: now() }) });
+  APP.params.welcomeStep = 2;
+  parentWelcomeWizard();
+}
+
+function parentWelcomeStep2Next() {
+  const phone = document.getElementById('cnt_phone').value.trim();
+  const email = document.getElementById('cnt_email').value.trim();
+  const parent = DB.find('parents', AUTH.current.id);
+  DB.update('parents', parent.id, { phone, email });
+  APP.params.welcomeStep = 3;
+  parentWelcomeWizard();
+}
+
+function parentWelcomeFinish() {
+  const parent = DB.find('parents', AUTH.current.id);
+  DB.update('parents', parent.id, { firstLogin: false, onboardedAt: now() });
+  APP.params.welcomeStep = null;
+  document.getElementById('modalBackdrop').click();
+  // If outstanding, route to fees page
+  const children = parentChildren();
+  const totalOutstanding = children.reduce((s, c) => { const i = COMPUTE.studentInvoice(c.id); return s + (i ? i.balance : 0); }, 0);
+  if (totalOutstanding > 0) APP.go('par_fees');
+  else APP.render();
+  toast('You\'re all set up. Welcome!');
+}
+
 function renderChildCard(child) {
   const cls = DB.find('classes', child.classId);
   const inv = COMPUTE.studentInvoice(child.id);
@@ -94,29 +270,35 @@ function renderChildCard(child) {
   return `
     <div class="card card-hover p-4 cursor-pointer" onclick="viewChildDetail('${child.id}')">
       <div class="flex items-center gap-3 mb-3">
-        ${avatar(child.name, 'lg')}
+        ${avatar(child, 'lg')}
         <div class="flex-1 min-w-0">
           <div class="font-bold text-slate-900 truncate">${child.name}</div>
           <div class="text-xs text-slate-500">${cls ? cls.name : ''} · ${child.admissionNo}</div>
         </div>
       </div>
-      <div class="grid grid-cols-3 gap-2 text-center mb-3">
+      <div class="grid grid-cols-2 gap-2 text-center mb-3">
         <div class="bg-brand-50 rounded-lg p-2">
-          <div class="text-xs text-brand-700 font-semibold">ATTEND</div>
+          <div class="text-xs text-brand-700 font-semibold">ATTENDANCE</div>
           <div class="font-bold text-brand-900">${attRate}%</div>
         </div>
         <div class="bg-blue-50 rounded-lg p-2">
-          <div class="text-xs text-blue-700 font-semibold">AVG</div>
+          <div class="text-xs text-blue-700 font-semibold">AVG SCORE</div>
           <div class="font-bold text-blue-900">${avg}%</div>
         </div>
-        ${inv && inv.status === 'paid' ? `<div class="bg-emerald-50 rounded-lg p-2">
-          <div class="text-xs text-emerald-700 font-semibold">FEES</div>
-          <div class="font-bold text-emerald-900 text-xs">PAID</div>
-        </div>` : `<div class="bg-amber-50 rounded-lg p-2">
-          <div class="text-xs text-amber-700 font-semibold">FEES</div>
-          <div class="font-bold text-amber-900 text-xs">${inv ? inv.status.toUpperCase() : '—'}</div>
-        </div>`}
       </div>
+      ${inv ? `<div class="bg-slate-50 rounded-lg p-3 mb-3">
+        <div class="flex justify-between items-baseline mb-1.5">
+          <span class="text-xs font-semibold text-slate-700 uppercase">Fees this term</span>
+          ${inv.status === 'paid' ? '<span class="badge badge-success">Cleared</span>' : inv.status === 'partial' ? '<span class="badge badge-warn">Partial</span>' : '<span class="badge badge-danger">Outstanding</span>'}
+        </div>
+        <div class="flex justify-between text-xs mb-1.5">
+          <span class="text-emerald-700"><strong class="font-mono">${money(inv.paid)}</strong> paid</span>
+          <span class="${inv.balance > 0 ? 'text-rose-700' : 'text-slate-500'}"><strong class="font-mono">${money(inv.balance)}</strong> ${inv.balance > 0 ? 'outstanding' : 'cleared'}</span>
+        </div>
+        <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+          <div class="h-full bg-emerald-500 rounded-full" style="width: ${inv.total ? Math.round((inv.paid / inv.total) * 100) : 0}%"></div>
+        </div>
+      </div>` : '<div class="bg-slate-50 rounded-lg p-3 mb-3 text-xs text-slate-500 text-center">No invoice yet for this term</div>'}
       <button class="btn btn-secondary w-full text-sm">View full profile →</button>
     </div>
   `;
@@ -166,7 +348,10 @@ function viewChildDetail(studentId) {
                   </div>
                 </div>`;
               }).join('') : emptyState({ title: 'No results yet', body: 'Results will appear here once teachers submit them.', icon: 'results' })}
-              ${results.length ? `<button class="btn btn-secondary w-full" onclick="printReportCard('${studentId}')">${icon('download','w-4 h-4')} Download Report Card</button>` : ''}
+              ${results.length ? `<div class="grid grid-cols-2 gap-2">
+                <button class="btn btn-secondary" onclick="printReportCard('${studentId}')">${icon('download','w-4 h-4')} Report Card</button>
+                <button class="btn btn-secondary" onclick="printTranscript('${studentId}')">${icon('download','w-4 h-4')} Full Transcript</button>
+              </div>` : ''}
             </div>
           ` : (APP.params.childTab === 'attendance') ? `
             <div class="mb-3 grid grid-cols-3 gap-2 text-center">
@@ -228,6 +413,81 @@ function payNowFromChild(studentId) {
   setTimeout(() => payInvoiceModal(COMPUTE.studentInvoice(studentId).id), 200);
 }
 
+function printTranscript(studentId) {
+  const s = DB.find('students', studentId);
+  const subjects = DB.get('subjects');
+  const results = COMPUTE.studentResults(studentId);
+  // Group results by term (single term in demo seed, but stub for multi-year capability)
+  const byTerm = {};
+  results.forEach(r => {
+    const key = r.term || DB.settings().currentTerm;
+    if (!byTerm[key]) byTerm[key] = [];
+    byTerm[key].push(r);
+  });
+  // Generate synthetic prior-year data for demo richness
+  const priorYearTerms = ['1st Term 2024/25', '2nd Term 2024/25', '3rd Term 2024/25'];
+  priorYearTerms.forEach(t => {
+    if (!byTerm[t]) {
+      byTerm[t] = subjects.slice(0, 6).map(sub => ({
+        subjectId: sub.id, term: t,
+        ca1: Math.floor(Math.random() * 15) + 5,
+        ca2: Math.floor(Math.random() * 15) + 5,
+        exam: Math.floor(Math.random() * 40) + 25,
+        get total() { return this.ca1 + this.ca2 + this.exam; },
+        get grade() { return COMPUTE.gradeFromScore(this.total).grade; }
+      })).map(r => ({ ...r, total: r.total, grade: r.grade }));
+    }
+  });
+  const termOrder = Object.keys(byTerm).sort();
+
+  const overallAvg = (() => {
+    let sum = 0, count = 0;
+    termOrder.forEach(t => byTerm[t].forEach(r => { sum += r.total; count++; }));
+    return count ? Math.round(sum / count) : 0;
+  })();
+
+  const html = `
+    <div style="max-width:820px;margin:0 auto;font-family:system-ui">
+      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:24px">
+        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
+        <p style="margin:4px 0;color:#666">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
+        <h2 style="margin:12px 0 0;font-size:22px">OFFICIAL ACADEMIC TRANSCRIPT</h2>
+      </div>
+      <table style="width:100%;margin-bottom:20px">
+        <tr><td><strong>Student:</strong> ${s.name}<br/><strong>Admission No:</strong> ${s.admissionNo}</td>
+            <td style="text-align:right"><strong>DOB:</strong> ${fdate(s.dob, { long: true })}<br/><strong>Gender:</strong> ${s.gender === 'M' ? 'Male' : 'Female'}</td></tr>
+      </table>
+      ${termOrder.map(term => {
+        const rows = byTerm[term];
+        const termAvg = Math.round(rows.reduce((s, r) => s + r.total, 0) / rows.length);
+        return `<h3 style="margin:24px 0 8px;color:#047857;border-bottom:1px solid #ddd;padding-bottom:4px">${term}</h3>
+        <table border="1" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:13px">
+          <thead style="background:#f3f4f6">
+            <tr><th align="left">Subject</th><th>CA1</th><th>CA2</th><th>Exam</th><th>Total</th><th>Grade</th></tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => {
+              const sub = subjects.find(x => x.id === r.subjectId);
+              return `<tr><td>${sub ? sub.name : '—'}</td><td align="center">${r.ca1}</td><td align="center">${r.ca2}</td><td align="center">${r.exam}</td><td align="center"><strong>${r.total}</strong></td><td align="center"><strong>${r.grade}</strong></td></tr>`;
+            }).join('')}
+          </tbody>
+          <tfoot><tr style="background:#f3f4f6;font-weight:bold"><td colspan="4">Term Average</td><td colspan="2" align="center">${termAvg}%</td></tr></tfoot>
+        </table>`;
+      }).join('')}
+      <div style="margin-top:24px;background:#d1fae5;padding:14px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+        <strong style="font-size:16px">CUMULATIVE AVERAGE</strong>
+        <strong style="font-size:20px;color:#047857">${overallAvg}%</strong>
+      </div>
+      <div style="margin-top:60px;display:flex;justify-content:space-between">
+        <div><strong>Principal</strong><br/><br/>____________________<br/><span style="font-size:11px;color:#666">Signature &amp; Stamp</span></div>
+        <div style="text-align:right">${fdate(now(), { long: true })}<br/><span style="font-size:11px;color:#666">Date Issued</span></div>
+      </div>
+      <p style="margin-top:30px;text-align:center;color:#999;font-size:11px">This transcript is an official record. Verification: caspaa.com/verify/${s.admissionNo}</p>
+    </div>
+  `;
+  printElement(html);
+}
+
 function printReportCard(studentId) {
   const s = DB.find('students', studentId);
   const cls = DB.find('classes', s.classId);
@@ -263,9 +523,23 @@ function printReportCard(studentId) {
           <tr style="background:#f3f4f6;font-weight:bold"><td colspan="4">Average</td><td colspan="3">${avg}%</td></tr>
         </tfoot>
       </table>
-      <div style="margin-top:30px;display:flex;justify-content:space-between">
-        <div><strong>Class Teacher</strong><br/><br/>____________________</div>
-        <div><strong>Head Teacher</strong><br/><br/>____________________</div>
+      ${(() => {
+        const rc = DB.query('reportComments', c => c.studentId === studentId && c.term === DB.settings().currentTerm)[0];
+        if (rc) return `
+          <div style="margin-top:20px;padding:12px;background:#f0fdf4;border-left:4px solid #047857;border-radius:4px">
+            <strong style="font-size:12px;color:#065f46">CLASS TEACHER'S COMMENT</strong>
+            <p style="margin:6px 0 0;font-size:13px;color:#1e293b">${rc.comment}</p>
+          </div>`;
+        return '';
+      })()}
+      <div style="margin-top:28px;display:flex;justify-content:space-between">
+        ${(() => {
+          const rc = DB.query('reportComments', c => c.studentId === studentId && c.term === DB.settings().currentTerm)[0];
+          const ct = rc?.classTeacher || 'Class Teacher';
+          const ht = rc?.headTeacher || 'Head Teacher';
+          return `<div><strong>Class Teacher:</strong> ${ct}<br/><br/>____________________</div>
+                  <div style="text-align:right"><strong>Head Teacher:</strong> ${ht}<br/><br/>____________________</div>`;
+        })()}
       </div>
       <p style="margin-top:30px;text-align:center;color:#999;font-size:11px">Generated by CASPAA · ${fdate(today(), { long: true })}</p>
     </div>
@@ -356,6 +630,7 @@ function viewInvoice(invoiceId) {
   const inv = DB.find('invoices', invoiceId);
   const s = DB.find('students', inv.studentId);
   const cls = DB.find('classes', s.classId);
+  const isFinance = AUTH.current && (AUTH.current.role === 'finance' || AUTH.current.role === 'schooladmin');
   modal({
     title: 'Invoice Details',
     body: `
@@ -381,7 +656,7 @@ function viewInvoice(invoiceId) {
         <table class="w-full text-sm border-t">
           <thead><tr class="border-b"><th class="text-left py-2">Description</th><th class="text-right py-2">Amount</th></tr></thead>
           <tbody>
-            ${inv.lineItems.map(l => `<tr class="border-b"><td class="py-2">${l.name}</td><td class="text-right font-mono py-2">${money(l.amount)}</td></tr>`).join('')}
+            ${inv.lineItems.map(l => `<tr class="border-b"><td class="py-2 ${l.amount < 0 ? 'text-emerald-700' : ''}">${l.amount < 0 ? '🎓 ' : ''}${l.name}</td><td class="text-right font-mono py-2 ${l.amount < 0 ? 'text-emerald-700' : ''}">${l.amount < 0 ? '-' : ''}${money(Math.abs(l.amount))}</td></tr>`).join('')}
           </tbody>
           <tfoot>
             <tr><td class="pt-3 font-bold">Total</td><td class="text-right font-bold pt-3 font-mono">${money(inv.total)}</td></tr>
@@ -392,10 +667,177 @@ function viewInvoice(invoiceId) {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="window.print()">${icon('download','w-4 h-4')} Print</button>
-      ${inv.balance > 0 ? `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); payInvoiceModal('${invoiceId}')">Pay Now</button>` : ''}
+      <button class="btn btn-secondary no-print" onclick="window.print()">${icon('download','w-4 h-4')} Print</button>
+      ${isFinance ? `<button class="btn btn-secondary no-print" onclick="applyDiscountModal('${invoiceId}')">${icon('plus','w-4 h-4')} Discount</button>` : ''}
+      ${(isFinance || AUTH.current.role === 'parent') && inv.balance > 0 ? `<button class="btn btn-secondary no-print" onclick="installmentPlanModal('${invoiceId}')">${icon('calendar','w-4 h-4')} Installment Plan</button>` : ''}
+      ${inv.balance > 0 ? `<button class="btn btn-primary no-print" onclick="document.getElementById('modalBackdrop').click(); payInvoiceModal('${invoiceId}')">Pay Now</button>` : ''}
     `
   });
+}
+
+function installmentPlanModal(invoiceId) {
+  const inv = DB.find('invoices', invoiceId);
+  const s = DB.find('students', inv.studentId);
+  const hasExisting = inv.installmentPlan && inv.installmentPlan.length;
+  document.getElementById('modalBackdrop')?.click();
+  setTimeout(() => modal({
+    title: 'Installment Plan — ' + s.name,
+    body: `
+      <div class="space-y-3">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          Split the outstanding balance of <strong>${money(inv.balance)}</strong> across several scheduled payments. The school keeps track of due dates and sends reminders automatically.
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Number of installments</label>
+            <select id="ip_count" class="input" onchange="renderInstallmentPreview('${invoiceId}')">
+              <option value="2">2 payments</option>
+              <option value="3" selected>3 payments</option>
+              <option value="4">4 payments</option>
+              <option value="6">6 payments</option>
+            </select>
+          </div>
+          <div><label class="input-label">First payment due</label>
+            <input id="ip_start" type="date" class="input" value="${daysAhead(7)}" onchange="renderInstallmentPreview('${invoiceId}')" />
+          </div>
+        </div>
+        <div><label class="input-label">Interval</label>
+          <select id="ip_interval" class="input" onchange="renderInstallmentPreview('${invoiceId}')">
+            <option value="30" selected>Monthly (every 30 days)</option>
+            <option value="14">Bi-weekly (every 14 days)</option>
+            <option value="60">Bi-monthly (every 60 days)</option>
+          </select>
+        </div>
+        <div id="ip_preview"></div>
+        ${hasExisting ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">A plan already exists. Saving will replace it.</div>` : ''}
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveInstallmentPlan('${invoiceId}')">${icon('check','w-4 h-4')} Save Plan</button>`
+  }), 50);
+  setTimeout(() => renderInstallmentPreview(invoiceId), 100);
+}
+
+function renderInstallmentPreview(invoiceId) {
+  const inv = DB.find('invoices', invoiceId);
+  const count = parseInt(document.getElementById('ip_count').value) || 3;
+  const start = document.getElementById('ip_start').value || today();
+  const interval = parseInt(document.getElementById('ip_interval').value) || 30;
+  const each = Math.ceil(inv.balance / count);
+  const schedule = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + interval * i);
+    schedule.push({ due: d.toISOString().slice(0, 10), amount: i === count - 1 ? inv.balance - each * (count - 1) : each });
+  }
+  document.getElementById('ip_preview').innerHTML = `
+    <h4 class="text-xs uppercase font-semibold text-slate-500 mb-2">Schedule</h4>
+    <div class="space-y-1.5">
+      ${schedule.map((p, i) => `<div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg text-sm">
+        <div class="flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold">${i + 1}</span><span>${fdate(p.due, { long: true })}</span></div>
+        <span class="font-mono font-semibold">${money(p.amount)}</span>
+      </div>`).join('')}
+    </div>
+  `;
+}
+
+function saveInstallmentPlan(invoiceId) {
+  const inv = DB.find('invoices', invoiceId);
+  const count = parseInt(document.getElementById('ip_count').value) || 3;
+  const start = document.getElementById('ip_start').value || today();
+  const interval = parseInt(document.getElementById('ip_interval').value) || 30;
+  const each = Math.ceil(inv.balance / count);
+  const schedule = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + interval * i);
+    schedule.push({ due: d.toISOString().slice(0, 10), amount: i === count - 1 ? inv.balance - each * (count - 1) : each, paid: false });
+  }
+  DB.update('invoices', invoiceId, { installmentPlan: schedule });
+  const s = DB.find('students', inv.studentId);
+  DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Installment Plan Created', body: `Your ${count}-installment plan for ${s.name}'s fees is set. First payment of ${money(schedule[0].amount)} is due ${fdate(schedule[0].due, { long: true })}.`, type: 'info', read: false, timestamp: now() });
+  toast(`${count}-installment plan saved · parent notified`);
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+}
+
+function applyDiscountModal(invoiceId) {
+  const inv = DB.find('invoices', invoiceId);
+  modal({
+    title: 'Apply Discount / Scholarship',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          The discount appears as a negative line item on the invoice. The student's balance reduces immediately.
+        </div>
+        <div>
+          <label class="input-label">Type</label>
+          <select id="dc_type" class="input" onchange="onDiscountTypeChange()">
+            <option value="sibling">Sibling Discount (10% of tuition)</option>
+            <option value="scholarship">Scholarship — Full Tuition Waiver</option>
+            <option value="partial">Partial Scholarship — % off tuition</option>
+            <option value="prompt">Prompt Payment Discount</option>
+            <option value="custom">Custom amount</option>
+          </select>
+        </div>
+        <div id="dc_pctRow" class="hidden">
+          <label class="input-label">% off tuition</label>
+          <input id="dc_pct" type="number" class="input" value="25" min="1" max="100" />
+        </div>
+        <div id="dc_customRow" class="hidden">
+          <label class="input-label">Discount Amount (NGN)</label>
+          <input id="dc_custom" type="number" class="input" placeholder="e.g. 25000" />
+        </div>
+        <div>
+          <label class="input-label">Label on invoice</label>
+          <input id="dc_label" class="input" value="Sibling Discount" />
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveDiscount('${invoiceId}')">Apply</button>`
+  });
+  // Update label as type changes
+  document.getElementById('dc_type').addEventListener('change', e => {
+    const map = { sibling: 'Sibling Discount', scholarship: 'Scholarship - Tuition Waiver', partial: 'Partial Scholarship', prompt: 'Prompt Payment Discount', custom: 'Discount' };
+    document.getElementById('dc_label').value = map[e.target.value];
+  });
+}
+
+function onDiscountTypeChange() {
+  const t = document.getElementById('dc_type').value;
+  document.getElementById('dc_pctRow').classList.toggle('hidden', t !== 'partial');
+  document.getElementById('dc_customRow').classList.toggle('hidden', t !== 'custom');
+}
+
+function saveDiscount(invoiceId) {
+  const inv = DB.find('invoices', invoiceId);
+  const type = document.getElementById('dc_type').value;
+  const label = document.getElementById('dc_label').value.trim() || 'Discount';
+  const tuitionLine = inv.lineItems.find(l => l.name.toLowerCase().includes('tuition'));
+  const tuitionAmt = tuitionLine ? tuitionLine.amount : 0;
+  let amount = 0;
+  if (type === 'sibling') amount = Math.round(tuitionAmt * 0.1);
+  else if (type === 'scholarship') amount = tuitionAmt;
+  else if (type === 'partial') {
+    const pct = parseInt(document.getElementById('dc_pct').value) || 0;
+    amount = Math.round(tuitionAmt * pct / 100);
+  } else if (type === 'prompt') amount = Math.round(tuitionAmt * 0.05);
+  else amount = parseInt(document.getElementById('dc_custom').value) || 0;
+
+  if (amount <= 0) { toast('Discount amount must be positive', 'danger'); return; }
+  if (amount > inv.balance) { toast(`Discount (${money(amount)}) exceeds balance (${money(inv.balance)})`, 'danger'); return; }
+
+  const lineItems = inv.lineItems.concat([{ name: label, amount: -amount, type: 'discount' }]);
+  const total = lineItems.reduce((s, l) => s + l.amount, 0);
+  const balance = Math.max(0, total - inv.paid);
+  const status = balance === 0 ? 'paid' : (inv.paid > 0 ? 'partial' : 'outstanding');
+  DB.update('invoices', invoiceId, { lineItems, total, balance, status });
+  const s = DB.find('students', inv.studentId);
+  DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Discount Applied', body: `${label} of ${money(amount)} applied to ${s.name}'s fees.`, type: 'success', read: false, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'applied_discount', target: `${money(amount)} (${label}) for ${s.name}`, timestamp: now() });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast(`${label} of ${money(amount)} applied`, 'success');
 }
 
 /* ---------- Paystack-style Payment Flow ---------- */
@@ -489,8 +931,53 @@ function processPayment(invoiceId) {
     return;
   }
 
-  // Card/Transfer flow
-  setTimeout(() => completePayment(invoiceId, amount, method), 1500);
+  // Card/Transfer flow — 10% simulated failure rate so the failure path is demonstrable
+  setTimeout(() => {
+    if (Math.random() < 0.10) failPayment(invoiceId, amount, method);
+    else completePayment(invoiceId, amount, method);
+  }, 1500);
+}
+
+function failPayment(invoiceId, amount, method) {
+  // Log the failed transaction for the finance officer's ledger
+  const reasons = [
+    { code: 'INSUFFICIENT_FUNDS', message: 'Your card does not have enough funds to complete this transaction.' },
+    { code: 'BANK_DECLINED', message: 'Your bank declined the transaction. Please try a different card or method.' },
+    { code: 'NETWORK_TIMEOUT', message: 'Network timeout. Your account was not charged.' }
+  ];
+  const r = reasons[Math.floor(Math.random() * reasons.length)];
+  DB.insert('transactions', {
+    id: uid('txn'),
+    schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    invoiceId, studentId: DB.find('invoices', invoiceId).studentId,
+    amount, method,
+    reference: 'CSP-' + Math.random().toString(36).slice(2, 10).toUpperCase(),
+    status: 'failed',
+    gateway: 'Paystack',
+    failureReason: r.code,
+    timestamp: now(),
+    reconciled: false
+  });
+  const root = document.getElementById('modalBackdrop'); if (root) root.click();
+  modal({
+    title: 'Payment Failed',
+    body: `
+      <div class="text-center py-5">
+        <div class="w-20 h-20 mx-auto rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4">${icon('x','w-12 h-12')}</div>
+        <h2 class="text-lg font-bold text-slate-900">${money(amount)} could not be charged</h2>
+        <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 mt-4 text-sm text-rose-900 text-left">
+          <div class="font-semibold mb-1">${r.code.replace(/_/g, ' ')}</div>
+          <div>${r.message}</div>
+        </div>
+        <p class="text-xs text-slate-500 mt-3">No money has left your account. You can try again with the same or a different payment method.</p>
+      </div>
+    `,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
+      <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); payInvoiceModal('${invoiceId}')">${icon('check','w-4 h-4')} Try again</button>
+    `
+  });
+  toast('Payment failed — please try again', 'danger');
 }
 
 function completePayment(invoiceId, amount, method) {
@@ -516,10 +1003,12 @@ function completePayment(invoiceId, amount, method) {
   DB.insert('transactions', txn);
   DB.update('invoices', invoiceId, { paid: newPaid, balance: newBalance, status: newStatus });
   // Notify parent
-  DB.insert('notifications', { id: uid('not'), userId: AUTH.current.id, title: 'Payment Received', body: `Your payment of ${money(amount)} was successful.`, type: 'success', read: false, timestamp: now() });
+  DB.insert('notifications', { id: uid('not'), userId: AUTH.current.id, title: 'Payment Received', body: `Your payment of ${money(amount)} was successful.`, type: 'success', read: false, timestamp: now(), link: { view: 'par_fees' } });
   DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'payment', target: `${money(amount)} for ${DB.find('students', inv.studentId).name}`, timestamp: now() });
 
   document.getElementById('modalBackdrop').click();
+  const hasMore = _payQueue.length > 0;
+  const nextChild = hasMore ? DB.find('students', DB.find('invoices', _payQueue[0]).studentId) : null;
   modal({
     title: 'Payment Successful!',
     body: `
@@ -533,11 +1022,18 @@ function completePayment(invoiceId, amount, method) {
           <div class="flex justify-between py-1"><span class="text-slate-500">Date</span><span>${fdate(txn.timestamp, { time: true })}</span></div>
           <div class="flex justify-between py-1"><span class="text-slate-500">Status</span>${statusBadge('successful')}</div>
         </div>
+        ${hasMore ? `<div class="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          Next up: <strong>${nextChild.name}</strong> · ${_payQueue.length} more invoice${_payQueue.length>1?'s':''} to pay
+        </div>` : ''}
       </div>
     `,
     footer: `
       <button class="btn btn-secondary" onclick="downloadReceipt('${invoiceId}')">${icon('download','w-4 h-4')} Receipt</button>
-      <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); APP.render()">Done</button>
+      ${hasMore
+        ? `<button class="btn btn-secondary" onclick="_payQueue=[]; document.getElementById('modalBackdrop').click(); APP.render()">Stop here</button>
+           <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); payAllContinue()">Pay for ${nextChild.name.split(' ')[0]} →</button>`
+        : `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); APP.render()">Done</button>`
+      }
     `
   });
   toast(`Payment of ${money(amount)} successful`, 'success');
@@ -580,22 +1076,26 @@ function downloadReceipt(invoiceId) {
   printElement(html);
 }
 
+// Queue of remaining invoice IDs in a multi-pay session
+let _payQueue = [];
+
 function payAllModal() {
   const children = parentChildren();
   const invoices = children.map(c => COMPUTE.studentInvoice(c.id)).filter(i => i && i.balance > 0);
   if (invoices.length === 0) { toast('No outstanding fees', 'info'); return; }
   if (invoices.length === 1) { payInvoiceModal(invoices[0].id); return; }
-  // Multi-child: pay invoices sequentially is heavy; show summary
   const total = invoices.reduce((s, i) => s + i.balance, 0);
   modal({
     title: 'Pay All Fees',
     body: `
-      <p class="text-sm text-slate-600 mb-3">You're paying for ${invoices.length} children at once.</p>
+      <p class="text-sm text-slate-600 mb-3">You'll pay for ${invoices.length} children. We'll walk you through each invoice so you can use a different payment method for each if you want.</p>
       <div class="space-y-2 mb-4">
-        ${invoices.map(i => {
+        ${invoices.map((i, idx) => {
           const s = DB.find('students', i.studentId);
-          return `<div class="flex justify-between p-3 bg-slate-50 rounded-xl">
-            <span>${s.name}</span>
+          return `<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+            <div class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold flex-shrink-0">${idx + 1}</div>
+            ${avatar(s, 'sm')}
+            <span class="flex-1 font-semibold">${s.name}</span>
             <span class="font-mono font-semibold">${money(i.balance)}</span>
           </div>`;
         }).join('')}
@@ -606,15 +1106,22 @@ function payAllModal() {
     `,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
-      <button class="btn btn-primary" onclick="payAllExecute(${JSON.stringify(invoices.map(i=>i.id)).replace(/"/g,'&quot;')})">${icon('check','w-4 h-4')} Pay ${money(total)}</button>
+      <button class="btn btn-primary" onclick="payAllExecute(${JSON.stringify(invoices.map(i=>i.id)).replace(/"/g,'&quot;')})">${icon('check','w-4 h-4')} Start — ${money(total)}</button>
     `
   });
 }
 
 function payAllExecute(invoiceIds) {
   document.getElementById('modalBackdrop').click();
+  _payQueue = invoiceIds.slice(1);
   setTimeout(() => payInvoiceModal(invoiceIds[0]), 200);
-  // For brevity, we pay them one at a time, starting with the first
+}
+
+function payAllContinue() {
+  if (_payQueue.length === 0) return false;
+  const next = _payQueue.shift();
+  setTimeout(() => payInvoiceModal(next), 200);
+  return true;
 }
 
 /* ---------- Loans ---------- */
@@ -688,6 +1195,20 @@ function renderLoanCard(loan) {
       </div>
     </div>`;
   }
+  if (loan.status === 'rejected') {
+    return `<div class="card p-4 border-l-4 border-rose-500">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <span class="badge badge-danger">Declined</span>
+          <h4 class="font-bold text-slate-900 mt-1">Loan Application</h4>
+          <p class="text-xs text-slate-500">Decision ${fdate(loan.decidedAt || loan.appliedAt, { relative: true })}</p>
+        </div>
+      </div>
+      ${loan.rejectionReason ? `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-900">
+        <strong>Reason:</strong> ${loan.rejectionReason}${loan.rejectionNote ? `<br/><span class="text-xs">${loan.rejectionNote}</span>` : ''}
+      </div>` : ''}
+    </div>`;
+  }
   const paidCount = loan.repayments.filter(r => r.paid).length;
   const totalCount = loan.repayments.length;
   const nextPayment = loan.repayments.find(r => !r.paid);
@@ -710,14 +1231,27 @@ function renderLoanCard(loan) {
       </div>
       <div class="progress"><div class="progress-bar" style="width: ${(paidCount/totalCount)*100}%"></div></div>
     </div>
-    ${nextPayment ? `<div class="bg-slate-50 rounded-xl p-3 text-sm flex items-center justify-between">
+    ${nextPayment ? `<div class="bg-slate-50 rounded-xl p-3 text-sm flex items-center justify-between mb-2">
       <div>
         <div class="text-xs text-slate-500">Next payment</div>
         <div class="font-semibold">${money(nextPayment.amount)} · ${fdate(nextPayment.dueDate, { long: true })}</div>
       </div>
       <button class="btn btn-primary !py-1.5" onclick="payLoanInstallment('${loan.id}')">Pay Now</button>
-    </div>` : `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800">${icon('check','w-4 h-4 inline')} Loan fully repaid. Thank you!</div>`}
+    </div>
+    <label class="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm cursor-pointer">
+      <div>
+        <div class="font-semibold text-blue-900">Auto-debit on due date</div>
+        <div class="text-xs text-blue-700">We'll charge your saved card automatically when payment is due</div>
+      </div>
+      <input type="checkbox" class="w-5 h-5 accent-brand-600" ${loan.autoDebit ? 'checked' : ''} onchange="toggleLoanAutoDebit('${loan.id}', this.checked)" />
+    </label>
+    ` : `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800">${icon('check','w-4 h-4 inline')} Loan fully repaid. Thank you!</div>`}
   </div>`;
+}
+
+function toggleLoanAutoDebit(loanId, enabled) {
+  DB.update('loans', loanId, { autoDebit: enabled });
+  toast(enabled ? 'Auto-debit enabled — your next payment will be charged automatically' : 'Auto-debit disabled');
 }
 
 function applyLoanModal() {
@@ -928,3 +1462,99 @@ function payLoanInstallment(loanId) {
 /* ---------- Messages & Announcements (delegated) ---------- */
 function view_par_messages() { return view_messages_shared('parent'); }
 function view_par_announce() { return view_announce_shared('parent'); }
+
+/* ---------- Digital Consent (parent) ---------- */
+function view_par_consent() {
+  const children = COMPUTE.parentChildren(AUTH.current.id).filter(c => c.status === 'active');
+  const childClassIds = children.map(c => c.classId);
+  const forms = DB.query('consentForms', f => f.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && (f.classId === 'all' || childClassIds.includes(f.classId)))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  return `
+    ${pageHeader({ title: 'Digital Consent', subtitle: 'Approve school activities online — no paperwork' })}
+    ${forms.length === 0 ? emptyState({ title: 'No consent requests', body: 'When the school needs your approval, it will appear here.', icon: 'check' }) : `
+      <div class="space-y-4">
+        ${forms.map(f => {
+          const applicableKids = f.classId === 'all' ? children : children.filter(c => c.classId === f.classId);
+          const typeBadge = { excursion: 'badge-info', media: 'badge-warn', pta: 'badge-neutral', policy: 'badge-success' }[f.type] || 'badge-neutral';
+          const overdue = new Date(f.dueDate) < new Date();
+          return `<div class="card p-4">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="badge ${typeBadge}">${f.type}</span>
+              <span class="badge ${overdue ? 'badge-danger' : 'badge-neutral'}">Respond by ${fdate(f.dueDate, { short: true })}</span>
+            </div>
+            <h3 class="font-bold text-slate-900">${f.title}</h3>
+            <p class="text-sm text-slate-600 mt-1">${f.description}</p>
+            <div class="mt-3 space-y-2">
+              ${applicableKids.map(kid => {
+                const r = DB.query('consentResponses', x => x.formId === f.id && x.studentId === kid.id)[0];
+                return `<div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl">
+                  ${avatar(kid.name, 'sm')}
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-sm">${kid.name}</div>
+                    ${r ? `<div class="text-xs text-slate-500">Signed by ${r.signature} · ${fdate(r.timestamp, { time: true })}</div>` : `<div class="text-xs text-slate-400">Awaiting your response</div>`}
+                  </div>
+                  ${r
+                    ? (r.agreed ? `<span class="badge badge-success">Agreed ✓</span>` : `<span class="badge badge-danger">Declined</span>`)
+                    : `<div class="flex gap-2">
+                         <button class="btn btn-secondary !py-1.5 !px-3 text-xs" onclick="respondConsent('${f.id}','${kid.id}',false)">Decline</button>
+                         <button class="btn btn-primary !py-1.5 !px-3 text-xs" onclick="consentSignModal('${f.id}','${kid.id}')">${icon('check','w-3.5 h-3.5')} Approve</button>
+                       </div>`}
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    `}
+  `;
+}
+
+function consentSignModal(formId, studentId) {
+  const form = DB.find('consentForms', formId);
+  const kid = DB.find('students', studentId);
+  modal({
+    title: 'Approve & Sign',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-slate-50 rounded-xl p-3">
+          <div class="font-semibold text-sm">${form.title}</div>
+          <div class="text-xs text-slate-500 mt-0.5">For ${kid.name}</div>
+        </div>
+        <p class="text-sm text-slate-600">By signing below you confirm you have read the details and give your consent on behalf of your child.</p>
+        <div><label class="input-label">Type your full name (e-signature)</label><input id="consent_sig" class="input" value="${AUTH.current.name}" /></div>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="consent_agree" checked /> I agree and authorise this activity</label>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="submitConsentSign('${formId}','${studentId}')">${icon('check','w-4 h-4')} Sign & Submit</button>`
+  });
+}
+
+function submitConsentSign(formId, studentId) {
+  const sig = document.getElementById('consent_sig').value.trim();
+  const agree = document.getElementById('consent_agree').checked;
+  if (!sig) { toast('Please type your name to sign', 'danger'); return; }
+  if (!agree) { toast('Tick the box to authorise, or use Decline', 'warn'); return; }
+  _recordConsent(formId, studentId, true, sig);
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast('Consent recorded · timestamp saved', 'success');
+}
+
+function respondConsent(formId, studentId, agreed) {
+  _recordConsent(formId, studentId, agreed, AUTH.current.name);
+  APP.render();
+  toast(agreed ? 'Consent recorded' : 'Response recorded as declined', agreed ? 'success' : 'info');
+}
+
+function _recordConsent(formId, studentId, agreed, signature) {
+  const form = DB.find('consentForms', formId);
+  // Remove any prior response for this form+student, then insert
+  DB.query('consentResponses', r => r.formId === formId && r.studentId === studentId).forEach(r => DB.remove('consentResponses', r.id));
+  DB.insert('consentResponses', { id: uid('cr'), formId, parentId: AUTH.current.id, studentId, agreed, signature, timestamp: now() });
+  // Notify the school
+  if (form) {
+    DB.insert('notifications', { id: uid('not'), userId: form.schoolId, title: 'Consent Response', body: `${signature} ${agreed ? 'approved' : 'declined'} "${form.title}".`, type: agreed ? 'success' : 'warn', read: false, timestamp: now(), link: { view: 'adm_comms', params: { commsTab: 'consent' } } });
+  }
+}

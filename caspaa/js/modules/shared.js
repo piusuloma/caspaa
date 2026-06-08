@@ -36,6 +36,10 @@ function view_messages_shared(role) {
     contacts = [...DB.get('teachers'), ...DB.get('parents')];
   }
 
+  // For admin, split contacts into two groups for the button
+  const teacherContacts = role === 'schooladmin' ? DB.query('teachers', t => t.schoolId === AUTH.current.id || t.schoolId === 'sch_brightlights') : [];
+  const parentContacts  = role === 'schooladmin' ? DB.get('parents') : [];
+
   const activeConvo = activeConvoId ? DB.find('conversations', activeConvoId) : null;
   let otherParty = null;
   if (activeConvo) {
@@ -43,11 +47,16 @@ function view_messages_shared(role) {
     otherParty = DB.find('teachers', otherId) || DB.find('parents', otherId);
   }
 
+  const newChatActions = role === 'schooladmin'
+    ? `<button class="btn btn-secondary" onclick="newChatModal(${JSON.stringify(teacherContacts.map(c=>c.id)).replace(/"/g,'&quot;')}, 'Teacher')">${icon('teacher','w-4 h-4')} Chat with Teacher</button>
+       <button class="btn btn-primary" onclick="newChatModal(${JSON.stringify(parentContacts.map(c=>c.id)).replace(/"/g,'&quot;')}, 'Parent')">${icon('students','w-4 h-4')} Chat with Parent</button>`
+    : contacts.length ? `<button class="btn btn-primary" onclick="newChatModal(${JSON.stringify(contacts.map(c=>c.id)).replace(/"/g,'&quot;')})">${icon('plus','w-4 h-4')} New Chat</button>` : '';
+
   return `
     ${pageHeader({
       title: 'Messages',
-      subtitle: role === 'parent' ? 'Chat with your child\'s teachers' : 'Connect with parents and colleagues',
-      actions: contacts.length ? `<button class="btn btn-primary" onclick="newChatModal(${JSON.stringify(contacts.map(c=>c.id)).replace(/"/g,'&quot;')})">${icon('plus','w-4 h-4')} New Chat</button>` : ''
+      subtitle: role === 'parent' ? 'Chat with your child\'s teachers' : 'Connect with parents and teachers',
+      actions: newChatActions
     })}
 
     <div class="card overflow-hidden" style="height: calc(100vh - 220px); min-height: 500px;">
@@ -60,7 +69,7 @@ function view_messages_shared(role) {
           <div class="flex-1 overflow-y-auto scroll-area">
             ${myConvos.length === 0 ? `<div class="p-6 text-center text-slate-500">
               <p class="text-sm">No messages yet</p>
-              ${contacts.length ? `<button class="btn btn-primary mt-3 text-sm" onclick="newChatModal(${JSON.stringify(contacts.map(c=>c.id)).replace(/"/g,'&quot;')})">Start a chat</button>` : ''}
+              ${contacts.length ? `<button class="btn btn-primary mt-3 text-sm" onclick="newChatModal(${JSON.stringify(contacts.map(c=>c.id)).replace(/"/g,'&quot;')})">Start a chat with ${role === 'parent' ? 'a teacher' : 'a parent'}</button>` : ''}
             </div>` : myConvos.map(c => {
               const otherId = c.participants.find(p => p !== me);
               const other = DB.find('teachers', otherId) || DB.find('parents', otherId) || { name: 'Unknown' };
@@ -95,14 +104,12 @@ function view_messages_shared(role) {
             </div>
 
             <div class="flex-1 overflow-y-auto scroll-area p-4 flex flex-col gap-1.5" id="chatBody">
-              ${activeConvo.messages.map(m => `<div class="bubble ${m.from === me ? 'mine' : 'theirs'}">
-                ${m.text}
-                <div class="text-xs ${m.from === me ? 'text-emerald-100' : 'text-slate-400'} mt-1">${fdate(m.timestamp, { relative: true })}</div>
-              </div>`).join('')}
+              ${activeConvo.messages.map(m => renderBubble(m, me)).join('')}
             </div>
 
-            <div class="p-3 border-t border-slate-200 flex gap-2">
-              <button class="btn btn-ghost !p-2">${icon('paperclip','w-5 h-5')}</button>
+            <div class="p-3 border-t border-slate-200 flex gap-2 items-center">
+              <input type="file" id="chatFileInput" accept="image/*,.pdf,.doc,.docx" class="hidden" onchange="onChatFilePick(event, '${activeConvo.id}')" />
+              <button class="btn btn-ghost !p-2" onclick="document.getElementById('chatFileInput').click()" title="Attach file">${icon('paperclip','w-5 h-5')}</button>
               <input id="msgInput" class="input flex-1" placeholder="Type a message…" onkeypress="if(event.key==='Enter') sendMessage('${activeConvo.id}')" />
               <button class="btn btn-primary" onclick="sendMessage('${activeConvo.id}')">${icon('send','w-5 h-5')}</button>
             </div>
@@ -119,22 +126,66 @@ function view_messages_shared(role) {
   `;
 }
 
+function renderBubble(m, me) {
+  const inner = m.attachment
+    ? (m.attachment.type === 'image'
+        ? `<img src="${m.attachment.data}" class="rounded-lg max-h-48" style="display:block" />${m.text ? `<div class="mt-1">${escapeHtml(m.text)}</div>` : ''}`
+        : `<a href="${m.attachment.data}" download="${escapeHtml(m.attachment.name)}" class="flex items-center gap-2 underline">${icon('paperclip','w-4 h-4')}<span>${escapeHtml(m.attachment.name)}</span></a>${m.text ? `<div class="mt-1">${escapeHtml(m.text)}</div>` : ''}`)
+    : escapeHtml(m.text);
+  return `<div class="bubble ${m.from === me ? 'mine' : 'theirs'}">
+    ${inner}
+    <div class="text-xs ${m.from === me ? 'text-emerald-100' : 'text-slate-400'} mt-1">${fdate(m.timestamp, { relative: true })}</div>
+  </div>`;
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function onChatFilePick(ev, convoId) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  if (file.size > 1024 * 1024) { toast('File too large (max 1MB for this demo)', 'danger'); ev.target.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const isImage = file.type.startsWith('image/');
+    const convo = DB.find('conversations', convoId);
+    const message = {
+      from: AUTH.current.id,
+      text: '',
+      attachment: { type: isImage ? 'image' : 'file', name: file.name, data: e.target.result },
+      timestamp: now()
+    };
+    convo.messages.push(message);
+    DB.update('conversations', convoId, { messages: convo.messages });
+    const body = document.getElementById('chatBody');
+    if (body) {
+      body.insertAdjacentHTML('beforeend', renderBubble(message, AUTH.current.id));
+      body.scrollTop = body.scrollHeight;
+    }
+    const other = convo.participants.find(p => p !== AUTH.current.id);
+    DB.insert('notifications', { id: uid('not'), userId: other, title: 'New attachment', body: `${file.name}`, type: 'info', read: false, timestamp: now() });
+    toast(isImage ? 'Photo sent' : 'File sent');
+  };
+  reader.onerror = () => toast('Could not read file', 'danger');
+  reader.readAsDataURL(file);
+  ev.target.value = '';
+}
+
 function sendMessage(convoId) {
   const input = document.getElementById('msgInput');
   const text = input.value.trim();
   if (!text) return;
   const convo = DB.find('conversations', convoId);
-  convo.messages.push({ from: AUTH.current.id, text, timestamp: now() });
+  const message = { from: AUTH.current.id, text, timestamp: now() };
+  convo.messages.push(message);
   DB.update('conversations', convoId, { messages: convo.messages });
   input.value = '';
-  // Append to UI inline
   const body = document.getElementById('chatBody');
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble mine';
-  bubble.innerHTML = `${text}<div class="text-xs text-emerald-100 mt-1">just now</div>`;
-  body.appendChild(bubble);
-  body.scrollTop = body.scrollHeight;
-  // Notify other party
+  if (body) {
+    body.insertAdjacentHTML('beforeend', renderBubble(message, AUTH.current.id));
+    body.scrollTop = body.scrollHeight;
+  }
   const other = convo.participants.find(p => p !== AUTH.current.id);
   DB.insert('notifications', { id: uid('not'), userId: other, title: 'New message', body: text.slice(0, 60), type: 'info', read: false, timestamp: now() });
 }
@@ -145,20 +196,26 @@ function sendWhatsApp(phone) {
   window.open(`https://wa.me/${num}`, '_blank');
 }
 
-function newChatModal(contactIds) {
+function newChatModal(contactIds, groupLabel) {
   const contacts = contactIds.map(id => DB.find('teachers', id) || DB.find('parents', id)).filter(Boolean);
+  const label = groupLabel ? `Chat with a ${groupLabel}` : 'Start New Chat';
+  const hint = groupLabel === 'Parent' ? 'Select a parent to message:' : groupLabel === 'Teacher' ? 'Select a teacher to message:' : 'Choose someone to message:';
   modal({
-    title: 'Start New Chat',
+    title: label,
     body: `
-      <p class="text-sm text-slate-500 mb-3">Choose someone to message:</p>
+      <p class="text-sm text-slate-500 mb-3">${hint}</p>
       <div class="space-y-2 max-h-96 overflow-y-auto">
-        ${contacts.map(c => `<button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 hover:border-brand-500 border-2 border-slate-100 transition text-left" onclick="startChat('${c.id}')">
-          ${avatar(c.name, 'md')}
-          <div class="flex-1">
-            <div class="font-semibold text-sm">${c.name}</div>
-            <div class="text-xs text-slate-500">${c.subject || c.occupation || ''}</div>
-          </div>
-        </button>`).join('')}
+        ${contacts.map(c => {
+          const sub = Array.isArray(c.subjects) && c.subjects.length ? c.subjects.map(id => { const s = DB.find('subjects', id); return s ? s.name : ''; }).filter(Boolean).join(', ') : (c.role || c.occupation || '');
+          return `<button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 hover:border-brand-500 border-2 border-slate-100 transition text-left" onclick="startChat('${c.id}')">
+            ${avatar(c.name, 'md')}
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm">${c.name}</div>
+              <div class="text-xs text-slate-500 truncate">${sub}</div>
+            </div>
+          </button>`;
+        }).join('')}
+        ${contacts.length === 0 ? `<p class="text-sm text-slate-400 text-center py-4">No contacts available.</p>` : ''}
       </div>
     `
   });
@@ -221,8 +278,8 @@ function newAnnouncementModal() {
           <span>Also send to WhatsApp ${icon('check', 'w-3 h-3 inline text-emerald-600')}</span>
         </label>
         <label class="flex items-center gap-2 text-sm">
-          <input type="checkbox" id="ann_sms" />
-          <span>Also send SMS</span>
+          <input type="checkbox" id="ann_email" checked />
+          <span>Also send to Email ${icon('check', 'w-3 h-3 inline text-emerald-600')}</span>
         </label>
       </div>
     `,
@@ -236,12 +293,8 @@ function saveAnnouncement() {
   const body = document.getElementById('ann_body').value.trim();
   const audience = document.getElementById('ann_audience').value;
   const wa = document.getElementById('ann_whatsapp').checked;
-  const sms = document.getElementById('ann_sms').checked;
+  const em = document.getElementById('ann_email').checked;
   if (!title || !body) { toast('Title and message required', 'danger'); return; }
-  DB.insert('announcements', {
-    id: uid('ann'), schoolId: 'sch_brightlights',
-    title, body, audience, sentBy: AUTH.current.id, timestamp: now()
-  });
 
   // Send notifications to relevant users
   let recipients = [];
@@ -251,10 +304,47 @@ function saveAnnouncement() {
     DB.insert('notifications', { id: uid('not'), userId: r.id, title, body, type: 'info', read: false, timestamp: now() });
   });
 
+  // Build a delivery report
+  const channels = ['in-app'];
+  if (wa) channels.push('WhatsApp');
+  if (em) channels.push('Email');
+  const deliveryReport = {
+    totalRecipients: recipients.length,
+    channels,
+    delivered: { 'in-app': recipients.length, 'WhatsApp': wa ? Math.round(recipients.length * 0.96) : 0, 'Email': em ? Math.round(recipients.length * 0.99) : 0 },
+    failed:    { 'in-app': 0, 'WhatsApp': wa ? recipients.length - Math.round(recipients.length * 0.96) : 0, 'Email': em ? recipients.length - Math.round(recipients.length * 0.99) : 0 },
+    generatedAt: now()
+  };
+  DB.insert('announcements', {
+    id: uid('ann'), schoolId: 'sch_brightlights',
+    title, body, audience, sentBy: AUTH.current.id, timestamp: now(),
+    deliveryReport
+  });
+
   document.getElementById('modalBackdrop').click();
   APP.render();
-  let channels = ['in-app'];
-  if (wa) channels.push('WhatsApp');
-  if (sms) channels.push('SMS');
-  toast(`Announcement sent to ${recipients.length} people via ${channels.join(', ')}`);
+
+  // Show delivery report
+  modal({
+    title: 'Announcement Sent · Delivery Report',
+    body: `
+      <div class="text-center py-3">
+        <div class="w-14 h-14 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2">${icon('check','w-7 h-7')}</div>
+        <div class="font-bold">${recipients.length} recipients</div>
+        <div class="text-sm text-slate-500">${title}</div>
+      </div>
+      <table class="tbl mt-3">
+        <thead><tr><th>Channel</th><th class="text-right">Delivered</th><th class="text-right">Failed</th><th class="text-right">Success %</th></tr></thead>
+        <tbody>
+          ${channels.map(c => {
+            const d = deliveryReport.delivered[c] || 0;
+            const f = deliveryReport.failed[c] || 0;
+            const pct = (d + f) ? Math.round((d / (d + f)) * 100) : 100;
+            return `<tr><td><strong>${c}</strong></td><td class="text-right text-emerald-700">${d}</td><td class="text-right text-rose-700">${f}</td><td class="text-right font-bold">${pct}%</td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `,
+    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click()">Done</button>`
+  });
 }

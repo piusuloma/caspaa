@@ -20,6 +20,12 @@ const AUTH = {
   login(user) {
     this.current = user;
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    // Seed a fresh history entry for this session
+    try {
+      const v = typeof APP !== 'undefined' ? APP.defaultView(user.role) : 'dashboard';
+      history.replaceState({ view: v, params: {}, ts: Date.now() }, '', '#' + v);
+      if (typeof APP !== 'undefined') APP.view = v;
+    } catch (e) {}
   },
 
   logout() {
@@ -37,9 +43,11 @@ const AUTH = {
 const DEMO_ACCOUNTS = [
   { id: 'sa_001', role: 'superadmin', name: 'Tayo Adesola',  email: 'super@caspaa.com',          title: 'CASPAA Super Admin',     subtitle: 'Platform Operator' },
   { id: 'sch_brightlights', role: 'schooladmin', name: 'Mr. Olusegun Adebayo', email: 'admin@brightlights.ng', title: 'School Proprietor', subtitle: 'Bright Lights Academy' },
-  { id: 'fin_001', role: 'finance', name: 'Mrs. Adaeze Okonkwo', email: 'finance@brightlights.ng', title: 'Finance Officer',  subtitle: 'Bright Lights Academy', schoolId: 'sch_brightlights' },
-  { id: 'tch_adamu', role: 'teacher', name: 'Mr. Adamu Ibrahim', email: 'adamu@brightlights.ng', title: 'Teacher',         subtitle: 'Mathematics — JSS1, JSS2, Pry1, Pry2', schoolId: 'sch_brightlights' },
-  { id: 'par_okafor', role: 'parent', name: 'Mr. Tunde Okafor', email: 'parent@demo.ng',          title: 'Parent',           subtitle: 'Chiamaka & Tobi Okafor', schoolId: 'sch_brightlights' }
+  { id: 'prn_001', role: 'principal', name: 'Mrs. Patricia Akande', email: 'principal@brightlights.ng', title: 'Principal',     subtitle: 'Academic + Admin oversight', schoolId: 'sch_brightlights' },
+  { id: 'fin_001', role: 'finance', name: 'Mrs. Adaeze Okonkwo', email: 'finance@brightlights.ng', title: 'Finance Officer',  subtitle: 'Bursar — Bright Lights Academy', schoolId: 'sch_brightlights' },
+  { id: 'tch_adamu', role: 'teacher', name: 'Mr. Adamu Ibrahim', email: 'adamu@brightlights.ng', title: 'Teacher',         subtitle: 'Maths + Science — Pry1, Pry2, JSS1', schoolId: 'sch_brightlights' },
+  { id: 'par_okafor', role: 'parent', name: 'Mr. Tunde Okafor', email: 'parent@demo.ng',          title: 'Parent',           subtitle: 'Chiamaka & Tobi Okafor', schoolId: 'sch_brightlights' },
+  { id: 'stu_002', role: 'student', name: 'Tobi Okafor', email: 'tobi@brightlights.ng',          title: 'Student',          subtitle: 'JSS 1 — Bright Lights Academy', schoolId: 'sch_brightlights' }
 ];
 
 /* ---------- Login screen ---------- */
@@ -62,7 +70,7 @@ function renderLogin() {
             One platform for <span class="text-brand-300">every part</span> of your school.
           </h2>
           <p class="text-slate-200 text-lg mb-8 max-w-md">
-            From admissions to fee collection, attendance to financing — CASPAA replaces the seven different tools your school is using right now.
+            From School Operations, Payment, Financing, Attendance, Learning, CBT and Engagement Infrastructure — CASPAA is a unified solution that replaces the several different tools your school is using right now.
           </p>
 
           <div class="grid grid-cols-2 gap-4 max-w-md">
@@ -76,7 +84,7 @@ function renderLogin() {
             <div class="flex gap-3 items-start">
               <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('fees', 'w-5 h-5')}</div>
               <div>
-                <div class="font-semibold text-sm">Paystack Built-in</div>
+                <div class="font-semibold text-sm">Payment</div>
                 <div class="text-xs text-slate-300">Parents pay in 30 seconds</div>
               </div>
             </div>
@@ -92,6 +100,20 @@ function renderLogin() {
               <div>
                 <div class="font-semibold text-sm">AI Assistant</div>
                 <div class="text-xs text-slate-300">Write report comments instantly</div>
+              </div>
+            </div>
+            <div class="flex gap-3 items-start">
+              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('results', 'w-5 h-5')}</div>
+              <div>
+                <div class="font-semibold text-sm">CBT Learnings</div>
+                <div class="text-xs text-slate-300">Run digital tests & exams</div>
+              </div>
+            </div>
+            <div class="flex gap-3 items-start">
+              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('check', 'w-5 h-5')}</div>
+              <div>
+                <div class="font-semibold text-sm">Digital Consent</div>
+                <div class="text-xs text-slate-300">Approve activities online</div>
               </div>
             </div>
           </div>
