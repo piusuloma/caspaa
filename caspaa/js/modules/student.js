@@ -663,7 +663,7 @@ function stu_viewCbtResult(subId) {
    ============================================================ */
 function view_stu_results() {
   const s = me();
-  const results = COMPUTE.studentResults(s.id);
+  const results = COMPUTE.studentResults(s.id).filter(r => r.approved);
   const subjects = DB.get('subjects');
   const total = results.reduce((sum, r) => sum + r.total, 0);
   const avg = results.length ? Math.round(total / results.length) : 0;

@@ -265,7 +265,7 @@ function renderChildCard(child) {
   const cls = DB.find('classes', child.classId);
   const inv = COMPUTE.studentInvoice(child.id);
   const attRate = COMPUTE.attendanceRate(child.id);
-  const results = COMPUTE.studentResults(child.id);
+  const results = COMPUTE.studentResults(child.id).filter(r => r.approved);
   const avg = results.length ? Math.round(results.reduce((sum, r) => sum + r.total, 0) / results.length) : 0;
   return `
     <div class="card card-hover p-4 cursor-pointer" onclick="viewChildDetail('${child.id}')">
@@ -309,7 +309,7 @@ function viewChildDetail(studentId) {
   const cls = DB.find('classes', s.classId);
   const inv = COMPUTE.studentInvoice(studentId);
   const attRate = COMPUTE.attendanceRate(studentId);
-  const results = COMPUTE.studentResults(studentId);
+  const results = COMPUTE.studentResults(studentId).filter(r => r.approved);
   const subjects = DB.get('subjects');
   const recentAtt = COMPUTE.studentAttendance(studentId).slice(-10).reverse();
   const assignments = DB.query('assignments', a => a.classId === s.classId);

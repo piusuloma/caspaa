@@ -127,14 +127,14 @@ function view_adm_inventory(params) {
     </div>
   `;
 
-  document.getElementById('app').innerHTML = html;
+  return html;
 }
 
 // ─── Issue Modal ─────────────────────────────────────────────────────────────
 
 function inv_issueModal(itemId) {
-  const item = DB.get('inventory', itemId);
-  if (!item) return toast('Item not found.', 'error');
+  const item = DB.find('inventory', itemId);
+  if (!item) return toast('Item not found.', 'danger');
 
   const qty = item.quantity || 0;
 
@@ -167,15 +167,15 @@ function inv_issueModal(itemId) {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="modal(null)">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
       <button class="btn btn-primary" onclick="inv_doIssue('${itemId}')">Issue Items</button>
     `
   });
 }
 
 function inv_doIssue(itemId) {
-  const item = DB.get('inventory', itemId);
-  if (!item) return toast('Item not found.', 'error');
+  const item = DB.find('inventory', itemId);
+  if (!item) return toast('Item not found.', 'danger');
 
   const qtyInput = document.getElementById('inv-issue-qty');
   const toInput = document.getElementById('inv-issue-to');
@@ -187,12 +187,12 @@ function inv_doIssue(itemId) {
 
   const currentQty = item.quantity || 0;
 
-  if (!quantity || quantity < 1) return toast('Please enter a valid quantity.', 'error');
-  if (!issuedTo) return toast('Please enter who the items are issued to.', 'error');
-  if (!purpose) return toast('Please enter the purpose for this issue.', 'error');
+  if (!quantity || quantity < 1) return toast('Please enter a valid quantity.', 'danger');
+  if (!issuedTo) return toast('Please enter who the items are issued to.', 'danger');
+  if (!purpose) return toast('Please enter the purpose for this issue.', 'danger');
 
   if (quantity > currentQty) {
-    return toast(`Insufficient stock. Only ${currentQty} item${currentQty !== 1 ? 's' : ''} available.`, 'error');
+    return toast(`Insufficient stock. Only ${currentQty} item${currentQty !== 1 ? 's' : ''} available.`, 'danger');
   }
 
   const newQty = currentQty - quantity;
@@ -209,7 +209,7 @@ function inv_doIssue(itemId) {
     history: [...(item.history || []), newEntry]
   });
 
-  modal(null);
+  document.getElementById('modalBackdrop').click();
   APP.render();
   toast(`${quantity} item${quantity !== 1 ? 's' : ''} issued successfully.`, 'success');
 }
@@ -217,8 +217,8 @@ function inv_doIssue(itemId) {
 // ─── Restock Modal ────────────────────────────────────────────────────────────
 
 function inv_restockModal(itemId) {
-  const item = DB.get('inventory', itemId);
-  if (!item) return toast('Item not found.', 'error');
+  const item = DB.find('inventory', itemId);
+  if (!item) return toast('Item not found.', 'danger');
 
   const qty = item.quantity || 0;
 
@@ -256,15 +256,15 @@ function inv_restockModal(itemId) {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="modal(null)">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
       <button class="btn btn-primary" style="background:#16a34a;border-color:#16a34a;" onclick="inv_doRestock('${itemId}')">Save Restock</button>
     `
   });
 }
 
 function inv_doRestock(itemId) {
-  const item = DB.get('inventory', itemId);
-  if (!item) return toast('Item not found.', 'error');
+  const item = DB.find('inventory', itemId);
+  if (!item) return toast('Item not found.', 'danger');
 
   const qtyInput = document.getElementById('inv-restock-qty');
   const supplierInput = document.getElementById('inv-restock-supplier');
@@ -276,7 +276,7 @@ function inv_doRestock(itemId) {
   const newPrice = priceInput && priceInput.value ? parseFloat(priceInput.value) : null;
   const notes = notesInput ? notesInput.value.trim() : '';
 
-  if (!quantity || quantity < 1) return toast('Please enter a valid quantity (minimum 1).', 'error');
+  if (!quantity || quantity < 1) return toast('Please enter a valid quantity (minimum 1).', 'danger');
 
   const currentQty = item.quantity || 0;
   const newQty = currentQty + quantity;
@@ -302,7 +302,7 @@ function inv_doRestock(itemId) {
 
   DB.update('inventory', itemId, updatePayload);
 
-  modal(null);
+  document.getElementById('modalBackdrop').click();
   APP.render();
   toast(`Stock updated — new total: ${newQty} item${newQty !== 1 ? 's' : ''}.`, 'success');
 }
@@ -310,8 +310,8 @@ function inv_doRestock(itemId) {
 // ─── Write-Off Modal ──────────────────────────────────────────────────────────
 
 function inv_writeOffModal(itemId) {
-  const item = DB.get('inventory', itemId);
-  if (!item) return toast('Item not found.', 'error');
+  const item = DB.find('inventory', itemId);
+  if (!item) return toast('Item not found.', 'danger');
 
   const qty = item.quantity || 0;
 
@@ -350,7 +350,7 @@ function inv_writeOffModal(itemId) {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="modal(null)">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
       <button class="btn btn-danger" onclick="inv_doWriteOff('${itemId}')">Confirm Write-Off</button>
     `
   });
@@ -370,8 +370,8 @@ function inv_toggleWriteOffNotes() {
 }
 
 function inv_doWriteOff(itemId) {
-  const item = DB.get('inventory', itemId);
-  if (!item) return toast('Item not found.', 'error');
+  const item = DB.find('inventory', itemId);
+  if (!item) return toast('Item not found.', 'danger');
 
   const qtyInput = document.getElementById('inv-writeoff-qty');
   const reasonInput = document.getElementById('inv-writeoff-reason');
@@ -383,12 +383,12 @@ function inv_doWriteOff(itemId) {
 
   const currentQty = item.quantity || 0;
 
-  if (!quantity || quantity < 1) return toast('Please enter a valid quantity.', 'error');
-  if (!reason) return toast('Please select a reason for the write-off.', 'error');
-  if (reason === 'Other' && !notes) return toast('Notes are required when the reason is "Other".', 'error');
+  if (!quantity || quantity < 1) return toast('Please enter a valid quantity.', 'danger');
+  if (!reason) return toast('Please select a reason for the write-off.', 'danger');
+  if (reason === 'Other' && !notes) return toast('Notes are required when the reason is "Other".', 'danger');
 
   if (quantity > currentQty) {
-    return toast(`Cannot write off more than current stock. Only ${currentQty} item${currentQty !== 1 ? 's' : ''} available.`, 'error');
+    return toast(`Cannot write off more than current stock. Only ${currentQty} item${currentQty !== 1 ? 's' : ''} available.`, 'danger');
   }
 
   const newQty = currentQty - quantity;
@@ -407,7 +407,7 @@ function inv_doWriteOff(itemId) {
     history: [...(item.history || []), newEntry]
   });
 
-  modal(null);
+  document.getElementById('modalBackdrop').click();
   APP.render();
   toast('Write-off recorded successfully.', 'success');
 }
