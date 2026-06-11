@@ -137,18 +137,134 @@ function diary_saveEntry(studentId, classId) {
   if (s && s.parentId) {
     DB.insert('notifications', {
       id: uid('not'), userId: s.parentId,
-      title: 'New Diary Entry',
+      title: 'New note from teacher',
       body: `${AUTH.current.name} wrote a note about ${s.name}: ${cat} — tap to read and reply.`,
-      type: 'info', read: false, timestamp: now(),
-      link: { view: 'par_diary', params: {} }
+      type: 'info', read: false, timestamp: now()
     });
   }
 
-  // Clear the textarea and refresh modal
-  if (document.getElementById('de_note')) document.getElementById('de_note').value = '';
   document.getElementById('modalBackdrop').click();
-  APP.go('tch_diary', { classId });
-  toast('Diary entry sent to parent', 'success');
+  // Stay on messages / student notes tab
+  APP.params.msgTab = 'notes';
+  APP.params.notesClassId = classId;
+  APP.render();
+  toast('Note sent to parent', 'success');
+}
+
+// ── Inline notes content for the Messages "Student Notes" tab ─────────────────
+
+function diary_notesContent(role) {
+  if (role === 'teacher') return diary_notesTeacher();
+  if (role === 'parent')  return diary_notesParent();
+  return '';
+}
+
+function diary_notesTeacher() {
+  const teacherId = AUTH.current.id;
+  const classes = (typeof teacherClasses === 'function' ? teacherClasses() : DB.get('classes'));
+  if (!classes.length) return emptyState({ title: 'No classes assigned', body: 'You have no classes to write notes for.', icon: 'book' });
+
+  const activeClassId = APP.params.notesClassId || classes[0].id;
+  const students = COMPUTE.studentsByClass(activeClassId);
+
+  return `
+    <div class="flex gap-2 mb-4 flex-wrap">
+      ${classes.map(c => `<button onclick="APP.params.notesClassId='${c.id}';APP.render()"
+        class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeClassId ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
+    </div>
+
+    ${students.length === 0
+      ? emptyState({ title: 'No students in this class', body: 'Enrol students to start writing notes.', icon: 'students' })
+      : `<div class="space-y-2">
+          ${students.map(s => {
+            const entries = DB.query('diaryEntries', e => e.studentId === s.id && e.teacherId === teacherId)
+                             .sort((a,b) => b.date.localeCompare(a.date));
+            const unreadReplies = entries.filter(e => e.parentReply && !e.teacherReadReply).length;
+            const lastEntry = entries[0];
+            const parent = s.parentId ? DB.find('parents', s.parentId) : null;
+            return `<div class="card p-4">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  ${avatar(s, 'sm')}
+                  <div class="min-w-0">
+                    <div class="font-bold text-slate-900">${s.name}</div>
+                    <div class="text-xs text-slate-400">${parent ? parent.name : 'No parent linked'} · ${entries.length} ${entries.length === 1 ? 'note' : 'notes'} this term</div>
+                    ${lastEntry ? `<div class="text-xs mt-0.5 ${lastEntry.parentRead ? 'text-emerald-600' : 'text-amber-600'}">
+                      Last: ${fdate(lastEntry.date,{short:true})} — ${lastEntry.category} — ${lastEntry.parentRead ? 'Read' : 'Unread by parent'}
+                    </div>` : `<div class="text-xs text-slate-400 mt-0.5">No notes yet</div>`}
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  ${unreadReplies ? `<span class="badge badge-danger">${unreadReplies} ${unreadReplies === 1 ? 'reply' : 'replies'}</span>` : ''}
+                  <button class="btn btn-secondary text-sm" onclick="diary_viewStudent('${s.id}','${activeClassId}')">
+                    ${icon('chat','w-4 h-4')} ${entries.length ? 'View / Add' : 'Write Note'}
+                  </button>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`}
+  `;
+}
+
+function diary_notesParent() {
+  const parentId = AUTH.current.id;
+  const children = COMPUTE.parentChildren(parentId).filter(s => s.status === 'active');
+  if (!children.length) return emptyState({ title: 'No children linked', body: 'No active children found on your account.', icon: 'students' });
+
+  const activeId = APP.params.notesStudentId || children[0].id;
+  const student  = DB.find('students', activeId);
+  const entries  = DB.query('diaryEntries', e => e.studentId === activeId)
+                     .sort((a,b) => b.date.localeCompare(a.date));
+  const unread   = entries.filter(e => !e.parentRead).length;
+
+  // Mark as read
+  entries.filter(e => !e.parentRead).forEach(e => {
+    DB.update('diaryEntries', e.id, { parentRead: true, parentReadAt: now() });
+  });
+
+  const catColors = { Homework: 'border-blue-400', Behaviour: 'border-amber-400', Academic: 'border-emerald-400', Health: 'border-red-400', General: 'border-slate-300' };
+  const catBadge  = { Homework: 'bg-blue-50 text-blue-700 border-blue-200', Behaviour: 'bg-amber-50 text-amber-700 border-amber-200', Academic: 'bg-emerald-50 text-emerald-700 border-emerald-200', Health: 'bg-red-50 text-red-700 border-red-200', General: 'bg-slate-100 text-slate-600 border-slate-200' };
+
+  return `
+    ${children.length > 1 ? `<div class="flex gap-2 mb-4 flex-wrap">
+      ${children.map(c => `<button onclick="APP.params.notesStudentId='${c.id}';APP.render()"
+        class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
+    </div>` : ''}
+
+    ${unread > 0 ? `<div class="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800 font-medium">
+      ${icon('bell','w-4 h-4 inline mr-1')} ${unread} new ${unread === 1 ? 'note' : 'notes'} since your last visit — now marked as read.
+    </div>` : ''}
+
+    ${entries.length === 0
+      ? emptyState({ title: 'No notes yet', body: 'Teacher notes about your child will appear here.', icon: 'book' })
+      : `<div class="space-y-4">
+          ${entries.map(e => {
+            const teacher = DB.find('teachers', e.teacherId);
+            const cc = catColors[e.category] || catColors.General;
+            const cb = catBadge[e.category]  || catBadge.General;
+            return `<div class="card p-4 border-l-4 ${cc}">
+              <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full border ${cb}">${e.category}</span>
+                  <span class="text-xs text-slate-500">${fdate(e.date,{long:true})}</span>
+                </div>
+                <span class="text-xs text-slate-400">${teacher ? teacher.name : 'Teacher'}</span>
+              </div>
+              <p class="text-sm text-slate-800 leading-relaxed mb-3">${e.note}</p>
+              ${e.parentReply
+                ? `<div class="bg-brand-50 rounded-xl p-3 border border-brand-200">
+                    <div class="text-xs font-semibold text-brand-700 mb-1">Your reply · ${fdate(e.parentRepliedAt,{relative:true})}</div>
+                    <p class="text-sm text-slate-700">${e.parentReply}</p>
+                   </div>`
+                : `<div class="flex gap-2 mt-1">
+                    <textarea id="reply_${e.id}" rows="2" class="input text-sm flex-1" placeholder="Reply to ${teacher ? teacher.name : 'teacher'}…"></textarea>
+                    <button class="btn btn-primary self-end text-sm" onclick="diary_parentReply('${e.id}')">Reply</button>
+                   </div>`}
+            </div>`;
+          }).join('')}
+        </div>`}
+  `;
 }
 
 // ── Parent Views ──────────────────────────────────────────────
@@ -225,12 +341,12 @@ function diary_parentReply(entryId) {
   if (entry) {
     DB.insert('notifications', {
       id: uid('not'), userId: entry.teacherId,
-      title: 'Parent replied to diary entry',
-      body: `A parent replied to your diary note. Tap to read.`,
-      type: 'info', read: false, timestamp: now(),
-      link: { view: 'tch_diary', params: {} }
+      title: 'Parent replied to your note',
+      body: `A parent replied to your student note. Tap to read.`,
+      type: 'info', read: false, timestamp: now()
     });
   }
+  APP.params.msgTab = 'notes';
   APP.render();
   toast('Reply sent to teacher', 'success');
 }
