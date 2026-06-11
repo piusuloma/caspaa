@@ -416,7 +416,7 @@ function payNowFromChild(studentId) {
 function printTranscript(studentId) {
   const s = DB.find('students', studentId);
   const subjects = DB.get('subjects');
-  const results = COMPUTE.studentResults(studentId);
+  const results = COMPUTE.studentResults(studentId).filter(r => r.approved);
   // Group results by term (single term in demo seed, but stub for multi-year capability)
   const byTerm = {};
   results.forEach(r => {
@@ -491,7 +491,7 @@ function printTranscript(studentId) {
 function printReportCard(studentId) {
   const s = DB.find('students', studentId);
   const cls = DB.find('classes', s.classId);
-  const results = COMPUTE.studentResults(studentId);
+  const results = COMPUTE.studentResults(studentId).filter(r => r.approved);
   const subjects = DB.get('subjects');
   const total = results.reduce((sum, r) => sum + r.total, 0);
   const avg = results.length ? Math.round(total / results.length) : 0;
