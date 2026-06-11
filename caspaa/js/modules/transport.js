@@ -22,7 +22,8 @@ function view_adm_transport(params) {
       ${[
         ['routes',  'Bus Routes',            routes.length],
         ['assign',  'Student Assignments',   assignments.length],
-        ['pickups', 'Pickup Authorizations', pendingCount ? `<span class="ml-1 px-1.5 py-0.5 bg-rose-500 text-white text-xs rounded-full">${pendingCount}</span>` : '']
+        ['pickups', 'Pickup Authorizations', pendingCount ? `<span class="ml-1 px-1.5 py-0.5 bg-rose-500 text-white text-xs rounded-full">${pendingCount}</span>` : ''],
+        ['status',  'Bus Status',            '']
       ].map(([k, l, badge]) =>
         `<button onclick="APP.params.tab = '${k}'; APP.render();"
           class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab === k ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'}">
@@ -35,6 +36,7 @@ function view_adm_transport(params) {
   if (tab === 'routes')  content = adm_renderRoutesTab(routes, schoolId);
   if (tab === 'assign')  content = adm_renderAssignmentsTab(assignments, schoolId);
   if (tab === 'pickups') content = adm_renderPickupsTab(pickups, schoolId);
+  if (tab === 'status')  content = adm_renderBusStatusTab(routes, schoolId);
 
   return `
     <div class="space-y-5">
@@ -92,7 +94,9 @@ function adm_renderRoutesTab(routes, schoolId) {
               </div>
               <div class="bg-slate-50 rounded-xl p-2.5">
                 <div class="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Students</div>
-                <div class="font-semibold text-slate-800">${assignedCount} / ${route.capacity || '?'}</div>
+                <div class="font-semibold ${route.capacity && assignedCount >= route.capacity ? 'text-rose-600' : 'text-slate-800'}">
+                  ${assignedCount} / ${route.capacity || '?'}${route.capacity && assignedCount >= route.capacity ? ' <span class="text-xs font-bold text-rose-600 ml-1">FULL</span>' : ''}
+                </div>
               </div>
               <div class="bg-slate-50 rounded-xl p-2.5">
                 <div class="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Departure</div>
@@ -141,7 +145,7 @@ function adm_renderAssignmentsTab(assignments, schoolId) {
           <h3 class="font-semibold text-slate-800">Assigned Students (${assignments.length})</h3>
         </div>
         <table class="tbl">
-          <thead><tr><th>Student</th><th>Class</th><th>Route</th><th>Direction</th><th class="text-right">Actions</th></tr></thead>
+          <thead><tr><th>Student</th><th>Class</th><th>Route</th><th>Direction</th><th>Stop</th><th class="text-right">Actions</th></tr></thead>
           <tbody>
             ${assignments.map(a => {
               const student = DB.find('students', a.studentId);
@@ -153,6 +157,7 @@ function adm_renderAssignmentsTab(assignments, schoolId) {
                 <td class="text-sm text-slate-500">${cls ? cls.name : '—'}</td>
                 <td><span class="badge badge-info">${route ? route.name : '—'}</span></td>
                 <td><span class="text-sm text-slate-600">${dirLabel}</span></td>
+                <td class="text-sm text-slate-600">${a.boardingStop || '—'}</td>
                 <td class="text-right">
                   <button class="btn btn-ghost !p-1.5 text-rose-500 hover:bg-rose-50" title="Remove assignment" onclick="adm_removeAssignment('${a.id}')">${icon('trash','w-4 h-4')}</button>
                 </td>
@@ -423,7 +428,25 @@ function adm_assignStudentModal() {
             <option value="dropoff">Afternoon drop-off only</option>
           </select>
         </div>
+        <div>
+          <label class="input-label">Boarding Stop</label>
+          <select id="as_stop" class="input">
+            <option value="">— Select route first —</option>
+          </select>
+          <p class="text-xs text-slate-400 mt-1">The stop where this student boards in the morning and alights in the afternoon.</p>
+        </div>
       </div>
+      <script>
+document.getElementById('as_route').addEventListener('change', function() {
+  const sel = document.getElementById('as_stop');
+  sel.innerHTML = '<option value="">— Any stop —</option>';
+  const route = DB.find('busRoutes', this.value);
+  if (route && route.stops) {
+    const stops = Array.isArray(route.stops) ? route.stops : route.stops.split('\n').filter(Boolean);
+    stops.forEach((s,i) => { const o = document.createElement('option'); o.value = s; o.textContent = (i+1) + '. ' + s; sel.appendChild(o); });
+  }
+});
+</script>
     `,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -433,9 +456,10 @@ function adm_assignStudentModal() {
 }
 
 function adm_saveAssignment() {
-  const studentId = (document.getElementById('as_student')  || {}).value;
-  const routeId   = (document.getElementById('as_route')    || {}).value;
-  const direction = (document.getElementById('as_direction') || {}).value;
+  const studentId   = (document.getElementById('as_student')   || {}).value;
+  const routeId     = (document.getElementById('as_route')     || {}).value;
+  const direction   = (document.getElementById('as_direction') || {}).value;
+  const boardingStop = (document.getElementById('as_stop')     || {}).value || '';
 
   if (!studentId) { toast('Please select a student', 'danger'); return; }
   if (!routeId)   { toast('Please select a route', 'danger');   return; }
@@ -449,12 +473,21 @@ function adm_saveAssignment() {
     return;
   }
 
+  // Capacity enforcement
+  const route = DB.find('busRoutes', routeId);
+  if (route && route.capacity) {
+    const currentCount = DB.query('busAssignments', a => a.routeId === routeId && a.schoolId === schoolId).length;
+    if (currentCount >= route.capacity) {
+      toast('This route is full — capacity: ' + route.capacity + ' students. Remove a student or increase capacity.', 'danger');
+      return;
+    }
+  }
+
   DB.insert('busAssignments', {
-    id: uid('ba'), schoolId, studentId, routeId, direction, createdAt: now()
+    id: uid('ba'), schoolId, studentId, routeId, direction, boardingStop, createdAt: now()
   });
 
   const student = DB.find('students', studentId);
-  const route   = DB.find('busRoutes', routeId);
   document.getElementById('modalBackdrop').click();
   APP.params.tab = 'assign'; APP.render();
   toast(`${student ? student.name : 'Student'} assigned to ${route ? route.name : 'route'}`, 'success');
@@ -545,6 +578,129 @@ function adm_revokePickup(pickupId) {
   );
 }
 
+/* ---------- Bus Status tab ---------- */
+function adm_renderBusStatusTab(routes, schoolId) {
+  const today = new Date().toISOString().slice(0, 10);
+  const statuses = DB.query('busStatus', s => s.schoolId === schoolId && s.date === today);
+
+  const statusLabels = {
+    waiting:  { label: 'Waiting at School',        badge: 'badge-neutral', icon: 'clock' },
+    departed: { label: 'Departed — En Route',       badge: 'badge-warn',    icon: 'navigation' },
+    arrived:  { label: 'Arrived at Destination',    badge: 'badge-success', icon: 'check-circle' },
+    delayed:  { label: 'Delayed',                   badge: 'badge-danger',  icon: 'warning' }
+  };
+
+  if (!routes.length) return emptyState({ icon: 'package', title: 'No routes', body: 'Add bus routes first.' });
+
+  return `
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="font-semibold text-slate-800">Today's Bus Status</h3>
+          <p class="text-sm text-slate-500">Update each route's current status — parents will see this in real time.</p>
+        </div>
+      </div>
+      ${routes.map(route => {
+        const s = statuses.find(s => s.routeId === route.id);
+        const current = s ? s.status : 'waiting';
+        const info = statusLabels[current] || statusLabels.waiting;
+        const assignedCount = DB.query('busAssignments', a => a.routeId === route.id && a.schoolId === schoolId).length;
+        return `
+          <div class="card p-4">
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="font-bold text-slate-900">${route.name}</span>
+                  <span class="badge ${info.badge}">${info.label}</span>
+                </div>
+                <div class="text-xs text-slate-400">${route.vehiclePlate || 'No plate'} · ${assignedCount} students · Departs ${route.departureTime || '—'} · Returns ${route.returnTime || '—'}</div>
+                ${s && s.note ? `<div class="text-sm text-slate-600 mt-1 italic">"${s.note}"</div>` : ''}
+                ${s && s.updatedAt ? `<div class="text-xs text-slate-400 mt-0.5">Last updated ${s.updatedAt.slice(11, 16)}</div>` : ''}
+              </div>
+              <div class="flex gap-2 flex-wrap flex-shrink-0">
+                ${Object.entries(statusLabels).map(([k, v]) => `
+                  <button onclick="adm_updateBusStatus('${route.id}', '${k}')"
+                    class="btn btn-sm ${current === k ? 'btn-primary' : 'btn-secondary'} !py-1.5 text-xs">
+                    ${v.label}
+                  </button>`).join('')}
+                <button onclick="adm_addBusNote('${route.id}')" class="btn btn-ghost btn-sm !py-1.5 text-xs">+ Note</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function adm_updateBusStatus(routeId, status) {
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const today = new Date().toISOString().slice(0, 10);
+  const existing = DB.query('busStatus', s => s.schoolId === schoolId && s.routeId === routeId && s.date === today)[0];
+  const route = DB.find('busRoutes', routeId);
+  const data = { schoolId, routeId, date: today, status, updatedBy: AUTH.current.id, updatedAt: new Date().toISOString() };
+
+  if (existing) {
+    DB.update('busStatus', existing.id, data);
+  } else {
+    DB.insert('busStatus', { id: uid('bs'), ...data });
+  }
+
+  // Notify all parents of students on this route
+  const assignments = DB.query('busAssignments', a => a.routeId === routeId && a.schoolId === schoolId);
+  const statusMessages = {
+    departed: `The ${route ? route.name : 'school bus'} has departed and is now en route.`,
+    arrived:  `The ${route ? route.name : 'school bus'} has arrived at its destination.`,
+    delayed:  `The ${route ? route.name : 'school bus'} is delayed. Please bear with us.`,
+    waiting:  `The ${route ? route.name : 'school bus'} is waiting at school.`
+  };
+
+  assignments.forEach(a => {
+    const student = DB.find('students', a.studentId);
+    if (student && student.parentId) {
+      DB.insert('notifications', {
+        id: uid('not'), userId: student.parentId,
+        title: 'Bus Status Update — ' + (route ? route.name : 'School Bus'),
+        body: statusMessages[status] || 'Bus status updated.',
+        type: status === 'delayed' ? 'warn' : 'info',
+        read: false, timestamp: new Date().toISOString(),
+        link: { view: 'par_transport' }
+      });
+    }
+  });
+
+  APP.render();
+  const labels = { departed: 'Marked as departed', arrived: 'Marked as arrived', delayed: 'Marked as delayed', waiting: 'Reset to waiting' };
+  toast(labels[status] || 'Status updated', 'success');
+}
+
+function adm_addBusNote(routeId) {
+  modal({
+    title: 'Add Note to Bus Update',
+    size: 'sm',
+    body: `<div><label class="input-label">Note (e.g. "Stuck in traffic at Lekki bridge")</label>
+      <textarea id="bn_note" class="input" rows="3" placeholder="Optional message for parents..."></textarea></div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="adm_saveBusNote('${routeId}')">Save Note</button>`
+  });
+}
+
+function adm_saveBusNote(routeId) {
+  const note = (document.getElementById('bn_note') || {}).value.trim();
+  if (!note) { toast('Enter a note', 'danger'); return; }
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const today = new Date().toISOString().slice(0, 10);
+  const existing = DB.query('busStatus', s => s.schoolId === schoolId && s.routeId === routeId && s.date === today)[0];
+  if (existing) {
+    DB.update('busStatus', existing.id, { note, updatedAt: new Date().toISOString() });
+  } else {
+    DB.insert('busStatus', { id: uid('bs'), schoolId, routeId, date: today, status: 'waiting', note, updatedBy: AUTH.current.id, updatedAt: new Date().toISOString() });
+  }
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast('Note saved', 'success');
+}
+
 /* ──────────────────────────────────────────────────────────────
    PARENT VIEWS
 ────────────────────────────────────────────────────────────── */
@@ -583,6 +739,15 @@ function view_par_transport(params) {
   const dirLabel = assignment
     ? ({ both: 'Both ways', pickup: 'Morning pickup only', dropoff: 'Afternoon drop-off only' }[assignment.direction] || assignment.direction)
     : '';
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const busStatusRecord = route ? DB.query('busStatus', s => s.routeId === route.id && s.date === todayStr)[0] : null;
+  const busStatusInfo = busStatusRecord ? {
+    waiting:  { label: 'Waiting at school',  color: 'text-slate-500',   dot: 'bg-slate-400' },
+    departed: { label: 'Bus is en route',     color: 'text-amber-700',   dot: 'bg-amber-500' },
+    arrived:  { label: 'Bus has arrived',     color: 'text-emerald-700', dot: 'bg-emerald-500' },
+    delayed:  { label: 'Bus is delayed',      color: 'text-rose-700',    dot: 'bg-rose-500' }
+  }[busStatusRecord.status] : null;
 
   return `
     <div class="space-y-5">
@@ -629,6 +794,14 @@ function view_par_transport(params) {
                     ${s}
                   </span>`).join('')}
                 </div>
+              </div>
+            ` : ''}
+            ${busStatusInfo ? `
+              <div class="mt-4 flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 ${busStatusInfo.dot}"></span>
+                <span class="text-sm font-semibold ${busStatusInfo.color}">${busStatusInfo.label}</span>
+                ${busStatusRecord.note ? `<span class="text-sm text-slate-500 ml-1">— ${busStatusRecord.note}</span>` : ''}
+                ${busStatusRecord.updatedAt ? `<span class="text-xs text-slate-400 ml-auto">${busStatusRecord.updatedAt.slice(11,16)}</span>` : ''}
               </div>
             ` : ''}
           </div>

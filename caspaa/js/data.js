@@ -1236,7 +1236,7 @@ function seedDatabase() {
     appraisalCycles, appraisals, salaryAdvances, budgets, helpArticles,
     houses, housePoints, houseEvents, diaryEntries, schoolEvents, feedbackForms, feedbackResponses,
     payslips, formativeTests, formativeSubmissions,
-    busRoutes, busAssignments, authorizedPickups,
+    busRoutes, busAssignments, authorizedPickups, busStatus: [],
     sickbayVisits, inventoryRequests,
     smsCampaigns: [],
     settings: {
