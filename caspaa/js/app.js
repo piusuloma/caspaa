@@ -70,10 +70,8 @@ const APP = {
         { key: 'tch_classes',    label: 'My Classes',        icon: 'classes' },
         { key: 'tch_attendance', label: 'Attendance',        icon: 'attendance' },
         { key: 'tch_results',    label: 'Enter Results',     icon: 'results' },
-        { key: 'tch_assignments',label: 'Assignments',       icon: 'book' },
-        { key: 'tch_cbt',        label: 'CBT Exams',         icon: 'classes' },
+        { key: 'tch_assessments', label: 'Assessments',       icon: 'results' },
         { key: 'tch_lessons',    label: 'Lessons & Content', icon: 'book' },
-        { key: 'tch_formative',  label: 'Quick Tests',         icon: 'results' },
         { key: 'tch_payslip',    label: 'My Payslip',         icon: 'fees' },
         { key: 'cal_main',       label: 'Calendar',           icon: 'calendar' },
         { key: 'tch_timetable',  label: 'My Schedule',        icon: 'calendar' },
@@ -96,15 +94,13 @@ const APP = {
       ],
       student: [
         { key: 'stu_dashboard',  label: 'Dashboard',       icon: 'dashboard' },
-        { key: 'stu_learning',   label: 'Learning',        icon: 'book' },
-        { key: 'stu_assignments',label: 'Assignments',     icon: 'results' },
-        { key: 'stu_cbt',        label: 'CBT Exams',       icon: 'classes' },
+        { key: 'stu_learning',    label: 'Learning',        icon: 'book' },
+        { key: 'stu_assessments', label: 'Assessments',    icon: 'results' },
         { key: 'stu_results',    label: 'My Results',      icon: 'reports' },
         { key: 'stu_behaviour',  label: 'Behaviour',       icon: 'check' },
         { key: 'stu_timetable',  label: 'Timetable',       icon: 'calendar' },
         { key: 'cal_main',       label: 'Calendar',        icon: 'calendar' },
-        { key: 'stu_houses',     label: 'House Points',    icon: 'check' },
-        { key: 'stu_formative',  label: 'Quick Tests',     icon: 'results' }
+        { key: 'stu_houses',     label: 'House Points',    icon: 'check' }
       ]
     };
     return menus[role] || [];
