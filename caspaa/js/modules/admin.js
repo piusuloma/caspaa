@@ -1260,10 +1260,11 @@ function view_adm_operations() {
 }
 
 function view_adm_comms() {
-  return buildHub('Communications', 'Messages, notice board and digital consent', [
-    { key: 'messages',  label: 'Messages',      view: 'view_adm_messages' },
-    { key: 'announce',  label: 'Notice Board',  view: 'view_adm_announce' },
-    { key: 'consent',   label: 'Digital Consent', view: 'view_adm_consent', badge: () => { const sid = currentSchoolId(); const forms = DB.query('consentForms', f => f.schoolId === sid).length; return forms || null; } }
+  return buildHub('Communications', 'Messages, announcements, notice board and consent', [
+    { key: 'messages',      label: 'Messages',      view: 'view_adm_messages' },
+    { key: 'bulk_notify',   label: 'Announcements', view: 'view_adm_bulk_notify' },
+    { key: 'announce',      label: 'Notice Board',  view: 'view_adm_announce' },
+    { key: 'consent',       label: 'Digital Consent', view: 'view_adm_consent', badge: () => { const sid = currentSchoolId(); const forms = DB.query('consentForms', f => f.schoolId === sid).length; return forms || null; } }
   ], 'messages', 'commsTab');
 }
 
