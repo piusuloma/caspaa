@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CASPAA — Feature Gap Analysis & Strategic Positioning</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 13.5px;
+      color: #1a2332;
+      background: #f5f7fa;
+      line-height: 1.6;
+    }
+
+    /* ── Cover Page ── */
+    .cover {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0a2540 0%, #1a4a7a 60%, #0d6e3f 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 60px 40px;
+      page-break-after: always;
+    }
+    .cover-logo {
+      font-size: 42px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+    }
+    .cover-logo span { color: #34d399; }
+    .cover-badge {
+      display: inline-block;
+      background: rgba(52, 211, 153, 0.18);
+      border: 1px solid #34d399;
+      color: #34d399;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 52px;
+    }
+    .cover h1 {
+      font-size: 38px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      max-width: 700px;
+      margin-bottom: 20px;
+    }
+    .cover h1 em {
+      color: #34d399;
+      font-style: normal;
+    }
+    .cover-sub {
+      font-size: 16px;
+      color: rgba(255,255,255,0.7);
+      max-width: 560px;
+      margin-bottom: 60px;
+    }
+    .cover-meta {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .cover-meta-item {
+      text-align: center;
+    }
+    .cover-meta-label {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 4px;
+    }
+    .cover-meta-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .cover-divider {
+      width: 60px;
+      height: 3px;
+      background: #34d399;
+      border-radius: 2px;
+      margin: 40px auto;
+    }
+
+    /* ── Layout ── */
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 48px 40px;
+    }
+
+    /* ── Section Headers ── */
+    .section {
+      margin-bottom: 52px;
+    }
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: #0d6e3f;
+      margin-bottom: 6px;
+    }
+    .section-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #0a2540;
+      margin-bottom: 10px;
+      line-height: 1.25;
+    }
+    .section-intro {
+      font-size: 14px;
+      color: #4a5568;
+      max-width: 720px;
+      margin-bottom: 28px;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 2px;
+      background: linear-gradient(90deg, #0d6e3f, transparent);
+      margin: 36px 0;
+      border: none;
+    }
+
+    /* ── Executive Summary Cards ── */
+    .exec-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    .exec-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px 20px;
+      border-top: 4px solid #0d6e3f;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .exec-card.amber { border-top-color: #d97706; }
+    .exec-card.blue  { border-top-color: #1d4ed8; }
+    .exec-card.red   { border-top-color: #dc2626; }
+    .exec-card-number {
+      font-size: 38px;
+      font-weight: 800;
+      color: #0d6e3f;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .exec-card.amber .exec-card-number { color: #d97706; }
+    .exec-card.blue  .exec-card-number { color: #1d4ed8; }
+    .exec-card.red   .exec-card-number { color: #dc2626; }
+    .exec-card-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0a2540;
+      margin-bottom: 6px;
+    }
+    .exec-card-desc {
+      font-size: 11.5px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    /* ── Advantage/Disadvantage Split ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+    .advantage-box, .gap-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .advantage-box { border-left: 4px solid #0d6e3f; }
+    .gap-box        { border-left: 4px solid #dc2626; }
+    .box-header {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .box-header .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-green { background: #0d6e3f; }
+    .dot-red   { background: #dc2626; }
+    .feature-list {
+      list-style: none;
+      padding: 0;
+    }
+    .feature-list li {
+      font-size: 12.5px;
+      color: #374151;
+      padding: 6px 0;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .feature-list li:last-child { border-bottom: none; }
+    .feature-list li::before {
+      content: '✓';
+      color: #0d6e3f;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .feature-list.gap li::before {
+      content: '✗';
+      color: #dc2626;
+    }
+
+    /* ── Full Gap Table ── */
+    .gap-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      font-size: 12.5px;
+    }
+    .gap-table thead {
+      background: #0a2540;
+      color: #fff;
+    }
+    .gap-table thead th {
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+    .gap-table tbody tr:nth-child(even) { background: #f9fafb; }
+    .gap-table tbody tr:hover { background: #f0fdf4; }
+    .gap-table td {
+      padding: 11px 16px;
+      border-bottom: 1px solid #f3f4f6;
+      vertical-align: top;
+    }
+    .gap-table td:first-child { font-weight: 600; color: #1a2332; }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 10.5px;
+      font-weight: 600;
+    }
+    .badge-green  { background: #d1fae5; color: #065f46; }
+    .badge-red    { background: #fee2e2; color: #991b1b; }
+    .badge-amber  { background: #fef3c7; color: #92400e; }
+    .badge-blue   { background: #dbeafe; color: #1e40af; }
+    .badge-gray   { background: #f3f4f6; color: #6b7280; }
+
+    /* ── Priority Grid ── */
+    .priority-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 12px;
+    }
+    .priority-col {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .priority-col-header {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .p1-header { background: #fee2e2; color: #991b1b; }
+    .p2-header { background: #fef3c7; color: #92400e; }
+    .p3-header { background: #dbeafe; color: #1e40af; }
+    .priority-item {
+      font-size: 12px;
+      color: #374151;
+      padding: 8px 0;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .priority-item:last-child { border-bottom: none; }
+    .priority-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .num-red   { background: #fee2e2; color: #991b1b; }
+    .num-amber { background: #fef3c7; color: #92400e; }
+    .num-blue  { background: #dbeafe; color: #1e40af; }
+    .priority-text strong {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .priority-text span {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    /* ── Positioning Statement ── */
+    .position-box {
+      background: linear-gradient(135deg, #0a2540 0%, #1a4a7a 100%);
+      border-radius: 16px;
+      padding: 40px;
+      color: #fff;
+      margin-bottom: 28px;
+    }
+    .position-box h3 {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      color: #34d399;
+    }
+    .position-box p {
+      font-size: 15px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.88);
+      margin-bottom: 20px;
+    }
+    .position-pillars {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .pillar {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .pillar-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #34d399;
+      margin-bottom: 6px;
+    }
+    .pillar-desc {
+      font-size: 11.5px;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.5;
+    }
+
+    /* ── Role Coverage Matrix ── */
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      font-size: 12px;
+    }
+    .matrix-table thead {
+      background: #0a2540;
+      color: #fff;
+    }
+    .matrix-table thead th {
+      padding: 12px 10px;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .matrix-table thead th:first-child { text-align: left; }
+    .matrix-table td {
+      padding: 10px 10px;
+      border-bottom: 1px solid #f3f4f6;
+      text-align: center;
+    }
+    .matrix-table td:first-child { text-align: left; font-weight: 600; color: #1a2332; }
+    .matrix-table tr:nth-child(even) { background: #f9fafb; }
+    .check { color: #0d6e3f; font-size: 15px; }
+    .cross { color: #dc2626; font-size: 15px; }
+    .partial { color: #d97706; font-size: 14px; }
+
+    /* ── Footer ── */
+    .footer {
+      background: #0a2540;
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      padding: 24px 40px;
+      font-size: 11.5px;
+      margin-top: 60px;
+    }
+    .footer strong { color: #34d399; }
+
+    /* ── Print ── */
+    @media print {
+      body { background: #fff; }
+      .cover { min-height: auto; padding: 80px 40px; }
+      .page { padding: 32px 40px; }
+      .section { page-break-inside: avoid; }
+      .gap-table { font-size: 11px; }
+    }
+
+    /* ── Page break utility ── */
+    .page-break { page-break-before: always; padding-top: 48px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     COVER PAGE
+══════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-logo">CASP<span>AA</span></div>
+  <div class="cover-badge">Strategic Document — Confidential</div>
+  <h1>Feature Gap Analysis &amp;<br/><em>Competitive Positioning</em></h1>
+  <p class="cover-sub">
+    A structured assessment of CASPAA's current capabilities versus the
+    EDVES benchmark, with strategic recommendations for the next product phase.
+  </p>
+  <div class="cover-divider"></div>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Prepared By</div>
+      <div class="cover-meta-value">Product &amp; Engineering</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Date</div>
+      <div class="cover-meta-value">June 2026</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Version</div>
+      <div class="cover-meta-value">1.0</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Audience</div>
+      <div class="cover-meta-value">Stakeholders</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     EXECUTIVE SUMMARY
+══════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section">
+    <div class="section-label">01 — Overview</div>
+    <div class="section-title">Executive Summary</div>
+    <p class="section-intro">
+      This document benchmarks CASPAA against EDVES — one of the leading school management
+      platforms in Africa with 1,800+ schools across 11 countries. The goal is to identify where
+      CASPAA leads, where it lags, and what to build next to win the market.
+    </p>
+
+    <div class="exec-grid">
+      <div class="exec-card">
+        <div class="exec-card-number">6</div>
+        <div class="exec-card-label">Unique Advantages</div>
+        <div class="exec-card-desc">Features CASPAA has that EDVES does not offer, representing genuine competitive moats.</div>
+      </div>
+      <div class="exec-card amber">
+        <div class="exec-card-number">14</div>
+        <div class="exec-card-label">Critical Gaps</div>
+        <div class="exec-card-desc">Features EDVES has that CASPAA is fully missing — must be closed to compete at parity.</div>
+      </div>
+      <div class="exec-card blue">
+        <div class="exec-card-number">5</div>
+        <div class="exec-card-label">Partial / Stub</div>
+        <div class="exec-card-desc">Features CASPAA has started but not completed — quick wins with focused effort.</div>
+      </div>
+    </div>
+
+    <div class="position-box">
+      <h3>Strategic Positioning Statement</h3>
+      <p>
+        CASPAA is not simply a school management system — it is a <strong>School Operating System</strong>
+        with a built-in financial infrastructure layer that no African EdTech platform currently offers at
+        the same depth. Our fee lending, reconciliation engine, SaaS operator dashboard, and digital consent
+        workflows are genuine differentiators. The priority now is to close the learning content gap
+        (video lessons, class notes, simulations) and complete the operational modules (transport, hostel,
+        health) so that CASPAA is a complete platform — not just a strong one.
+      </p>
+      <div class="position-pillars">
+        <div class="pillar">
+          <div class="pillar-title">Financial Infrastructure</div>
+          <div class="pillar-desc">Fee lending, reconciliation, multi-role payroll, real-time P&amp;L — deepest in market.</div>
+        </div>
+        <div class="pillar">
+          <div class="pillar-title">Platform Architecture</div>
+          <div class="pillar-desc">True SaaS operator layer with school health scoring, MRR/ARR tracking, and remittances.</div>
+        </div>
+        <div class="pillar">
+          <div class="pillar-title">Learning Content</div>
+          <div class="pillar-desc">Gap to close: video lessons, simulations, class notes, virtual classroom integration.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ── WHERE CASPAA LEADS vs GAPS ── -->
+  <div class="section">
+    <div class="section-label">02 — Competitive Landscape</div>
+    <div class="section-title">Where We Lead vs. Where We Lag</div>
+    <p class="section-intro">A side-by-side view of CASPAA's strengths and the gaps that need to be addressed in the next product phase.</p>
+
+    <div class="two-col">
+      <div class="advantage-box">
+        <div class="box-header">
+          <div class="dot dot-green"></div>
+          CASPAA Advantages — Features EDVES Does Not Have
+        </div>
+        <ul class="feature-list">
+          <li>Fee Lending &amp; Financing Module — parents apply for fee loans; full repayment schedule tracking</li>
+          <li>Platform Super Admin Layer — MRR, ARR, school health scores, remittance management</li>
+          <li>Digital Consent Forms — paperless activity &amp; trip approvals with parent tracking</li>
+          <li>Student Gamification — stars, points, achievement badges driving engagement</li>
+          <li>Substitute Teacher Coverage Workflow — structured coverage requests and acceptance</li>
+          <li>Role Impersonation — admins can view the system exactly as any user role sees it</li>
+        </ul>
+      </div>
+      <div class="gap-box">
+        <div class="box-header">
+          <div class="dot dot-red"></div>
+          Critical Gaps — Features EDVES Has That We Are Missing
+        </div>
+        <ul class="feature-list gap">
+          <li>Video Lessons &amp; E-Videos — student and teacher video content library</li>
+          <li>Virtual Classroom — live online classes (currently a stub)</li>
+          <li>Class Notes for Students — teacher-posted notes accessible in student portal</li>
+          <li>Maths &amp; Science Simulations (PhET) — interactive science labs</li>
+          <li>School Bus &amp; Transport Management — route tracking, parent notifications</li>
+          <li>Hostel Management — boarding student records and room assignments</li>
+          <li>House Point System — dedicated pastoral care module</li>
+          <li>Parent Feedback Tool — structured parent-to-school feedback forms</li>
+          <li>Secure Pickup (Parent Portal) — approved pickup person management</li>
+          <li>Event Calendar — school-wide events visible across all roles</li>
+          <li>Teacher Payslip View — teachers viewing their own salary statements</li>
+          <li>Communication Diary — structured daily teacher ↔ parent notes</li>
+          <li>Formative Assessment — distinct in-class ongoing assessment (not just CBT)</li>
+          <li>Bulk SMS &amp; Email — currently marked TBD in codebase</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ── FULL FEATURE TABLE ── -->
+  <div class="section page-break">
+    <div class="section-label">03 — Detailed Comparison</div>
+    <div class="section-title">Full Feature-by-Feature Breakdown</div>
+    <p class="section-intro">Every major feature category compared across both platforms, with priority classification for CASPAA's roadmap.</p>
+
+    <table class="gap-table">
+      <thead>
+        <tr>
+          <th style="width:26%">Feature</th>
+          <th style="width:14%">EDVES</th>
+          <th style="width:14%">CASPAA Now</th>
+          <th style="width:14%">Priority</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- FINANCIAL -->
+        <tr>
+          <td colspan="5" style="background:#0a2540;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Financial Management</td>
+        </tr>
+        <tr><td>Fee Structure Management</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Both complete. CASPAA adds activity-based fee layering.</td></tr>
+        <tr><td>Invoice Generation</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>CASPAA includes line-item detail per activity.</td></tr>
+        <tr><td>Online Payment Integration</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-amber">⚠ Partial</span></td><td><span class="badge badge-red">P1</span></td><td>Gateway UI exists; actual payment processing not wired.</td></tr>
+        <tr><td>Payment Reconciliation</td><td><span class="badge badge-amber">⚠ Basic</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>CASPAA advantage: dedicated reconciliation workflow.</td></tr>
+        <tr><td>Expense Tracking</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Payroll Processing</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Teacher Payslip (self-view)</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-amber">P2</span></td><td>Teachers cannot see their own payslip; data exists, view missing.</td></tr>
+        <tr><td>Financial Reports</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Fee Lending / Financing</td><td><span class="badge badge-red">✗ None</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">LEAD</span></td><td>Unique CASPAA differentiator. Parents borrow school fees.</td></tr>
+        <!-- ACADEMIC -->
+        <tr>
+          <td colspan="5" style="background:#0a2540;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Academic &amp; Learning</td>
+        </tr>
+        <tr><td>Result Management</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Attendance Tracking</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>CASPAA adds staff clock-in/out and QR support.</td></tr>
+        <tr><td>Online CBT / Exams</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Offline CBT / Exams</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-blue">P3</span></td><td>EDVES supports offline exam-taking.</td></tr>
+        <tr><td>Assignments</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Lesson Plans (Teacher)</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Class Notes (Student access)</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-red">P1</span></td><td>Teachers post notes; students read them in portal.</td></tr>
+        <tr><td>Video Lessons / E-Videos</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-amber">⚠ Stub</span></td><td><span class="badge badge-red">P1</span></td><td>Learning hub exists but has no video content functionality.</td></tr>
+        <tr><td>Virtual Classroom (Live)</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-amber">⚠ Stub</span></td><td><span class="badge badge-red">P1</span></td><td>Can integrate Zoom/Google Meet or Jitsi.</td></tr>
+        <tr><td>Maths &amp; Science Simulations</td><td><span class="badge badge-green">✓ PhET</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-red">P1</span></td><td>EDVES key differentiator. PhET is free and embeddable.</td></tr>
+        <tr><td>Formative Assessment</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-amber">P2</span></td><td>Ongoing in-class assessment, distinct from term-end CBT.</td></tr>
+        <tr><td>Timetable</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Curriculum Mapping</td><td><span class="badge badge-green">✓ Multi-curriculum</span></td><td><span class="badge badge-amber">⚠ Partial</span></td><td><span class="badge badge-blue">P3</span></td><td>EDVES supports NERDC, Cambridge, IGCSE, IB. CASPAA is single-curriculum.</td></tr>
+        <!-- STUDENT MANAGEMENT -->
+        <tr>
+          <td colspan="5" style="background:#0a2540;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Student Management</td>
+        </tr>
+        <tr><td>Student Enrollment</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Admissions Workflow</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-amber">⚠ Partial</span></td><td><span class="badge badge-amber">P2</span></td><td>Admission statuses exist; full application form workflow incomplete.</td></tr>
+        <tr><td>Behaviour / Discipline</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>House Point System</td><td><span class="badge badge-green">✓ Dedicated</span></td><td><span class="badge badge-amber">⚠ Buried</span></td><td><span class="badge badge-amber">P2</span></td><td>CASPAA has behavior tracking but no dedicated house point module.</td></tr>
+        <tr><td>Student Gamification</td><td><span class="badge badge-amber">⚠ Basic</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">LEAD</span></td><td>CASPAA stars/points/badges system is more advanced.</td></tr>
+        <tr><td>Alumni Tracking</td><td><span class="badge badge-amber">⚠ Basic</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">LEAD</span></td><td>CASPAA has career tracking and alumni network support.</td></tr>
+        <!-- STAFF MANAGEMENT -->
+        <tr>
+          <td colspan="5" style="background:#0a2540;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Staff Management</td>
+        </tr>
+        <tr><td>Staff Directory</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Leave Management</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Performance Appraisal</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity. CASPAA has multi-stage approval.</td></tr>
+        <tr><td>Substitute Coverage</td><td><span class="badge badge-red">✗ None</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">LEAD</span></td><td>Unique CASPAA feature.</td></tr>
+        <tr><td>Teacher Analytics</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-amber">⚠ Partial</span></td><td><span class="badge badge-amber">P2</span></td><td>Basic dashboard exists; cross-teacher vs. student analytics missing.</td></tr>
+        <!-- COMMUNICATION -->
+        <tr>
+          <td colspan="5" style="background:#0a2540;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Communication</td>
+        </tr>
+        <tr><td>Messaging (Internal)</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Announcements / Broadcast</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">—</span></td><td>Parity.</td></tr>
+        <tr><td>Bulk SMS</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-red">P1</span></td><td>Critical for Nigerian schools. Currently marked TBD in CASPAA.</td></tr>
+        <tr><td>Email Notifications</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-red">P1</span></td><td>Currently marked TBD in CASPAA.</td></tr>
+        <tr><td>Communication Diary</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-amber">P2</span></td><td>Structured teacher↔parent daily notes, distinct from general messaging.</td></tr>
+        <tr><td>Parent Feedback Tool</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-amber">P2</span></td><td>Formal school feedback surveys, distinct from consent forms.</td></tr>
+        <tr><td>Event Calendar</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-red">P1</span></td><td>School-wide event calendar visible to all roles.</td></tr>
+        <tr><td>Digital Consent Forms</td><td><span class="badge badge-red">✗ None</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">LEAD</span></td><td>Unique CASPAA feature.</td></tr>
+        <!-- OPERATIONS -->
+        <tr>
+          <td colspan="5" style="background:#0a2540;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Operations</td>
+        </tr>
+        <tr><td>Inventory Management</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-amber">⚠ Stub</span></td><td><span class="badge badge-amber">P2</span></td><td>Menu exists; logic not built.</td></tr>
+        <tr><td>Library Management</td><td><span class="badge badge-amber">⚠ Basic</span></td><td><span class="badge badge-amber">⚠ Stub</span></td><td><span class="badge badge-blue">P3</span></td><td>Both partial; not a key differentiator.</td></tr>
+        <tr><td>Health / Sickbay</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-amber">⚠ Stub</span></td><td><span class="badge badge-amber">P2</span></td><td>Menu exists; logic not built.</td></tr>
+        <tr><td>Transport / School Bus</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-amber">P2</span></td><td>Route management, driver assignment, parent tracking alerts.</td></tr>
+        <tr><td>Secure Pickup (Parent)</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-amber">P2</span></td><td>Approved pickup persons per child, notification on pickup.</td></tr>
+        <tr><td>Hostel Management</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-blue">P3</span></td><td>Boarding student records, room assignments, meals.</td></tr>
+        <tr><td>Visitors Log</td><td><span class="badge badge-amber">⚠ Basic</span></td><td><span class="badge badge-amber">⚠ Stub</span></td><td><span class="badge badge-blue">P3</span></td><td>Both partial.</td></tr>
+        <!-- AI -->
+        <tr>
+          <td colspan="5" style="background:#0a2540;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">AI &amp; Intelligence</td>
+        </tr>
+        <tr><td>AI Grading Assistance</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-blue">P3</span></td><td>AI-assisted marking and feedback generation.</td></tr>
+        <tr><td>Student Performance Prediction</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-blue">P3</span></td><td>AI flags at-risk students based on trends.</td></tr>
+        <tr><td>AI Question Generation</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-blue">P3</span></td><td>Auto-generate CBT questions from lesson notes.</td></tr>
+        <tr><td>AI Chatbot</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-blue">P3</span></td><td>Student and teacher assistant chatbot.</td></tr>
+        <tr><td>Personalized Learning Paths</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-blue">P3</span></td><td>AI-tailored content recommendations per student.</td></tr>
+        <!-- PLATFORM -->
+        <tr>
+          <td colspan="5" style="background:#0a2540;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Platform &amp; Business</td>
+        </tr>
+        <tr><td>Multi-Curriculum Support</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-blue">P3</span></td><td>NERDC, Cambridge, IGCSE, IB. Needed for international schools.</td></tr>
+        <tr><td>SaaS Operator Dashboard</td><td><span class="badge badge-red">✗ None</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">LEAD</span></td><td>MRR, ARR, school health, remittances — unique to CASPAA.</td></tr>
+        <tr><td>Role Impersonation</td><td><span class="badge badge-red">✗ None</span></td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-gray">LEAD</span></td><td>Admin can view as any user for support/debugging.</td></tr>
+        <tr><td>Tiered Subscription Plans</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-amber">⚠ Partial</span></td><td><span class="badge badge-amber">P2</span></td><td>Plans defined; feature gating by plan not fully enforced.</td></tr>
+        <tr><td>Reseller / Partner Network</td><td><span class="badge badge-green">✓ Full</span></td><td><span class="badge badge-red">✗ Missing</span></td><td><span class="badge badge-blue">P3</span></td><td>EDVES has resellers in major cities; CASPAA has no partner layer.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ── PRIORITY ROADMAP ── -->
+  <div class="section page-break">
+    <div class="section-label">04 — Roadmap</div>
+    <div class="section-title">Priority Breakdown for Next Phase</div>
+    <p class="section-intro">
+      Prioritized by stakeholder visibility, competitive parity, and implementation effort.
+      P1 = must-have for parity, P2 = important differentiators, P3 = long-term roadmap.
+    </p>
+
+    <div class="priority-grid">
+      <div class="priority-col">
+        <div class="priority-col-header p1-header">P1 — Critical (Must Build Now)</div>
+
+        <div class="priority-item">
+          <div class="priority-num num-red">1</div>
+          <div class="priority-text"><strong>Event Calendar</strong><span>All roles need a shared school calendar. High visibility to parents &amp; teachers.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-red">2</div>
+          <div class="priority-text"><strong>Bulk SMS &amp; Email</strong><span>Critical in Nigerian market. Parents expect SMS alerts for fees, results, events.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-red">3</div>
+          <div class="priority-text"><strong>Class Notes (Student Portal)</strong><span>Teachers post notes; students read in Learning hub. Core to student daily usage.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-red">4</div>
+          <div class="priority-text"><strong>Video Lessons</strong><span>Embed video content per subject. Can start with YouTube embeds + upload links.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-red">5</div>
+          <div class="priority-text"><strong>Science Simulations (PhET)</strong><span>PhET is free &amp; embeddable. Major EDVES selling point — easy to replicate.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-red">6</div>
+          <div class="priority-text"><strong>Online Payment Gateway</strong><span>UI exists; needs to connect to Paystack or Flutterwave to process real payments.</span></div>
+        </div>
+      </div>
+
+      <div class="priority-col">
+        <div class="priority-col-header p2-header">P2 — Important (Build Next)</div>
+
+        <div class="priority-item">
+          <div class="priority-num num-amber">7</div>
+          <div class="priority-text"><strong>House Point System</strong><span>Dedicated pastoral care module surfaced to students, teachers, and parents.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-amber">8</div>
+          <div class="priority-text"><strong>Teacher Payslip View</strong><span>Data already in payroll; just needs a teacher-facing view. Quick win.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-amber">9</div>
+          <div class="priority-text"><strong>Transport Management</strong><span>School bus routes, driver assignment, parent tracking alerts and secure pickup.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-amber">10</div>
+          <div class="priority-text"><strong>Parent Feedback Tool</strong><span>Structured survey/rating from parents to school. Builds trust and NPS.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-amber">11</div>
+          <div class="priority-text"><strong>Communication Diary</strong><span>Structured daily teacher ↔ parent notes with read receipts.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-amber">12</div>
+          <div class="priority-text"><strong>Formative Assessment</strong><span>In-class ongoing quizzes and scoring, distinct from end-of-term CBT.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-amber">13</div>
+          <div class="priority-text"><strong>Health / Sickbay</strong><span>Complete the stub: student health records, incidents, parent notification.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-amber">14</div>
+          <div class="priority-text"><strong>Inventory Management</strong><span>Complete the stub: items, stock levels, procurement, issue tracking.</span></div>
+        </div>
+      </div>
+
+      <div class="priority-col">
+        <div class="priority-col-header p3-header">P3 — Strategic (Future Phase)</div>
+
+        <div class="priority-item">
+          <div class="priority-num num-blue">15</div>
+          <div class="priority-text"><strong>Virtual Classroom (Live)</strong><span>Zoom/Jitsi/Google Meet integration for live online classes.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-blue">16</div>
+          <div class="priority-text"><strong>AI Grading &amp; Assistance</strong><span>AI-powered marking, question generation from lesson notes, chatbot.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-blue">17</div>
+          <div class="priority-text"><strong>Student Performance AI</strong><span>Predictive analytics flagging at-risk students based on attendance and results.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-blue">18</div>
+          <div class="priority-text"><strong>Hostel Management</strong><span>Boarding students: rooms, meals, check-in/out, parent communication.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-blue">19</div>
+          <div class="priority-text"><strong>Multi-Curriculum Support</strong><span>NERDC, Cambridge, IGCSE, IB curriculum tagging on lessons and assessments.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-blue">20</div>
+          <div class="priority-text"><strong>Offline CBT</strong><span>Exam-taking when internet is unavailable; syncs when reconnected.</span></div>
+        </div>
+        <div class="priority-item">
+          <div class="priority-num num-blue">21</div>
+          <div class="priority-text"><strong>Reseller / Partner Network</strong><span>Commission-based partner portal for city-level resellers.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ── CONCLUSION ── -->
+  <div class="section">
+    <div class="section-label">05 — Conclusion</div>
+    <div class="section-title">Recommendation</div>
+    <p class="section-intro">
+      CASPAA enters the market with a stronger financial and platform infrastructure than EDVES.
+      The single most important action is to close the learning content gap — because that is what
+      students and parents interact with daily, and it is the primary reason schools choose EDVES today.
+    </p>
+    <div class="two-col">
+      <div class="advantage-box">
+        <div class="box-header"><div class="dot dot-green"></div> Immediate Focus (Next 60 Days)</div>
+        <ul class="feature-list">
+          <li>Wire up online payment gateway (Paystack/Flutterwave)</li>
+          <li>Build Event Calendar visible across all roles</li>
+          <li>Implement Class Notes in the student learning hub</li>
+          <li>Add Video Lesson embedding per subject</li>
+          <li>Integrate PhET Simulations for Maths &amp; Science</li>
+          <li>Activate Bulk SMS via Africa's Talking or Termii</li>
+        </ul>
+      </div>
+      <div class="gap-box" style="border-left-color:#1d4ed8;">
+        <div class="box-header"><div class="dot" style="background:#1d4ed8;"></div> Medium-Term Focus (60–120 Days)</div>
+        <ul class="feature-list" style="">
+          <li style="">Dedicate House Point System as its own module</li>
+          <li>Build Transport Management + Secure Pickup</li>
+          <li>Add Parent Feedback Tool</li>
+          <li>Complete Inventory &amp; Health/Sickbay stubs</li>
+          <li>Add Communication Diary for teacher-parent notes</li>
+          <li>Begin AI roadmap: question generation from lesson notes</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<div class="footer">
+  <strong>CASPAA</strong> — School Operating System &nbsp;|&nbsp; Confidential &amp; Proprietary &nbsp;|&nbsp;
+  Prepared June 2026 &nbsp;|&nbsp; For Stakeholder Distribution Only
+</div>
+
+</body>
+</html>

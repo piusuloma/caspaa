@@ -1045,46 +1045,300 @@ function saveAssignment(editingId) {
 }
 
 /* ---------- Lesson Plans ---------- */
-function view_tch_lessons() {
-  const lessons = DB.query('lessonPlans', l => l.teacherId === AUTH.current.id);
-  const subjects = DB.get('subjects');
-  return `
-    ${pageHeader({
-      title: 'Lesson Plans',
-      subtitle: 'Weekly schemes and lesson notes',
-      actions: `<button class="btn btn-primary" onclick="createLessonModal()">${icon('plus','w-4 h-4')} New Lesson Plan</button>`
-    })}
-    ${lessons.length === 0 ? emptyState({ title: 'No lesson plans yet', body: 'Document your weekly plans here.', icon: 'book' }) : `
-      <div class="space-y-3">
-        ${lessons.map(l => {
-          const cls = DB.find('classes', l.classId);
-          const sub = subjects.find(s => s.id === l.subjectId);
-          return `<div class="card p-4">
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-2">
-                <span class="badge badge-info">${cls ? cls.name : ''}</span>
-                <span class="badge badge-neutral">${sub ? sub.name : ''}</span>
-                <span class="badge badge-success">${l.week}</span>
+function view_tch_lessons(params) {
+  const tab = (params && params.tab) || 'plans';
+  const tabs = [
+    { key: 'plans',  label: 'Lesson Plans' },
+    { key: 'notes',  label: 'Class Notes' },
+    { key: 'videos', label: 'Videos' }
+  ];
+  const tabBar = `<div class="flex gap-1 mb-5 border-b border-slate-200">
+    ${tabs.map(t => `<button onclick="APP.go('tch_lessons',{tab:'${t.key}'})" class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab === t.key ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'}">${t.label}</button>`).join('')}
+  </div>`;
+
+  if (tab === 'plans') {
+    const lessons = DB.query('lessonPlans', l => l.teacherId === AUTH.current.id);
+    const subjects = DB.get('subjects');
+    return `
+      ${pageHeader({ title: 'Lessons & Content', subtitle: 'Lesson plans, class notes, and videos for your students',
+        actions: `<button class="btn btn-primary" onclick="createLessonModal()">${icon('plus','w-4 h-4')} New Plan</button>` })}
+      ${tabBar}
+      ${lessons.length === 0 ? emptyState({ title: 'No lesson plans yet', body: 'Document your weekly plans here.', icon: 'book' }) : `
+        <div class="space-y-3">
+          ${lessons.map(l => {
+            const cls = DB.find('classes', l.classId);
+            const sub = subjects.find(s => s.id === l.subjectId);
+            return `<div class="card p-4">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="badge badge-info">${cls ? cls.name : ''}</span>
+                  <span class="badge badge-neutral">${sub ? sub.name : ''}</span>
+                  <span class="badge badge-success">${l.week}</span>
+                </div>
+                <span class="text-xs text-slate-400">${fdate(l.createdAt, { short: true })}</span>
               </div>
-              <span class="text-xs text-slate-400">${fdate(l.createdAt, { short: true })}</span>
+              <h3 class="font-bold text-slate-900">${l.topic}</h3>
+              <div class="grid sm:grid-cols-3 gap-3 mt-3 text-sm">
+                <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Objectives</div><div>${l.objectives}</div></div>
+                <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Activities</div><div>${l.activities}</div></div>
+                <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Resources</div><div>${l.resources}</div></div>
+              </div>
+              ${l.file ? `<a href="${l.file.data}" download="${l.file.name}" class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-sm hover:bg-emerald-100">
+                ${icon('paperclip','w-4 h-4 text-emerald-600')}
+                <span class="font-semibold text-emerald-900">${l.file.name}</span>
+                <span class="text-xs text-emerald-700">${l.file.size}</span>
+                ${icon('download','w-3.5 h-3.5 text-emerald-700')}
+              </a>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      `}
+    `;
+  }
+
+  if (tab === 'notes') {
+    const notes = DB.query('learningMaterials', m => m.teacherId === AUTH.current.id && m.type === 'note')
+                    .sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+    return `
+      ${pageHeader({ title: 'Lessons & Content', subtitle: 'Class notes posted to your students',
+        actions: `<button class="btn btn-primary" onclick="tch_postNoteModal()">${icon('plus','w-4 h-4')} Post Note</button>` })}
+      ${tabBar}
+      ${notes.length === 0 ? emptyState({ title: 'No class notes yet', body: 'Post a note and your students will see it instantly in their Learning hub.', icon: 'book' }) : `
+        <div class="space-y-3">
+          ${notes.map(m => {
+            const cls = DB.find('classes', m.classId);
+            const sub = DB.find('subjects', m.subjectId);
+            const readViews = DB.query('materialViews', v => v.materialId === m.id);
+            const classStudents = cls ? COMPUTE.studentsByClass(cls.id) : [];
+            return `<div class="card p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-2 flex-wrap">
+                    <span class="badge badge-info">${cls ? cls.name : '—'}</span>
+                    <span class="badge badge-neutral">${sub ? sub.name : '—'}</span>
+                    ${m.week ? `<span class="badge badge-success">${m.week}</span>` : ''}
+                  </div>
+                  <h3 class="font-bold text-slate-900">${m.title}</h3>
+                  ${m.description ? `<p class="text-sm text-slate-500 mt-1 line-clamp-2">${m.description}</p>` : ''}
+                  ${m.content ? `<div class="mt-2 p-3 bg-slate-50 rounded-lg text-sm text-slate-700 max-h-24 overflow-y-auto whitespace-pre-wrap">${m.content}</div>` : ''}
+                  ${m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs hover:bg-blue-100">
+                    ${icon('paperclip','w-3.5 h-3.5 text-blue-600')}<span class="font-semibold text-blue-900">${m.file.name}</span>${icon('download','w-3 h-3 text-blue-600')}
+                  </a>` : ''}
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <div class="text-xs text-slate-400">${fdate(m.createdAt, { short: true })}</div>
+                  ${classStudents.length ? `<div class="mt-1 text-xs font-semibold ${readViews.length >= classStudents.length ? 'text-emerald-600' : 'text-amber-600'}">${readViews.length}/${classStudents.length} read</div>` : ''}
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      `}
+    `;
+  }
+
+  // tab === 'videos'
+  const videos = DB.query('learningMaterials', m => m.teacherId === AUTH.current.id && m.type === 'video')
+                   .sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+  return `
+    ${pageHeader({ title: 'Lessons & Content', subtitle: 'Videos posted to your students',
+      actions: `<button class="btn btn-primary" onclick="tch_postVideoModal()">${icon('plus','w-4 h-4')} Add Video</button>` })}
+    ${tabBar}
+    ${videos.length === 0 ? emptyState({ title: 'No videos yet', body: 'Paste a YouTube or Vimeo link and your students can watch it from their Learning hub.', icon: 'classes' }) : `
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        ${videos.map(m => {
+          const cls = DB.find('classes', m.classId);
+          const sub = DB.find('subjects', m.subjectId);
+          const ytId = m.url ? tch_ytId(m.url) : null;
+          return `<div class="card overflow-hidden">
+            ${ytId ? `<div class="relative bg-black aspect-video cursor-pointer" onclick="tch_playVideo('${m.id}')">
+              <img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" class="w-full h-full object-cover opacity-90" onerror="this.style.display='none'">
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-lg">${icon('classes','w-6 h-6 text-white')}</div>
+              </div>
+            </div>` : `<div class="bg-slate-100 aspect-video flex items-center justify-center">${icon('classes','w-12 h-12 text-slate-300')}</div>`}
+            <div class="p-3">
+              <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+                <span class="badge badge-info text-xs">${cls ? cls.name : '—'}</span>
+                <span class="badge badge-neutral text-xs">${sub ? sub.name : '—'}</span>
+              </div>
+              <h4 class="font-bold text-slate-900 text-sm leading-tight">${m.title}</h4>
+              <div class="text-xs text-slate-400 mt-1">${fdate(m.createdAt, { short: true })}</div>
+              <div class="flex gap-2 mt-3">
+                <button class="btn btn-secondary flex-1 text-xs py-1.5" onclick="tch_playVideo('${m.id}')">${icon('classes','w-3.5 h-3.5')} Preview</button>
+                <button class="btn btn-secondary text-xs py-1.5 px-2 text-red-600" onclick="tch_deleteVideo('${m.id}')">${icon('trash','w-3.5 h-3.5')}</button>
+              </div>
             </div>
-            <h3 class="font-bold text-slate-900">${l.topic}</h3>
-            <div class="grid sm:grid-cols-3 gap-3 mt-3 text-sm">
-              <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Objectives</div><div>${l.objectives}</div></div>
-              <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Activities</div><div>${l.activities}</div></div>
-              <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Resources</div><div>${l.resources}</div></div>
-            </div>
-            ${l.file ? `<a href="${l.file.data}" download="${l.file.name}" class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-sm hover:bg-emerald-100">
-              ${icon('paperclip','w-4 h-4 text-emerald-600')}
-              <span class="font-semibold text-emerald-900">${l.file.name}</span>
-              <span class="text-xs text-emerald-700">${l.file.size}</span>
-              ${icon('download','w-3.5 h-3.5 text-emerald-700')}
-            </a>` : ''}
           </div>`;
         }).join('')}
       </div>
     `}
   `;
+}
+
+function tch_ytId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/);
+  return m ? m[1] : null;
+}
+
+let _noteFileBuffer = null;
+function tch_postNoteModal() {
+  _noteFileBuffer = null;
+  const classes = teacherClasses();
+  const subjects = DB.get('subjects');
+  modal({
+    title: 'Post Class Note',
+    size: 'lg',
+    body: `<div class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="input-label">Class</label>
+          <select id="cn_class" class="input">${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+        <div><label class="input-label">Subject</label>
+          <select id="cn_subject" class="input">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="input-label">Week (optional)</label><input id="cn_week" class="input" placeholder="e.g. Week 8"></div>
+        <div><label class="input-label">Note Title</label><input id="cn_title" class="input" placeholder="e.g. Quadratic Equations — Notes"></div>
+      </div>
+      <div><label class="input-label">Note Content</label>
+        <textarea id="cn_content" rows="5" class="input" placeholder="Type the full note here. Students will read this directly..."></textarea></div>
+      <div><label class="input-label">Description / Summary (shown on card)</label>
+        <input id="cn_desc" class="input" placeholder="One-line summary for students"></div>
+      <div>
+        <label class="input-label">Attach File (PDF / Image — optional, max 5MB)</label>
+        <input type="file" id="cn_fileInput" accept="application/pdf,image/*" class="hidden" onchange="onNoteFilePick(event)">
+        <div class="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('cn_fileInput').click()">
+          ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}<div class="text-xs text-slate-500">Click to attach a PDF or image</div>
+        </div>
+        <div id="cn_filePreview" class="mt-2"></div>
+      </div>
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="tch_saveNote()">Post Note</button>`
+  });
+}
+
+function onNoteFilePick(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast('File too large (max 5MB)', 'danger'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    _noteFileBuffer = { name: file.name, type: file.type, size: Math.round(file.size/1024) + ' KB', data: e.target.result };
+    const p = document.getElementById('cn_filePreview');
+    if (p) p.innerHTML = `<div class="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-blue-600')}<span class="flex-1 truncate font-semibold text-blue-900">${file.name}</span><span class="text-xs text-blue-700">${_noteFileBuffer.size}</span><button class="text-red-500 text-xs" onclick="_noteFileBuffer=null;document.getElementById('cn_filePreview').innerHTML=''">Remove</button></div>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function tch_saveNote() {
+  const title = (document.getElementById('cn_title') || {}).value.trim();
+  const classId = (document.getElementById('cn_class') || {}).value;
+  const subjectId = (document.getElementById('cn_subject') || {}).value;
+  if (!title || !classId) { toast('Title and class required', 'danger'); return; }
+  const mat = {
+    id: uid('lm'), schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    classId, subjectId, teacherId: AUTH.current.id,
+    title, type: 'note',
+    week: (document.getElementById('cn_week') || {}).value.trim() || null,
+    description: (document.getElementById('cn_desc') || {}).value.trim(),
+    content: (document.getElementById('cn_content') || {}).value.trim(),
+    file: _noteFileBuffer, url: '', createdAt: now()
+  };
+  DB.insert('learningMaterials', mat);
+  // Notify all students in the class
+  COMPUTE.studentsByClass(classId).forEach(s => {
+    DB.insert('notifications', { id: uid('not'), userId: s.id, title: 'New Class Note', body: `${mat.title} — posted by ${AUTH.current.name}`, type: 'info', read: false, timestamp: now(), link: { view: 'stu_learning', params: { tab: 'notes' } } });
+  });
+  _noteFileBuffer = null;
+  document.getElementById('modalBackdrop').click();
+  APP.go('tch_lessons', { tab: 'notes' });
+  toast('Note posted · students notified', 'success');
+}
+
+function tch_postVideoModal() {
+  const classes = teacherClasses();
+  const subjects = DB.get('subjects');
+  modal({
+    title: 'Add Video Lesson',
+    size: 'lg',
+    body: `<div class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="input-label">Class</label>
+          <select id="vid_class" class="input">${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+        <div><label class="input-label">Subject</label>
+          <select id="vid_subject" class="input">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+      </div>
+      <div><label class="input-label">Video Title</label><input id="vid_title" class="input" placeholder="e.g. Solving Quadratic Equations — Khan Academy"></div>
+      <div><label class="input-label">YouTube or Vimeo URL</label>
+        <input id="vid_url" class="input" placeholder="https://www.youtube.com/watch?v=..." oninput="tch_previewYT()"></div>
+      <div id="vid_preview" class="hidden rounded-xl overflow-hidden bg-black aspect-video">
+        <iframe id="vid_iframe" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
+      </div>
+      <div><label class="input-label">Description (optional)</label><input id="vid_desc" class="input" placeholder="What will students learn from this video?"></div>
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="tch_saveVideo()">Save Video</button>`
+  });
+}
+
+function tch_previewYT() {
+  const url = (document.getElementById('vid_url') || {}).value;
+  const ytId = tch_ytId(url);
+  const preview = document.getElementById('vid_preview');
+  const iframe = document.getElementById('vid_iframe');
+  if (ytId && preview && iframe) {
+    iframe.src = `https://www.youtube.com/embed/${ytId}`;
+    preview.classList.remove('hidden');
+  } else if (preview) {
+    preview.classList.add('hidden');
+  }
+}
+
+function tch_saveVideo() {
+  const title = (document.getElementById('vid_title') || {}).value.trim();
+  const url = (document.getElementById('vid_url') || {}).value.trim();
+  const classId = (document.getElementById('vid_class') || {}).value;
+  const subjectId = (document.getElementById('vid_subject') || {}).value;
+  if (!title || !url) { toast('Title and URL required', 'danger'); return; }
+  const mat = {
+    id: uid('lm'), schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    classId, subjectId, teacherId: AUTH.current.id,
+    title, type: 'video', url,
+    description: (document.getElementById('vid_desc') || {}).value.trim(),
+    file: null, createdAt: now()
+  };
+  DB.insert('learningMaterials', mat);
+  COMPUTE.studentsByClass(classId).forEach(s => {
+    DB.insert('notifications', { id: uid('not'), userId: s.id, title: 'New Video Lesson', body: `${mat.title} — posted by ${AUTH.current.name}`, type: 'info', read: false, timestamp: now(), link: { view: 'stu_learning', params: { tab: 'videos' } } });
+  });
+  document.getElementById('modalBackdrop').click();
+  APP.go('tch_lessons', { tab: 'videos' });
+  toast('Video saved · students notified', 'success');
+}
+
+function tch_playVideo(id) {
+  const m = DB.find('learningMaterials', id);
+  if (!m) return;
+  const ytId = tch_ytId(m.url);
+  modal({
+    title: m.title,
+    size: 'xl',
+    body: `<div class="rounded-xl overflow-hidden bg-black aspect-video w-full">
+      ${ytId ? `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay"></iframe>`
+             : `<div class="flex items-center justify-center h-full text-white text-sm">Video unavailable</div>`}
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+  });
+}
+
+function tch_deleteVideo(id) {
+  confirm('Delete this video? Students will no longer see it.', () => {
+    DB.remove('learningMaterials', id);
+    APP.go('tch_lessons', { tab: 'videos' });
+    toast('Video removed');
+  }, { danger: true });
 }
 
 let _lessonFileBuffer = null;

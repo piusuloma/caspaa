@@ -154,112 +154,35 @@ function view_fin_fees() {
 function renderFeeStructuresTab() {
   const structures = DB.get('feeStructures');
   const classes = DB.get('classes');
-  const students = DB.get('students').filter(s => s.status === 'active');
-  const totalExpected = structures.reduce((sum, f) => {
-    const count = students.filter(s => s.classId === f.classId).length;
-    return sum + (f.tuition + f.books + f.uniform + f.pta) * count;
-  }, 0);
-
-  // Group by level
-  const levelOrder = ['Nursery', 'Primary', 'Junior Secondary', 'Senior Secondary'];
-  const grouped = {};
-  structures.forEach(f => {
-    const cls = classes.find(c => c.id === f.classId);
-    const lvl = cls ? cls.level : 'Other';
-    (grouped[lvl] = grouped[lvl] || []).push(f);
-  });
-
   return `
-    <!-- Summary strip -->
-    <div class="grid grid-cols-3 gap-3 mb-5">
-      <div class="bg-white border border-slate-200 rounded-2xl p-4">
-        <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">Fee Structures</div>
-        <div class="text-2xl font-extrabold text-slate-900">${structures.length}</div>
-        <div class="text-xs text-slate-400 mt-0.5">${classes.length} classes</div>
-      </div>
-      <div class="bg-white border border-slate-200 rounded-2xl p-4">
-        <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">Term Revenue Potential</div>
-        <div class="text-2xl font-extrabold text-brand-700">${money(totalExpected)}</div>
-        <div class="text-xs text-slate-400 mt-0.5">if all students pay in full</div>
-      </div>
-      <div class="bg-white border border-slate-200 rounded-2xl p-4">
-        <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">Avg Fee / Student</div>
-        <div class="text-2xl font-extrabold text-slate-900">${students.length ? money(Math.round(totalExpected / students.length)) : '—'}</div>
-        <div class="text-xs text-slate-400 mt-0.5">across all active students</div>
-      </div>
+    <div class="card overflow-hidden">
+      <table class="tbl">
+        <thead><tr><th>Class</th><th>Term</th><th>Tuition</th><th>Books</th><th>Uniform</th><th>PTA</th><th>Total</th><th>Due</th><th></th></tr></thead>
+        <tbody>
+          ${structures.map(f => {
+            const cls = classes.find(c => c.id === f.classId);
+            const total = f.tuition + f.books + f.uniform + f.pta;
+            return `<tr>
+              <td class="font-semibold">${cls ? cls.name : '—'}</td>
+              <td><span class="badge badge-info">${f.term}</span></td>
+              <td class="font-mono">${money(f.tuition)}</td>
+              <td class="font-mono">${money(f.books)}</td>
+              <td class="font-mono">${money(f.uniform)}</td>
+              <td class="font-mono">${money(f.pta)}</td>
+              <td class="font-mono font-bold">${money(total)}</td>
+              <td class="text-sm text-slate-500">${fdate(f.dueDate, { short: true })}</td>
+              <td class="text-right whitespace-nowrap">
+                <button class="btn btn-ghost !p-1.5" title="Edit" onclick="feeStructureModal('${f.id}')">${icon('edit','w-4 h-4')}</button>
+                <button class="btn btn-ghost !p-1.5 text-rose-600" title="Delete" onclick="deleteFeeStructure('${f.id}')">${icon('trash','w-4 h-4')}</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
     </div>
-
-    <!-- Grouped fee table -->
-    <div class="space-y-4">
-      ${(levelOrder.filter(l => grouped[l]?.length)).map(level => `
-        <div class="card overflow-hidden">
-          <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-            <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">${level}</h3>
-            <span class="text-xs text-slate-400">${(grouped[level] || []).length} class${(grouped[level] || []).length !== 1 ? 'es' : ''}</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
-                  <th class="px-5 py-2.5 text-left font-semibold">Class</th>
-                  <th class="px-4 py-2.5 text-right font-semibold">Tuition</th>
-                  <th class="px-4 py-2.5 text-right font-semibold">Books</th>
-                  <th class="px-4 py-2.5 text-right font-semibold">Uniform</th>
-                  <th class="px-4 py-2.5 text-right font-semibold">PTA</th>
-                  <th class="px-4 py-2.5 text-right font-semibold text-slate-700">Total / Student</th>
-                  <th class="px-4 py-2.5 text-right font-semibold">Students</th>
-                  <th class="px-4 py-2.5 text-right font-semibold text-brand-700">Class Revenue</th>
-                  <th class="px-4 py-2.5 text-right font-semibold">Due</th>
-                  <th class="px-4 py-2.5"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100">
-                ${(grouped[level] || []).map(f => {
-                  const cls = classes.find(c => c.id === f.classId);
-                  const total = f.tuition + f.books + f.uniform + f.pta;
-                  const classStudents = students.filter(s => s.classId === f.classId).length;
-                  const classRevenue = total * classStudents;
-                  return `<tr class="hover:bg-slate-50">
-                    <td class="px-5 py-3 font-semibold text-slate-900">${cls ? cls.name : '—'}</td>
-                    <td class="px-4 py-3 text-right text-slate-600 font-mono">${money(f.tuition)}</td>
-                    <td class="px-4 py-3 text-right text-slate-500 font-mono">${money(f.books)}</td>
-                    <td class="px-4 py-3 text-right text-slate-500 font-mono">${money(f.uniform)}</td>
-                    <td class="px-4 py-3 text-right text-slate-500 font-mono">${money(f.pta)}</td>
-                    <td class="px-4 py-3 text-right font-bold text-slate-900 font-mono">${money(total)}</td>
-                    <td class="px-4 py-3 text-right">
-                      <span class="inline-flex items-center gap-1 text-slate-600">${icon('students','w-3.5 h-3.5 text-slate-400')} ${classStudents}</span>
-                    </td>
-                    <td class="px-4 py-3 text-right font-semibold text-brand-700 font-mono">${money(classRevenue)}</td>
-                    <td class="px-4 py-3 text-right text-slate-400 text-xs">${fdate(f.dueDate, { short: true })}</td>
-                    <td class="px-4 py-3 text-right whitespace-nowrap">
-                      <button class="btn btn-ghost !p-1.5 hover:bg-slate-100 rounded-lg" title="Edit" onclick="feeStructureModal('${f.id}')">${icon('edit','w-4 h-4 text-slate-500')}</button>
-                      <button class="btn btn-ghost !p-1.5 hover:bg-rose-50 rounded-lg" title="Delete" onclick="deleteFeeStructure('${f.id}')">${icon('trash','w-4 h-4 text-rose-400')}</button>
-                    </td>
-                  </tr>`;
-                }).join('')}
-              </tbody>
-              <tfoot>
-                <tr class="bg-slate-50 border-t border-slate-200">
-                  <td class="px-5 py-2 text-xs font-semibold text-slate-500 uppercase" colspan="7">Level subtotal</td>
-                  <td class="px-4 py-2 text-right font-bold text-brand-700 font-mono text-sm">
-                    ${money((grouped[level] || []).reduce((sum, f) => {
-                      const cnt = students.filter(s => s.classId === f.classId).length;
-                      return sum + (f.tuition + f.books + f.uniform + f.pta) * cnt;
-                    }, 0))}
-                  </td>
-                  <td colspan="2"></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      `).join('')}
-      ${structures.length === 0 ? emptyState({ title: 'No fee structures yet', body: 'Create a fee structure for each class to generate invoices.', icon: 'fees' }) : ''}
-    </div>
-
-    <div class="mt-4 flex items-center gap-2 text-xs text-slate-500 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200">
-      ${icon('info','w-3.5 h-3.5 flex-shrink-0')}
-      <span>Extracurricular fees (swimming, ballet, music, etc.) are charged <strong>per student</strong> — manage them under the <button class="text-brand-700 font-semibold underline" onclick="APP.params.feeTab='activities'; APP.render()">Activities tab</button>.</span>
+    <div class="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+      ${icon('info','w-3.5 h-3.5 flex-shrink-0 text-blue-500')}
+      <span>Extracurricular fees (swimming, ballet, music, etc.) are charged <strong>per student</strong> — manage them under the <button class="text-brand-700 font-semibold underline" onclick="APP.params.feeTab='activities'; APP.render()">Activities tab</button> and assign from each student's profile.</span>
     </div>
   `;
 }

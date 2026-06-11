@@ -25,22 +25,34 @@ const APP = {
       ],
       schooladmin: [
         { key: 'adm_dashboard',     label: 'Dashboard',      icon: 'dashboard' },
-        { key: 'adm_people',        label: 'Students',         icon: 'students' },
+        { key: 'adm_people',        label: 'Students',       icon: 'students' },
         { key: 'adm_workforce',     label: 'Staff & HR',     icon: 'teacher' },
         { key: 'adm_academic',      label: 'Academic',       icon: 'classes' },
         { key: 'adm_finance_hub',   label: 'Finance',        icon: 'fees' },
         { key: 'adm_operations',    label: 'Operations',     icon: 'package' },
         { key: 'adm_comms',         label: 'Communications', icon: 'chat' },
+        { key: 'adm_bulk_notify',   label: 'Announcements',  icon: 'bell' },
+        { key: 'cal_main',          label: 'Calendar',       icon: 'calendar' },
+        { key: 'adm_houses',        label: 'House Points',   icon: 'check' },
+        { key: 'adm_transport',     label: 'Transport',      icon: 'package' },
+        { key: 'adm_feedback',      label: 'Surveys',        icon: 'check' },
+        { key: 'adm_health',        label: 'Sickbay',        icon: 'reports' },
         { key: 'adm_support',       label: 'Help & Support', icon: 'chat' },
         { key: 'adm_settings',      label: 'School Settings',icon: 'settings' }
       ],
       principal: [
         { key: 'adm_dashboard',  label: 'Dashboard',      icon: 'dashboard' },
-        { key: 'adm_people',     label: 'Students',         icon: 'students' },
+        { key: 'adm_people',     label: 'Students',       icon: 'students' },
         { key: 'adm_workforce',  label: 'Staff & HR',     icon: 'teacher' },
         { key: 'adm_academic',   label: 'Academic',       icon: 'classes' },
         { key: 'adm_operations', label: 'Operations',     icon: 'package' },
         { key: 'adm_comms',      label: 'Communications', icon: 'chat' },
+        { key: 'adm_bulk_notify',label: 'Announcements',  icon: 'bell' },
+        { key: 'cal_main',       label: 'Calendar',       icon: 'calendar' },
+        { key: 'adm_houses',     label: 'House Points',   icon: 'check' },
+        { key: 'adm_transport',  label: 'Transport',      icon: 'package' },
+        { key: 'adm_feedback',   label: 'Surveys',        icon: 'check' },
+        { key: 'adm_health',     label: 'Sickbay',        icon: 'reports' },
         { key: 'adm_support',    label: 'Help & Support', icon: 'chat' }
       ],
       finance: [
@@ -54,16 +66,20 @@ const APP = {
         { key: 'fin_reports',    label: 'Financial Reports', icon: 'reports' }
       ],
       teacher: [
-        { key: 'tch_dashboard',  label: 'Dashboard',       icon: 'dashboard' },
-        { key: 'tch_classes',    label: 'My Classes',      icon: 'classes' },
-        { key: 'tch_attendance', label: 'Attendance',      icon: 'attendance' },
-        { key: 'tch_results',    label: 'Enter Results',   icon: 'results' },
-        { key: 'tch_assignments',label: 'Assignments',     icon: 'book' },
-        { key: 'tch_cbt',        label: 'CBT Exams',       icon: 'classes' },
-        { key: 'tch_lessons',    label: 'Lesson Plans',    icon: 'book' },
-        { key: 'tch_timetable',  label: 'My Schedule',     icon: 'calendar' },
-        { key: 'tch_messages',   label: 'Messages',        icon: 'chat' },
-        { key: 'tch_appraisal',  label: 'My Appraisal',    icon: 'reports' }
+        { key: 'tch_dashboard',  label: 'Dashboard',         icon: 'dashboard' },
+        { key: 'tch_classes',    label: 'My Classes',        icon: 'classes' },
+        { key: 'tch_attendance', label: 'Attendance',        icon: 'attendance' },
+        { key: 'tch_results',    label: 'Enter Results',     icon: 'results' },
+        { key: 'tch_assignments',label: 'Assignments',       icon: 'book' },
+        { key: 'tch_cbt',        label: 'CBT Exams',         icon: 'classes' },
+        { key: 'tch_lessons',    label: 'Lessons & Content', icon: 'book' },
+        { key: 'tch_diary',      label: 'Diary',             icon: 'book' },
+        { key: 'tch_formative',  label: 'Quick Tests',         icon: 'results' },
+        { key: 'tch_payslip',    label: 'My Payslip',         icon: 'fees' },
+        { key: 'cal_main',       label: 'Calendar',           icon: 'calendar' },
+        { key: 'tch_timetable',  label: 'My Schedule',        icon: 'calendar' },
+        { key: 'tch_messages',   label: 'Messages',           icon: 'chat' },
+        { key: 'tch_appraisal',  label: 'My Appraisal',       icon: 'reports' }
       ],
       parent: [
         { key: 'par_dashboard',  label: 'Dashboard',       icon: 'dashboard' },
@@ -72,7 +88,13 @@ const APP = {
         { key: 'par_loans',      label: 'Loans',           icon: 'loan' },
         { key: 'par_consent',    label: 'Consent',         icon: 'check' },
         { key: 'par_messages',   label: 'Messages',        icon: 'chat' },
-        { key: 'par_announce',   label: 'Announcements',   icon: 'bell' }
+        { key: 'par_announce',   label: 'Announcements',   icon: 'bell' },
+        { key: 'cal_main',       label: 'Calendar',        icon: 'calendar' },
+        { key: 'par_diary',      label: 'Diary',           icon: 'book' },
+        { key: 'par_houses',     label: 'House Points',    icon: 'check' },
+        { key: 'par_transport',  label: 'Transport',       icon: 'package' },
+        { key: 'par_health',     label: 'Health',          icon: 'reports' },
+        { key: 'par_feedback',   label: 'Surveys',         icon: 'check' }
       ],
       student: [
         { key: 'stu_dashboard',  label: 'Dashboard',       icon: 'dashboard' },
@@ -81,7 +103,10 @@ const APP = {
         { key: 'stu_cbt',        label: 'CBT Exams',       icon: 'classes' },
         { key: 'stu_results',    label: 'My Results',      icon: 'reports' },
         { key: 'stu_behaviour',  label: 'Behaviour',       icon: 'check' },
-        { key: 'stu_timetable',  label: 'Timetable',       icon: 'calendar' }
+        { key: 'stu_timetable',  label: 'Timetable',       icon: 'calendar' },
+        { key: 'cal_main',       label: 'Calendar',        icon: 'calendar' },
+        { key: 'stu_houses',     label: 'House Points',    icon: 'check' },
+        { key: 'stu_formative',  label: 'Quick Tests',     icon: 'results' }
       ]
     };
     return menus[role] || [];

@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CASPAA — New Modules Implementation Roadmap</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 13.5px;
+      color: #1a2332;
+      background: #f5f7fa;
+      line-height: 1.6;
+    }
+
+    /* ── Cover ── */
+    .cover {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0a2540 0%, #1e3a6e 55%, #1a4a3a 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 60px 40px;
+      page-break-after: always;
+    }
+    .cover-logo { font-size: 40px; font-weight: 800; color: #fff; letter-spacing: -1px; margin-bottom: 8px; }
+    .cover-logo span { color: #34d399; }
+    .cover-badge {
+      display: inline-block;
+      background: rgba(52,211,153,0.15);
+      border: 1px solid #34d399;
+      color: #34d399;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 52px;
+    }
+    .cover h1 { font-size: 36px; font-weight: 800; color: #fff; line-height: 1.2; max-width: 680px; margin-bottom: 18px; }
+    .cover h1 em { color: #34d399; font-style: normal; }
+    .cover-sub { font-size: 15px; color: rgba(255,255,255,0.7); max-width: 560px; margin-bottom: 60px; }
+    .cover-divider { width: 60px; height: 3px; background: #34d399; border-radius: 2px; margin: 36px auto; }
+    .cover-meta { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; }
+    .cover-meta-item { text-align: center; }
+    .cover-meta-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+    .cover-meta-value { font-size: 15px; font-weight: 600; color: #fff; }
+
+    /* ── Layout ── */
+    .page { max-width: 980px; margin: 0 auto; padding: 48px 40px; }
+
+    /* ── Section Headers ── */
+    .section { margin-bottom: 56px; }
+    .section-label { font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: #0d6e3f; margin-bottom: 6px; }
+    .section-title { font-size: 26px; font-weight: 800; color: #0a2540; margin-bottom: 10px; line-height: 1.25; }
+    .section-intro { font-size: 14px; color: #4a5568; max-width: 720px; margin-bottom: 28px; }
+    .divider { height: 2px; background: linear-gradient(90deg, #0d6e3f, transparent); margin: 40px 0; border: none; }
+
+    /* ── Phase Header ── */
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding: 18px 24px;
+      border-radius: 12px;
+    }
+    .ph-p1 { background: linear-gradient(90deg, #fef2f2, #fff); border-left: 5px solid #dc2626; }
+    .ph-p2 { background: linear-gradient(90deg, #fffbeb, #fff); border-left: 5px solid #d97706; }
+    .ph-p3 { background: linear-gradient(90deg, #eff6ff, #fff); border-left: 5px solid #1d4ed8; }
+    .phase-badge {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .pb-p1 { background: #fee2e2; color: #991b1b; }
+    .pb-p2 { background: #fef3c7; color: #92400e; }
+    .pb-p3 { background: #dbeafe; color: #1e40af; }
+    .phase-header-text h3 { font-size: 18px; font-weight: 800; color: #0a2540; }
+    .phase-header-text p { font-size: 12.5px; color: #6b7280; margin-top: 2px; }
+
+    /* ── Module Card ── */
+    .module-card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.06);
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+    .module-card-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 24px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .module-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .icon-red    { background: #fee2e2; }
+    .icon-amber  { background: #fef3c7; }
+    .icon-blue   { background: #dbeafe; }
+    .icon-green  { background: #d1fae5; }
+    .icon-purple { background: #ede9fe; }
+    .module-title { font-size: 16px; font-weight: 800; color: #0a2540; }
+    .module-subtitle { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .module-tags { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+    .tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    .tag-effort-low    { background: #d1fae5; color: #065f46; }
+    .tag-effort-medium { background: #fef3c7; color: #92400e; }
+    .tag-effort-high   { background: #fee2e2; color: #991b1b; }
+    .tag-role { background: #f3f4f6; color: #374151; }
+
+    .module-body { padding: 24px; }
+
+    /* ── Steps ── */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .steps-col-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-bottom: 10px;
+    }
+    .step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #0a2540;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-content strong {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #1a2332;
+      margin-bottom: 2px;
+    }
+    .step-content span {
+      font-size: 11.5px;
+      color: #6b7280;
+      line-height: 1.45;
+    }
+
+    /* ── Data Schema Box ── */
+    .schema-box {
+      background: #0a2540;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 11.5px;
+      color: #93c5fd;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+    .schema-box .comment { color: #6b7280; }
+    .schema-box .key { color: #34d399; }
+    .schema-box .type { color: #fbbf24; }
+
+    /* ── Roles Affected ── */
+    .roles-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #f3f4f6;
+      align-items: center;
+    }
+    .roles-row-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-right: 4px;
+    }
+    .role-chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 12px;
+    }
+    .rc-admin   { background: #dbeafe; color: #1e40af; }
+    .rc-teacher { background: #d1fae5; color: #065f46; }
+    .rc-parent  { background: #fef3c7; color: #92400e; }
+    .rc-student { background: #ede9fe; color: #5b21b6; }
+    .rc-finance { background: #fee2e2; color: #991b1b; }
+
+    /* ── Timeline Overview ── */
+    .timeline {
+      position: relative;
+      padding-left: 40px;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 12px;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, #dc2626, #d97706, #1d4ed8);
+      border-radius: 2px;
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 32px;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: -33px;
+      top: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px currentColor;
+    }
+    .td-red    { color: #dc2626; background: #dc2626; }
+    .td-amber  { color: #d97706; background: #d97706; }
+    .td-blue   { color: #1d4ed8; background: #1d4ed8; }
+    .timeline-week {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+    .timeline-title { font-size: 15px; font-weight: 800; color: #0a2540; margin-bottom: 6px; }
+    .timeline-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .timeline-chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 10px;
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    /* ── Tech Notes ── */
+    .tech-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 16px;
+    }
+    .tech-box-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; }
+    .tech-box ul { list-style: none; padding: 0; }
+    .tech-box li { font-size: 12px; color: #475569; padding: 4px 0; display: flex; gap: 8px; align-items: flex-start; }
+    .tech-box li::before { content: '→'; color: #0d6e3f; font-weight: 700; flex-shrink: 0; }
+
+    /* ── Summary Table ── */
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      font-size: 12.5px;
+    }
+    .summary-table thead { background: #0a2540; color: #fff; }
+    .summary-table thead th { padding: 13px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; }
+    .summary-table tbody tr:nth-child(even) { background: #f9fafb; }
+    .summary-table td { padding: 11px 16px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 10.5px; font-weight: 600; }
+    .badge-red    { background: #fee2e2; color: #991b1b; }
+    .badge-amber  { background: #fef3c7; color: #92400e; }
+    .badge-blue   { background: #dbeafe; color: #1e40af; }
+    .badge-green  { background: #d1fae5; color: #065f46; }
+    .badge-gray   { background: #f3f4f6; color: #6b7280; }
+
+    /* ── Footer ── */
+    .footer { background: #0a2540; color: rgba(255,255,255,0.6); text-align: center; padding: 24px 40px; font-size: 11.5px; margin-top: 60px; }
+    .footer strong { color: #34d399; }
+
+    @media print {
+      body { background: #fff; }
+      .cover { min-height: auto; padding: 80px 40px; }
+      .page { padding: 32px 40px; }
+      .module-card { page-break-inside: avoid; }
+    }
+    .page-break { page-break-before: always; padding-top: 48px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════ COVER ══ -->
+<div class="cover">
+  <div class="cover-logo">CASP<span>AA</span></div>
+  <div class="cover-badge">Engineering Roadmap — Internal</div>
+  <h1>New Modules<br/><em>Implementation Roadmap</em></h1>
+  <p class="cover-sub">
+    Step-by-step flow for implementing every new module identified in the
+    Feature Gap Analysis. Covers data schema, UI flow, roles affected, and technical notes.
+  </p>
+  <div class="cover-divider"></div>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><div class="cover-meta-label">Phase 1</div><div class="cover-meta-value">Weeks 1–4</div></div>
+    <div class="cover-meta-item"><div class="cover-meta-label">Phase 2</div><div class="cover-meta-value">Weeks 5–10</div></div>
+    <div class="cover-meta-item"><div class="cover-meta-label">Phase 3</div><div class="cover-meta-value">Weeks 11–16+</div></div>
+    <div class="cover-meta-item"><div class="cover-meta-label">Total Modules</div><div class="cover-meta-value">14 New</div></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ OVERVIEW ══ -->
+<div class="page">
+  <div class="section">
+    <div class="section-label">00 — Overview</div>
+    <div class="section-title">High-Level Timeline</div>
+    <p class="section-intro">
+      14 new modules spread across 3 implementation phases. Each phase builds on the previous —
+      Phase 1 unlocks daily student/parent usage, Phase 2 completes operational coverage,
+      Phase 3 delivers strategic differentiation.
+    </p>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot td-red"></div>
+        <div class="timeline-week">Phase 1 · Weeks 1–4</div>
+        <div class="timeline-title">Core Content &amp; Communication Layer</div>
+        <div class="timeline-items">
+          <span class="timeline-chip">Event Calendar</span>
+          <span class="timeline-chip">Bulk SMS &amp; Email</span>
+          <span class="timeline-chip">Class Notes</span>
+          <span class="timeline-chip">Video Lessons</span>
+          <span class="timeline-chip">PhET Simulations</span>
+          <span class="timeline-chip">Payment Gateway</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot td-amber"></div>
+        <div class="timeline-week">Phase 2 · Weeks 5–10</div>
+        <div class="timeline-title">Operational &amp; Engagement Modules</div>
+        <div class="timeline-items">
+          <span class="timeline-chip">House Point System</span>
+          <span class="timeline-chip">Teacher Payslip</span>
+          <span class="timeline-chip">Transport Management</span>
+          <span class="timeline-chip">Parent Feedback</span>
+          <span class="timeline-chip">Communication Diary</span>
+          <span class="timeline-chip">Formative Assessment</span>
+          <span class="timeline-chip">Health / Sickbay</span>
+          <span class="timeline-chip">Inventory</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot td-blue"></div>
+        <div class="timeline-week">Phase 3 · Weeks 11–16+</div>
+        <div class="timeline-title">Strategic &amp; AI Differentiation</div>
+        <div class="timeline-items">
+          <span class="timeline-chip">Virtual Classroom</span>
+          <span class="timeline-chip">AI Grading</span>
+          <span class="timeline-chip">Performance Prediction</span>
+          <span class="timeline-chip">Hostel Management</span>
+          <span class="timeline-chip">Multi-Curriculum</span>
+          <span class="timeline-chip">Offline CBT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ══ SUMMARY TABLE ══ -->
+  <div class="section">
+    <div class="section-label">Module Index</div>
+    <div class="section-title">All 14 Modules at a Glance</div>
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Module</th>
+          <th>Phase</th>
+          <th>Effort</th>
+          <th>Primary File(s)</th>
+          <th>Roles</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Event Calendar</td><td><span class="badge badge-red">P1</span></td><td><span class="badge badge-amber">Medium</span></td><td>admin.js, shared.js</td><td>All</td></tr>
+        <tr><td>2</td><td>Bulk SMS &amp; Email</td><td><span class="badge badge-red">P1</span></td><td><span class="badge badge-amber">Medium</span></td><td>admin.js + backend API</td><td>Admin, Finance</td></tr>
+        <tr><td>3</td><td>Class Notes</td><td><span class="badge badge-red">P1</span></td><td><span class="badge badge-green">Low</span></td><td>teacher.js, student.js</td><td>Teacher, Student</td></tr>
+        <tr><td>4</td><td>Video Lessons</td><td><span class="badge badge-red">P1</span></td><td><span class="badge badge-green">Low</span></td><td>teacher.js, student.js</td><td>Teacher, Student</td></tr>
+        <tr><td>5</td><td>PhET Simulations</td><td><span class="badge badge-red">P1</span></td><td><span class="badge badge-green">Low</span></td><td>student.js, shared.js</td><td>Student, Teacher</td></tr>
+        <tr><td>6</td><td>Payment Gateway</td><td><span class="badge badge-red">P1</span></td><td><span class="badge badge-red">High</span></td><td>finance.js, parent.js</td><td>Finance, Parent</td></tr>
+        <tr><td>7</td><td>House Point System</td><td><span class="badge badge-amber">P2</span></td><td><span class="badge badge-green">Low</span></td><td>admin.js, teacher.js</td><td>Admin, Teacher, Student, Parent</td></tr>
+        <tr><td>8</td><td>Teacher Payslip</td><td><span class="badge badge-amber">P2</span></td><td><span class="badge badge-green">Low</span></td><td>teacher.js</td><td>Teacher</td></tr>
+        <tr><td>9</td><td>Transport Management</td><td><span class="badge badge-amber">P2</span></td><td><span class="badge badge-red">High</span></td><td>admin.js, parent.js</td><td>Admin, Parent</td></tr>
+        <tr><td>10</td><td>Parent Feedback Tool</td><td><span class="badge badge-amber">P2</span></td><td><span class="badge badge-green">Low</span></td><td>parent.js, admin.js</td><td>Parent, Admin</td></tr>
+        <tr><td>11</td><td>Communication Diary</td><td><span class="badge badge-amber">P2</span></td><td><span class="badge badge-amber">Medium</span></td><td>teacher.js, parent.js</td><td>Teacher, Parent</td></tr>
+        <tr><td>12</td><td>Formative Assessment</td><td><span class="badge badge-amber">P2</span></td><td><span class="badge badge-amber">Medium</span></td><td>teacher.js, student.js</td><td>Teacher, Student, Admin</td></tr>
+        <tr><td>13</td><td>Health / Sickbay</td><td><span class="badge badge-amber">P2</span></td><td><span class="badge badge-amber">Medium</span></td><td>admin.js</td><td>Admin, Parent</td></tr>
+        <tr><td>14</td><td>Inventory Management</td><td><span class="badge badge-amber">P2</span></td><td><span class="badge badge-amber">Medium</span></td><td>admin.js</td><td>Admin</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ PHASE 1 ══ -->
+<div class="page page-break">
+  <div class="section-label">Phase 1 — Weeks 1–4</div>
+  <div class="section-title">Core Content &amp; Communication Layer</div>
+  <p class="section-intro">These six modules directly impact daily usage by students, parents, and teachers. They unlock the content and communication layer that is currently CASPAA's biggest gap versus EDVES.</p>
+
+  <div class="phase-header ph-p1">
+    <div class="phase-badge pb-p1">Phase 1</div>
+    <div class="phase-header-text">
+      <h3>6 Modules · Estimated 3–4 Weeks</h3>
+      <p>Focus: high-visibility, daily-use features that close the learning content gap immediately.</p>
+    </div>
+  </div>
+
+  <!-- ── MODULE 1: EVENT CALENDAR ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-red">📅</div>
+      <div>
+        <div class="module-title">1. Event Calendar</div>
+        <div class="module-subtitle">School-wide events visible across all roles</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-medium">Medium Effort</span>
+        <span class="tag tag-role">All Roles</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Data &amp; Backend</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Add Events table to DB</strong>
+              <span>Fields: id, schoolId, title, description, date, endDate, type (holiday/exam/sports/meeting/other), targetAudience (all/students/parents/teachers), createdBy.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Seed sample events</strong>
+              <span>Mid-term break, PTA meeting, Sports Day, End-of-term exams, Prize Giving Day — covers current academic term.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Compute upcoming events</strong>
+              <span>Add COMPUTE.upcomingEvents(userId) — returns next 5 events relevant to the user's role.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">UI &amp; Views</div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Admin: Create &amp; manage events</strong>
+              <span>New view view_adm_calendar — month grid + list toggle. Add/Edit/Delete events with audience targeting and color-coded types.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>Teacher &amp; Parent: Read-only calendar</strong>
+              <span>Add "Calendar" to teacher and parent menus. Month view with clickable events showing detail panel.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <strong>Dashboard widgets</strong>
+              <span>Add "Upcoming Events" card to Admin, Teacher, Parent, and Student dashboards showing next 3 events.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tech-box">
+        <div class="tech-box-label">Technical Notes</div>
+        <ul>
+          <li>Month grid: use a pure CSS grid (7 columns) populated by JS — no external calendar library needed.</li>
+          <li>Color-code event types: holiday = red, exam = amber, sports = green, meeting = blue.</li>
+          <li>Re-use existing modal pattern for Create/Edit event form.</li>
+        </ul>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-admin">Admin (Create)</span>
+        <span class="role-chip rc-teacher">Teacher (View)</span>
+        <span class="role-chip rc-parent">Parent (View)</span>
+        <span class="role-chip rc-student">Student (View)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODULE 2: BULK SMS & EMAIL ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-red">📱</div>
+      <div>
+        <div class="module-title">2. Bulk SMS &amp; Email Notifications</div>
+        <div class="module-subtitle">Critical communication channel for Nigerian schools</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-medium">Medium Effort</span>
+        <span class="tag tag-role">Admin · Finance</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Infrastructure</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Integrate SMS provider</strong>
+              <span>Integrate Africa's Talking or Termii API. Store API key in school settings. Track SMS units consumed per school.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Integrate Email provider</strong>
+              <span>Use Resend or SendGrid. Each school gets a sending identity (e.g. noreply@schoolname.caspaa.ng).</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Add SMSLog &amp; EmailLog tables</strong>
+              <span>Fields: id, schoolId, sentBy, recipients (count), message, channel, status, sentAt. Track delivery status.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">UI &amp; Views</div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Admin: SMS Compose view</strong>
+              <span>New view view_adm_sms — choose audience (All Parents / All Teachers / Specific Class), compose message, see character count &amp; unit cost, send &amp; confirm.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>SMS Log history</strong>
+              <span>Table of past sends: audience, message preview, units used, delivery rate, timestamp.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <strong>Auto-triggers</strong>
+              <span>Trigger SMS on: invoice generated, payment received, new announcement, exam results published, event reminder.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tech-box">
+        <div class="tech-box-label">Technical Notes</div>
+        <ul>
+          <li>Numbers on DND (Do Not Disturb) consume more SMS units — warn admin in UI (already noted in EDVES pricing as a caveat).</li>
+          <li>Store remaining SMS balance in school settings; deduct on send; alert when balance &lt; 50 units.</li>
+          <li>For demo mode: simulate API call with a 1.5s delay and mock success response.</li>
+        </ul>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-admin">Admin (Send)</span>
+        <span class="role-chip rc-finance">Finance (Fee alerts)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODULE 3: CLASS NOTES ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-green">📝</div>
+      <div>
+        <div class="module-title">3. Class Notes</div>
+        <div class="module-subtitle">Teachers post notes; students access them in the learning portal</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-low">Low Effort</span>
+        <span class="tag tag-role">Teacher · Student</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Data &amp; Backend</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Add ClassNotes table</strong>
+              <span>Fields: id, schoolId, classId, subjectId, teacherId, title, content (rich text), attachmentUrl, term, week, createdAt, updatedAt.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Add NoteViews table</strong>
+              <span>Track which students have read each note: noteId, studentId, viewedAt. Used for teacher analytics.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">UI &amp; Views</div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Teacher: Post &amp; manage notes</strong>
+              <span>Add "Notes" tab to tch_lessons. Create note form: title, subject, class, content (textarea with formatting), optional file attach. List with edit/delete.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Student: Browse notes</strong>
+              <span>In stu_learning, add "Class Notes" tab. Filter by subject. Card list showing title, teacher, date, "New" badge if unread. Open to read full note. Mark as read on open.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>Dashboard nudge</strong>
+              <span>Student dashboard shows "X new notes this week" widget. Teacher dashboard shows note read rate per class.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-teacher">Teacher (Create)</span>
+        <span class="role-chip rc-student">Student (Read)</span>
+        <span class="role-chip rc-admin">Admin (View all)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODULE 4: VIDEO LESSONS ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-red">🎬</div>
+      <div>
+        <div class="module-title">4. Video Lessons</div>
+        <div class="module-subtitle">Embed video content per subject for student self-study</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-low">Low Effort</span>
+        <span class="tag tag-role">Teacher · Student</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Data &amp; Backend</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Add Videos table</strong>
+              <span>Fields: id, schoolId, classId, subjectId, teacherId, title, description, videoUrl (YouTube/Vimeo/upload), thumbnailUrl, duration, term, week, createdAt.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>URL parser utility</strong>
+              <span>Helper that detects YouTube/Vimeo links and auto-generates embed URLs and thumbnails from the video ID.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">UI &amp; Views</div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Teacher: Upload/link videos</strong>
+              <span>Add "Videos" tab to tch_lessons. Post form: title, subject, class, paste YouTube/Vimeo URL or upload file, description. Preview thumbnail auto-loads.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Student: Video library</strong>
+              <span>In stu_learning, add "Video Lessons" tab. Grid of video cards with thumbnail, title, subject, teacher, duration. Click opens inline player (iframe embed).</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>Watch progress tracking</strong>
+              <span>On video open, log VideoView record. Student dashboard shows "Continue Watching" row for incomplete videos.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-teacher">Teacher (Post)</span>
+        <span class="role-chip rc-student">Student (Watch)</span>
+        <span class="role-chip rc-parent">Parent (View list)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODULE 5: PhET SIMULATIONS ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-green">⚗️</div>
+      <div>
+        <div class="module-title">5. Maths &amp; Science Simulations (PhET)</div>
+        <div class="module-subtitle">Embed free PhET interactive simulations — a key EDVES selling point</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-low">Low Effort</span>
+        <span class="tag tag-role">Student · Teacher</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Data &amp; Setup</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Create SimulationCatalog</strong>
+              <span>Static JS array of 30–50 curated PhET simulations: { id, name, subject, topic, gradeLevel, embedUrl, thumbnailUrl, description }. PhET is free, open source, no API key needed.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Cover Maths &amp; Sciences</strong>
+              <span>Include: Build an Atom, Wave on a String, Projectile Motion, Ohm's Law, Fraction Matcher, Area Builder, Balancing Chemical Equations, etc.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">UI &amp; Views</div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Student: Simulations library</strong>
+              <span>New tab "Simulations" in stu_learning. Filter by subject (Maths / Physics / Chemistry / Biology). Card grid: thumbnail, name, topic, "Launch" button.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Simulation player</strong>
+              <span>Full-screen modal with PhET simulation in an iframe (PhET provides embed-ready URLs). No API key required.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>Teacher: Assign simulations</strong>
+              <span>Teacher can "assign" a simulation to a class for a lesson — appears in student's dashboard as "Simulation this week".</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tech-box">
+        <div class="tech-box-label">Technical Notes</div>
+        <ul>
+          <li>PhET simulations at phet.colorado.edu are free, open source, and embeddable without authentication.</li>
+          <li>Use the direct simulation HTML embed URLs — no dependency on external API.</li>
+          <li>HTML5 sims work on tablets and mobile; older Java sims require desktop — only catalogue HTML5 ones.</li>
+        </ul>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-student">Student (Launch)</span>
+        <span class="role-chip rc-teacher">Teacher (Assign)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODULE 6: PAYMENT GATEWAY ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-red">💳</div>
+      <div>
+        <div class="module-title">6. Online Payment Gateway</div>
+        <div class="module-subtitle">Connect fee payments to Paystack or Flutterwave</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-high">High Effort</span>
+        <span class="tag tag-role">Parent · Finance</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Integration Steps</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Add payment provider config to School Settings</strong>
+              <span>Admin enters Paystack/Flutterwave public key and secret key. Stored in school settings. Test mode toggle for sandbox.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Implement "Pay Now" flow (Parent)</strong>
+              <span>Parent clicks "Pay Now" on invoice → Paystack popup/redirect opens with invoice amount pre-filled → on success, callback fires.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Payment verification backend</strong>
+              <span>On callback, verify transaction reference with Paystack API. Only mark payment as successful after server-side verification.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">Post-Payment Flow</div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Auto-create Transaction record</strong>
+              <span>On verified success: create Transaction with method=Card, amount, invoiceId, reference, status=Completed. Update invoice balance.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>Send receipt SMS &amp; email</strong>
+              <span>Auto-trigger SMS + email to parent with payment confirmation and receipt number. CC finance officer.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <strong>Finance dashboard update</strong>
+              <span>Online payments appear in fin_payments with a "Card" badge. Reconciliation queue auto-marks these as verified (no manual step needed).</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tech-box">
+        <div class="tech-box-label">Technical Notes</div>
+        <ul>
+          <li>Use Paystack's inline JS for popup mode — no redirect, better UX.</li>
+          <li>Paystack charges 1.5% per transaction (capped at ₦2,000) — make this visible to parents before payment, as noted in EDVES pricing.</li>
+          <li>Store transaction reference in Transactions table for reconciliation and dispute resolution.</li>
+        </ul>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-parent">Parent (Pay)</span>
+        <span class="role-chip rc-finance">Finance (Receive)</span>
+        <span class="role-chip rc-admin">Admin (Configure)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ PHASE 2 ══ -->
+<div class="page page-break">
+  <div class="section-label">Phase 2 — Weeks 5–10</div>
+  <div class="section-title">Operational &amp; Engagement Modules</div>
+  <p class="section-intro">Eight modules that complete CASPAA's operational coverage and deepen parent/teacher engagement. Several are quick wins built on existing data.</p>
+
+  <div class="phase-header ph-p2">
+    <div class="phase-badge pb-p2">Phase 2</div>
+    <div class="phase-header-text">
+      <h3>8 Modules · Estimated 5–6 Weeks</h3>
+      <p>Focus: operational completeness, parent satisfaction, and teacher tools that increase daily platform usage.</p>
+    </div>
+  </div>
+
+  <!-- ── MODULE 7: HOUSE POINT SYSTEM ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-amber">🏆</div>
+      <div>
+        <div class="module-title">7. House Point System (Pastoral Care)</div>
+        <div class="module-subtitle">Dedicated module surfacing behavior rewards as a school-wide leaderboard</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-low">Low Effort</span>
+        <span class="tag tag-role">All Roles</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Data &amp; Setup</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Add Houses table</strong>
+              <span>Fields: id, schoolId, name (e.g. "Red House", "Blue House"), color, emblem. Admin creates and assigns students to houses.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Add HousePoints table</strong>
+              <span>Fields: id, houseId, studentId, points, reason, awardedBy, awardedAt. Build on existing Discipline table or keep separate.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>COMPUTE.houseLeaderboard(schoolId)</strong>
+              <span>Aggregate house points by house, return sorted leaderboard with house name, total points, leading student.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">UI &amp; Views</div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Admin: Manage houses &amp; award points</strong>
+              <span>New view view_adm_houses. Create/edit houses, assign students, award bulk points for school events (sports day, debate).</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>Teacher: Award individual points</strong>
+              <span>In tch_classes view, "Award House Point" button per student. Select reason from dropdown (Excellent work / Conduct / Participation).</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <strong>Student &amp; Parent: Leaderboard view</strong>
+              <span>House leaderboard widget on student dashboard. Parent sees child's house, points earned this term, rank.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-admin">Admin</span>
+        <span class="role-chip rc-teacher">Teacher</span>
+        <span class="role-chip rc-student">Student</span>
+        <span class="role-chip rc-parent">Parent</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODULE 8: TEACHER PAYSLIP ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-green">💰</div>
+      <div>
+        <div class="module-title">8. Teacher Payslip (Self-View)</div>
+        <div class="module-subtitle">Teachers access their own monthly payslip — data already exists in payroll</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-low">Low Effort — Quick Win</span>
+        <span class="tag tag-role">Teacher</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Implementation Steps</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Add "Payslip" to teacher menu</strong>
+              <span>New view view_tch_payslip. Pull current teacher's payroll records from existing Payroll/Salary data in DB.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Payslip card layout</strong>
+              <span>Term/month selector at top. Show: Gross Salary, Deductions breakdown (tax, pension, etc.), Net Pay, Bank Account, Payment Date, Payment Status. Print-ready format.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Salary advance status</strong>
+              <span>If teacher has a pending salary advance, show it on the payslip with status (Pending/Approved/Deducted).</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>PDF download</strong>
+              <span>Print/PDF button using window.print() with a payslip-specific print stylesheet. No external PDF library needed.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">Access Control</div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>Privacy: own data only</strong>
+              <span>Teacher can only see their own payslip. Query must filter by session.userId to prevent accidental data leaks.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <strong>Finance: Payslip history</strong>
+              <span>Finance officer can view/download payslips for any staff from fin_payroll. Existing payroll view — just add "View Payslip" action per row.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-teacher">Teacher (Own only)</span>
+        <span class="role-chip rc-finance">Finance (All staff)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODULE 9: TRANSPORT MANAGEMENT ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-amber">🚌</div>
+      <div>
+        <div class="module-title">9. Transport Management &amp; Secure Pickup</div>
+        <div class="module-subtitle">School bus routes, driver records, and approved pickup persons per child</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-high">High Effort</span>
+        <span class="tag tag-role">Admin · Parent</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Data Schema</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Add Buses table</strong>
+              <span>Fields: id, schoolId, plateNumber, capacity, driverName, driverPhone, route, status (Active/Maintenance).</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Add Routes table</strong>
+              <span>Fields: id, schoolId, name, stops (JSON array of {name, time}), busId. Students are assigned to routes.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Add PickupPersons table</strong>
+              <span>Fields: id, studentId, name, relationship, phone, photo, isDefault. Parent registers who can collect their child.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">UI &amp; Views</div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Admin: Manage buses &amp; routes</strong>
+              <span>New view view_adm_transport. Add buses, define routes and stops, assign students to routes, view daily boarding manifest.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>Parent: Register pickup persons</strong>
+              <span>In par_children, "Authorized Pickup" tab. Add persons with photo, name, relationship. Max 3 per child. Admin can verify.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <strong>Parent: Bus tracker</strong>
+              <span>View child's bus route and expected arrival time at each stop. "Bus En Route" status alert (manual trigger by admin).</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-admin">Admin (Manage)</span>
+        <span class="role-chip rc-parent">Parent (Register pickup / Track bus)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODULE 10: PARENT FEEDBACK ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-amber">📊</div>
+      <div>
+        <div class="module-title">10. Parent Feedback Tool</div>
+        <div class="module-subtitle">Structured school satisfaction surveys and per-teacher ratings</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-low">Low Effort</span>
+        <span class="tag tag-role">Parent · Admin</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Data &amp; Setup</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Add FeedbackForms table</strong>
+              <span>Fields: id, schoolId, title, questions (JSON array: {question, type: rating/text/yesno}), targetTerm, status, createdAt.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Add FeedbackResponses table</strong>
+              <span>Fields: id, formId, parentId, answers (JSON), submittedAt. Responses are anonymous to teachers but visible to admin.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">UI &amp; Views</div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Admin: Create &amp; publish feedback forms</strong>
+              <span>New view view_adm_feedback. Build form with drag-and-drop questions. Publish with deadline. View aggregate results (charts + word cloud).</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Parent: Complete feedback</strong>
+              <span>New "Feedback" item in parent menu. Shows active forms with deadline. Star ratings, text fields. Submit once per form per child.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>Parent dashboard nudge</strong>
+              <span>Alert card: "Term feedback form is open — share your opinion" with link to form. Disappears after submission.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-parent">Parent (Submit)</span>
+        <span class="role-chip rc-admin">Admin (Create / Analyze)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODULE 11: COMMUNICATION DIARY ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-purple">📔</div>
+      <div>
+        <div class="module-title">11. Communication Diary</div>
+        <div class="module-subtitle">Structured daily teacher ↔ parent notes with read receipts</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-medium">Medium Effort</span>
+        <span class="tag tag-role">Teacher · Parent</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Data Schema</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Add DiaryEntries table</strong>
+              <span>Fields: id, studentId, teacherId, date, note (text), category (Homework/Behaviour/Health/General), readByParent, readAt, parentReply, replyAt.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Distinguish from Messaging</strong>
+              <span>Diary is structured, per-student, per-day entries — not free-form chat. Messaging is open-ended. Both coexist.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">UI &amp; Views</div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Teacher: Write diary entries</strong>
+              <span>In tch_classes, "Diary" tab per class. Select student, date, category, write note. See unread count badge per student.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Parent: Read &amp; reply</strong>
+              <span>New "Diary" section in parent portal. Per-child feed of diary entries, newest first. Tap to expand, reply inline. Read receipt updates on open.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>SMS alert on new diary entry</strong>
+              <span>Trigger SMS to parent: "New diary note from Mrs. Adaeze for Tobi — log in to read and reply." Uses Bulk SMS module.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-teacher">Teacher (Write)</span>
+        <span class="role-chip rc-parent">Parent (Read &amp; Reply)</span>
+        <span class="role-chip rc-admin">Admin (View all)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODULE 12: FORMATIVE ASSESSMENT ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-blue">📋</div>
+      <div>
+        <div class="module-title">12. Formative Assessment</div>
+        <div class="module-subtitle">In-class ongoing quizzes and scoring, distinct from end-of-term CBT</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-medium">Medium Effort</span>
+        <span class="tag tag-role">Teacher · Student</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Data Schema</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Add FormativeAssessments table</strong>
+              <span>Fields: id, classId, subjectId, teacherId, title, type (ClassTest/Quiz/Oral/Project), maxScore, term, week, date.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Add FormativeScores table</strong>
+              <span>Fields: id, assessmentId, studentId, score, remarks, gradedAt. Distinct from CBTSubmissions (those are computer-graded).</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">UI &amp; Views</div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Teacher: Create &amp; score</strong>
+              <span>New "Formative" tab in tch_results. Create assessment (type, max score). Then enter scores per student in a spreadsheet-style row view.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Student: View formative scores</strong>
+              <span>In stu_results, add "Assessments" tab showing all formative scores by week, with class average for comparison.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>Include in terminal report</strong>
+              <span>Formative scores contribute to cumulative CA (Continuous Assessment) score visible on the end-of-term report card.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-teacher">Teacher (Create &amp; Score)</span>
+        <span class="role-chip rc-student">Student (View)</span>
+        <span class="role-chip rc-admin">Admin (Overview)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODULE 13: HEALTH / SICKBAY ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-red">🏥</div>
+      <div>
+        <div class="module-title">13. Health Management / Sickbay</div>
+        <div class="module-subtitle">Complete the existing stub: student health records and incident tracking</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-medium">Medium Effort</span>
+        <span class="tag tag-role">Admin · Parent</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Data Schema</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Add HealthProfiles table</strong>
+              <span>Fields: id, studentId, bloodGroup, allergies (array), conditions (array), emergencyContact, doctorName, doctorPhone, vaccinations (array).</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Add SickbayVisits table</strong>
+              <span>Fields: id, studentId, dateIn, dateOut, complaint, treatment, medications, referredOut (bool), attendedBy, parentNotified, parentNotifiedAt.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">UI &amp; Views</div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Admin: Sickbay log</strong>
+              <span>Complete view_adm_sickbay stub. Check student in, record complaint and treatment, check out. View today's visits and history.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Parent notification on visit</strong>
+              <span>On sickbay check-in, auto-send SMS to parent: "Your child [Name] visited the sickbay at [time]. Complaint: [brief]. Contact: [school number]."</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>Parent: View health record</strong>
+              <span>In par_children, add "Health" tab showing child's health profile and sickbay visit history. Parent can update health profile.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-admin">Admin (Log visits)</span>
+        <span class="role-chip rc-parent">Parent (View + Update profile)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODULE 14: INVENTORY ── -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-icon icon-amber">📦</div>
+      <div>
+        <div class="module-title">14. Inventory Management</div>
+        <div class="module-subtitle">Complete the existing stub: items, stock levels, and issue tracking</div>
+      </div>
+      <div class="module-tags">
+        <span class="tag tag-effort-medium">Medium Effort</span>
+        <span class="tag tag-role">Admin</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="steps-grid">
+        <div>
+          <div class="steps-col-label">Data Schema</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Add InventoryItems table</strong>
+              <span>Fields: id, schoolId, name, category (Furniture/Electronics/Stationery/Equipment/Uniforms), quantity, unit, reorderLevel, location, lastUpdated.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Add InventoryTransactions table</strong>
+              <span>Fields: id, itemId, type (Stock-In/Issue/Return/Write-Off), quantity, issuedTo, notes, recordedBy, date.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="steps-col-label">UI &amp; Views</div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Admin: Item catalogue</strong>
+              <span>Complete view_adm_inventory. Table of all items with current stock. Color-coded: red if below reorder level. Quick-add restock button.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Issue &amp; return flow</strong>
+              <span>Issue item to staff/student: deducts from stock, logs transaction with recipient. Return: adds back to stock. All changes audit-logged.</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>Low stock alerts</strong>
+              <span>Dashboard alert card: "3 items below reorder level" linking to inventory view. Admin dashboard shows inventory health widget.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="roles-row">
+        <span class="roles-row-label">Roles:</span>
+        <span class="role-chip rc-admin">Admin (Full access)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ PHASE 3 NOTE ══ -->
+<div class="page page-break">
+  <div class="section-label">Phase 3 — Weeks 11–16+</div>
+  <div class="section-title">Strategic &amp; AI Differentiation</div>
+  <p class="section-intro">Phase 3 modules require deeper engineering investment or third-party integrations. They are the long-term differentiation layer — plan now, build after Phase 1 &amp; 2 are stable.</p>
+
+  <div class="phase-header ph-p3">
+    <div class="phase-badge pb-p3">Phase 3</div>
+    <div class="phase-header-text">
+      <h3>6 Modules · Weeks 11–16+</h3>
+      <p>Focus: AI integration, live learning infrastructure, multi-curriculum support, and offline capability.</p>
+    </div>
+  </div>
+
+  <table class="summary-table" style="margin-bottom:36px;">
+    <thead>
+      <tr>
+        <th>Module</th>
+        <th>What It Involves</th>
+        <th>Why It Matters</th>
+        <th>Estimated Effort</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Virtual Classroom</strong></td>
+        <td>Embed Jitsi Meet or Zoom SDK for live classes. Schedule sessions linked to timetable. Teacher starts, students join from portal.</td>
+        <td>EDVES has this. Needed for hybrid/remote school models which are growing post-COVID.</td>
+        <td><span class="badge badge-amber">4–6 weeks</span></td>
+      </tr>
+      <tr>
+        <td><strong>AI Grading &amp; Question Generation</strong></td>
+        <td>Integrate Claude API. Teacher selects lesson note → AI suggests 10 CBT questions. AI also marks short-answer questions with justification.</td>
+        <td>Reduces teacher workload by 40%. Clear differentiator vs. EDVES's current AI features.</td>
+        <td><span class="badge badge-red">6–8 weeks</span></td>
+      </tr>
+      <tr>
+        <td><strong>Student Performance Prediction</strong></td>
+        <td>ML model (or rule-based heuristic) flagging students at risk based on: declining attendance, falling grades, missed assignments. Alert shown to teacher and admin.</td>
+        <td>Early intervention tool. Schools pay premium for this insight. EDVES highlights it prominently.</td>
+        <td><span class="badge badge-red">6–8 weeks</span></td>
+      </tr>
+      <tr>
+        <td><strong>Hostel Management</strong></td>
+        <td>Boarding schools only. Rooms, bedspace assignment, check-in/out records, meals schedule, lights-out tracking, parent visit authorization.</td>
+        <td>Unlocks boarding school market. Currently zero boarding school support in CASPAA.</td>
+        <td><span class="badge badge-amber">4–5 weeks</span></td>
+      </tr>
+      <tr>
+        <td><strong>Multi-Curriculum Support</strong></td>
+        <td>Tag lessons, notes, and assessments with curriculum standard (NERDC / Cambridge / IGCSE / IB). Allow school to set default curriculum. Filter analytics by curriculum compliance.</td>
+        <td>Required for international schools and premium market segment. EDVES's Cambridge/IGCSE support is a key differentiator in Lagos Island schools.</td>
+        <td><span class="badge badge-amber">3–4 weeks</span></td>
+      </tr>
+      <tr>
+        <td><strong>Offline CBT</strong></td>
+        <td>Service Worker + IndexedDB to cache exam questions. Students take exam offline; answers sync when connection restored. Tamper-proof with exam session token.</td>
+        <td>Critical for schools in areas with unreliable internet. EDVES supports this; it blocks adoption in rural and peri-urban schools.</td>
+        <td><span class="badge badge-red">6–8 weeks</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="divider" />
+
+  <div class="section">
+    <div class="section-label">Appendix — Dependency Map</div>
+    <div class="section-title">Build Order Dependencies</div>
+    <p class="section-intro">Some modules depend on others being built first. Follow this order to avoid rework.</p>
+    <div style="background:#fff;border-radius:12px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+      <div class="step" style="margin-bottom:20px;">
+        <div class="step-num" style="background:#dc2626;">1</div>
+        <div class="step-content">
+          <strong>Bulk SMS &amp; Email must come first</strong>
+          <span>Communication Diary (Module 11), Health/Sickbay (13), Transport (9), and Payment Gateway (6) all depend on SMS/Email to send alerts. Build this before those modules.</span>
+        </div>
+      </div>
+      <div class="step" style="margin-bottom:20px;">
+        <div class="step-num" style="background:#dc2626;">2</div>
+        <div class="step-content">
+          <strong>Class Notes before Video Lessons</strong>
+          <span>Both live in stu_learning. Build the Notes tab structure first, then Video Lessons tab slots in alongside it. Shared learning hub UX is established once.</span>
+        </div>
+      </div>
+      <div class="step" style="margin-bottom:20px;">
+        <div class="step-num" style="background:#d97706;">3</div>
+        <div class="step-content">
+          <strong>Formative Assessment before Multi-Curriculum (P3)</strong>
+          <span>Formative Assessment data model (week-based scoring) becomes the foundation for curriculum-tagged assessment in Phase 3.</span>
+        </div>
+      </div>
+      <div class="step" style="margin-bottom:20px;">
+        <div class="step-num" style="background:#d97706;">4</div>
+        <div class="step-content">
+          <strong>House Point System can be built independently</strong>
+          <span>No dependencies on other new modules. Safe to start any time in Phase 2 in parallel with other work.</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:#1d4ed8;">5</div>
+        <div class="step-content">
+          <strong>AI features (P3) depend on Class Notes and Results data</strong>
+          <span>AI question generation reads from existing ClassNotes content. Performance prediction reads from Results + Attendance — both of which must be populated with real data first.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<div class="footer">
+  <strong>CASPAA</strong> — School Operating System &nbsp;|&nbsp; Implementation Roadmap v1.0 &nbsp;|&nbsp;
+  June 2026 &nbsp;|&nbsp; Engineering &amp; Product Team &nbsp;|&nbsp; Internal Use
+</div>
+
+</body>
+</html>

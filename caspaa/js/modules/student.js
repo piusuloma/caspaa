@@ -134,37 +134,198 @@ function view_stu_dashboard() {
 /* ============================================================
    2. LEARNING (LMS)
    ============================================================ */
-function view_stu_learning() {
-  const s = me();
-  const materials = DB.query('learningMaterials', m => m.classId === s.classId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  // group by subject
-  const bySubject = {};
-  materials.forEach(m => { (bySubject[m.subjectId] = bySubject[m.subjectId] || []).push(m); });
+const PHET_SIMS = [
+  { id: 'wave-on-a-string',    name: 'Wave on a String',       subject: 'Physics',     desc: 'Explore how waves travel along a string and how frequency, amplitude and tension interact.' },
+  { id: 'projectile-motion',   name: 'Projectile Motion',      subject: 'Physics',     desc: 'Fire cannonballs and explore how angle, speed, and gravity affect trajectory.' },
+  { id: 'ohms-law',            name: "Ohm's Law",              subject: 'Physics',     desc: 'Discover the relationship between voltage, current, and resistance.' },
+  { id: 'circuit-construction-kit-dc', name: 'Circuit Builder', subject: 'Physics',   desc: 'Build circuits using batteries, resistors, switches, and bulbs.' },
+  { id: 'masses-and-springs',  name: 'Masses & Springs',       subject: 'Physics',     desc: 'Hang masses from springs and investigate how spring constant and mass affect oscillation.' },
+  { id: 'build-an-atom',       name: 'Build an Atom',          subject: 'Chemistry',   desc: 'Construct atoms from protons, neutrons, and electrons. See how the periodic table connects.' },
+  { id: 'states-of-matter',    name: 'States of Matter',       subject: 'Chemistry',   desc: 'See atoms and molecules as a solid, liquid, and gas. Add or remove heat and watch what happens.' },
+  { id: 'acid-base-solutions', name: 'Acid-Base Solutions',    subject: 'Chemistry',   desc: 'Test the pH of household chemicals and see why some solutions are acidic or basic.' },
+  { id: 'concentration',       name: 'Concentration',          subject: 'Chemistry',   desc: 'Add solutes to water and observe how concentration changes as you add or remove particles.' },
+  { id: 'natural-selection',   name: 'Natural Selection',      subject: 'Biology',     desc: 'Evolve a population of bunnies and observe how environment drives natural selection.' },
+  { id: 'membrane-channels',   name: 'Membrane Channels',      subject: 'Biology',     desc: 'Explore how molecules move through membranes via diffusion and active transport.' },
+  { id: 'area-builder',        name: 'Area Builder',           subject: 'Mathematics', desc: 'Build shapes and see how area and perimeter relate. Great for geometry practice.' },
+  { id: 'fraction-matcher',    name: 'Fraction Matcher',       subject: 'Mathematics', desc: 'Match fractions to shapes, decimals, and percentages to build deep fraction sense.' },
+  { id: 'graphing-lines',      name: 'Graphing Lines',         subject: 'Mathematics', desc: 'Explore how slope and y-intercept affect the appearance of a linear equation.' },
+  { id: 'equality-explorer',   name: 'Equality Explorer',      subject: 'Mathematics', desc: 'Balance scales using objects and variables to build intuition for equations.' },
+  { id: 'number-line-integers',name: 'Number Line — Integers', subject: 'Mathematics', desc: 'Use a number line to add and subtract positive and negative numbers.' }
+];
 
-  return `
-    ${pageHeader({ title: 'Learning Materials', subtitle: 'Notes, videos and resources from your teachers' })}
-    ${materials.length === 0 ? emptyState({ title: 'No materials yet', body: 'Your teachers will post notes and videos here.', icon: 'book' }) : `
-      <div class="space-y-5">
-        ${Object.keys(bySubject).map(subId => `
-          <div>
-            <h3 class="font-bold text-slate-700 mb-2">${subjName(subId)}</h3>
-            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              ${bySubject[subId].map(m => `<div class="card p-4">
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="w-9 h-9 rounded-lg ${m.type === 'video' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'} flex items-center justify-center">${icon(m.type === 'video' ? 'classes' : 'book', 'w-5 h-5')}</span>
-                  <span class="badge ${m.type === 'video' ? 'badge-danger' : 'badge-info'}">${m.type === 'video' ? 'Video' : 'Note'}</span>
+function view_stu_learning(params) {
+  const s = me();
+  const tab = (params && params.tab) || 'notes';
+  const tabBar = `<div class="flex gap-1 mb-5 border-b border-slate-200 overflow-x-auto">
+    ${[['notes','Notes'],['videos','Videos'],['sims','Simulations']].map(([k,l]) =>
+      `<button onclick="APP.go('stu_learning',{tab:'${k}'})" class="whitespace-nowrap px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab===k?'border-brand-600 text-brand-700':'border-transparent text-slate-500 hover:text-slate-700'}">${l}</button>`
+    ).join('')}
+  </div>`;
+
+  if (tab === 'notes') {
+    const notes = DB.query('learningMaterials', m => m.classId === s.classId && m.type === 'note')
+                    .sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+    return `
+      ${pageHeader({ title: 'Learning Hub', subtitle: 'Notes, videos and simulations from your teachers' })}
+      ${tabBar}
+      ${notes.length === 0 ? emptyState({ title: 'No notes yet', body: 'Your teachers will post class notes here. Check back soon.', icon: 'book' }) : `
+        <div class="space-y-3">
+          ${notes.map(m => {
+            const viewed = DB.query('materialViews', v => v.materialId === m.id && v.studentId === s.id).length > 0;
+            return `<div class="card p-4 ${viewed ? '' : 'border-l-4 border-brand-400'}">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <span class="badge badge-neutral">${subjName(m.subjectId)}</span>
+                    ${m.week ? `<span class="badge badge-success">${m.week}</span>` : ''}
+                    ${viewed ? '' : '<span class="badge badge-info">NEW</span>'}
+                  </div>
+                  <h3 class="font-bold text-slate-900">${m.title}</h3>
+                  ${m.description ? `<p class="text-sm text-slate-500 mt-1">${m.description}</p>` : ''}
+                  <div class="text-xs text-slate-400 mt-1">${teacherName(m.teacherId)} · ${fdate(m.createdAt, { short: true })}</div>
                 </div>
-                <h4 class="font-bold text-slate-900 text-sm mb-1">${m.title}</h4>
-                <p class="text-xs text-slate-500 line-clamp-2 mb-3">${m.description || ''}</p>
-                <div class="text-xs text-slate-400 mb-3">${teacherName(m.teacherId)} · ${fdate(m.createdAt, { short: true })}</div>
-                <button class="btn btn-secondary w-full text-sm" onclick="stu_openMaterial('${m.id}')">${icon(m.type === 'video' ? 'classes' : 'download', 'w-4 h-4')} ${m.type === 'video' ? 'Watch' : 'Open'}</button>
-              </div>`).join('')}
-            </div>
+                <button class="btn btn-primary text-sm flex-shrink-0" onclick="stu_openNote('${m.id}')">${icon('book','w-4 h-4')} Read</button>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      `}
+    `;
+  }
+
+  if (tab === 'videos') {
+    const videos = DB.query('learningMaterials', m => m.classId === s.classId && m.type === 'video')
+                     .sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+    return `
+      ${pageHeader({ title: 'Learning Hub', subtitle: 'Video lessons from your teachers' })}
+      ${tabBar}
+      ${videos.length === 0 ? emptyState({ title: 'No videos yet', body: 'Your teachers will post video lessons here.', icon: 'classes' }) : `
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${videos.map(m => {
+            const ytId = m.url ? m.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/) : null;
+            const videoId = ytId ? ytId[1] : null;
+            const viewed = DB.query('materialViews', v => v.materialId === m.id && v.studentId === s.id).length > 0;
+            return `<div class="card overflow-hidden">
+              <div class="relative bg-black aspect-video cursor-pointer" onclick="stu_watchVideo('${m.id}')">
+                ${videoId ? `<img src="https://img.youtube.com/vi/${videoId}/mqdefault.jpg" class="w-full h-full object-cover opacity-90" onerror="this.style.display='none'">` : ''}
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-lg">${icon('classes','w-6 h-6 text-white')}</div>
+                </div>
+                ${viewed ? '' : '<div class="absolute top-2 right-2 bg-brand-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">NEW</div>'}
+              </div>
+              <div class="p-3">
+                <span class="badge badge-neutral text-xs">${subjName(m.subjectId)}</span>
+                <h4 class="font-bold text-slate-900 text-sm mt-1">${m.title}</h4>
+                ${m.description ? `<p class="text-xs text-slate-500 mt-1 line-clamp-2">${m.description}</p>` : ''}
+                <div class="text-xs text-slate-400 mt-1">${teacherName(m.teacherId)} · ${fdate(m.createdAt, { short: true })}</div>
+                <button class="btn btn-primary w-full text-sm mt-3" onclick="stu_watchVideo('${m.id}')">${icon('classes','w-4 h-4')} Watch Now</button>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      `}
+    `;
+  }
+
+  // tab === 'sims'
+  const filter = (params && params.simFilter) || 'All';
+  const subjects = ['All', 'Mathematics', 'Physics', 'Chemistry', 'Biology'];
+  const filtered = filter === 'All' ? PHET_SIMS : PHET_SIMS.filter(s => s.subject === filter);
+  return `
+    ${pageHeader({ title: 'Learning Hub', subtitle: 'Interactive science and maths simulations' })}
+    ${tabBar}
+    <div class="flex gap-2 mb-4 flex-wrap">
+      ${subjects.map(sub => `<button onclick="APP.go('stu_learning',{tab:'sims',simFilter:'${sub}'})" class="px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors ${filter===sub?'bg-brand-700 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${sub}</button>`).join('')}
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      ${filtered.map(sim => `<div class="card p-4 hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl ${{Physics:'bg-blue-50',Chemistry:'bg-amber-50',Biology:'bg-green-50',Mathematics:'bg-purple-50'}[sim.subject]||'bg-slate-50'}">
+            ${{Physics:'⚡',Chemistry:'🧪',Biology:'🌿',Mathematics:'📐'}[sim.subject]||'🔬'}
           </div>
-        `).join('')}
-      </div>
-    `}
+          <div>
+            <div class="text-xs font-semibold uppercase text-slate-400">${sim.subject}</div>
+            <h4 class="font-bold text-slate-900 text-sm leading-tight">${sim.name}</h4>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 mb-3">${sim.desc}</p>
+        <button class="btn btn-primary w-full text-sm" onclick="stu_launchSim('${sim.id}','${sim.name.replace(/'/g,"\\'")}')">
+          ${icon('classes','w-4 h-4')} Launch Simulation
+        </button>
+      </div>`).join('')}
+    </div>
   `;
+}
+
+function stu_openNote(id) {
+  const m = DB.find('learningMaterials', id);
+  if (!m) return;
+  const s = me();
+  // Mark as read
+  if (!DB.query('materialViews', v => v.materialId === id && v.studentId === s.id).length) {
+    DB.insert('materialViews', { id: uid('mv'), materialId: id, studentId: s.id, viewedAt: now() });
+  }
+  modal({
+    title: m.title,
+    size: 'lg',
+    body: `<div class="space-y-3">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="badge badge-neutral">${subjName(m.subjectId)}</span>
+        ${m.week ? `<span class="badge badge-success">${m.week}</span>` : ''}
+        <span class="text-xs text-slate-400">${teacherName(m.teacherId)} · ${fdate(m.createdAt, { long: true })}</span>
+      </div>
+      ${m.content ? `<div class="bg-slate-50 rounded-xl p-4 text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">${m.content}</div>` : ''}
+      ${m.description && !m.content ? `<p class="text-sm text-slate-700">${m.description}</p>` : ''}
+      ${m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-xl text-sm hover:bg-blue-100 font-semibold text-blue-900">
+        ${icon('download','w-4 h-4 text-blue-600')} Download Attachment — ${m.file.name} (${m.file.size})
+      </a>` : ''}
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+  });
+  APP.render();
+}
+
+function stu_watchVideo(id) {
+  const m = DB.find('learningMaterials', id);
+  if (!m) return;
+  const s = me();
+  if (!DB.query('materialViews', v => v.materialId === id && v.studentId === s.id).length) {
+    DB.insert('materialViews', { id: uid('mv'), materialId: id, studentId: s.id, viewedAt: now() });
+  }
+  const ytMatch = m.url ? m.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/) : null;
+  const ytId = ytMatch ? ytMatch[1] : null;
+  modal({
+    title: m.title,
+    size: 'xl',
+    body: `<div class="rounded-xl overflow-hidden bg-black aspect-video w-full">
+      ${ytId ? `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay"></iframe>`
+             : `<div class="flex items-center justify-center h-full text-white text-sm p-6 text-center">Video unavailable. Your teacher may have posted an incorrect link.<br><a href="${m.url}" target="_blank" class="underline mt-2 block">Try opening directly</a></div>`}
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+  });
+  APP.render();
+}
+
+function stu_launchSim(simId, simName) {
+  const url = `https://phet.colorado.edu/sims/html/${simId}/latest/${simId}_all.html`;
+  modal({
+    title: simName,
+    size: 'xl',
+    body: `<div class="rounded-xl overflow-hidden bg-slate-900" style="height:520px">
+      <iframe src="${url}" width="100%" height="100%" frameborder="0" allowfullscreen
+        onerror="this.outerHTML='<div class=\\'flex items-center justify-center h-full text-white p-6 text-center\\'><div>Unable to load simulation.<br><a href=\\'${url}\\' target=\\'_blank\\' class=\\'underline mt-2 block\\'>Open on PhET website instead</a></div></div>'">
+      </iframe>
+    </div>
+    <p class="text-xs text-slate-400 mt-2 text-center">Simulation provided by <a href="https://phet.colorado.edu" target="_blank" class="underline">PhET Interactive Simulations</a> (University of Colorado Boulder) — free and open-source.</p>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+  });
+}
+
+function stu_openMaterial(id) {
+  const m = DB.find('learningMaterials', id);
+  if (!m) return;
+  if (m.type === 'video') { stu_watchVideo(id); return; }
+  stu_openNote(id);
 }
 
 function stu_openMaterial(id) {

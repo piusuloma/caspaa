@@ -72,16 +72,16 @@ function seedDatabase() {
   ];
 
   const students = [
-    { id: 'stu_001', schoolId, name: 'Chiamaka Okafor', admissionNo: 'BL/2024/001', classId: 'cls_pry3', dob: '2016-04-12', gender: 'F', parentId: 'par_okafor', photo: null, admissionDate: '2024-09-01', bloodGroup: 'O+', status: 'active' },
-    { id: 'stu_002', schoolId, name: 'Tobi Okafor',     admissionNo: 'BL/2024/002', classId: 'cls_jss1', dob: '2013-08-22', gender: 'M', parentId: 'par_okafor', photo: null, admissionDate: '2024-09-01', bloodGroup: 'O+', status: 'active' },
-    { id: 'stu_003', schoolId, name: 'Zainab Bello',    admissionNo: 'BL/2024/003', classId: 'cls_jss2', dob: '2012-02-10', gender: 'F', parentId: 'par_bello',  photo: null, admissionDate: '2023-09-01', bloodGroup: 'A+', status: 'active' },
-    { id: 'stu_004', schoolId, name: 'Yusuf Bello',     admissionNo: 'BL/2024/004', classId: 'cls_pry2', dob: '2017-06-30', gender: 'M', parentId: 'par_bello',  photo: null, admissionDate: '2024-09-01', bloodGroup: 'A+', status: 'active' },
-    { id: 'stu_005', schoolId, name: 'Daniel Eze',      admissionNo: 'BL/2024/005', classId: 'cls_pry1', dob: '2018-11-05', gender: 'M', parentId: 'par_eze',    photo: null, admissionDate: '2024-09-01', bloodGroup: 'B+', status: 'active' },
-    { id: 'stu_006', schoolId, name: 'Ngozi Eze',       admissionNo: 'BL/2024/006', classId: 'cls_pry3', dob: '2016-01-18', gender: 'F', parentId: 'par_eze',    photo: null, admissionDate: '2024-09-01', bloodGroup: 'B+', status: 'active' },
-    { id: 'stu_007', schoolId, name: 'Ibrahim Musa',    admissionNo: 'BL/2024/007', classId: 'cls_nur2', dob: '2020-03-15', gender: 'M', parentId: 'par_musa',   photo: null, admissionDate: '2024-09-01', bloodGroup: 'AB+', status: 'active' },
-    { id: 'stu_008', schoolId, name: 'Fatima Musa',     admissionNo: 'BL/2024/008', classId: 'cls_sss1', dob: '2009-07-09', gender: 'F', parentId: 'par_musa',   photo: null, admissionDate: '2022-09-01', bloodGroup: 'AB+', status: 'active' },
-    { id: 'stu_009', schoolId, name: 'Ade Lawal',       admissionNo: 'BL/2024/009', classId: 'cls_jss1', dob: '2013-12-01', gender: 'M', parentId: 'par_lawal',  photo: null, admissionDate: '2023-09-01', bloodGroup: 'O-', status: 'active' },
-    { id: 'stu_010', schoolId, name: 'Bisi Lawal',      admissionNo: 'BL/2024/010', classId: 'cls_pry2', dob: '2017-09-25', gender: 'F', parentId: 'par_lawal',  photo: null, admissionDate: '2024-09-01', bloodGroup: 'O-', status: 'active' },
+    { id: 'stu_001', schoolId, name: 'Chiamaka Okafor', admissionNo: 'BL/2024/001', classId: 'cls_pry3', dob: '2016-04-12', gender: 'F', parentId: 'par_okafor', photo: null, admissionDate: '2024-09-01', bloodGroup: 'O+', allergies: 'None', status: 'active', houseId: 'house_red' },
+    { id: 'stu_002', schoolId, name: 'Tobi Okafor',     admissionNo: 'BL/2024/002', classId: 'cls_jss1', dob: '2013-08-22', gender: 'M', parentId: 'par_okafor', photo: null, admissionDate: '2024-09-01', bloodGroup: 'O+', allergies: 'Penicillin', status: 'active', houseId: 'house_red' },
+    { id: 'stu_003', schoolId, name: 'Zainab Bello',    admissionNo: 'BL/2024/003', classId: 'cls_jss2', dob: '2012-02-10', gender: 'F', parentId: 'par_bello',  photo: null, admissionDate: '2023-09-01', bloodGroup: 'A+', allergies: 'None', status: 'active', houseId: 'house_blue' },
+    { id: 'stu_004', schoolId, name: 'Yusuf Bello',     admissionNo: 'BL/2024/004', classId: 'cls_pry2', dob: '2017-06-30', gender: 'M', parentId: 'par_bello',  photo: null, admissionDate: '2024-09-01', bloodGroup: 'A+', allergies: 'None', status: 'active', houseId: 'house_blue' },
+    { id: 'stu_005', schoolId, name: 'Daniel Eze',      admissionNo: 'BL/2024/005', classId: 'cls_pry1', dob: '2018-11-05', gender: 'M', parentId: 'par_eze',    photo: null, admissionDate: '2024-09-01', bloodGroup: 'B+', allergies: 'None', status: 'active', houseId: 'house_green' },
+    { id: 'stu_006', schoolId, name: 'Ngozi Eze',       admissionNo: 'BL/2024/006', classId: 'cls_pry3', dob: '2016-01-18', gender: 'F', parentId: 'par_eze',    photo: null, admissionDate: '2024-09-01', bloodGroup: 'B+', allergies: 'None', status: 'active', houseId: 'house_green' },
+    { id: 'stu_007', schoolId, name: 'Ibrahim Musa',    admissionNo: 'BL/2024/007', classId: 'cls_nur2', dob: '2020-03-15', gender: 'M', parentId: 'par_musa',   photo: null, admissionDate: '2024-09-01', bloodGroup: 'AB+', allergies: 'None', status: 'active', houseId: 'house_gold' },
+    { id: 'stu_008', schoolId, name: 'Fatima Musa',     admissionNo: 'BL/2024/008', classId: 'cls_sss1', dob: '2009-07-09', gender: 'F', parentId: 'par_musa',   photo: null, admissionDate: '2022-09-01', bloodGroup: 'AB+', allergies: 'Aspirin', status: 'active', houseId: 'house_gold' },
+    { id: 'stu_009', schoolId, name: 'Ade Lawal',       admissionNo: 'BL/2024/009', classId: 'cls_jss1', dob: '2013-12-01', gender: 'M', parentId: 'par_lawal',  photo: null, admissionDate: '2023-09-01', bloodGroup: 'O-', allergies: 'None', status: 'active', houseId: 'house_red' },
+    { id: 'stu_010', schoolId, name: 'Bisi Lawal',      admissionNo: 'BL/2024/010', classId: 'cls_pry2', dob: '2017-09-25', gender: 'F', parentId: 'par_lawal',  photo: null, admissionDate: '2024-09-01', bloodGroup: 'O-', allergies: 'None', status: 'active', houseId: 'house_blue' },
 
     /* ============ ALUMNI — past graduating cohorts ============ */
     { id: 'stu_alum1', schoolId, name: 'Olamide Sanusi',     admissionNo: 'BL/2019/044', classId: 'cls_sss1', dob: '2006-03-15', gender: 'M', parentId: 'par_okafor', photo: null, admissionDate: '2014-09-01', bloodGroup: 'O+',  status: 'alumni', graduationYear: 2024, finalClass: 'SSS 3', awards: 'Best in Mathematics · Senior Prefect',                graduatedAt: daysAgo(365) },
@@ -1035,6 +1035,163 @@ function seedDatabase() {
     { id: 'ha_005', category: 'Account', question: 'How do I reset the demo data?', answer: 'Click your name (top right) → Reset demo data.' }
   ];
 
+  // ============ HOUSES (inter-house competition) ============
+  const houses = [
+    { id: 'house_red',   schoolId, name: 'Red House',   color: '#ef4444', icon: '🔴', motto: 'Courage and Strength' },
+    { id: 'house_blue',  schoolId, name: 'Blue House',  color: '#3b82f6', icon: '🔵', motto: 'Wisdom and Integrity' },
+    { id: 'house_green', schoolId, name: 'Green House', color: '#22c55e', icon: '🟢', motto: 'Growth and Harmony' },
+    { id: 'house_gold',  schoolId, name: 'Gold House',  color: '#f59e0b', icon: '🟡', motto: 'Excellence and Pride' }
+  ];
+
+  const housePoints = [
+    // Red House points
+    { id: uid('hp'), schoolId, studentId: 'stu_002', houseId: 'house_red', points: 5, reason: 'Excellent Classwork', category: 'Academic', awardedBy: 'tch_adamu', awardedAt: daysAgo(8) },
+    { id: uid('hp'), schoolId, studentId: 'stu_001', houseId: 'house_red', points: 3, reason: 'Helped a classmate during recess', category: 'Community Service', awardedBy: 'tch_adamu', awardedAt: daysAgo(6) },
+    { id: uid('hp'), schoolId, studentId: 'stu_009', houseId: 'house_red', points: 4, reason: 'Best science project', category: 'Academic', awardedBy: 'tch_emeka', awardedAt: daysAgo(5) },
+    { id: uid('hp'), schoolId, studentId: 'stu_002', houseId: 'house_red', points: 2, reason: 'Punctuality all week', category: 'Conduct', awardedBy: 'tch_adamu', awardedAt: daysAgo(3) },
+    // Blue House points
+    { id: uid('hp'), schoolId, studentId: 'stu_003', houseId: 'house_blue', points: 5, reason: 'Top scorer in Science quiz', category: 'Academic', awardedBy: 'tch_emeka', awardedAt: daysAgo(9) },
+    { id: uid('hp'), schoolId, studentId: 'stu_004', houseId: 'house_blue', points: 3, reason: 'Outstanding sports performance', category: 'Sports', awardedBy: 'tch_adamu', awardedAt: daysAgo(7) },
+    { id: uid('hp'), schoolId, studentId: 'stu_010', houseId: 'house_blue', points: 4, reason: 'Perfect attendance this month', category: 'Conduct', awardedBy: 'tch_funke', awardedAt: daysAgo(4) },
+    { id: uid('hp'), schoolId, studentId: 'stu_003', houseId: 'house_blue', points: 3, reason: 'Literature essay competition winner', category: 'Academic', awardedBy: 'tch_chioma', awardedAt: daysAgo(2) },
+    // Green House points
+    { id: uid('hp'), schoolId, studentId: 'stu_005', houseId: 'house_green', points: 4, reason: 'Excellent conduct during assembly', category: 'Conduct', awardedBy: 'tch_adamu', awardedAt: daysAgo(10) },
+    { id: uid('hp'), schoolId, studentId: 'stu_006', houseId: 'house_green', points: 3, reason: 'Art project displayed in school reception', category: 'Academic', awardedBy: 'tch_chioma', awardedAt: daysAgo(6) },
+    { id: uid('hp'), schoolId, studentId: 'stu_005', houseId: 'house_green', points: 2, reason: 'Volunteered to help at open day', category: 'Community Service', awardedBy: 'tch_emeka', awardedAt: daysAgo(3) },
+    // Gold House points
+    { id: uid('hp'), schoolId, studentId: 'stu_008', houseId: 'house_gold', points: 5, reason: 'Valedictorian runner-up in mock exams', category: 'Academic', awardedBy: 'tch_bola', awardedAt: daysAgo(11) },
+    { id: uid('hp'), schoolId, studentId: 'stu_007', houseId: 'house_gold', points: 2, reason: 'Kindness award from junior class', category: 'Community Service', awardedBy: 'tch_funke', awardedAt: daysAgo(5) },
+    { id: uid('hp'), schoolId, studentId: 'stu_008', houseId: 'house_gold', points: 3, reason: 'Football match victory', category: 'Sports', awardedBy: 'tch_emeka', awardedAt: daysAgo(2) }
+  ];
+
+  // ============ DIARY ENTRIES (teacher → parent, per student) ============
+  const diaryEntries = [
+    { id: uid('de'), schoolId, studentId: 'stu_002', teacherId: 'tch_adamu', category: 'Homework', note: 'Tobi did not submit the Mathematics assignment due today. Please remind him to complete it and submit by Thursday.', date: daysAgo(3), parentRead: true, parentReadAt: daysAgo(2), parentReply: 'Thank you for letting me know. I will speak with him tonight and ensure he submits by Thursday.', parentRepliedAt: daysAgo(2), teacherReadReply: true },
+    { id: uid('de'), schoolId, studentId: 'stu_002', teacherId: 'tch_adamu', category: 'Academic', note: 'Tobi scored 16/20 in today\'s Maths class test — a good improvement. Please keep encouraging him at home.', date: daysAgo(1), parentRead: false, parentReadAt: null, parentReply: null, parentRepliedAt: null, teacherReadReply: false },
+    { id: uid('de'), schoolId, studentId: 'stu_001', teacherId: 'tch_adamu', category: 'Behaviour', note: 'Chiamaka was very disruptive in class today during Social Studies. She was cautioned twice. Please speak with her about the importance of listening in class.', date: daysAgo(2), parentRead: true, parentReadAt: daysAgo(1), parentReply: 'We sincerely apologise. We will have a serious talk with her. This is not her usual behaviour.', parentRepliedAt: daysAgo(1), teacherReadReply: false },
+    { id: uid('de'), schoolId, studentId: 'stu_009', teacherId: 'tch_emeka', category: 'Health', note: 'Ade was looking unwell during third period today. He was given water and allowed to sit out of the outdoor activities. Please monitor him at home.', date: daysAgo(0), parentRead: false, parentReadAt: null, parentReply: null, parentRepliedAt: null, teacherReadReply: false }
+  ];
+
+  // ============ SCHOOL EVENTS (admin creates, all roles see) ============
+  const schoolEvents = [
+    { id: uid('evt'), schoolId, title: 'Mid-Term Break', startDate: daysAhead(5), endDate: daysAhead(9), type: 'holiday', audience: 'all', description: 'School closes for mid-term. Resumes Monday.', createdBy: schoolId, createdAt: daysAgo(3) },
+    { id: uid('evt'), schoolId, title: 'PTA Meeting', startDate: daysAhead(12), endDate: daysAhead(12), type: 'meeting', audience: 'parents', description: 'All parents are invited to the end-of-term PTA meeting in the school hall at 10am.', createdBy: schoolId, createdAt: daysAgo(5) },
+    { id: uid('evt'), schoolId, title: 'Inter-House Sports Day', startDate: daysAhead(18), endDate: daysAhead(18), type: 'event', audience: 'all', description: 'Annual inter-house sports day. Students should come in their house colours.', createdBy: schoolId, createdAt: daysAgo(7) },
+    { id: uid('evt'), schoolId, title: 'End of Term Exams Begin', startDate: daysAhead(22), endDate: daysAhead(29), type: 'exam', audience: 'students', description: 'End of 1st Term examinations. Full timetable to be distributed by class teachers.', createdBy: schoolId, createdAt: daysAgo(10) },
+    { id: uid('evt'), schoolId, title: '1st Term Closes', startDate: '2025-12-12', endDate: '2025-12-12', type: 'milestone', audience: 'all', description: 'Last day of the 1st Term 2025/26 academic session.', createdBy: schoolId, createdAt: daysAgo(20) }
+  ];
+
+  // ============ FEEDBACK FORMS (admin creates, parents respond) ============
+  const feedbackForms = [
+    { id: 'ff_001', schoolId, title: 'End of Term 1 Parent Survey 2025/26', questions: [
+        { id: 'q1', type: 'star', text: 'How satisfied are you with your child\'s academic progress this term?' },
+        { id: 'q2', type: 'yesno', text: 'Are teachers responsive when you contact them?' },
+        { id: 'q3', type: 'text', text: 'What can we do better next term?' }
+      ], deadline: daysAhead(20), status: 'active', createdBy: schoolId, createdAt: daysAgo(2) }
+  ];
+  const feedbackResponses = [
+    { id: uid('fr'), formId: 'ff_001', schoolId, parentId: 'par_bello', answers: { q1: 4, q2: 'yes', q3: 'More frequent progress updates would be helpful.' }, submittedAt: daysAgo(1) }
+  ];
+
+  // ============ PAYSLIPS (individual per staff member) ============
+  const _psl = (staffId, period, gross, bonus, status, paidDaysAgo, createdDaysAgo) => {
+    const paye     = Math.round(gross * 0.07);
+    const pension  = Math.round(gross * 0.08);
+    const nhf      = Math.round(gross * 0.025);
+    const net      = gross - paye - pension - nhf + (bonus || 0);
+    const staff    = teachers.find(t => t.id === staffId);
+    return {
+      id: uid('psl'), schoolId, staffId, period,
+      grossPay: gross,
+      deductions: { paye, pension, nhf, total: paye + pension + nhf },
+      allowances: { housing: 0, transport: 0, meal: 0, bonus: bonus || 0 },
+      netPay: net,
+      bankName:    staff && staff.bank ? staff.bank.name    : 'N/A',
+      bankAccount: staff && staff.bank ? staff.bank.account : 'N/A',
+      status,
+      paidAt:    status === 'paid' ? daysAgo(paidDaysAgo) : null,
+      createdAt: daysAgo(createdDaysAgo)
+    };
+  };
+  const payslips = [
+    _psl('tch_adamu',  'April 2026',  220000,     0, 'paid',    62, 65),
+    _psl('tch_adamu',  'May 2026',    220000, 25000, 'paid',    32, 35),
+    _psl('tch_adamu',  'June 2026',   220000,     0, 'pending',  0,  3),
+    _psl('tch_emeka',  'April 2026',  240000,     0, 'paid',    62, 65),
+    _psl('tch_emeka',  'May 2026',    240000,     0, 'paid',    32, 35),
+    _psl('tch_emeka',  'June 2026',   240000,     0, 'pending',  0,  3),
+    _psl('tch_funke',  'May 2026',    180000,     0, 'paid',    32, 35),
+    _psl('tch_funke',  'June 2026',   180000,     0, 'pending',  0,  3),
+    _psl('tch_chioma', 'May 2026',    200000,     0, 'paid',    32, 35),
+    _psl('tch_chioma', 'June 2026',   200000, -5000, 'pending',  0,  3),
+    _psl('tch_bola',   'May 2026',    260000,     0, 'paid',    32, 35),
+    _psl('tch_bola',   'June 2026',   260000,     0, 'pending',  0,  3),
+    _psl('stf_bursar', 'May 2026',    280000,     0, 'paid',    32, 35),
+    _psl('stf_bursar', 'June 2026',   280000,     0, 'pending',  0,  3),
+    _psl('stf_nurse',  'May 2026',    165000,     0, 'paid',    32, 35),
+    _psl('stf_nurse',  'June 2026',   165000,     0, 'pending',  0,  3),
+    _psl('stf_driver', 'May 2026',     95000,     0, 'paid',    32, 35),
+    _psl('stf_driver', 'June 2026',    95000,     0, 'pending',  0,  3),
+  ];
+
+  // ============ FORMATIVE TESTS (teacher creates per class/subject) ============
+  const formativeTests = [
+    { id: 'ftest_001', schoolId, classId: 'cls_jss1', subjectId: 'sub_math', teacherId: 'tch_adamu',
+      title: 'Algebra Quick Check — Week 6', duration: 15, status: 'active',
+      questions: [
+        { id: 'q1', text: 'Solve: x + 5 = 12. What is x?', type: 'mcq', options: ['5', '7', '17', '3'], answer: '7' },
+        { id: 'q2', text: 'Which of these is a quadratic equation?', type: 'mcq', options: ['2x + 3 = 0', 'x² + 3x − 4 = 0', 'x/2 = 7', '3x − 9 = 0'], answer: 'x² + 3x − 4 = 0' },
+        { id: 'q3', text: 'Factorize: x² − 9', type: 'mcq', options: ['(x+3)(x−3)', '(x−3)(x−3)', '(x+3)(x+3)', '(x−9)(x+1)'], answer: '(x+3)(x−3)' },
+        { id: 'q4', text: 'What is the value of x² when x = 5?', type: 'mcq', options: ['10', '25', '52', '15'], answer: '25' },
+        { id: 'q5', text: 'In your own words, explain what a quadratic equation is.', type: 'short', options: [], answer: '' }
+      ],
+      dueDate: daysAhead(7), createdAt: daysAgo(2) },
+    { id: 'ftest_002', schoolId, classId: 'cls_jss1', subjectId: 'sub_sci', teacherId: 'tch_emeka',
+      title: 'States of Matter — Quick Quiz', duration: 10, status: 'active',
+      questions: [
+        { id: 'q1', text: 'Which state of matter has a definite shape and volume?', type: 'mcq', options: ['Liquid', 'Gas', 'Solid', 'Plasma'], answer: 'Solid' },
+        { id: 'q2', text: 'At what temperature (°C) does water boil at sea level?', type: 'mcq', options: ['90', '95', '100', '110'], answer: '100' },
+        { id: 'q3', text: 'What process changes liquid water into steam?', type: 'mcq', options: ['Condensation', 'Evaporation', 'Melting', 'Freezing'], answer: 'Evaporation' },
+        { id: 'q4', text: 'Give one example of a gas and describe one of its properties.', type: 'short', options: [], answer: '' }
+      ],
+      dueDate: daysAhead(5), createdAt: daysAgo(1) }
+  ];
+  const formativeSubmissions = [
+    { id: uid('fsub'), testId: 'ftest_001', studentId: 'stu_002', schoolId,
+      answers: { q1: '7', q2: 'x² + 3x − 4 = 0', q3: '(x+3)(x−3)', q4: '25', q5: 'An equation with the highest power of 2.' },
+      score: 4, total: 5, percentage: 80, submittedAt: daysAgo(1) }
+  ];
+
+  // ============ TRANSPORT & PICKUP ============
+  const busRoutes = [
+    { id: 'route_001', schoolId, name: 'Route A — Ikeja / Allen', stops: 'Allen Junction → Ogba Roundabout → Ikeja GRA → School Gate', driverStaffId: 'stf_driver', vehiclePlate: 'LND-421-EK', capacity: 30, departureTime: '06:45', returnTime: '15:30', createdAt: daysAgo(90) },
+    { id: 'route_002', schoolId, name: 'Route B — Surulere / Yaba', stops: 'Surulere Market → National Stadium → Yaba Tech → School Gate', driverStaffId: 'stf_driver', vehiclePlate: 'LND-875-GH', capacity: 25, departureTime: '06:30', returnTime: '15:30', createdAt: daysAgo(90) }
+  ];
+  const busAssignments = [
+    { id: uid('ba'), schoolId, studentId: 'stu_001', routeId: 'route_001', direction: 'both',    createdAt: daysAgo(60) },
+    { id: uid('ba'), schoolId, studentId: 'stu_002', routeId: 'route_001', direction: 'both',    createdAt: daysAgo(60) },
+    { id: uid('ba'), schoolId, studentId: 'stu_005', routeId: 'route_002', direction: 'pickup',  createdAt: daysAgo(30) }
+  ];
+  const authorizedPickups = [
+    { id: uid('ap'), schoolId, studentId: 'stu_003', name: 'Uncle James Adebayo',  relationship: 'Uncle',       phone: '08033456789', status: 'approved', approvedBy: schoolId, approvedAt: daysAgo(14), createdAt: daysAgo(15) },
+    { id: uid('ap'), schoolId, studentId: 'stu_001', name: 'Grandma Ngozi Okafor', relationship: 'Grandparent', phone: '08022345678', status: 'approved', approvedBy: schoolId, approvedAt: daysAgo(20), createdAt: daysAgo(21) },
+    { id: uid('ap'), schoolId, studentId: 'stu_004', name: 'Aunty Kemi Abiodun',   relationship: 'Aunt/Uncle',  phone: '08098765432', status: 'pending',  approvedBy: null,    approvedAt: null,        createdAt: daysAgo(1) }
+  ];
+
+  // ============ SICKBAY VISITS ============
+  const sickbayVisits = [
+    { id: uid('sv'), schoolId, studentId: 'stu_003', date: daysAgo(5), complaint: 'Headache and mild fever', treatment: 'Paracetamol 500mg given. Rested in sickbay for 40 minutes.', temperature: 38.2, outcome: 'returned_to_class', parentNotified: true,  recordedBy: 'stf_nurse', createdAt: daysAgo(5) },
+    { id: uid('sv'), schoolId, studentId: 'stu_009', date: daysAgo(2), complaint: 'Stomach pain after lunch', treatment: 'Warm water given and rested. No fever observed.', temperature: 36.8, outcome: 'returned_to_class', parentNotified: false, recordedBy: 'stf_nurse', createdAt: daysAgo(2) },
+    { id: uid('sv'), schoolId, studentId: 'stu_003', date: daysAgo(0), complaint: 'Allergic reaction — skin rash on right arm', treatment: 'Antihistamine cream applied. Parent contacted by phone.', temperature: 36.9, outcome: 'sent_home', parentNotified: true, recordedBy: 'stf_nurse', createdAt: now() },
+    { id: uid('sv'), schoolId, studentId: 'stu_006', date: daysAgo(10), complaint: 'Cut on left hand from sports', treatment: 'Wound cleaned and bandaged. Tetanus record checked — up to date.', temperature: 36.5, outcome: 'returned_to_class', parentNotified: false, recordedBy: 'stf_nurse', createdAt: daysAgo(10) }
+  ];
+
+  // ============ INVENTORY REQUESTS (teacher requests items) ============
+  const inventoryRequests = [
+    { id: uid('ir'), schoolId, requestedBy: 'tch_adamu', itemName: 'Mathematics Textbook (JSS1)', quantity: 5, reason: 'New students enrolled mid-term, stock insufficient', status: 'pending', reviewedBy: null, reviewedAt: null, reviewNote: '', createdAt: daysAgo(2) },
+    { id: uid('ir'), schoolId, requestedBy: 'tch_emeka', itemName: 'Science Lab Beakers (Set of 10)', quantity: 2, reason: 'Two sets broken during experiments last week', status: 'approved', reviewedBy: schoolId, reviewedAt: daysAgo(0), reviewNote: 'Approved — request raised with supplier.', createdAt: daysAgo(3) }
+  ];
+
   return {
     schools, classes, subjects, teachers, parents, students,
     feeStructures, invoices, transactions, attendance, results,
@@ -1051,6 +1208,11 @@ function seedDatabase() {
     activities, studentActivities, reportComments: [],
     learningMaterials, cbtExams, cbtSubmissions, consentForms, consentResponses,
     appraisalCycles, appraisals, salaryAdvances, budgets, helpArticles,
+    houses, housePoints, diaryEntries, schoolEvents, feedbackForms, feedbackResponses,
+    payslips, formativeTests, formativeSubmissions,
+    busRoutes, busAssignments, authorizedPickups,
+    sickbayVisits, inventoryRequests,
+    smsCampaigns: [],
     settings: {
       currentSchoolId: 'sch_brightlights',
       currentTerm: '1st Term 2025/26',
