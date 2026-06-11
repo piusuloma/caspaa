@@ -78,7 +78,8 @@ function assess_tch_formativeList() {
   const ftTab     = APP.params.ftTab || 'active';
   const allTests  = DB.query('formativeTests', t => t.schoolId === schoolId && t.teacherId === teacherId);
   const tabTests  = allTests.filter(t => t.status === ftTab);
-  const classes   = DB.get('classes');
+  const schoolId  = AUTH.current.schoolId || 'sch_brightlights';
+  const classes   = DB.query('classes', c => c.schoolId === schoolId);
   const subjects  = DB.get('subjects');
 
   const subTabs = [
@@ -293,7 +294,7 @@ function assess_stu_formative(s, sName) {
 
 function assess_bulkUploadModal(targetType) {
   const isCbt = targetType === 'cbt';
-  const classes  = (typeof teacherClasses === 'function' ? teacherClasses() : DB.get('classes'));
+  const classes  = (typeof teacherClasses === 'function' ? teacherClasses() : DB.query('classes', c => c.schoolId === (AUTH.current.schoolId || 'sch_brightlights')));
   const subjects = DB.get('subjects');
   const label    = isCbt ? 'CBT Exam' : 'Quick Test';
 

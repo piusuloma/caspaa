@@ -43,6 +43,7 @@ function processPayment(invoiceId) {
       document.getElementById('modalBackdrop').click();
       const student = DB.find('students', inv.studentId);
       const studentName = student ? student.name : inv.studentId;
+      const schoolName = (DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School';
       modal({
         title: 'Pay via Bank Transfer',
         body: `<div class="space-y-4">
@@ -62,7 +63,7 @@ function processPayment(invoiceId) {
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-slate-500">Account Name</span>
-              <span class="font-semibold text-slate-900">Bright Lights Academy</span>
+              <span class="font-semibold text-slate-900">${schoolName}</span>
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-slate-500">Narration</span>
@@ -94,6 +95,7 @@ function processPayment(invoiceId) {
 // ── Card input step ──────────────────────────────────────────────────────────
 
 function pay_showCardInput(invoiceId, amount, txFee, charged) {
+  const schoolName = (DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School';
   modal({
     size: 'sm',
     title: '',
@@ -105,7 +107,7 @@ function pay_showCardInput(invoiceId, amount, txFee, charged) {
         </div>
         <div class="text-3xl font-extrabold text-slate-900">${money(charged)}</div>
         ${txFee > 0 ? `<div class="text-xs text-slate-400 mt-1">Includes transaction fee: ${money(txFee)} (1.5%)</div>` : ''}
-        <div class="text-sm text-slate-500 mt-1">Bright Lights Academy</div>
+        <div class="text-sm text-slate-500 mt-1">${schoolName}</div>
       </div>
 
       <div class="space-y-3">
@@ -235,9 +237,7 @@ function pay_confirmOTP(invoiceId, amount) {
 
   setTimeout(() => {
     document.getElementById('modalBackdrop').click();
-    // 10% simulated failure so the failure path is demonstrable, same as original
-    if (Math.random() < 0.10) failPayment(invoiceId, amount, 'card');
-    else pay_showReceipt(invoiceId, amount);
+    pay_showReceipt(invoiceId, amount);
   }, 1200);
 }
 
@@ -265,7 +265,8 @@ function pay_showReceipt(invoiceId, amount) {
 function pay_downloadReceipt(invoiceId, amount) {
   const inv = DB.find('invoices', invoiceId);
   const student = inv ? DB.find('students', inv.studentId) : null;
-  const ref = 'CSP-' + Math.random().toString(36).slice(2, 10).toUpperCase();
+  const ref = 'CSP-' + Date.now().toString(36).toUpperCase().slice(-8);
+  const schoolName = (DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School';
   const receiptHtml = `
     <!DOCTYPE html>
     <html>
@@ -285,7 +286,7 @@ function pay_downloadReceipt(invoiceId, amount) {
       </style>
     </head>
     <body>
-      <div class="logo">Bright Lights Academy</div>
+      <div class="logo">${schoolName}</div>
       <div class="body">
         <div style="text-align:center;margin-bottom:20px;">
           <div style="font-size:13px;color:#64748b;margin-bottom:4px;">Payment Receipt</div>

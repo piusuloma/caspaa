@@ -40,7 +40,7 @@ function cal_monthDays(year, month) {
   return days;
 }
 
-function view_cal_main(params) {
+function cal_renderCalendar(params) {
   const role = AUTH.current.role;
   const isAdmin = role === 'schooladmin' || role === 'principal';
   const now = new Date();
@@ -66,21 +66,15 @@ function view_cal_main(params) {
   const upcoming = events.filter(e => e.startDate >= todayStr && e.startDate <= upcomingCutoff.toISOString().slice(0,10)).slice(0,8);
 
   return `
-    ${pageHeader({
-      title: 'School Calendar',
-      subtitle: 'Upcoming events, holidays, and important dates',
-      actions: isAdmin ? `<button class="btn btn-primary" onclick="cal_addEventModal()">${icon('plus','w-4 h-4')} Add Event</button>` : ''
-    })}
-
     <div class="grid lg:grid-cols-3 gap-6">
       <!-- Calendar grid -->
       <div class="lg:col-span-2">
         <div class="card p-4">
           <!-- Month nav -->
           <div class="flex items-center justify-between mb-4">
-            <button onclick="APP.go('cal_main',{month:${prevMonth.month},year:${prevMonth.year}})" class="btn btn-secondary px-3 py-1.5 text-sm">${icon('arrow_left','w-4 h-4')}</button>
+            <button onclick="APP.params.month=${prevMonth.month};APP.params.year=${prevMonth.year};APP.render()" class="btn btn-secondary px-3 py-1.5 text-sm">${icon('arrow_left','w-4 h-4')}</button>
             <h2 class="font-bold text-slate-900">${monthName}</h2>
-            <button onclick="APP.go('cal_main',{month:${nextMonth.month},year:${nextMonth.year}})" class="btn btn-secondary px-3 py-1.5 text-sm">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
+            <button onclick="APP.params.month=${nextMonth.month};APP.params.year=${nextMonth.year};APP.render()" class="btn btn-secondary px-3 py-1.5 text-sm">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
           </div>
           <!-- Day headers -->
           <div class="grid grid-cols-7 text-center text-xs font-semibold text-slate-400 uppercase mb-2">
@@ -136,10 +130,35 @@ function view_cal_main(params) {
   `;
 }
 
+function view_cal_main(params) {
+  const role = AUTH.current.role;
+  const isAdmin = role === 'schooladmin' || role === 'principal';
+  const activeTab = (APP.params && APP.params.calTab) || 'calendar';
+
+  const tabBar = `<div class="flex gap-2 mb-4 border-b border-slate-200 pb-1">
+    <button onclick="APP.params.calTab='calendar'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'calendar' ? 'bg-white border border-b-white border-slate-200 text-sky-600' : 'text-slate-500 hover:text-slate-700'}">
+      <i class="ph ph-calendar mr-1"></i>Calendar
+    </button>
+    <button onclick="APP.params.calTab='noticeboard'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'noticeboard' ? 'bg-white border border-b-white border-slate-200 text-sky-600' : 'text-slate-500 hover:text-slate-700'}">
+      <i class="ph ph-note mr-1"></i>Notice Board
+    </button>
+  </div>`;
+
+  const header = pageHeader({
+    title: 'School Calendar',
+    subtitle: 'Upcoming events, holidays, and important dates',
+    actions: isAdmin && activeTab === 'calendar' ? `<button class="btn btn-primary" onclick="cal_addEventModal()">${icon('plus','w-4 h-4')} Add Event</button>` : ''
+  });
+
+  const content = activeTab === 'noticeboard' ? cal_renderNoticeBoard() : cal_renderCalendar(params);
+
+  return `${header}${tabBar}${content}`;
+}
+
 function cal_showDay(ds) {
   const role = AUTH.current.role;
   const events = cal_eventsForRole(role).filter(e => ds >= e.startDate && ds <= (e.endDate || e.startDate));
-  if (!events.length) return;
+  if (!events.length) { toast('No events on this day', 'info'); return; }
   if (events.length === 1) { cal_showEvent(events[0].id); return; }
   modal({
     title: fdate(ds, { long: true }),
@@ -180,6 +199,7 @@ function cal_showEvent(id) {
     </div>`,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
+      ${(AUTH.current.role === 'schooladmin' || AUTH.current.role === 'principal') ? '<button class="btn btn-secondary btn-sm" onclick="cal_editEventModal(\''+e.id+'\')">Edit</button>' : ''}
       ${isAdmin ? `<button class="btn btn-danger" onclick="document.getElementById('modalBackdrop').click();cal_deleteEvent('${e.id}')">Delete Event</button>` : ''}
     `
   });
@@ -232,15 +252,172 @@ function cal_saveEvent() {
   const schoolId = AUTH.current.schoolId || 'sch_brightlights';
   DB.insert('schoolEvents', { id: uid('evt'), schoolId, title, startDate, endDate, type, audience, description: desc, createdBy: AUTH.current.id, createdAt: now() });
   document.getElementById('modalBackdrop').click();
-  const d = new Date(startDate);
-  APP.go('cal_main', { month: d.getMonth(), year: d.getFullYear() });
+  APP.params.month = new Date(startDate).getMonth();
+  APP.params.year = new Date(startDate).getFullYear();
+  APP.render();
   toast('Event added to calendar', 'success');
 }
 
 function cal_deleteEvent(id) {
+  if (AUTH.current.role !== 'schooladmin' && AUTH.current.role !== 'principal') {
+    toast('Only admins can delete events', 'danger');
+    return;
+  }
   confirm('Delete this event from the calendar?', () => {
     DB.remove('schoolEvents', id);
     APP.render();
-    toast('Event deleted');
+    toast('Event deleted', 'info');
   }, { danger: true });
+}
+
+function cal_editEventModal(id) {
+  const ev = DB.find('events', id);
+  if (!ev) return;
+  modal({
+    title: 'Edit Event',
+    size: 'md',
+    body: `<div class="space-y-3">
+      <div><label class="input-label">Title *</label><input id="ce_edit_title" class="input" value="${ev.title || ''}"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="input-label">Start Date</label><input id="ce_edit_start" type="date" class="input" value="${ev.startDate || ev.date || ''}"></div>
+        <div><label class="input-label">End Date</label><input id="ce_edit_end" type="date" class="input" value="${ev.endDate || ev.date || ''}"></div>
+      </div>
+      <div><label class="input-label">Type</label>
+        <select id="ce_edit_type" class="input">
+          ${['Holiday','Academic','Sports','Meeting','Exam','Other'].map(t => '<option value="'+t+'"'+(ev.type===t?' selected':'')+'>'+t+'</option>').join('')}
+        </select>
+      </div>
+      <div><label class="input-label">Audience</label>
+        <select id="ce_edit_audience" class="input">
+          ${['all','students','parents','teachers'].map(a => '<option value="'+a+'"'+(ev.audience===a?' selected':'')+'>'+({all:'Everyone',students:'Students',parents:'Parents',teachers:'Teachers'}[a])+'</option>').join('')}
+        </select>
+      </div>
+      <div><label class="input-label">Description</label><textarea id="ce_edit_desc" class="input" rows="2">${ev.description || ''}</textarea></div>
+    </div>`,
+    footer: '<button class="btn btn-secondary" onclick="document.getElementById(\'modalBackdrop\').click()">Cancel</button><button class="btn btn-primary" onclick="cal_saveEdit(\''+id+'\')">Save Changes</button>'
+  });
+}
+
+function cal_saveEdit(id) {
+  const title = (document.getElementById('ce_edit_title') || {}).value.trim();
+  if (!title) { toast('Title is required', 'danger'); return; }
+  DB.update('events', id, {
+    title,
+    startDate: (document.getElementById('ce_edit_start') || {}).value,
+    endDate: (document.getElementById('ce_edit_end') || {}).value,
+    type: (document.getElementById('ce_edit_type') || {}).value,
+    audience: (document.getElementById('ce_edit_audience') || {}).value,
+    description: (document.getElementById('ce_edit_desc') || {}).value.trim()
+  });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast('Event updated', 'success');
+}
+
+/* ============================================================
+   NOTICE BOARD
+   ============================================================ */
+
+function cal_renderNoticeBoard() {
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const role = AUTH.current.role;
+  const canPost = role === 'schooladmin' || role === 'principal';
+
+  // Build audience filter for this role
+  let audience = ['all'];
+  if (role === 'teacher') audience = ['all', 'teachers'];
+  else if (role === 'student') audience = ['all', 'students'];
+  else if (role === 'parent') audience = ['all', 'parents'];
+  else if (canPost) audience = ['all', 'teachers', 'students', 'parents'];
+
+  const notices = DB.query('announcements', a =>
+    a.schoolId === schoolId && audience.includes(a.audience)
+  ).sort((a, b) => (b.createdAt || b.timestamp || '').localeCompare(a.createdAt || a.timestamp || ''));
+
+  const audienceLabels = { all: 'Everyone', teachers: 'Teachers', students: 'Students', parents: 'Parents' };
+
+  const postBtn = canPost ? `<button class="btn btn-primary btn-sm" onclick="cal_newNoticeModal()">
+    <i class="ph ph-plus mr-1"></i>Post Notice
+  </button>` : '';
+
+  const noticeCards = notices.length === 0
+    ? `<div class="text-center py-12 text-slate-500">
+         <i class="ph ph-note text-4xl block mb-2"></i>
+         <p>No notices posted yet.</p>
+       </div>`
+    : notices.map(n => `
+      <div class="card p-4 border-l-4 border-sky-400">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="font-semibold text-slate-800">${n.title || 'Notice'}</span>
+              <span class="badge badge-info text-xs">${audienceLabels[n.audience] || n.audience || 'Everyone'}</span>
+            </div>
+            <p class="text-sm text-slate-600 whitespace-pre-line">${n.body || n.message || ''}</p>
+            <p class="text-xs text-slate-400 mt-2">${n.authorName || 'School Admin'} · ${(n.createdAt || n.timestamp || '').slice(0, 10)}</p>
+          </div>
+          ${canPost ? `<button onclick="cal_deleteNotice('${n.id}')" class="btn btn-sm text-slate-400 hover:text-rose-500" title="Delete"><i class="ph ph-trash"></i></button>` : ''}
+        </div>
+      </div>`).join('');
+
+  return `<div>
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-800">Notice Board</h2>
+        <p class="text-sm text-slate-500">Pinned announcements from the school</p>
+      </div>
+      ${postBtn}
+    </div>
+    <div class="space-y-3">${noticeCards}</div>
+  </div>`;
+}
+
+function cal_newNoticeModal() {
+  modal({
+    title: 'Post a Notice',
+    size: 'md',
+    body: `<div class="space-y-3">
+      <div><label class="input-label">Title *</label><input id="cn_title" class="input" placeholder="e.g. School Closure Notice"></div>
+      <div><label class="input-label">Message *</label><textarea id="cn_body" class="input" rows="4" placeholder="Write the notice here..."></textarea></div>
+      <div><label class="input-label">Visible to</label>
+        <select id="cn_audience" class="input">
+          <option value="all">Everyone</option>
+          <option value="parents">Parents only</option>
+          <option value="teachers">Teachers only</option>
+          <option value="students">Students only</option>
+        </select>
+      </div>
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="cal_saveNotice()">Post Notice</button>`
+  });
+}
+
+function cal_saveNotice() {
+  const title = (document.getElementById('cn_title') || {}).value.trim();
+  const body = (document.getElementById('cn_body') || {}).value.trim();
+  if (!title || !body) { toast('Title and message are required', 'danger'); return; }
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const audience = (document.getElementById('cn_audience') || {}).value || 'all';
+  DB.insert('announcements', {
+    id: uid('ann'),
+    schoolId,
+    title,
+    body,
+    audience,
+    authorId: AUTH.current.id,
+    authorName: AUTH.current.name,
+    createdAt: now(),
+    timestamp: now()
+  });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast('Notice posted', 'success');
+}
+
+function cal_deleteNotice(id) {
+  if (!confirm('Delete this notice?')) return;
+  DB.remove('announcements', id);
+  APP.render();
+  toast('Notice removed', 'info');
 }

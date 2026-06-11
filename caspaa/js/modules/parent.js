@@ -25,7 +25,7 @@ function view_par_dashboard() {
   }, 0);
   const totalBilled = totalPaid + totalOutstanding;
   const paidPct = totalBilled ? Math.round((totalPaid / totalBilled) * 100) : 0;
-  const announcements = DB.query('announcements', a => a.audience === 'all' || a.audience === 'parents').slice(0, 3);
+  const announcements = DB.query('announcements', a => a.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && (a.audience === 'all' || a.audience === 'parents')).slice(0, 3);
   // Pending digital-consent requests across this parent's children
   const childClassIds = children.map(c => c.classId);
   const consentForms = DB.query('consentForms', f => f.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && (f.classId === 'all' || childClassIds.includes(f.classId)));
@@ -41,7 +41,7 @@ function view_par_dashboard() {
       <div class="bg-gradient-to-br from-brand-700 to-brand-800 rounded-2xl p-5 lg:p-6 text-white">
         <p class="text-brand-200 text-sm">Hello,</p>
         <h1 class="text-2xl lg:text-3xl font-extrabold">${parent.name.split(' ').slice(-1)}</h1>
-        <p class="text-brand-100 text-sm mt-1">${children.length} ${children.length === 1 ? 'child' : 'children'} at Bright Lights Academy</p>
+        <p class="text-brand-100 text-sm mt-1">${children.length} ${children.length === 1 ? 'child' : 'children'} at ${(DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School'}</p>
 
         ${totalBilled > 0 ? `<div class="mt-4 bg-white/15 backdrop-blur rounded-xl p-4">
           <div class="flex items-center justify-between mb-2">
@@ -121,13 +121,15 @@ function view_par_dashboard() {
         <div class="flex items-center justify-between mb-3">
           <h3 class="font-bold text-slate-900">Latest from School</h3>
         </div>
-        <div class="space-y-3">
+        ${announcements.length === 0
+          ? `<p class="text-slate-500 text-sm p-4 text-center">No announcements from the school yet.</p>`
+          : `<div class="space-y-3">
           ${announcements.map(a => `<div class="border-l-4 border-brand-500 pl-3 py-1">
             <div class="font-semibold text-sm text-slate-900">${a.title}</div>
             <div class="text-sm text-slate-600 line-clamp-2">${a.body}</div>
             <div class="text-xs text-slate-400 mt-1">${fdate(a.timestamp, { relative: true })}</div>
           </div>`).join('')}
-        </div>
+        </div>`}
       </div>
     </div>
   `;
@@ -424,20 +426,6 @@ function printTranscript(studentId) {
     if (!byTerm[key]) byTerm[key] = [];
     byTerm[key].push(r);
   });
-  // Generate synthetic prior-year data for demo richness
-  const priorYearTerms = ['1st Term 2024/25', '2nd Term 2024/25', '3rd Term 2024/25'];
-  priorYearTerms.forEach(t => {
-    if (!byTerm[t]) {
-      byTerm[t] = subjects.slice(0, 6).map(sub => ({
-        subjectId: sub.id, term: t,
-        ca1: Math.floor(Math.random() * 15) + 5,
-        ca2: Math.floor(Math.random() * 15) + 5,
-        exam: Math.floor(Math.random() * 40) + 25,
-        get total() { return this.ca1 + this.ca2 + this.exam; },
-        get grade() { return COMPUTE.gradeFromScore(this.total).grade; }
-      })).map(r => ({ ...r, total: r.total, grade: r.grade }));
-    }
-  });
   const termOrder = Object.keys(byTerm).sort();
 
   const overallAvg = (() => {
@@ -449,7 +437,7 @@ function printTranscript(studentId) {
   const html = `
     <div style="max-width:820px;margin:0 auto;font-family:system-ui">
       <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:24px">
-        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
+        <h1 style="margin:0;color:#047857">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h1>
         <p style="margin:4px 0;color:#666">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:12px 0 0;font-size:22px">OFFICIAL ACADEMIC TRANSCRIPT</h2>
       </div>
@@ -457,10 +445,12 @@ function printTranscript(studentId) {
         <tr><td><strong>Student:</strong> ${s.name}<br/><strong>Admission No:</strong> ${s.admissionNo}</td>
             <td style="text-align:right"><strong>DOB:</strong> ${fdate(s.dob, { long: true })}<br/><strong>Gender:</strong> ${s.gender === 'M' ? 'Male' : 'Female'}</td></tr>
       </table>
-      ${termOrder.map(term => {
-        const rows = byTerm[term];
-        const termAvg = Math.round(rows.reduce((s, r) => s + r.total, 0) / rows.length);
-        return `<h3 style="margin:24px 0 8px;color:#047857;border-bottom:1px solid #ddd;padding-bottom:4px">${term}</h3>
+      ${termOrder.length === 0
+        ? `<p style="margin:24px 0;text-align:center;color:#6b7280;font-style:italic">Historical results for previous terms will appear here once published.</p>`
+        : termOrder.map(term => {
+            const rows = byTerm[term];
+            const termAvg = Math.round(rows.reduce((s, r) => s + r.total, 0) / rows.length);
+            return `<h3 style="margin:24px 0 8px;color:#047857;border-bottom:1px solid #ddd;padding-bottom:4px">${term}</h3>
         <table border="1" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:13px">
           <thead style="background:#f3f4f6">
             <tr><th align="left">Subject</th><th>CA1</th><th>CA2</th><th>Exam</th><th>Total</th><th>Grade</th></tr>
@@ -473,7 +463,8 @@ function printTranscript(studentId) {
           </tbody>
           <tfoot><tr style="background:#f3f4f6;font-weight:bold"><td colspan="4">Term Average</td><td colspan="2" align="center">${termAvg}%</td></tr></tfoot>
         </table>`;
-      }).join('')}
+          }).join('')
+      }
       <div style="margin-top:24px;background:#d1fae5;padding:14px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
         <strong style="font-size:16px">CUMULATIVE AVERAGE</strong>
         <strong style="font-size:20px;color:#047857">${overallAvg}%</strong>
@@ -496,10 +487,11 @@ function printReportCard(studentId) {
   const total = results.reduce((sum, r) => sum + r.total, 0);
   const avg = results.length ? Math.round(total / results.length) : 0;
   const attRate = COMPUTE.attendanceRate(studentId);
+  const reportComment = DB.query('reportComments', c => c.studentId === studentId && c.term === DB.settings().currentTerm)[0];
   const html = `
     <div style="max-width:780px;margin:0 auto;font-family:system-ui">
       <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:24px">
-        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
+        <h1 style="margin:0;color:#047857">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h1>
         <p style="margin:4px 0;color:#666">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:12px 0 0;font-size:20px">STUDENT REPORT CARD</h2>
         <p style="margin:4px 0">${DB.settings().currentTerm}</p>
@@ -523,20 +515,15 @@ function printReportCard(studentId) {
           <tr style="background:#f3f4f6;font-weight:bold"><td colspan="4">Average</td><td colspan="3">${avg}%</td></tr>
         </tfoot>
       </table>
-      ${(() => {
-        const rc = DB.query('reportComments', c => c.studentId === studentId && c.term === DB.settings().currentTerm)[0];
-        if (rc) return `
+      ${reportComment ? `
           <div style="margin-top:20px;padding:12px;background:#f0fdf4;border-left:4px solid #047857;border-radius:4px">
             <strong style="font-size:12px;color:#065f46">CLASS TEACHER'S COMMENT</strong>
-            <p style="margin:6px 0 0;font-size:13px;color:#1e293b">${rc.comment}</p>
-          </div>`;
-        return '';
-      })()}
+            <p style="margin:6px 0 0;font-size:13px;color:#1e293b">${reportComment.comment}</p>
+          </div>` : ''}
       <div style="margin-top:28px;display:flex;justify-content:space-between">
         ${(() => {
-          const rc = DB.query('reportComments', c => c.studentId === studentId && c.term === DB.settings().currentTerm)[0];
-          const ct = rc?.classTeacher || 'Class Teacher';
-          const ht = rc?.headTeacher || 'Head Teacher';
+          const ct = reportComment?.classTeacher || 'Class Teacher';
+          const ht = reportComment?.headTeacher || 'Head Teacher';
           return `<div><strong>Class Teacher:</strong> ${ct}<br/><br/>____________________</div>
                   <div style="text-align:right"><strong>Head Teacher:</strong> ${ht}<br/><br/>____________________</div>`;
         })()}
@@ -551,7 +538,7 @@ function printReportCard(studentId) {
 function view_par_children() {
   const children = parentChildren();
   return `
-    ${pageHeader({ title: 'My Children', subtitle: `${children.length} ${children.length===1?'child':'children'} at Bright Lights Academy` })}
+    ${pageHeader({ title: 'My Children', subtitle: `${children.length} ${children.length===1?'child':'children'} at ${(DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School'}` })}
     <div class="grid sm:grid-cols-2 gap-4">
       ${children.map(c => renderChildCard(c)).join('')}
     </div>
@@ -579,7 +566,7 @@ function view_par_fees() {
           <div class="text-3xl font-extrabold text-emerald-200">${money(totalPaid)}</div>
         </div>
       </div>
-      ${totalDue > 0 ? `<button class="btn btn-gold w-full mt-4 !py-3 text-base" onclick="payAllModal()">${icon('fees','w-5 h-5')} Pay All Fees Now</button>` : ''}
+      ${totalDue > 0 ? `<button class="btn btn-primary w-full mt-4 !py-3 text-base" onclick="payAllModal()">${icon('fees','w-5 h-5')} Pay All Fees Now</button>` : ''}
     </div>
 
     <div class="space-y-3">
@@ -642,7 +629,7 @@ function viewInvoice(invoiceId) {
     body: `
       <div class="print-area">
         <div class="text-center mb-4 pb-3 border-b">
-          <h2 class="text-xl font-bold text-brand-700">BRIGHT LIGHTS ACADEMY</h2>
+          <h2 class="text-xl font-bold text-brand-700">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h2>
           <p class="text-xs text-slate-500">15 Liberty Estate, Lekki, Lagos</p>
         </div>
         <div class="grid grid-cols-2 text-sm mb-4">
@@ -953,10 +940,9 @@ function processPayment(invoiceId) {
     return;
   }
 
-  // Card/Transfer flow — 10% simulated failure rate so the failure path is demonstrable
+  // Card/Transfer flow — always succeeds in demo mode
   setTimeout(() => {
-    if (Math.random() < 0.10) failPayment(invoiceId, amount, method);
-    else completePayment(invoiceId, amount, method);
+    completePayment(invoiceId, amount, method);
   }, 1500);
 }
 
@@ -1070,7 +1056,7 @@ function downloadReceipt(invoiceId) {
   const html = `
     <div style="max-width:600px;margin:0 auto;font-family:system-ui">
       <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
+        <h1 style="margin:0;color:#047857">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h1>
         <p style="margin:4px 0;color:#666;font-size:13px">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:14px 0 4px;font-size:18px">OFFICIAL PAYMENT RECEIPT</h2>
       </div>
@@ -1440,7 +1426,7 @@ function finalizeLoanDecision(amount, term, childrenSel) {
     repayments.push({ dueDate: daysAhead(30 * m), amount: monthly, paid: false });
   }
   const loan = {
-    id: uid('loan'), schoolId: 'sch_brightlights', parentId: AUTH.current.id,
+    id: uid('loan'), schoolId: AUTH.current.schoolId || 'sch_brightlights', parentId: AUTH.current.id,
     studentIds: childrenSel, amount, term, interestRate: 5,
     totalRepayment: total, monthlyPayment: monthly,
     status: 'active', creditScore: score,
@@ -1474,9 +1460,8 @@ function payLoanInstallment(loanId) {
   const loan = DB.find('loans', loanId);
   const next = loan.repayments.find(r => !r.paid);
   if (!next) return;
-  next.paid = true;
-  next.paidAt = now();
-  DB.update('loans', loanId, { repayments: loan.repayments });
+  const updatedRepayments = loan.repayments.map(r => r.id === next.id ? Object.assign({}, r, { paid: true, paidAt: new Date().toISOString() }) : r);
+  DB.update('loans', loanId, { repayments: updatedRepayments });
   toast(`Installment of ${money(next.amount)} paid`);
   APP.render();
 }

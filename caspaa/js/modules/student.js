@@ -63,7 +63,9 @@ function view_stu_dashboard() {
       <div class="card p-5">
         <h3 class="font-bold text-slate-900 mb-3">My Trophies & Badges</h3>
         <div class="flex flex-wrap gap-3">
-          ${reward.badges.map(b => `<div class="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+          ${reward.badges.length === 0
+            ? `<p class="text-sm text-slate-500">No badges yet — keep working hard!</p>`
+            : reward.badges.map(b => `<div class="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
             <span class="text-2xl">${b.icon}</span>
             <span class="text-sm font-semibold text-amber-900">${b.label}</span>
           </div>`).join('')}
@@ -324,13 +326,6 @@ function stu_launchSim(simId, simName) {
 function stu_openMaterial(id) {
   const m = DB.find('learningMaterials', id);
   if (!m) return;
-  if (m.type === 'video') { stu_watchVideo(id); return; }
-  stu_openNote(id);
-}
-
-function stu_openMaterial(id) {
-  const m = DB.find('learningMaterials', id);
-  if (!m) return;
   if (m.type === 'video' && m.url) { window.open(m.url, '_blank'); return; }
   if (m.file && m.file.data) { const a = document.createElement('a'); a.href = m.file.data; a.download = m.file.name; a.click(); return; }
   modal({
@@ -382,7 +377,9 @@ function view_stu_assignments() {
                 ${sub ? (graded
                   ? `<div class="text-center"><div class="text-2xl font-extrabold text-emerald-700">${sub.grade}</div><div class="text-xs text-slate-400">/100</div></div>`
                   : `<span class="text-xs text-slate-400">Awaiting grade</span>`)
-                  : `<button class="btn btn-primary text-sm" onclick="stu_submitAssignmentModal('${a.id}')">${icon('upload','w-4 h-4')} Submit</button>`}
+                  : (a.dueDate && new Date(a.dueDate) < new Date()) || a.overdue === true
+                    ? `<span class="badge badge-danger">Submission closed</span>`
+                    : `<button class="btn btn-primary text-sm" onclick="stu_submitAssignmentModal('${a.id}')">${icon('upload','w-4 h-4')} Submit</button>`}
               </div>
             </div>
           </div>`;
@@ -663,15 +660,16 @@ function stu_viewCbtResult(subId) {
    ============================================================ */
 function view_stu_results() {
   const s = me();
-  const results = COMPUTE.studentResults(s.id).filter(r => r.approved);
-  const subjects = DB.get('subjects');
+  const allResults = COMPUTE.studentResults(s.id);
+  const results = allResults.filter(r => r.approved);
+  const pendingCount = allResults.length - results.length;
   const total = results.reduce((sum, r) => sum + r.total, 0);
   const avg = results.length ? Math.round(total / results.length) : 0;
   const cbtSubs = DB.query('cbtSubmissions', x => x.studentId === s.id);
   const reportComment = DB.query('reportComments', rc => rc.studentId === s.id && rc.term === DB.settings().currentTerm)[0];
   const canDownload = results.length > 0 && !!reportComment;
   return `
-    ${pageHeader({ title: 'My Results', subtitle: `${DB.settings().currentTerm} · academic performance`, actions: results.length ? `
+    ${pageHeader({ title: 'My Results', subtitle: `${(APP.params && APP.params.term) || (results.length > 0 && results[0].term) || DB.settings().currentTerm} · academic performance`, actions: results.length ? `
       <div class="flex items-center gap-2">
         ${!reportComment ? `<span class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">${icon('info','w-3.5 h-3.5 inline mr-1')} Awaiting teacher comment</span>` : ''}
         <button class="btn btn-secondary ${!canDownload ? 'opacity-50 cursor-not-allowed' : ''}" ${canDownload ? `onclick="printReportCard('${s.id}')"` : 'disabled title="Your class teacher must add a comment before the report card can be downloaded"'}>${icon('download','w-4 h-4')} Report Card</button>
@@ -682,6 +680,8 @@ function view_stu_results() {
       ${statCard({ label: 'Average', value: avg + '%', icon: 'reports', color: avg >= 60 ? 'brand' : 'rose' })}
       ${statCard({ label: 'CBT Taken', value: cbtSubs.length, icon: 'classes', color: 'blue' })}
     </div>
+
+    ${pendingCount > 0 ? `<div class="alert alert-warn mb-4">${pendingCount} result(s) are still being reviewed by your teacher and will appear here once approved.</div>` : ''}
 
     <div class="card overflow-hidden mb-4">
       <div class="px-4 py-3 border-b border-slate-100"><h3 class="font-bold text-slate-900">Subject Results</h3></div>
@@ -695,7 +695,7 @@ function view_stu_results() {
               <td class="text-center">${r.ca2}</td>
               <td class="text-center">${r.exam}</td>
               <td class="text-center font-bold">${r.total}</td>
-              <td class="text-center"><span class="badge ${r.grade === 'A' ? 'badge-success' : r.grade === 'F' ? 'badge-danger' : 'badge-info'}">${r.grade}</span></td>
+              <td class="text-center">${(() => { const gradeBadge = r.grade === 'A' ? 'badge-success' : r.grade === 'F' ? 'badge-danger' : (r.grade === 'D' || r.grade === 'E') ? 'badge-warn' : 'badge-info'; return `<span class="badge ${gradeBadge}">${r.grade}</span>`; })()}</td>
             </tr>`).join('')}
           </tbody>
         </table></div>

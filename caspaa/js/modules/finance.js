@@ -64,7 +64,7 @@ function view_fin_dashboard() {
         <div class="card p-5">
           <h3 class="font-bold text-slate-900 mb-3">Fee Collection</h3>
           <div style="height: 200px;"><canvas id="finChart1"></canvas></div>
-          <p class="text-center text-sm text-slate-600 mt-2"><strong>${Math.round((collected/(collected+outstanding))*100)}%</strong> of fees collected this term</p>
+          <p class="text-center text-sm text-slate-600 mt-2"><strong>${(collected + outstanding) > 0 ? Math.round((collected/(collected+outstanding))*100) : 0}%</strong> of fees collected this term</p>
         </div>
         <div class="card p-5 lg:col-span-2">
           <h3 class="font-bold text-slate-900 mb-3">Income vs Expenses (6 months)</h3>
@@ -102,6 +102,7 @@ function view_fin_dashboard() {
           <div class="space-y-2">
             ${invoices.filter(i => i.balance > 0).sort((a,b) => b.balance - a.balance).slice(0, 5).map(i => {
               const s = DB.find('students', i.studentId);
+              if (!s) return '';
               const p = DB.find('parents', s.parentId);
               return `<div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                 <div>
@@ -125,7 +126,7 @@ function sendReminder(invoiceId) {
   const inv = DB.find('invoices', invoiceId);
   const s = DB.find('students', inv.studentId);
   DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Fee Payment Reminder', body: `Your outstanding balance of ${money(inv.balance)} is overdue.`, type: 'warn', read: false, timestamp: now() });
-  toast(`Reminder sent for ${s.name}`);
+  toast(`Reminder sent for ${s.name}`, 'success');
 }
 
 /* ---------- Fee Structure (tabs: Class Fees + Activities) ---------- */
@@ -379,7 +380,7 @@ function exportFeeStructureCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'caspaa_fee_structure.csv'; a.click();
   URL.revokeObjectURL(url);
-  toast('Fee structure exported');
+  toast('Fee structure exported', 'success');
 }
 
 function exportFeeStructurePDF() {
@@ -486,10 +487,10 @@ function saveFeeStructure(editingId) {
   if (!data.term) { toast('Term is required', 'danger'); return; }
   if (editingId) {
     DB.update('feeStructures', editingId, data);
-    toast('Fee structure updated');
+    toast('Fee structure updated', 'success');
   } else {
     DB.insert('feeStructures', { id: uid('fee'), ...data });
-    toast('Fee structure created');
+    toast('Fee structure created', 'success');
   }
   document.getElementById('modalBackdrop').click();
   APP.render();
@@ -741,7 +742,7 @@ function saveManualPayment() {
 }
 
 function exportPayments() {
-  const txns = DB.get('transactions');
+  const txns = DB.query('transactions', t => t.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
   const csv = 'Reference,Student,Amount,Method,Status,Reconciled,Date\n' +
     txns.map(t => {
       const s = DB.find('students', t.studentId);
@@ -750,12 +751,12 @@ function exportPayments() {
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'caspaa_payments.csv'; a.click();
-  toast('Payment ledger exported');
+  toast('Payment ledger exported', 'success');
 }
 
 /* ---------- Reconciliation ---------- */
 function view_fin_recon() {
-  const unrec = DB.query('transactions', t => !t.reconciled);
+  const unrec = DB.query('transactions', t => t.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && !t.reconciled);
   // Create a synthetic unreconciled transaction for demo
   if (unrec.length === 0) {
     DB.insert('transactions', {
@@ -768,7 +769,7 @@ function view_fin_recon() {
       narration: 'TRSF/OKAFOR/SCH FEES JSS1'
     });
   }
-  const unreconciled = DB.query('transactions', t => !t.reconciled);
+  const unreconciled = DB.query('transactions', t => t.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && !t.reconciled);
   return `
     ${pageHeader({ title: 'Payment Reconciliation', subtitle: 'Match incoming payments to student invoices' })}
     <div class="card bg-blue-50 border border-blue-200 p-3 mb-4 text-sm text-blue-900">
@@ -811,7 +812,7 @@ function reconcileTxn(txnId, studentId) {
 
 /* ---------- Expenses ---------- */
 function view_fin_expenses() {
-  const expenses = DB.get('expenses');
+  const expenses = DB.query('expenses', e => e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const byCategory = {};
   expenses.forEach(e => { byCategory[e.category] = (byCategory[e.category] || 0) + e.amount; });
@@ -865,17 +866,19 @@ function addExpenseModal() {
 }
 
 function saveExpense() {
+  const amount = parseInt(document.getElementById('ex_amt').value) || 0;
+  if (!amount || amount <= 0) { toast('Enter a valid amount', 'danger'); return; }
   DB.insert('expenses', {
     id: uid('exp'), schoolId: 'sch_brightlights',
     date: document.getElementById('ex_date').value,
     category: document.getElementById('ex_cat').value,
-    amount: parseInt(document.getElementById('ex_amt').value) || 0,
+    amount,
     description: document.getElementById('ex_desc').value.trim(),
     recordedBy: AUTH.current.id
   });
   document.getElementById('modalBackdrop').click();
   APP.render();
-  toast('Expense recorded');
+  toast('Expense recorded', 'success');
 }
 
 /* ---------- Lending (school side) ---------- */
@@ -1336,7 +1339,7 @@ function startNewPayrollRun() {
     adjustments: [],
     computedAt: now(), computedBy: AUTH.current.id
   });
-  toast(`Started ${period} payroll run`);
+  toast(`Started ${period} payroll run`, 'success');
   APP.render();
 }
 
@@ -1577,7 +1580,7 @@ function addAdjustment(runId) {
     pensionTotal: Math.round(newGross * 0.08),
     netTotal: Math.round(newGross * 0.85)
   });
-  toast('Adjustment added');
+  toast('Adjustment added', 'success');
   manageAdjustmentsModal(runId);
 }
 
@@ -1664,7 +1667,7 @@ function exportPayrollCSV() {
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'caspaa_payroll.csv'; a.click();
-  toast('Payroll exported');
+  toast('Payroll exported', 'success');
 }
 
 /* ---------- Financial Reports ---------- */
@@ -1696,7 +1699,7 @@ function view_fin_reports() {
 function _accFigures() {
   const invoices = DB.query('invoices', i => i.schoolId === 'sch_brightlights');
   const txns = DB.query('transactions', t => t.schoolId === 'sch_brightlights' && t.status === 'successful');
-  const expenses = DB.get('expenses');
+  const expenses = DB.query('expenses', e => e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
   const collected = txns.reduce((s, t) => s + t.amount, 0);
   const billed = invoices.reduce((s, i) => s + i.total, 0);
   const outstanding = invoices.reduce((s, i) => s + i.balance, 0);
@@ -1883,7 +1886,7 @@ function saveBudget() {
 
 function exportPL() {
   const txns = DB.query('transactions', t => t.status === 'successful');
-  const expenses = DB.get('expenses');
+  const expenses = DB.query('expenses', e => e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
   const totalRev = txns.reduce((s, t) => s + t.amount, 0);
   const totalExp = expenses.reduce((s, e) => s + e.amount, 0);
   const profit = totalRev - totalExp;

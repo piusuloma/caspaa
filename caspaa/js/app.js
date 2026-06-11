@@ -74,6 +74,7 @@ const APP = {
         { key: 'cal_main',       label: 'Calendar',           icon: 'calendar' },
         { key: 'tch_timetable',  label: 'My Schedule',        icon: 'calendar' },
         { key: 'tch_houses',     label: 'House Points',        icon: 'check' },
+        { key: 'tch_diary',      label: 'Diary',              icon: 'book-open' },
         { key: 'tch_messages',   label: 'Messages',           icon: 'chat' },
         { key: 'tch_appraisal',  label: 'My Appraisal',       icon: 'reports' }
       ],
@@ -89,6 +90,7 @@ const APP = {
         { key: 'par_houses',     label: 'House Points',    icon: 'check' },
         { key: 'par_transport',  label: 'Transport',       icon: 'package' },
         { key: 'par_health',     label: 'Health',          icon: 'reports' },
+        { key: 'par_diary',      label: 'Diary',           icon: 'book-open' },
         { key: 'par_feedback',   label: 'Surveys',         icon: 'check' }
       ],
       student: [

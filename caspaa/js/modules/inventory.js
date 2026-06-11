@@ -411,3 +411,65 @@ function inv_doWriteOff(itemId) {
   APP.render();
   toast('Write-off recorded successfully.', 'success');
 }
+
+// ─── Add Inventory Modal ──────────────────────────────────────────────────────
+
+function addInventoryModal() {
+  modal({
+    title: 'Add Inventory Item',
+    size: 'md',
+    body: `<div class="space-y-3">
+      <div><label class="input-label">Item Name *</label><input id="inv_name" class="input" placeholder="e.g. A4 Notebooks"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="input-label">Category</label>
+          <select id="inv_cat" class="input">
+            <option>Books</option><option>Stationery</option><option>Equipment</option><option>Uniforms</option><option>Furniture</option><option>Sports</option><option>Other</option>
+          </select>
+        </div>
+        <div><label class="input-label">Initial Quantity</label><input id="inv_qty" class="input" type="number" min="0" placeholder="0"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="input-label">Unit Cost (NGN)</label><input id="inv_cost" class="input" type="number" min="0" placeholder="0"></div>
+        <div><label class="input-label">Min. Stock Level</label><input id="inv_min" class="input" type="number" min="0" placeholder="5"></div>
+      </div>
+      <div><label class="input-label">Supplier</label><input id="inv_supplier" class="input" placeholder="e.g. ABC Supplies Ltd"></div>
+    </div>`,
+    footer: '<button class="btn btn-secondary" onclick="document.getElementById(\'modalBackdrop\').click()">Cancel</button><button class="btn btn-primary" onclick="inv_saveNewItem()">Add Item</button>'
+  });
+}
+
+function inv_saveNewItem() {
+  const name = (document.getElementById('inv_name') || {}).value.trim();
+  if (!name) { toast('Item name is required', 'danger'); return; }
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  DB.insert('inventory', {
+    id: uid('inv'),
+    schoolId,
+    name,
+    category: (document.getElementById('inv_cat') || {}).value,
+    quantity: parseInt((document.getElementById('inv_qty') || {}).value) || 0,
+    unitCost: parseFloat((document.getElementById('inv_cost') || {}).value) || 0,
+    minStock: parseInt((document.getElementById('inv_min') || {}).value) || 5,
+    supplier: (document.getElementById('inv_supplier') || {}).value.trim(),
+    history: []
+  });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast('Item added to inventory', 'success');
+}
+
+// ─── View Inventory History ───────────────────────────────────────────────────
+
+function viewInventoryHistory(itemId) {
+  const item = DB.find('inventory', itemId);
+  if (!item) return;
+  const history = (item.history || []).sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  modal({
+    title: 'History — ' + item.name,
+    size: 'md',
+    body: history.length === 0
+      ? '<p class="text-slate-500 text-sm p-4 text-center">No history recorded yet.</p>'
+      : `<table class="tbl w-full"><thead><tr><th>Type</th><th>Change</th><th>Reason</th><th>Date</th></tr></thead><tbody>${history.map(h => `<tr><td><span class="badge ${h.type === 'Issue' ? 'badge-warn' : h.type === 'Write-Off' ? 'badge-danger' : 'badge-success'}">${h.type}</span></td><td class="font-bold ${h.delta < 0 ? 'text-rose-600' : 'text-emerald-600'}">${h.delta > 0 ? '+' : ''}${h.delta}</td><td class="text-sm">${h.reason || '—'}</td><td class="text-xs text-slate-400">${h.timestamp ? h.timestamp.slice(0, 10) : '—'}</td></tr>`).join('')}</tbody></table>`,
+    footer: '<button class="btn btn-secondary" onclick="document.getElementById(\'modalBackdrop\').click()">Close</button>'
+  });
+}

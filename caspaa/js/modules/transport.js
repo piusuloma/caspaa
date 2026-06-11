@@ -24,7 +24,7 @@ function view_adm_transport(params) {
         ['assign',  'Student Assignments',   assignments.length],
         ['pickups', 'Pickup Authorizations', pendingCount ? `<span class="ml-1 px-1.5 py-0.5 bg-rose-500 text-white text-xs rounded-full">${pendingCount}</span>` : '']
       ].map(([k, l, badge]) =>
-        `<button onclick="APP.go('adm_transport',{tab:'${k}'})"
+        `<button onclick="APP.params.tab = '${k}'; APP.render();"
           class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab === k ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'}">
           ${l}${badge !== undefined && badge !== '' ? (typeof badge === 'number' ? '' : badge) : ''}
         </button>`
@@ -71,7 +71,7 @@ function adm_renderRoutesTab(routes, schoolId) {
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       ${routes.map(route => {
         const driver = allStaff.find(s => s.id === route.driverStaffId);
-        const assignedCount = DB.query('busAssignments', a => a.routeId === route.id).length;
+        const assignedCount = DB.query('busAssignments', a => a.routeId === route.id && a.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).length;
         const stops = Array.isArray(route.stops) ? route.stops : (route.stops || '').split('\n').map(s => s.trim()).filter(Boolean);
         return `
           <div class="card p-5 flex flex-col gap-3">
@@ -365,7 +365,7 @@ function adm_saveRoute(routeId) {
     toast('Route added', 'success');
   }
   document.getElementById('modalBackdrop').click();
-  APP.go('adm_transport', { tab: 'routes' });
+  APP.params.tab = 'routes'; APP.render();
 }
 
 function adm_deleteRoute(routeId) {
@@ -377,7 +377,7 @@ function adm_deleteRoute(routeId) {
     () => {
       DB.query('busAssignments', a => a.routeId === routeId).forEach(a => DB.remove('busAssignments', a.id));
       DB.remove('busRoutes', routeId);
-      APP.go('adm_transport', { tab: 'routes' });
+      APP.params.tab = 'routes'; APP.render();
       toast('Route deleted', 'info');
     },
     { danger: true, yesLabel: 'Delete Route' }
@@ -456,7 +456,7 @@ function adm_saveAssignment() {
   const student = DB.find('students', studentId);
   const route   = DB.find('busRoutes', routeId);
   document.getElementById('modalBackdrop').click();
-  APP.go('adm_transport', { tab: 'assign' });
+  APP.params.tab = 'assign'; APP.render();
   toast(`${student ? student.name : 'Student'} assigned to ${route ? route.name : 'route'}`, 'success');
 }
 
@@ -590,7 +590,7 @@ function view_par_transport(params) {
 
       ${children.length > 1 ? `
         <div class="flex gap-2 flex-wrap">
-          ${children.map(c => `<button onclick="APP.go('par_transport',{studentId:'${c.id}'})"
+          ${children.map(c => `<button onclick="APP.params.studentId = '${c.id}'; APP.render();"
             class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
         </div>
       ` : ''}
@@ -655,7 +655,7 @@ function view_par_transport(params) {
             <div class="font-semibold text-amber-800 text-sm mb-2 flex items-center gap-2">${icon('bell','w-4 h-4')} ${pendingPickups.length} pending approval${pendingPickups.length !== 1 ? 's' : ''}</div>
             <div class="space-y-1">
               ${pendingPickups.map(p => `<div class="text-sm text-amber-800 flex items-center gap-2">
-                <span class="badge badge-warning">Pending</span>
+                <span class="badge badge-warn">Pending</span>
                 <span>${p.name} · ${p.relationship}</span>
               </div>`).join('')}
             </div>

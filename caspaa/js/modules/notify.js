@@ -44,7 +44,7 @@ function view_adm_bulk_notify(params) {
 function notify_composeEmailTab() {
   const classOptions = notify_classOptions();
   const school = DB.find('schools', AUTH.current.schoolId) || {};
-  const schoolName = school.name || 'Bright Lights Academy';
+  const schoolName = school.name || 'School';
 
   return `
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -189,9 +189,9 @@ function notify_classOptions() {
 function notify_countAudience(audienceKey, classId) {
   const sid = AUTH.current.schoolId;
   try {
-    if (audienceKey === 'all_parents')  return (DB.get('parents')  || []).filter(p => p.schoolId === sid).length;
-    if (audienceKey === 'all_teachers') return (DB.get('teachers') || []).filter(t => t.schoolId === sid).length;
-    if (audienceKey === 'all_students') return (DB.get('students') || []).filter(s => s.schoolId === sid && s.status === 'active').length;
+    if (audienceKey === 'all_parents')  return (DB.query('parents',  p => p.schoolId === sid) || []).length;
+    if (audienceKey === 'all_teachers') return (DB.query('teachers', t => t.schoolId === sid) || []).length;
+    if (audienceKey === 'all_students') return (DB.query('students', s => s.schoolId === sid && s.status === 'active') || []).length;
     if (audienceKey === 'class' && classId) return (COMPUTE.studentsByClass(classId) || []).length;
   } catch(e) {}
   return 0;
@@ -200,9 +200,9 @@ function notify_countAudience(audienceKey, classId) {
 function notify_getRecipientIds(audienceKey, classId) {
   const sid = AUTH.current.schoolId;
   try {
-    if (audienceKey === 'all_parents')  return (DB.get('parents')  || []).filter(p => p.schoolId === sid).map(p => p.id);
-    if (audienceKey === 'all_teachers') return (DB.get('teachers') || []).filter(t => t.schoolId === sid).map(t => t.id);
-    if (audienceKey === 'all_students') return (DB.get('students') || []).filter(s => s.schoolId === sid && s.status === 'active').map(s => s.id);
+    if (audienceKey === 'all_parents')  return (DB.query('parents',  p => p.schoolId === sid) || []).map(p => p.id);
+    if (audienceKey === 'all_teachers') return (DB.query('teachers', t => t.schoolId === sid) || []).map(t => t.id);
+    if (audienceKey === 'all_students') return (DB.query('students', s => s.schoolId === sid && s.status === 'active') || []).map(s => s.id);
     if (audienceKey === 'class' && classId) {
       const students = COMPUTE.studentsByClass(classId) || [];
       return [...new Set(students.map(s => s.parentId).filter(Boolean))];
@@ -293,7 +293,7 @@ function notify_previewEmail() {
 
   const audLabel   = notify_audienceLabel(audienceKey, classId);
   const school     = DB.find('schools', AUTH.current.schoolId) || {};
-  const schoolName = school.name || 'Bright Lights Academy';
+  const schoolName = school.name || 'School';
 
   modal({
     title: 'Confirm Email Broadcast',

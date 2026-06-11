@@ -97,7 +97,7 @@ function view_par_feedback(params) {
         ? emptyState({ icon: 'chat', title: 'No active surveys right now', body: 'Check back soon — the school will post surveys here for parents to complete.' })
         : `<div class="space-y-3">
             ${forms.map(form => {
-              const myResponse = DB.query('feedbackResponses', r => r.formId === form.id && r.parentId === AUTH.current.id)[0];
+              const myResponse = DB.query('feedbackResponses', r => r.formId === form.id && r.parentId === AUTH.current.id && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))[0];
               const qCount = (form.questions || []).length;
               return `
                 <div class="card p-5">
@@ -161,6 +161,11 @@ function par_openFeedbackForm(formId) {
 function par_submitFeedback(formId) {
   const form = DB.find('feedbackForms', formId);
   if (!form) return;
+
+  if (form.deadline && new Date(form.deadline) < new Date()) {
+    toast('This survey has closed — deadline has passed', 'warn');
+    return;
+  }
 
   const questions = form.questions || [];
   const answers = {};
@@ -231,7 +236,7 @@ function view_adm_feedback(params) {
           ? emptyState({ icon: 'chat', title: `No ${tab} surveys`, body: tab === 'active' ? 'Create a survey to collect parent feedback.' : 'Closed surveys will appear here.' })
           : displayed.map(form => {
               const qCount    = (form.questions || []).length;
-              const responses = DB.query('feedbackResponses', r => r.formId === form.id);
+              const responses = DB.query('feedbackResponses', r => r.formId === form.id && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
               return `
                 <div class="card p-5">
                   <div class="flex items-start justify-between gap-3 flex-wrap">
@@ -251,7 +256,7 @@ function view_adm_feedback(params) {
                     </div>
                     <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
                       <button class="btn btn-secondary" onclick="adm_viewFeedbackResults('${form.id}')">
-                        ${icon('reports', 'w-4 h-4')} View Results
+                        ${icon('reports', 'w-4 h-4')} View Results (${responses.length})
                       </button>
                       ${form.status === 'active' ? `
                         <button class="btn btn-danger" onclick="adm_closeSurvey('${form.id}')">
@@ -272,6 +277,7 @@ function view_adm_feedback(params) {
 
 /* ---------- Create survey modal ---------- */
 function adm_createSurveyModal() {
+  _svQCount = 0;
   modal({
     title: 'Create New Survey',
     size: 'lg',
@@ -392,6 +398,15 @@ function adm_saveSurvey() {
     createdAt: now()
   });
 
+  // Notify all school parents about the new survey
+  const parents = DB.query('parents', p => p.schoolId === schoolId);
+  parents.forEach(p => DB.insert('notifications', {
+    id: uid('not'), userId: p.id,
+    title: 'New Feedback Survey',
+    body: 'The school has published a new survey: ' + title + '. Please respond at your earliest convenience.',
+    type: 'info', read: false, timestamp: now()
+  }));
+
   document.getElementById('modalBackdrop').click();
   APP.render();
   toast('Survey created and published to parents', 'success');
@@ -400,6 +415,7 @@ function adm_saveSurvey() {
 /* ---------- Close survey ---------- */
 function adm_closeSurvey(formId) {
   const form = DB.find('feedbackForms', formId);
+  if (!form) { toast('Survey not found', 'danger'); return; }
   confirm(`Close "${form.title}"? Parents will no longer be able to submit new responses.`, () => {
     DB.update('feedbackForms', formId, { status: 'closed' });
     APP.render();
@@ -410,10 +426,11 @@ function adm_closeSurvey(formId) {
 /* ---------- Delete survey ---------- */
 function adm_deleteSurvey(formId) {
   const form = DB.find('feedbackForms', formId);
-  const rCount = DB.query('feedbackResponses', r => r.formId === formId).length;
+  if (!form) { toast('Survey not found', 'danger'); return; }
+  const rCount = DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).length;
   confirm(`Delete "${form.title}"?${rCount ? ` This will also remove ${rCount} response${rCount !== 1 ? 's' : ''}.` : ''} This cannot be undone.`, () => {
     DB.remove('feedbackForms', formId);
-    DB.query('feedbackResponses', r => r.formId === formId).forEach(r => DB.remove('feedbackResponses', r.id));
+    DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).forEach(r => DB.remove('feedbackResponses', r.id));
     APP.render();
     toast('Survey deleted', 'info');
   }, { yesLabel: 'Delete', danger: true });
@@ -424,7 +441,7 @@ function adm_viewFeedbackResults(formId) {
   const form = DB.find('feedbackForms', formId);
   if (!form) { toast('Survey not found', 'danger'); return; }
 
-  const responses = DB.query('feedbackResponses', r => r.formId === formId);
+  const responses = DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
   const questions  = form.questions || [];
   const total      = responses.length;
 

@@ -35,7 +35,7 @@ function view_tch_formative(params) {
             </div>
           </div>
           ${test.status === 'active'  ? '<span class="badge badge-success flex-shrink-0">Active</span>'  : ''}
-          ${test.status === 'draft'   ? '<span class="badge badge-warning flex-shrink-0">Draft</span>'   : ''}
+          ${test.status === 'draft'   ? '<span class="badge badge-warn flex-shrink-0">Draft</span>'   : ''}
           ${test.status === 'closed'  ? '<span class="badge badge-danger flex-shrink-0">Closed</span>'   : ''}
         </div>
 
@@ -431,7 +431,7 @@ function tch_viewTestResults(testId) {
                     </td>
                     <td class="px-4 py-3 text-center font-mono">${sub.score}/${sub.total}</td>
                     <td class="px-4 py-3 text-center"><span class="${scoreBg(sub.percentage)}">${sub.percentage}%</span></td>
-                    <td class="px-4 py-3 text-center"><span class="badge ${sub.percentage >= 75 ? 'badge-success' : sub.percentage >= 50 ? 'badge-warning' : 'badge-danger'}">${gradeLabel(sub.percentage)}</span></td>
+                    <td class="px-4 py-3 text-center"><span class="badge ${sub.percentage >= 75 ? 'badge-success' : sub.percentage >= 50 ? 'badge-warn' : 'badge-danger'}">${gradeLabel(sub.percentage)}</span></td>
                     <td class="px-4 py-3 text-right text-slate-500 text-xs">${fdate(sub.submittedAt, { relative: true })}</td>
                   </tr>`;
                 } else {
@@ -492,6 +492,7 @@ function view_stu_formative(params) {
   );
 
   const pendingTests   = allTests.filter(t => t.status === 'active' && !submittedTestIds.has(t.id) && t.dueDate >= todayStr);
+  const overdueTests   = allTests.filter(t => t.status === 'active' && !submittedTestIds.has(t.id) && t.dueDate < todayStr);
   const completedTests = allTests.filter(t => submittedTestIds.has(t.id));
 
   const classes  = DB.get('classes');
@@ -546,7 +547,7 @@ function view_stu_formative(params) {
             <div class="text-slate-500">Percentage</div>
           </div>
           <div class="bg-slate-50 rounded-xl py-2">
-            <div class="font-bold text-slate-900">${sub.percentage >= 75 ? 'Excellent' : sub.percentage >= 50 ? 'Good' : 'Retry'}</div>
+            <div class="font-bold text-slate-900">${sub.percentage >= 75 ? 'Excellent' : sub.percentage >= 50 ? 'Good' : 'Below Pass'}</div>
             <div class="text-slate-500">Result</div>
           </div>
         </div>
@@ -566,7 +567,7 @@ function view_stu_formative(params) {
       })}
 
       <div class="flex gap-2 flex-wrap">
-        ${[{ key: 'pending', label: 'Pending', count: pendingTests.length }, { key: 'completed', label: 'Completed', count: completedTests.length }].map(t => {
+        ${[{ key: 'pending', label: 'Pending', count: pendingTests.length + overdueTests.length }, { key: 'completed', label: 'Completed', count: completedTests.length }].map(t => {
           const isActive = activeTab === t.key;
           return `<button
             class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
@@ -577,9 +578,53 @@ function view_stu_formative(params) {
       </div>
 
       ${activeTab === 'pending' ? (
-        pendingTests.length === 0
+        (pendingTests.length === 0 && overdueTests.length === 0)
           ? `<div class="pt-6">${emptyState({ icon: 'check', title: 'All caught up!', body: 'No pending tests right now. Check back later.' })}</div>`
-          : `<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">${pendingTests.map(pendingCard).join('')}</div>`
+          : `
+            ${overdueTests.length > 0 ? `
+              <div class="space-y-3">
+                <div class="flex items-center gap-2 text-sm font-semibold text-rose-700">
+                  ${icon('bell', 'w-4 h-4')} Overdue Tests (${overdueTests.length})
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  ${overdueTests.map(test => {
+                    const cls  = classes.find(c => c.id === test.classId);
+                    const subj = subjects.find(s => s.id === test.subjectId);
+                    return `
+                      <div class="card p-4 flex flex-col gap-3 border-rose-300 bg-rose-50">
+                        <div class="flex items-start justify-between gap-2">
+                          <div>
+                            <div class="font-bold text-slate-900">${test.title}</div>
+                            <div class="text-xs text-slate-500 mt-0.5">${cls ? cls.name : '—'} &middot; ${subj ? subj.name : '—'}</div>
+                          </div>
+                          <span class="badge badge-danger flex-shrink-0">Overdue</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs text-center">
+                          <div class="bg-white rounded-xl py-2">
+                            <div class="font-bold text-slate-900">${(test.questions || []).length}</div>
+                            <div class="text-slate-500">Questions</div>
+                          </div>
+                          <div class="bg-white rounded-xl py-2">
+                            <div class="font-bold text-slate-900">${test.duration} min</div>
+                            <div class="text-slate-500">Duration</div>
+                          </div>
+                        </div>
+                        <div class="text-xs text-rose-700 flex items-center gap-1">
+                          ${icon('calendar', 'w-3.5 h-3.5')} Was due: <strong>${fdate(test.dueDate, { short: true })}</strong>
+                        </div>
+                        <button class="btn btn-secondary w-full border-rose-300 text-rose-700" onclick="stu_startTest('${test.id}')">
+                          ${icon('book', 'w-4 h-4')} Start Test
+                        </button>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            ` : ''}
+            ${pendingTests.length > 0 ? `
+              <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">${pendingTests.map(pendingCard).join('')}</div>
+            ` : ''}
+          `
       ) : (
         completedTests.length === 0
           ? `<div class="pt-6">${emptyState({ icon: 'results', title: 'No completed tests yet', body: 'Your submitted tests and scores will appear here.' })}</div>`

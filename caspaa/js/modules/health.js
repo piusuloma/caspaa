@@ -6,7 +6,7 @@
 
 const HEALTH_OUTCOMES = {
   returned_to_class: { label: 'Returned to Class', badge: 'badge-success',  color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  sent_home:         { label: 'Sent Home',          badge: 'badge-warning',  color: 'bg-amber-100  text-amber-800  border-amber-200'  },
+  sent_home:         { label: 'Sent Home',          badge: 'badge-warn',  color: 'bg-amber-100  text-amber-800  border-amber-200'  },
   referred_hospital: { label: 'Referred to Hospital', badge: 'badge-danger', color: 'bg-rose-100   text-rose-800   border-rose-200'   }
 };
 
@@ -34,7 +34,7 @@ function view_adm_health(params) {
         ['history',  `Visit History${visits.length ? ' (' + visits.length + ')' : ''}`],
         ['profiles', 'Health Profiles']
       ].map(([k, l]) =>
-        `<button onclick="APP.go('adm_health',{tab:'${k}'})"
+        `<button onclick="APP.params.tab = '${k}'; APP.render();"
           class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab === k ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'}">${l}</button>`
       ).join('')}
     </div>`;
@@ -168,7 +168,8 @@ function adm_saveVisit() {
   const outcomeEl = document.querySelector('input[name="hv_outcome"]:checked');
   const outcome   = outcomeEl ? outcomeEl.value : 'returned_to_class';
   const notifyEl  = document.getElementById('hv_notify');
-  const parentNotified = notifyEl ? notifyEl.checked : false;
+  let parentNotified = notifyEl ? notifyEl.checked : false;
+  if (outcome === 'sent_home' || outcome === 'referred_hospital') parentNotified = true;
 
   if (!studentId) { toast('Please select a student', 'danger'); return; }
   if (!complaint) { toast('Complaint / symptoms are required', 'danger'); return; }
@@ -202,7 +203,7 @@ function adm_saveVisit() {
   }
 
   toast('Visit recorded successfully', 'success');
-  APP.go('adm_health', { tab: 'history' });
+  APP.params.tab = 'history'; APP.render();
 }
 
 /* ---------- Visit History tab ---------- */
@@ -412,8 +413,8 @@ function adm_viewStudentHealth(studentId) {
   if (!student) { toast('Student not found', 'danger'); return; }
   const cls        = DB.find('classes', student.classId);
   const schoolId   = student.schoolId || 'sch_brightlights';
-  const visits     = DB.query('sickbayVisits', v => v.studentId === studentId)
-                       .sort((a, b) => a.date.localeCompare(b.date));
+  const visits     = DB.query('sickbayVisits', v => v.studentId === studentId && v.schoolId === (schoolId || 'sch_brightlights'))
+                       .sort((a, b) => b.date.localeCompare(a.date));
   const hasAllergies = student.allergies && student.allergies.toLowerCase() !== 'none' && student.allergies.trim() !== '';
 
   modal({
@@ -507,7 +508,7 @@ function view_par_health(params) {
 
   const activeId = (params && params.studentId) || children[0].id;
   const child    = DB.find('students', activeId);
-  const visits   = DB.query('sickbayVisits', v => v.studentId === activeId)
+  const visits   = DB.query('sickbayVisits', v => v.studentId === activeId && v.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
                      .sort((a, b) => b.date.localeCompare(a.date));
 
   const hasAllergies = child && child.allergies && child.allergies.toLowerCase() !== 'none' && child.allergies.trim() !== '';

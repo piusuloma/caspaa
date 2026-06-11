@@ -376,15 +376,18 @@ function view_tch_dashboard() {
 /* ---------- My Classes ---------- */
 function view_tch_classes() {
   const classes = teacherClasses();
+  const tRecord = DB.find('teachers', AUTH.current.id);
   return `
     ${pageHeader({ title: 'My Classes', subtitle: 'Classes you teach this term' })}
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
       ${classes.map(c => {
         const students = COMPUTE.studentsByClass(c.id);
+        const isFormTeacher = tRecord && tRecord.classTeacherOf === c.id;
         return `<div class="card p-5">
           <div class="flex items-start justify-between mb-3">
             <div>
               <span class="badge badge-info">${c.level}</span>
+              ${isFormTeacher ? `<span class="badge badge-info ml-1">Form Teacher</span>` : ''}
               <h3 class="font-bold text-lg text-slate-900 mt-2">${c.name}</h3>
               <p class="text-sm text-slate-500">${students.length} students</p>
             </div>
@@ -482,7 +485,7 @@ function markStudent(studentId, status) {
 function bulkMarkAttendance(classId, date, status) {
   const students = COMPUTE.studentsByClass(classId);
   students.forEach(s => markStudent(s.id, status));
-  toast(`All marked ${status}`);
+  toast(`All marked ${status}`, 'info');
 }
 
 function saveAttendance(classId, date) {
@@ -497,7 +500,7 @@ function saveAttendance(classId, date) {
     const timeStamp = new Date().toTimeString().slice(0, 5); // HH:MM in 24h
     if (cur) DB.update('attendance', cur.id, { status, markedAt: timeStamp, markedAtFull: now() });
     else {
-      DB.insert('attendance', { id: uid('att'), schoolId: AUTH.current.id, studentId: s.id, classId, date, status, recordedBy: AUTH.current.id, markedAt: timeStamp, markedAtFull: now() });
+      DB.insert('attendance', { id: uid('att'), schoolId: AUTH.current.schoolId || 'sch_brightlights', studentId: s.id, classId, date, status, recordedBy: AUTH.current.id, markedAt: timeStamp, markedAtFull: now() });
     }
     added++;
     // Real notification record for absent / late students (sent via WhatsApp + in-app)
@@ -530,7 +533,7 @@ function saveAttendance(classId, date) {
   const parts = [`Saved ${added} entries`];
   if (absent) parts.push(`${absent} absence alert${absent!==1?'s':''} sent`);
   if (late) parts.push(`${late} late notice${late!==1?'s':''} sent`);
-  toast(parts.join(' · '));
+  toast(parts.join(' · '), 'success');
   Object.keys(_attBuffer).forEach(k => delete _attBuffer[k]);
 
   // Next-action prompt
@@ -561,9 +564,11 @@ function view_tch_results() {
   const classes = teacherClasses();
   if (classes.length === 0) return emptyState({ title: 'No classes assigned', body: 'Contact admin.', icon: 'classes' });
   const classId = APP.params.classId || classes[0].id;
-  const subjectId = APP.params.subjectId || 'sub_math';
   const cls = DB.find('classes', classId);
-  const subjects = DB.get('subjects');
+  const tData = DB.find('teachers', AUTH.current.id);
+  const subjects = tData && tData.subjects && tData.subjects.length ? DB.get('subjects').filter(s => tData.subjects.includes(s.id)) : DB.get('subjects');
+  const defaultSubjectId = APP.params.subjectId || (subjects[0] ? subjects[0].id : '');
+  const subjectId = defaultSubjectId;
   const students = COMPUTE.studentsByClass(classId);
   const results = DB.query('results', r => r.classId === classId && r.subjectId === subjectId);
 
@@ -646,10 +651,10 @@ function saveResults(classId, subjectId) {
     const { grade } = COMPUTE.gradeFromScore(total);
     const existing = DB.query('results', r => r.studentId === s.id && r.subjectId === subjectId && r.classId === classId)[0];
     if (existing) DB.update('results', existing.id, { ca1, ca2, exam, total, grade, comment, approved: false });
-    else DB.insert('results', { id: uid('res'), schoolId: AUTH.current.id, studentId: s.id, classId, subjectId, term: DB.settings().currentTerm, ca1, ca2, exam, total, grade, comment, approved: false });
+    else DB.insert('results', { id: uid('res'), schoolId: AUTH.current.schoolId || 'sch_brightlights', studentId: s.id, classId, subjectId, term: DB.settings().currentTerm, ca1, ca2, exam, total, grade, comment, approved: false });
     count++;
   });
-  toast(`${count} result${count !== 1 ? 's' : ''} submitted for approval`);
+  toast(`${count} result${count !== 1 ? 's' : ''} submitted for approval`, 'success');
   APP.render();
 }
 
@@ -963,7 +968,7 @@ function gradeSubmission(assignmentId, studentId) {
   if (student) DB.insert('notifications', { id: uid('not'), userId: student.id, title: 'Assignment Graded', body: `${a.title}: ${grade}/100${feedback ? ' — ' + feedback : ''}`, type: 'success', read: false, timestamp: now(), link: { view: 'stu_assignments' } });
   // And keep the parent informed
   if (student) DB.insert('notifications', { id: uid('not'), userId: student.parentId, title: 'Assignment Graded', body: `${student.name}: ${a.title} — ${grade}/100`, type: 'info', read: false, timestamp: now(), link: { view: 'par_dashboard' } });
-  toast(`${student ? student.name : 'Student'} graded ${grade}/100`);
+  toast(`${student ? student.name : 'Student'} graded ${grade}/100`, 'success');
   openAssignment(assignmentId);
 }
 
@@ -1026,12 +1031,12 @@ function saveAssignment(editingId) {
     DB.update('assignments', editingId, { title, classId, subjectId, description, dueDate, updatedAt: now() });
     document.getElementById('modalBackdrop').click();
     APP.render();
-    toast('Assignment updated');
+    toast('Assignment updated', 'success');
     return;
   }
 
   DB.insert('assignments', {
-    id: uid('asn'), schoolId: AUTH.current.id, classId, subjectId, teacherId: AUTH.current.id,
+    id: uid('asn'), schoolId: AUTH.current.schoolId || 'sch_brightlights', classId, subjectId, teacherId: AUTH.current.id,
     title, description, dueDate, createdAt: now(), submissions: []
   });
   // Notify all parents in the class
@@ -1041,7 +1046,7 @@ function saveAssignment(editingId) {
   });
   document.getElementById('modalBackdrop').click();
   APP.render();
-  toast(`Assignment posted. ${parents.length} parents notified.`);
+  toast(`Assignment posted. ${parents.length} parents notified.`, 'success');
 }
 
 /* ---------- Lesson Plans ---------- */
@@ -1337,7 +1342,7 @@ function tch_deleteVideo(id) {
   confirm('Delete this video? Students will no longer see it.', () => {
     DB.remove('learningMaterials', id);
     APP.go('tch_lessons', { tab: 'videos' });
-    toast('Video removed');
+    toast('Video removed', 'info');
   }, { danger: true });
 }
 
@@ -1461,7 +1466,7 @@ function saveLesson() {
   _lessonFileBuffer = null;
   document.getElementById('modalBackdrop').click();
   APP.render();
-  toast('Lesson plan saved' + (schemeRef ? ' · scheme week marked covered' : '') + (lp.file ? ' · attachment uploaded' : ''));
+  toast('Lesson plan saved' + (schemeRef ? ' · scheme week marked covered' : '') + (lp.file ? ' · attachment uploaded' : ''), 'success');
 }
 
 // Wire scheme dropdown when modal opens

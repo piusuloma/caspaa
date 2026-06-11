@@ -1260,10 +1260,9 @@ function view_adm_operations() {
 }
 
 function view_adm_comms() {
-  return buildHub('Communications', 'Messages, announcements, notice board and consent', [
+  return buildHub('Communications', 'Messages, announcements and digital consent', [
     { key: 'messages',      label: 'Messages',      view: 'view_adm_messages' },
     { key: 'bulk_notify',   label: 'Announcements', view: 'view_adm_bulk_notify' },
-    { key: 'announce',      label: 'Notice Board',  view: 'view_adm_announce' },
     { key: 'consent',       label: 'Digital Consent', view: 'view_adm_consent', badge: () => { const sid = currentSchoolId(); const forms = DB.query('consentForms', f => f.schoolId === sid).length; return forms || null; } }
   ], 'messages', 'commsTab');
 }
@@ -2917,7 +2916,7 @@ function changeStudentStatus(studentId, status, label) {
   DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'changed_status', target: `${s.name}: ${status}`, timestamp: now() });
   document.getElementById('modalBackdrop').click();
   APP.render();
-  toast(label || `${s.name} status: ${status}`);
+  toast(label || `${s.name} status: ${status}`, status === 'suspended' ? 'warn' : undefined);
 }
 
 /* ---------- Alumni Page ---------- */
@@ -3646,7 +3645,7 @@ function view_adm_timetable() {
   const classId = APP.params.classId || classes[0].id;
   const tt = DB.query('timetable', t => t.classId === classId);
   const subjects = DB.get('subjects');
-  const teachers = DB.get('teachers');
+  const teachers = DB.query('teachers', t => t.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
   const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
   const periods = [1,2,3,4,5,6,7,8];
 
@@ -4025,7 +4024,7 @@ function view_adm_attendance() {
     })}
     <div class="card p-4 mb-4 grid sm:grid-cols-2 gap-3">
       <div><label class="input-label">Class</label>
-        <select class="input" onchange="APP.go('adm_attendance', { classId: this.value, date: '${date}' })">
+        <select class="input" onchange="APP.params.classId = this.value; APP.render()">
           ${classes.map(c => `<option value="${c.id}" ${classId===c.id?'selected':''}>${c.name}</option>`).join('')}
         </select>
       </div>
@@ -4061,7 +4060,7 @@ function view_adm_attendance() {
 /* ---------- Results overview ---------- */
 function view_adm_results() {
   const classes = DB.get('classes');
-  const classId = APP.params.classId || classes[5].id; // default JSS1
+  const classId = APP.params.classId || (classes.length ? classes[0].id : '');
   const subjects = DB.get('subjects');
   const students = COMPUTE.studentsByClass(classId);
   const results = DB.query('results', r => r.classId === classId);
@@ -4077,7 +4076,7 @@ function view_adm_results() {
       <div class="flex flex-col sm:flex-row gap-3 items-end">
         <div class="flex-1">
           <label class="input-label">Class</label>
-          <select class="input" onchange="APP.go('adm_results', { classId: this.value })">
+          <select class="input" onchange="APP.params.classId = this.value; APP.render()">
             ${classes.map(c => `<option value="${c.id}" ${classId===c.id?'selected':''}>${c.name}</option>`).join('')}
           </select>
         </div>
@@ -4088,27 +4087,37 @@ function view_adm_results() {
       <div class="overflow-x-auto">
         <table class="tbl">
           <thead>
-            <tr><th>Student</th>${subjects.slice(0,6).map(s => `<th class="text-center">${s.name.split(' ')[0]}</th>`).join('')}<th class="text-center">Avg</th><th class="text-center">Pos</th><th class="text-center">Result</th></tr>
+            <tr><th>Student</th>${subjects.map(s => `<th class="text-center">${s.name.split(' ')[0]}</th>`).join('')}<th class="text-center">Avg</th><th class="text-center">Pos</th><th class="text-center">Result</th></tr>
           </thead>
           <tbody>
-            ${students.map((s, idx) => {
-              const studRes = results.filter(r => r.studentId === s.id);
-              const total = studRes.reduce((sum, r) => sum + r.total, 0);
-              const avg = studRes.length ? Math.round(total / studRes.length) : 0;
-              return `<tr>
+            ${(() => {
+              const studentsWithAvg = students.map(s => {
+                const sRes = results.filter(r => r.studentId === s.id);
+                const avg = sRes.length ? Math.round(sRes.reduce((sum, r) => sum + (r.total || r.score || 0), 0) / sRes.length) : 0;
+                return Object.assign({}, s, { _avg: avg });
+              }).sort((a, b) => b._avg - a._avg);
+              let _rank = 1;
+              const ranked = studentsWithAvg.map((s, i) => {
+                if (i > 0 && s._avg < studentsWithAvg[i-1]._avg) _rank = i + 1;
+                return Object.assign({}, s, { _rank });
+              });
+              return ranked.map(s => {
+                const studRes = results.filter(r => r.studentId === s.id);
+                return `<tr>
                 <td><div class="flex items-center gap-2">${avatar(s.name, 'sm')}<span class="font-medium">${s.name}</span></div></td>
-                ${subjects.slice(0,6).map(sub => {
+                ${subjects.map(sub => {
                   const r = studRes.find(x => x.subjectId === sub.id);
                   if (!r) return '<td class="text-center text-slate-300">—</td>';
                   return `<td class="text-center"><strong>${r.total}</strong> <span class="badge ${r.grade==='A'?'badge-success':r.grade==='F'?'badge-danger':'badge-info'} ml-1">${r.grade}</span></td>`;
                 }).join('')}
-                <td class="text-center font-bold">${avg}%</td>
-                <td class="text-center">${idx + 1}</td>
+                <td class="text-center font-bold">${s._avg}%</td>
+                <td class="text-center">${s._rank}</td>
                 <td class="text-center">${studRes.length
                   ? `<button class="btn btn-primary !py-1 !px-2 text-xs" title="Generate this student's result and share with the parent" onclick="generateStudentResult('${s.id}')">${icon('send','w-3.5 h-3.5')} Generate</button>`
                   : `<span class="text-xs text-slate-400">No scores</span>`}</td>
               </tr>`;
-            }).join('')}
+              }).join('');
+            })()}
           </tbody>
         </table>
       </div>
@@ -4119,7 +4128,7 @@ function view_adm_results() {
 function approveAllResults(classId) {
   DB.query('results', r => r.classId === classId && !r.approved).forEach(r => DB.update('results', r.id, { approved: true }));
   APP.render();
-  toast('All pending results approved');
+  toast('All pending results approved', 'success');
 }
 
 function generateStudentResult(studentId) {
@@ -6102,7 +6111,7 @@ function saveSickBay() {
 
 /* ---------- Visitor Log ---------- */
 function view_adm_visitors() {
-  const log = DB.get('visitorLog').sort((a,b) => b.checkIn.localeCompare(a.checkIn));
+  const log = DB.query('visitorLog', l => l.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).sort((a,b) => b.checkIn.localeCompare(a.checkIn));
   const today_ = today();
   const todayCount = log.filter(l => l.checkIn.startsWith(today_)).length;
   return `

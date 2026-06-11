@@ -28,7 +28,7 @@ function view_tch_diary(params) {
     ${students.length === 0 ? emptyState({ title: 'No students in this class', body: 'Enrol students to start writing diary entries.', icon: 'students' }) : `
       <div class="space-y-2">
         ${students.map(s => {
-          const entries = DB.query('diaryEntries', e => e.studentId === s.id && e.teacherId === teacherId)
+          const entries = DB.query('diaryEntries', e => e.studentId === s.id && e.teacherId === teacherId && e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
                            .sort((a,b) => b.date.localeCompare(a.date));
           const unreadReplies = entries.filter(e => e.parentReply && !e.teacherReadReply).length;
           const lastEntry = entries[0];
@@ -61,7 +61,7 @@ function diary_viewStudent(studentId, classId) {
   const s = DB.find('students', studentId);
   const parent = s && s.parentId ? DB.find('parents', s.parentId) : null;
   const teacherId = AUTH.current.id;
-  const entries = DB.query('diaryEntries', e => e.studentId === studentId && e.teacherId === teacherId)
+  const entries = DB.query('diaryEntries', e => e.studentId === studentId && e.teacherId === teacherId && e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
                     .sort((a,b) => b.date.localeCompare(a.date));
 
   // Mark all unread replies as read
@@ -161,7 +161,7 @@ function diary_notesContent(role) {
 
 function diary_notesTeacher() {
   const teacherId = AUTH.current.id;
-  const classes = (typeof teacherClasses === 'function' ? teacherClasses() : DB.get('classes'));
+  const classes = (typeof teacherClasses === 'function' ? teacherClasses() : DB.query('classes', c => c.schoolId === (AUTH.current.schoolId || 'sch_brightlights')));
   if (!classes.length) return emptyState({ title: 'No classes assigned', body: 'You have no classes to write notes for.', icon: 'book' });
 
   const activeClassId = APP.params.notesClassId || classes[0].id;
@@ -177,7 +177,7 @@ function diary_notesTeacher() {
       ? emptyState({ title: 'No students in this class', body: 'Enrol students to start writing notes.', icon: 'students' })
       : `<div class="space-y-2">
           ${students.map(s => {
-            const entries = DB.query('diaryEntries', e => e.studentId === s.id && e.teacherId === teacherId)
+            const entries = DB.query('diaryEntries', e => e.studentId === s.id && e.teacherId === teacherId && e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
                              .sort((a,b) => b.date.localeCompare(a.date));
             const unreadReplies = entries.filter(e => e.parentReply && !e.teacherReadReply).length;
             const lastEntry = entries[0];
@@ -214,17 +214,26 @@ function diary_notesParent() {
 
   const activeId = APP.params.notesStudentId || children[0].id;
   const student  = DB.find('students', activeId);
-  const entries  = DB.query('diaryEntries', e => e.studentId === activeId)
+  const entries  = DB.query('diaryEntries', e => e.studentId === activeId && e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
                      .sort((a,b) => b.date.localeCompare(a.date));
   const unread   = entries.filter(e => !e.parentRead).length;
 
-  // Mark as read
-  entries.filter(e => !e.parentRead).forEach(e => {
-    DB.update('diaryEntries', e.id, { parentRead: true, parentReadAt: now() });
-  });
+  // Mark as read — only update entries that are actually unread
+  const unreadEntries = entries.filter(e => !e.parentRead);
+  if (unreadEntries.length) {
+    unreadEntries.forEach(e => {
+      DB.update('diaryEntries', e.id, { parentRead: true, parentReadAt: new Date().toISOString() });
+    });
+  }
 
   const catColors = { Homework: 'border-blue-400', Behaviour: 'border-amber-400', Academic: 'border-emerald-400', Health: 'border-red-400', General: 'border-slate-300' };
   const catBadge  = { Homework: 'bg-blue-50 text-blue-700 border-blue-200', Behaviour: 'bg-amber-50 text-amber-700 border-amber-200', Academic: 'bg-emerald-50 text-emerald-700 border-emerald-200', Health: 'bg-red-50 text-red-700 border-red-200', General: 'bg-slate-100 text-slate-600 border-slate-200' };
+
+  const catFilter = APP.params.notesCategory;
+  const filteredEntries = catFilter ? entries.filter(e => e.category === catFilter) : entries;
+
+  const categories = ['All', 'Homework', 'Academic', 'Behaviour', 'Health', 'General'];
+  const catBtns = categories.map(c => `<button onclick="APP.params.notesCategory=${c === 'All' ? 'null' : "'" + c + "'"}; APP.render()" class="badge ${(catFilter || 'All') === c ? 'badge-primary' : 'badge-neutral'} cursor-pointer">${c}</button>`).join('');
 
   return `
     ${children.length > 1 ? `<div class="flex gap-2 mb-4 flex-wrap">
@@ -236,10 +245,12 @@ function diary_notesParent() {
       ${icon('bell','w-4 h-4 inline mr-1')} ${unread} new ${unread === 1 ? 'note' : 'notes'} since your last visit — now marked as read.
     </div>` : ''}
 
-    ${entries.length === 0
+    <div class="flex gap-2 mb-4 flex-wrap">${catBtns}</div>
+
+    ${filteredEntries.length === 0
       ? emptyState({ title: 'No notes yet', body: 'Teacher notes about your child will appear here.', icon: 'book' })
       : `<div class="space-y-4">
-          ${entries.map(e => {
+          ${filteredEntries.map(e => {
             const teacher = DB.find('teachers', e.teacherId);
             const cc = catColors[e.category] || catColors.General;
             const cb = catBadge[e.category]  || catBadge.General;
@@ -276,7 +287,7 @@ function view_par_diary(params) {
 
   const activeId = (params && params.studentId) || children[0].id;
   const student  = DB.find('students', activeId);
-  const entries  = DB.query('diaryEntries', e => e.studentId === activeId)
+  const entries  = DB.query('diaryEntries', e => e.studentId === activeId && e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
                      .sort((a,b) => b.date.localeCompare(a.date));
   const unread   = entries.filter(e => !e.parentRead).length;
 
@@ -339,10 +350,11 @@ function diary_parentReply(entryId) {
   // Notify teacher
   const entry = DB.find('diaryEntries', entryId);
   if (entry) {
+    const replyStudent = DB.find('students', entry.studentId);
     DB.insert('notifications', {
       id: uid('not'), userId: entry.teacherId,
       title: 'Parent replied to your note',
-      body: `A parent replied to your student note. Tap to read.`,
+      body: `A parent replied to your note about ${replyStudent ? replyStudent.name : 'a student'}. Tap to read.`,
       type: 'info', read: false, timestamp: now()
     });
   }
