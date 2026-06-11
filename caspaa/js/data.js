@@ -1064,6 +1064,32 @@ function seedDatabase() {
     { id: uid('hp'), schoolId, studentId: 'stu_008', houseId: 'house_gold', points: 3, reason: 'Football match victory', category: 'Sports', awardedBy: 'tch_emeka', awardedAt: daysAgo(2) }
   ];
 
+  // ============ INTER-HOUSE COMPETITION EVENTS ============
+  const houseEvents = [
+    {
+      id: 'hev_001', schoolId, name: 'Inter-House Athletics (Sports Day)', type: 'Sports Day',
+      date: daysAgo(21),
+      results: [
+        { position: 1, houseId: 'house_blue',  points: 50 },
+        { position: 2, houseId: 'house_red',   points: 35 },
+        { position: 3, houseId: 'house_gold',  points: 20 },
+        { position: 4, houseId: 'house_green', points: 10 }
+      ],
+      recordedBy: 'adm_brightlights', createdAt: daysAgo(21)
+    },
+    {
+      id: 'hev_002', schoolId, name: 'Inter-House Quiz Competition', type: 'Quiz Competition',
+      date: daysAgo(10),
+      results: [
+        { position: 1, houseId: 'house_green', points: 50 },
+        { position: 2, houseId: 'house_gold',  points: 35 },
+        { position: 3, houseId: 'house_blue',  points: 20 },
+        { position: 4, houseId: 'house_red',   points: 10 }
+      ],
+      recordedBy: 'adm_brightlights', createdAt: daysAgo(10)
+    }
+  ];
+
   // ============ DIARY ENTRIES (teacher → parent, per student) ============
   const diaryEntries = [
     { id: uid('de'), schoolId, studentId: 'stu_002', teacherId: 'tch_adamu', category: 'Homework', note: 'Tobi did not submit the Mathematics assignment due today. Please remind him to complete it and submit by Thursday.', date: daysAgo(3), parentRead: true, parentReadAt: daysAgo(2), parentReply: 'Thank you for letting me know. I will speak with him tonight and ensure he submits by Thursday.', parentRepliedAt: daysAgo(2), teacherReadReply: true },
@@ -1208,7 +1234,7 @@ function seedDatabase() {
     activities, studentActivities, reportComments: [],
     learningMaterials, cbtExams, cbtSubmissions, consentForms, consentResponses,
     appraisalCycles, appraisals, salaryAdvances, budgets, helpArticles,
-    houses, housePoints, diaryEntries, schoolEvents, feedbackForms, feedbackResponses,
+    houses, housePoints, houseEvents, diaryEntries, schoolEvents, feedbackForms, feedbackResponses,
     payslips, formativeTests, formativeSubmissions,
     busRoutes, busAssignments, authorizedPickups,
     sickbayVisits, inventoryRequests,

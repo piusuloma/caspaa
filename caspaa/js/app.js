@@ -73,6 +73,7 @@ const APP = {
         { key: 'tch_payslip',    label: 'My Payslip',         icon: 'fees' },
         { key: 'cal_main',       label: 'Calendar',           icon: 'calendar' },
         { key: 'tch_timetable',  label: 'My Schedule',        icon: 'calendar' },
+        { key: 'tch_houses',     label: 'House Points',        icon: 'check' },
         { key: 'tch_messages',   label: 'Messages',           icon: 'chat' },
         { key: 'tch_appraisal',  label: 'My Appraisal',       icon: 'reports' }
       ],
