@@ -3184,12 +3184,47 @@ function view_adm_staff() {
     </tr>
   `;
 
+  const totalSalary = teachers.reduce((sum, t) => sum + (t.salary || 0), 0);
+  const academicSalary    = academic.reduce((sum, t) => sum + (t.salary || 0), 0);
+  const nonAcademicSalary = nonAcademic.reduce((sum, t) => sum + (t.salary || 0), 0);
+
+  // Group non-academic for the breakdown chips
+  const nonAcadGroups = {};
+  nonAcademic.forEach(t => {
+    const g = t.staffType || 'Other';
+    nonAcadGroups[g] = (nonAcadGroups[g] || 0) + 1;
+  });
+
   return `
     ${pageHeader({
-      title: 'Staff Management',
-      subtitle: `${academic.length} academic · ${nonAcademic.length} non-academic`,
+      title: 'Staff & HR',
+      subtitle: 'Academic and non-academic staff directory',
       actions: `<button class="btn btn-primary" onclick="addStaffModal()">${icon('plus','w-4 h-4')} Add Staff</button>`
     })}
+
+    <!-- Headcount summary cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <div class="card p-4">
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Staff</div>
+        <div class="text-3xl font-extrabold text-slate-900">${teachers.length}</div>
+        <div class="text-xs text-slate-500 mt-1">All categories</div>
+      </div>
+      <div class="card p-4 border-l-4 border-brand-500">
+        <div class="text-xs font-semibold text-brand-600 uppercase tracking-wider mb-1">Academic</div>
+        <div class="text-3xl font-extrabold text-brand-700">${academic.length}</div>
+        <div class="text-xs text-slate-500 mt-1">Teachers &amp; subject leads</div>
+      </div>
+      <div class="card p-4 border-l-4 border-blue-400">
+        <div class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Non-Academic</div>
+        <div class="text-3xl font-extrabold text-blue-700">${nonAcademic.length}</div>
+        <div class="text-xs text-slate-500 mt-1">${Object.entries(nonAcadGroups).map(([k,v]) => `${v} ${k}`).join(' · ') || 'Admin, Operations, etc.'}</div>
+      </div>
+      <div class="card p-4 border-l-4 border-amber-400">
+        <div class="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-1">Monthly Payroll</div>
+        <div class="text-2xl font-extrabold text-amber-700">${money(totalSalary)}</div>
+        <div class="text-xs text-slate-500 mt-1">Acad: ${money(academicSalary)} · Non-acad: ${money(nonAcademicSalary)}</div>
+      </div>
+    </div>
 
     <!-- Academic Staff -->
     <div class="card mb-4 overflow-hidden">
