@@ -103,7 +103,7 @@ function pay_showCardInput(invoiceId, amount, txFee, charged) {
       <div class="text-center mb-5 pt-2">
         <div class="inline-flex items-center gap-2 bg-brand-50 text-brand-700 px-3 py-1 rounded-full text-xs font-semibold mb-3">
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-          Secured by Paystack
+          Secure Payment
         </div>
         <div class="text-3xl font-extrabold text-slate-900">${money(charged)}</div>
         ${txFee > 0 ? `<div class="text-xs text-slate-400 mt-1">Includes transaction fee: ${money(txFee)} (1.5%)</div>` : ''}

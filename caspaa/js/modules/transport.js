@@ -10,33 +10,40 @@
 
 function view_adm_transport(params) {
   const schoolId = AUTH.current.schoolId || 'sch_brightlights';
-  const tab = (params && params.tab) || 'routes';
+  const tab = (params && params.tab) || APP.params.tab || 'routes';
 
   const routes      = DB.query('busRoutes',       r => r.schoolId === schoolId);
   const assignments = DB.query('busAssignments',  a => a.schoolId === schoolId);
   const pickups     = DB.query('authorizedPickups', p => p.schoolId === schoolId);
   const pendingCount = pickups.filter(p => p.status === 'pending').length;
 
+  // Clock-out: students not yet dismissed today
+  const todayDismissals = DB.query('studentDismissals', d => d.schoolId === schoolId && d.date === today());
+  const activeStudents = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
+  const notDismissed = activeStudents.filter(s => !todayDismissals.find(d => d.studentId === s.id)).length;
+
   const tabBar = `
-    <div class="flex gap-1 mb-5 border-b border-slate-200">
+    <div class="flex gap-1 mb-5 border-b border-slate-200 overflow-x-auto">
       ${[
-        ['routes',  'Bus Routes',            routes.length],
-        ['assign',  'Student Assignments',   assignments.length],
-        ['pickups', 'Pickup Authorizations', pendingCount ? `<span class="ml-1 px-1.5 py-0.5 bg-rose-500 text-white text-xs rounded-full">${pendingCount}</span>` : ''],
-        ['status',  'Bus Status',            '']
+        ['routes',     'Bus Routes',            ''],
+        ['assign',     'Student Assignments',   ''],
+        ['pickups',    'Pickup Authorizations', pendingCount ? `<span class="ml-1 px-1.5 py-0.5 bg-rose-500 text-white text-xs rounded-full">${pendingCount}</span>` : ''],
+        ['dismissal',  'Dismissal Clock-Out',   notDismissed > 0 ? `<span class="ml-1 px-1.5 py-0.5 bg-amber-500 text-white text-xs rounded-full">${notDismissed}</span>` : ''],
+        ['status',     'Bus Status',            '']
       ].map(([k, l, badge]) =>
         `<button onclick="APP.params.tab = '${k}'; APP.render();"
-          class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab === k ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'}">
-          ${l}${badge !== undefined && badge !== '' ? (typeof badge === 'number' ? '' : badge) : ''}
+          class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === k ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'}">
+          ${l}${badge || ''}
         </button>`
       ).join('')}
     </div>`;
 
   let content = '';
-  if (tab === 'routes')  content = adm_renderRoutesTab(routes, schoolId);
-  if (tab === 'assign')  content = adm_renderAssignmentsTab(assignments, schoolId);
-  if (tab === 'pickups') content = adm_renderPickupsTab(pickups, schoolId);
-  if (tab === 'status')  content = adm_renderBusStatusTab(routes, schoolId);
+  if (tab === 'routes')    content = adm_renderRoutesTab(routes, schoolId);
+  if (tab === 'assign')    content = adm_renderAssignmentsTab(assignments, schoolId);
+  if (tab === 'pickups')   content = adm_renderPickupsTab(pickups, schoolId);
+  if (tab === 'dismissal') content = adm_renderDismissalTab(schoolId, todayDismissals, activeStudents);
+  if (tab === 'status')    content = adm_renderBusStatusTab(routes, schoolId);
 
   return `
     <div class="space-y-5">
@@ -951,4 +958,197 @@ function par_removePickup(pickupId) {
     },
     { danger: true, yesLabel: 'Remove' }
   );
+}
+
+/* ---------- Dismissal / Clock-Out Tab ---------- */
+function adm_renderDismissalTab(schoolId, todayDismissals, activeStudents) {
+  const cfg = DB.settings().dismissalConfig || { schoolEndTime: '15:00', lateThreshold: '15:30' };
+  const nowH = new Date().getHours();
+  const nowM = new Date().getMinutes();
+  const nowMins = nowH * 60 + nowM;
+  const [endH, endM] = cfg.schoolEndTime.split(':').map(Number);
+  const [lateH, lateM] = cfg.lateThreshold.split(':').map(Number);
+  const schoolEndMins = endH * 60 + endM;
+  const lateThreshMins = lateH * 60 + lateM;
+
+  // Time-bound model:
+  // Before school end → teachers handle (Academic staff in attendance module)
+  // After lateThreshold → parents (late pickup) or admin
+  const isLatePickupTime = nowMins > lateThreshMins;
+  const isDuringSchool = nowMins <= schoolEndMins;
+
+  const classes = DB.get('classes');
+  const classFilter = APP.params.dismissClass || 'all';
+  const searchQ = (APP.params.dismissQ || '').toLowerCase();
+
+  let displayStudents = activeStudents.filter(s => {
+    if (classFilter !== 'all' && s.classId !== classFilter) return false;
+    if (searchQ && !s.name.toLowerCase().includes(searchQ)) return false;
+    return true;
+  });
+
+  const dismissed = displayStudents.filter(s => todayDismissals.find(d => d.studentId === s.id));
+  const notDismissed = displayStudents.filter(s => !todayDismissals.find(d => d.studentId === s.id));
+
+  return `
+    <div class="space-y-4">
+      <!-- Config banner -->
+      <div class="flex items-start gap-3 flex-wrap">
+        <div class="flex-1 ${isLatePickupTime ? 'bg-amber-50 border border-amber-200' : isDuringSchool ? 'bg-blue-50 border border-blue-200' : 'bg-emerald-50 border border-emerald-200'} rounded-xl p-3">
+          <div class="flex items-center gap-2 mb-1">
+            ${icon('bell','w-4 h-4 text-current')}
+            <span class="font-semibold text-sm">${
+              isLatePickupTime ? 'Late Pickup Period — Admin/parent handles dismissal' :
+              isDuringSchool   ? 'School Hours — Teachers handle student release' :
+              'Closing Time — Confirm student pickups below'
+            }</span>
+          </div>
+          <div class="text-xs text-slate-600">School ends at <strong>${cfg.schoolEndTime}</strong> · Late pickup threshold: <strong>${cfg.lateThreshold}</strong>
+            <button class="ml-2 underline text-brand-700 font-semibold" onclick="adm_dismissalConfigModal()">Edit</button>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-secondary text-sm" onclick="adm_bulkDismissAll()">${icon('check','w-4 h-4')} Mark All Dismissed</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-3">
+        <div class="card p-3 text-center">
+          <div class="text-2xl font-extrabold text-emerald-700">${dismissed.length}</div>
+          <div class="text-xs text-slate-500">Dismissed</div>
+        </div>
+        <div class="card p-3 text-center">
+          <div class="text-2xl font-extrabold text-amber-700">${notDismissed.length}</div>
+          <div class="text-xs text-slate-500">Still Here</div>
+        </div>
+        <div class="card p-3 text-center">
+          <div class="text-2xl font-extrabold text-slate-700">${displayStudents.length}</div>
+          <div class="text-xs text-slate-500">Total</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="flex gap-2 flex-wrap items-center">
+        <div class="relative flex-1 min-w-40">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${icon('search','w-4 h-4')}</span>
+          <input type="text" class="input pl-9" placeholder="Search student…" value="${APP.params.dismissQ || ''}" oninput="APP.params.dismissQ=this.value; APP.render()" />
+        </div>
+        <select class="input w-auto" onchange="APP.params.dismissClass=this.value; APP.render()">
+          <option value="all">All Classes</option>
+          ${classes.map(c => `<option value="${c.id}" ${classFilter===c.id?'selected':''}>${c.name}</option>`).join('')}
+        </select>
+      </div>
+
+      <!-- Student list -->
+      <div class="card overflow-hidden">
+        <table class="tbl">
+          <thead><tr><th>Student</th><th>Class</th><th>Dismissal</th><th>Time</th><th>Handler</th><th></th></tr></thead>
+          <tbody>
+            ${displayStudents.length === 0 ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No students found</td></tr>` : displayStudents.map(s => {
+              const cls = DB.find('classes', s.classId);
+              const rec = todayDismissals.find(d => d.studentId === s.id);
+              const handlerType = rec ? rec.handlerType : null;
+              return `<tr>
+                <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-500">${s.admissionNo || ''}</div></div></div></td>
+                <td class="text-sm">${cls ? cls.name : '—'}</td>
+                <td>${rec
+                  ? `<span class="badge badge-success">${icon('check','w-3 h-3')} Dismissed</span>`
+                  : `<span class="badge badge-warn">Still here</span>`}</td>
+                <td class="font-mono text-xs text-slate-500">${rec ? rec.dismissedAt : '—'}</td>
+                <td class="text-xs text-slate-500">${rec ? (handlerType === 'teacher' ? icon('teacher','w-3.5 h-3.5 inline') + ' Teacher' : handlerType === 'parent' ? icon('user','w-3.5 h-3.5 inline') + ' Parent' : 'Admin') : '—'}</td>
+                <td>${rec
+                  ? `<button class="btn btn-ghost !p-1.5 text-rose-500 text-xs" onclick="adm_undoDismissal('${s.id}')" title="Undo dismissal">Undo</button>`
+                  : `<button class="btn btn-primary !py-1.5 text-xs" onclick="adm_dismissStudent('${s.id}', '${isLatePickupTime ? 'parent' : 'admin'}')">${icon('check','w-3.5 h-3.5')} Dismiss</button>`}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function adm_dismissStudent(studentId, handlerType) {
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const s = DB.find('students', studentId);
+  const timeStr = new Date().toTimeString().slice(0, 5);
+  const existing = DB.query('studentDismissals', d => d.schoolId === schoolId && d.studentId === studentId && d.date === today())[0];
+  if (existing) return;
+  DB.insert('studentDismissals', {
+    id: uid('dism'), schoolId, studentId,
+    date: today(), dismissedAt: timeStr,
+    handlerType, recordedBy: AUTH.current.id, timestamp: now()
+  });
+  // Notify parent
+  if (s.parentId) {
+    DB.insert('notifications', {
+      id: uid('not'), userId: s.parentId,
+      title: 'Student Dismissed',
+      body: `${s.name} was dismissed from school at ${timeStr}.${handlerType === 'parent' ? ' This was recorded as a late pickup.' : ''}`,
+      type: 'info', read: false, timestamp: now()
+    });
+  }
+  DB.insert('auditLog', { id: uid('aud'), schoolId, actor: AUTH.current.id, action: 'student_dismissed', target: `${s ? s.name : studentId} @ ${timeStr} (${handlerType})`, timestamp: now() });
+  APP.render();
+  toast(`${s ? s.name.split(' ')[0] : 'Student'} dismissed at ${timeStr}`, 'success');
+}
+
+function adm_undoDismissal(studentId) {
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const rec = DB.query('studentDismissals', d => d.schoolId === schoolId && d.studentId === studentId && d.date === today())[0];
+  if (!rec) return;
+  DB.remove('studentDismissals', rec.id);
+  APP.render();
+  toast('Dismissal undone', 'info');
+}
+
+function adm_bulkDismissAll() {
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const activeStudents = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
+  const todayRecs = DB.query('studentDismissals', d => d.schoolId === schoolId && d.date === today());
+  const notYet = activeStudents.filter(s => !todayRecs.find(d => d.studentId === s.id));
+  const timeStr = new Date().toTimeString().slice(0, 5);
+  notYet.forEach(s => {
+    DB.insert('studentDismissals', { id: uid('dism'), schoolId, studentId: s.id, date: today(), dismissedAt: timeStr, handlerType: 'admin', recordedBy: AUTH.current.id, timestamp: now() });
+  });
+  APP.render();
+  toast(`${notYet.length} students marked dismissed at ${timeStr}`, 'success');
+}
+
+function adm_dismissalConfigModal() {
+  const cfg = DB.settings().dismissalConfig || { schoolEndTime: '15:00', lateThreshold: '15:30' };
+  modal({
+    title: 'Dismissal Time Configuration',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          <strong>Time-bound model:</strong> During school hours, teachers handle student release from class. After the late pickup threshold, the system flags remaining students for parent/admin action and sends parent notifications.
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="input-label">School End Time</label>
+            <input type="time" id="dism_end" class="input" value="${cfg.schoolEndTime}" />
+            <p class="text-xs text-slate-400 mt-1">Regular dismissal time</p>
+          </div>
+          <div>
+            <label class="input-label">Late Pickup Threshold</label>
+            <input type="time" id="dism_late" class="input" value="${cfg.lateThreshold}" />
+            <p class="text-xs text-slate-400 mt-1">After this, parent/admin must handle</p>
+          </div>
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="adm_saveDismissalConfig()">${icon('check','w-4 h-4')} Save</button>`
+  });
+}
+
+function adm_saveDismissalConfig() {
+  const schoolEndTime = (document.getElementById('dism_end') || {}).value || '15:00';
+  const lateThreshold = (document.getElementById('dism_late') || {}).value || '15:30';
+  DB.settings({ dismissalConfig: { schoolEndTime, lateThreshold } });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast('Dismissal times saved', 'success');
 }

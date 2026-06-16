@@ -91,6 +91,48 @@ function view_par_dashboard() {
         </div>
       </div>
 
+      <!-- Student achievements banner -->
+      ${(() => {
+        const achievers = children.filter(c => c.awards || c.achievements || c.badges);
+        if (!achievers.length) return '';
+        return `<div class="card bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-8 h-8 rounded-lg bg-amber-400 text-white flex items-center justify-center text-base">🏆</span>
+            <h3 class="font-bold text-amber-900">Recent Achievements</h3>
+          </div>
+          <div class="space-y-2">
+            ${achievers.map(c => {
+              const awards = c.awards || c.achievements || '';
+              const badge = c.badges || '';
+              return `<div class="flex items-start gap-3 p-2.5 bg-white/70 rounded-xl">
+                ${avatar(c.name, 'sm')}
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm text-slate-900">${c.name}</div>
+                  ${awards ? `<div class="text-xs text-amber-800 mt-0.5">🌟 ${awards}</div>` : ''}
+                  ${badge ? `<div class="mt-1 flex flex-wrap gap-1">${badge.split(',').map(b => `<span class="badge badge-warn text-xs">${b.trim()}</span>`).join('')}</div>` : ''}
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      })()}
+
+      <!-- Parent assistance banner -->
+      ${(() => {
+        const school = DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {};
+        return `<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
+          <span class="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">${icon('chat','w-5 h-5')}</span>
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold text-blue-900">Need help?</div>
+            <div class="text-sm text-blue-700 mt-0.5">For queries on fees, records, or your child's welfare, contact the school directly.</div>
+            ${school.phone ? `<div class="mt-2 flex flex-wrap gap-2">
+              <a href="tel:${school.phone}" class="btn btn-secondary !text-xs !py-1.5">${icon('bell','w-3 h-3')} ${school.phone}</a>
+              ${school.email ? `<a href="mailto:${school.email}" class="btn btn-secondary !text-xs !py-1.5">${icon('chat','w-3 h-3')} Email school</a>` : ''}
+            </div>` : `<button class="btn btn-secondary !text-xs !py-1.5 mt-2" onclick="APP.go('par_messages')">${icon('chat','w-3 h-3')} Send a message</button>`}
+          </div>
+        </div>`;
+      })()}
+
       <!-- Quick actions -->
       <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <button class="card card-hover p-4 text-center" onclick="APP.go('par_fees')">
@@ -170,7 +212,7 @@ function parentWelcomeWizard() {
           <p class="text-xs text-slate-400 mt-1">${parent.credentials ? 'Pre-fill hint: ' + parent.credentials.tempPassword : ''}</p>
         </div>
         <div><label class="input-label">New password</label><input id="pw_new" type="password" class="input" placeholder="At least 8 characters" /></div>
-        <div><label class="input-label">Confirm new password</label><input id="pw_new2" type="password" class="input" /></div>
+        <div><label class="input-label">Confirm new password</label><input id="pw_new2" type="password" class="input" placeholder="Re-enter new password" /></div>
       </div>
     `;
     footerContent = `<button class="btn btn-primary w-full" onclick="parentWelcomeStep1Next()">Set password →</button>`;
@@ -548,6 +590,18 @@ function view_par_children() {
 /* ---------- Fees & Payment ---------- */
 function view_par_fees() {
   const children = parentChildren();
+
+  // Prospective parent: no enrolled children yet — show application status gate
+  if (children.length === 0) {
+    const me = DB.find('parents', AUTH.current.id);
+    const myApp = me ? DB.query('admissionApplications', a =>
+      a.schoolId === (me.schoolId || AUTH.current.schoolId || 'sch_brightlights') &&
+      a.parentPhone === me.phone &&
+      a.status !== 'rejected' && a.status !== 'accepted'
+    )[0] : null;
+    if (myApp) return renderProspectFeeGate(myApp);
+  }
+
   const invoices = children.map(c => COMPUTE.studentInvoice(c.id)).filter(Boolean);
   const totalDue = invoices.reduce((s, i) => s + i.balance, 0);
   const totalPaid = invoices.reduce((s, i) => s + i.paid, 0);
@@ -616,6 +670,107 @@ function view_par_fees() {
         </div>`;
       }).join('')}
     </div>
+  `;
+}
+
+function renderProspectFeeGate(app) {
+  const cls = DB.find('classes', app.requestedClass);
+  const fs = cls ? DB.query('feeStructures', f => f.classId === cls.id)[0] : null;
+  const school = DB.find('schools', AUTH.current.schoolId || 'sch_brightlights');
+
+  const statusOrder = ['pending', 'reviewing', 'visit_scheduled', 'visit_confirmed', 'accepted'];
+  const currentIdx = statusOrder.indexOf(app.status);
+  const steps = [
+    { label: 'Application Received' },
+    { label: 'Under Review' },
+    { label: 'Visit Scheduled' },
+    { label: 'Fees Unlocked' },
+    { label: 'Enrolled' }
+  ];
+
+  return `
+    ${pageHeader({ title: 'Fees & Enrolment', subtitle: 'Track your application progress' })}
+
+    <div class="card p-5 mb-4">
+      <div class="text-sm font-semibold text-slate-700 mb-4">Application Progress — <span class="text-brand-700">${app.applicantName}</span></div>
+      <div class="relative flex items-start justify-between">
+        <div class="absolute top-4 left-0 right-0 h-0.5 bg-slate-100 z-0"></div>
+        ${steps.map((step, i) => {
+          const done = i <= currentIdx;
+          const active = i === currentIdx;
+          return `<div class="flex flex-col items-center gap-1.5 text-center flex-1 relative z-10">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${done ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400'} ${active ? 'ring-2 ring-brand-300 ring-offset-1' : ''}">
+              ${done ? icon('check','w-4 h-4') : (i + 1)}
+            </div>
+            <div class="text-xs leading-tight max-w-[4.5rem] ${done ? 'text-brand-700 font-semibold' : 'text-slate-400'}">${step.label}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    ${app.status === 'visit_scheduled' ? `
+    <div class="card p-4 mb-4 border border-brand-200 bg-brand-50">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center text-brand-700 flex-shrink-0">${icon('calendar','w-5 h-5')}</div>
+        <div class="flex-1">
+          <div class="font-semibold text-brand-900">School Visit Scheduled</div>
+          <div class="text-sm text-brand-700 mt-0.5">${fdate(app.visitDate, { long: true })}${app.visitTime ? ' at ' + app.visitTime : ''}</div>
+          ${app.visitNotes ? `<div class="text-xs text-brand-600 mt-1 bg-white/60 rounded-lg p-2">${app.visitNotes}</div>` : ''}
+        </div>
+      </div>
+      <div class="mt-3 text-xs text-brand-800 bg-white/60 rounded-lg p-2.5">
+        Please bring <strong>${app.applicantName}</strong> to ${school ? school.name : 'the school'} on the scheduled date.
+        Fee information will be revealed here once your visit has been confirmed by the admissions team.
+      </div>
+    </div>` : ''}
+
+    ${app.status === 'visit_confirmed' ? `
+    <div class="card p-4 mb-4 border border-emerald-200 bg-emerald-50">
+      <div class="flex items-center gap-2">
+        <span class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">${icon('check','w-5 h-5')}</span>
+        <div>
+          <div class="font-semibold text-emerald-900">Visit Confirmed — Fee Details Unlocked</div>
+          <div class="text-xs text-emerald-700">Thank you for visiting. Here is the fee breakdown for ${cls ? cls.name : 'your child\'s class'}.</div>
+        </div>
+      </div>
+    </div>
+
+    ${fs ? `
+    <div class="card p-4 mb-4">
+      <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+        ${avatar(app.applicantName, 'md')}
+        <div>
+          <div class="font-bold text-slate-900">${app.applicantName}</div>
+          <div class="text-sm text-slate-500">${cls ? cls.name : '—'} · ${DB.settings().currentTerm || 'Upcoming Term'}</div>
+        </div>
+        <span class="ml-auto badge badge-info">Preview</span>
+      </div>
+      <div class="space-y-2 mb-4">
+        ${[{ name: 'Tuition Fee', amount: fs.tuition }, { name: 'Books & Materials', amount: fs.books }, { name: 'Uniform', amount: fs.uniform }, { name: 'PTA Levy', amount: fs.pta }]
+          .filter(l => l.amount > 0)
+          .map(l => `<div class="flex justify-between text-sm"><span class="text-slate-600">${l.name}</span><span class="font-mono font-semibold">${money(l.amount)}</span></div>`).join('')}
+        <div class="flex justify-between text-sm font-bold border-t border-slate-200 pt-2 mt-1">
+          <span>Total</span>
+          <span class="font-mono text-brand-700">${money(fs.tuition + fs.books + fs.uniform + fs.pta)}</span>
+        </div>
+      </div>
+      <div class="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 flex items-start gap-2">
+        ${icon('bell','w-3.5 h-3.5 flex-shrink-0 mt-0.5')}
+        <span>These fees will be invoiced once your child is formally enrolled. Contact the admissions office to confirm your place.</span>
+      </div>
+    </div>` : `
+    <div class="card p-4 text-center text-slate-500 text-sm">
+      <div class="mb-1 font-semibold">Fee structure not yet published for ${cls ? cls.name : 'this class'}</div>
+      <div class="text-xs">The school will update fees shortly. Check back soon or contact the admissions office.</div>
+    </div>`}` : ''}
+
+    ${app.status !== 'visit_scheduled' && app.status !== 'visit_confirmed' ? `
+    <div class="card p-6 text-center">
+      <div class="w-14 h-14 mx-auto mb-3 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">${icon('fees','w-7 h-7')}</div>
+      <h3 class="font-bold text-slate-800 mb-1">Fees Available After School Visit</h3>
+      <p class="text-sm text-slate-500 max-w-xs mx-auto">Our admissions team will contact you to schedule a visit. Fee details are shared once the visit is complete.</p>
+      ${school ? `<p class="text-xs text-slate-400 mt-3">Questions? Call ${school.phone || school.email || 'the school office'}</p>` : ''}
+    </div>` : ''}
   `;
 }
 
@@ -903,7 +1058,7 @@ function payInvoiceModal(invoiceId) {
         </div>
       </div>
 
-      <p class="text-xs text-slate-400 text-center mt-3">Powered by <strong class="text-brand-700">Paystack</strong> · Your card details are never stored.</p>
+      <p class="text-xs text-slate-400 text-center mt-3">Secured payment · Your card details are never stored.</p>
     `,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -1470,31 +1625,125 @@ function payLoanInstallment(loanId) {
 function view_par_messages() { return view_messages_shared('parent'); }
 function view_par_announce() { return view_announce_shared('parent'); }
 
+/* ---------- Timetable (parent) ---------- */
+function view_par_timetable() {
+  const children = COMPUTE.parentChildren(AUTH.current.id).filter(c => c.status === 'active');
+  if (children.length === 0) return emptyState({ title: 'No children registered', body: 'Contact the school to link your children to this account.', icon: 'students' });
+  const childId = APP.params.parTtChild || children[0].id;
+  const child = DB.find('students', childId) || children[0];
+  const cls = child ? DB.find('classes', child.classId) : null;
+  const tt = cls ? DB.query('timetable', t => t.classId === cls.id) : [];
+  const subjects = DB.get('subjects');
+  const teachers = DB.get('teachers');
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const periods = [1,2,3,4,5,6,7,8];
+  const ttConfig = DB.settings().timetableConfig || {};
+  const periodTimes = ttConfig.periodTimes || {1:'08:00-08:40',2:'08:40-09:20',3:'09:20-10:00',4:'10:00-10:40',5:'11:00-11:40',6:'11:40-12:20',7:'13:00-13:40',8:'13:40-14:20'};
+  const break1After = ttConfig.break1After || 4;
+  const break2After = ttConfig.break2After || 6;
+  const break1Label = ttConfig.break1Label || 'Short Break';
+  const break2Label = ttConfig.break2Label || 'Lunch Break';
+
+  return `
+    ${pageHeader({ title: 'Class Timetable', subtitle: `Weekly schedule for ${child ? child.name : 'your child'}` })}
+    ${children.length > 1 ? `
+      <div class="flex gap-2 mb-4 flex-wrap">
+        ${children.map(c => `<button class="chip ${c.id===childId?'active':''}" onclick="APP.params.parTtChild='${c.id}'; APP.render()">${c.name.split(' ')[0]}</button>`).join('')}
+      </div>
+    ` : ''}
+    <div class="card p-4 mb-4 flex items-center gap-3">
+      ${avatar(child ? child.name : '?', 'md')}
+      <div>
+        <div class="font-bold text-slate-900">${child ? child.name : '—'}</div>
+        <div class="text-sm text-slate-500">${cls ? cls.name : 'Class not assigned'} ${cls ? '· ' + (cls.level || '') : ''}</div>
+      </div>
+    </div>
+    ${tt.length === 0 ? emptyState({ title: 'Timetable not published', body: 'The school has not yet published the timetable for this class.', icon: 'calendar' }) : `
+      <div class="card overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="tbl">
+            <thead><tr><th>Period</th>${days.map(d => `<th>${d}</th>`).join('')}</tr></thead>
+            <tbody>
+              ${periods.map(p => {
+                const entries = days.map(d => tt.find(x => x.day === d && x.period === p));
+                const rows = [];
+                if (p === break1After + 1) rows.push(`<tr class="bg-amber-50"><td colspan="6" class="text-center text-xs text-amber-800 font-semibold py-1.5">${break1Label}</td></tr>`);
+                else if (p === break2After + 1) rows.push(`<tr class="bg-sky-50"><td colspan="6" class="text-center text-xs text-sky-800 font-semibold py-1.5">${break2Label}</td></tr>`);
+                rows.push(`<tr>
+                  <td><strong class="text-slate-900">P${p}</strong><br><span class="text-xs text-slate-500">${periodTimes[p] || ''}</span></td>
+                  ${entries.map(e => {
+                    if (!e) return '<td class="text-center text-slate-300 text-sm">—</td>';
+                    const sub = subjects.find(s => s.id === e.subjectId);
+                    const tch = teachers.find(t => t.id === e.teacherId);
+                    return `<td><div class="font-semibold text-sm text-slate-900">${sub ? sub.name : '—'}</div><div class="text-xs text-slate-500">${tch ? tch.name : ''}</div></td>`;
+                  }).join('')}
+                </tr>`);
+                return rows.join('');
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `}
+  `;
+}
+
 /* ---------- Digital Consent (parent) ---------- */
 function view_par_consent() {
   const children = COMPUTE.parentChildren(AUTH.current.id).filter(c => c.status === 'active');
   const childClassIds = children.map(c => c.classId);
-  const forms = DB.query('consentForms', f => f.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && (f.classId === 'all' || childClassIds.includes(f.classId)))
+  const allForms = DB.query('consentForms', f => f.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && (f.classId === 'all' || childClassIds.includes(f.classId)))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const consentF = APP.params.consentFilter || 'all';
+
+  // Determine each form's response state for this parent
+  const formsWithState = allForms.map(f => {
+    const applicableKids = f.classId === 'all' ? children : children.filter(c => c.classId === f.classId);
+    const responses = applicableKids.map(kid => DB.query('consentResponses', x => x.formId === f.id && x.studentId === kid.id)[0]).filter(Boolean);
+    const allAnswered = responses.length === applicableKids.length && applicableKids.length > 0;
+    const anyApproved = responses.some(r => r.agreed);
+    const anyDeclined = responses.some(r => !r.agreed);
+    const state = !allAnswered ? 'pending' : anyDeclined ? 'rejected' : 'approved';
+    return { ...f, applicableKids, responses, state };
+  });
+
+  const pendingCount = formsWithState.filter(f => f.state === 'pending').length;
+  const approvedCount = formsWithState.filter(f => f.state === 'approved').length;
+  const rejectedCount = formsWithState.filter(f => f.state === 'rejected').length;
+
+  const filtered = consentF === 'all' ? formsWithState
+    : formsWithState.filter(f => f.state === consentF);
 
   return `
     ${pageHeader({ title: 'Digital Consent', subtitle: 'Approve school activities online — no paperwork' })}
-    ${forms.length === 0 ? emptyState({ title: 'No consent requests', body: 'When the school needs your approval, it will appear here.', icon: 'check' }) : `
+
+    <div class="flex gap-2 mb-4 flex-wrap">
+      <button class="chip ${consentF==='all'?'active':''}" onclick="APP.params.consentFilter='all'; APP.render()">All (${allForms.length})</button>
+      <button class="chip ${consentF==='pending'?'active':''}" onclick="APP.params.consentFilter='pending'; APP.render()">${icon('bell','w-3.5 h-3.5')} Pending (${pendingCount})</button>
+      <button class="chip ${consentF==='approved'?'active':''}" onclick="APP.params.consentFilter='approved'; APP.render()">${icon('check','w-3.5 h-3.5')} Approved (${approvedCount})</button>
+      <button class="chip ${consentF==='rejected'?'active':''}" onclick="APP.params.consentFilter='rejected'; APP.render()">${icon('logout','w-3.5 h-3.5')} Declined (${rejectedCount})</button>
+    </div>
+
+    ${filtered.length === 0 ? emptyState({ title: 'No consent requests', body: consentF === 'all' ? 'When the school needs your approval, it will appear here.' : `No ${consentF} consent forms.`, icon: 'check' }) : `
       <div class="space-y-4">
-        ${forms.map(f => {
-          const applicableKids = f.classId === 'all' ? children : children.filter(c => c.classId === f.classId);
+        ${filtered.map(f => {
           const typeBadge = { excursion: 'badge-info', media: 'badge-warn', pta: 'badge-neutral', policy: 'badge-success' }[f.type] || 'badge-neutral';
           const overdue = new Date(f.dueDate) < new Date();
+          const stateColors = { pending: 'badge-warn', approved: 'badge-success', rejected: 'badge-danger' };
           return `<div class="card p-4">
-            <div class="flex items-center gap-2 mb-1 flex-wrap">
-              <span class="badge ${typeBadge}">${f.type}</span>
-              <span class="badge ${overdue ? 'badge-danger' : 'badge-neutral'}">Respond by ${fdate(f.dueDate, { short: true })}</span>
+            <div class="flex items-start gap-2 mb-2">
+              <div class="flex-1 flex items-center gap-2 flex-wrap">
+                <span class="badge ${typeBadge}">${f.type}</span>
+                <span class="badge ${stateColors[f.state] || 'badge-neutral'}">${f.state}</span>
+                <span class="badge ${overdue ? 'badge-danger' : 'badge-neutral'}">Due ${fdate(f.dueDate, { short: true })}</span>
+              </div>
+              <button class="btn btn-ghost !p-1.5 text-slate-500 hover:text-brand-700 flex-shrink-0" title="Share this consent form" onclick="shareConsentRecord('${f.id}')">${icon('paperclip','w-4 h-4')}</button>
             </div>
             <h3 class="font-bold text-slate-900">${f.title}</h3>
             <p class="text-sm text-slate-600 mt-1">${f.description}</p>
             <div class="mt-3 space-y-2">
-              ${applicableKids.map(kid => {
-                const r = DB.query('consentResponses', x => x.formId === f.id && x.studentId === kid.id)[0];
+              ${f.applicableKids.map(kid => {
+                const r = f.responses.find(res => res.studentId === kid.id);
                 return `<div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl">
                   ${avatar(kid.name, 'sm')}
                   <div class="flex-1 min-w-0">
@@ -1502,7 +1751,7 @@ function view_par_consent() {
                     ${r ? `<div class="text-xs text-slate-500">Signed by ${r.signature} · ${fdate(r.timestamp, { time: true })}</div>` : `<div class="text-xs text-slate-400">Awaiting your response</div>`}
                   </div>
                   ${r
-                    ? (r.agreed ? `<span class="badge badge-success">Agreed ✓</span>` : `<span class="badge badge-danger">Declined</span>`)
+                    ? (r.agreed ? `<span class="badge badge-success">Approved ✓</span>` : `<span class="badge badge-danger">Declined</span>`)
                     : `<div class="flex gap-2">
                          <button class="btn btn-secondary !py-1.5 !px-3 text-xs" onclick="respondConsent('${f.id}','${kid.id}',false)">Decline</button>
                          <button class="btn btn-primary !py-1.5 !px-3 text-xs" onclick="consentSignModal('${f.id}','${kid.id}')">${icon('check','w-3.5 h-3.5')} Approve</button>
@@ -1515,6 +1764,20 @@ function view_par_consent() {
       </div>
     `}
   `;
+}
+
+function shareConsentRecord(formId) {
+  const form = DB.find('consentForms', formId);
+  if (!form) return;
+  const shareText = `Consent form: "${form.title}" — please respond by ${fdate(form.dueDate, { short: true })}. Log in to your parent portal to review and sign.`;
+  if (navigator.share) {
+    navigator.share({ title: form.title, text: shareText }).catch(() => {});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(shareText);
+    toast('Consent form info copied — share via WhatsApp or email');
+  } else {
+    toast(shareText, 'info');
+  }
 }
 
 function consentSignModal(formId, studentId) {

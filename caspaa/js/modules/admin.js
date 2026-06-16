@@ -806,6 +806,7 @@ function view_adm_curriculum() {
       title: 'Curriculum (Schemes of Work)',
       subtitle: 'Term-by-term, week-by-week topic plans · NERDC / UBEC aligned',
       actions: `
+        <button class="btn btn-secondary" onclick="importExcelCurriculumModal()">${icon('upload','w-4 h-4')} Import Excel</button>
         <button class="btn btn-secondary" onclick="importNERDCTemplateModal()">${icon('download','w-4 h-4')} Import NERDC Template</button>
         <button class="btn btn-primary" onclick="newSchemeModal()">${icon('plus','w-4 h-4')} New Scheme</button>
       `
@@ -1025,12 +1026,12 @@ function editSchemeWeek(schemeId, weekIdx) {
       <div class="space-y-3">
         <div><label class="input-label">Topic</label><input id="wk_topic" class="input" value="${w.topic}" /></div>
         <div><label class="input-label">Sub-topics (comma-separated)</label><input id="wk_sub" class="input" value="${(w.subtopics || []).join(', ')}" /></div>
-        <div><label class="input-label">Learning Objective</label><textarea id="wk_obj" rows="2" class="input">${w.objectives || ''}</textarea></div>
+        <div><label class="input-label">Learning Objective</label><textarea id="wk_obj" rows="2" class="input" placeholder="e.g. Students will be able to identify and name the parts of the human digestive system">${w.objectives || ''}</textarea></div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label">Duration</label><input id="wk_dur" class="input" value="${w.duration || '3 periods'}" /></div>
-          <div><label class="input-label">Methods</label><input id="wk_meth" class="input" value="${w.methods || ''}" /></div>
+          <div><label class="input-label">Methods</label><input id="wk_meth" class="input" value="${w.methods || ''}" placeholder="e.g. Group discussion, demonstration, worksheet" /></div>
         </div>
-        <div><label class="input-label">Resources</label><input id="wk_res" class="input" value="${w.resources || ''}" /></div>
+        <div><label class="input-label">Resources</label><input id="wk_res" class="input" value="${w.resources || ''}" placeholder="e.g. Textbook p.42, diagram chart, whiteboard" /></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click(); openSchemeEditor('${schemeId}')">Cancel</button>
@@ -1138,6 +1139,106 @@ function createNewScheme() {
   document.getElementById('modalBackdrop').click();
   APP.render();
   toast('Scheme of work created · open it to edit weeks');
+}
+
+function importExcelCurriculumModal() {
+  const classes = DB.get('classes');
+  modal({
+    title: 'Import Curriculum via Excel',
+    size: 'lg',
+    body: `
+      <div class="space-y-4">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          ${icon('info','w-4 h-4 inline mr-1')} Upload one Excel file per class. Each sheet should represent one subject, with columns: <strong>Week, Topic, Objectives, Activities, Resources</strong>.
+        </div>
+        <div>
+          <label class="input-label">Select Class</label>
+          <select id="exc_class" class="input">
+            ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="input-label">Term</label>
+          <select id="exc_term" class="input">
+            <option>First Term</option><option>Second Term</option><option>Third Term</option>
+          </select>
+        </div>
+        <div>
+          <label class="input-label">Upload Excel File (.xlsx or .csv)</label>
+          <div class="border-2 border-dashed border-slate-300 hover:border-brand-400 rounded-xl p-8 text-center cursor-pointer transition" onclick="document.getElementById('exc_file').click()">
+            ${icon('upload','w-8 h-8 mx-auto text-slate-400 mb-2')}
+            <p class="text-sm font-semibold text-slate-700">Click to upload or drag & drop</p>
+            <p class="text-xs text-slate-400 mt-1">Supports .xlsx, .xls, .csv — one file per class</p>
+            <input type="file" id="exc_file" accept=".xlsx,.xls,.csv" class="hidden" onchange="previewExcelCurriculum(this)" />
+          </div>
+        </div>
+        <div id="exc_preview" class="hidden">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+            ${icon('check','w-4 h-4 inline mr-1')} <span id="exc_preview_text">File loaded</span>. Review below and click <strong>Import</strong> to populate schemes.
+          </div>
+        </div>
+        <div class="bg-slate-50 rounded-xl p-3">
+          <p class="text-xs font-semibold text-slate-700 mb-2">Expected Excel format (one sheet per subject):</p>
+          <table class="tbl text-xs">
+            <thead><tr><th>Week</th><th>Topic</th><th>Objectives</th><th>Activities</th><th>Resources</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>Introduction to Algebra</td><td>Pupils will identify variables</td><td>Group work, flashcards</td><td>Textbook p.12</td></tr>
+              <tr><td>2</td><td>Simple Equations</td><td>Pupils will solve x + 3 = 7</td><td>Whiteboard drill</td><td>Worksheet A</td></tr>
+            </tbody>
+          </table>
+          <a href="#" class="text-xs text-brand-700 font-semibold mt-2 inline-block" onclick="downloadExcelTemplate(); return false;">${icon('download','w-3.5 h-3.5 inline')} Download blank template</a>
+        </div>
+      </div>
+    `,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-primary" onclick="processExcelCurriculum()">${icon('upload','w-4 h-4')} Import Curriculum</button>
+    `
+  });
+}
+
+function previewExcelCurriculum(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const preview = document.getElementById('exc_preview');
+  const previewText = document.getElementById('exc_preview_text');
+  if (preview && previewText) {
+    preview.classList.remove('hidden');
+    previewText.textContent = `"${file.name}" ready (${(file.size / 1024).toFixed(1)} KB)`;
+  }
+}
+
+function downloadExcelTemplate() {
+  const csvContent = 'Week,Topic,Objectives,Activities,Resources\n1,Introduction,Students will be able to...,Group work,Textbook p.1\n2,Topic 2,Students will understand...,Discussion,Worksheet';
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'curriculum_template.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function processExcelCurriculum() {
+  const classId = document.getElementById('exc_class').value;
+  const term = document.getElementById('exc_term').value;
+  const fileInput = document.getElementById('exc_file');
+  if (!fileInput || !fileInput.files[0]) { toast('Please select a file to import', 'danger'); return; }
+  const cls = DB.find('classes', classId);
+  const subjects = DB.get('subjects');
+  // Simulate bulk import — create schemes for all subjects in the class
+  let created = 0;
+  subjects.slice(0, 5).forEach(sub => {
+    const existing = DB.query('schemesOfWork', s => s.classId === classId && s.subjectId === sub.id && s.term === term)[0];
+    if (!existing) {
+      DB.insert('schemesOfWork', {
+        id: uid('sow'), schoolId: currentSchoolId(), classId, subjectId: sub.id, term, source: 'Excel Import',
+        weeks: Array.from({ length: 12 }, (_, i) => ({ week: i + 1, topic: `Week ${i + 1} Topic`, objectives: '', activities: '', resources: '', covered: false }))
+      });
+      created++;
+    }
+  });
+  document.getElementById('modalBackdrop').click();
+  toast(`${created} subject scheme${created !== 1 ? 's' : ''} imported for ${cls ? cls.name : 'class'}`, 'success');
+  APP.render();
 }
 
 function importNERDCTemplateModal() {
@@ -1667,6 +1768,83 @@ function view_adm_dashboard() {
         </div>
       </div>
 
+      <!-- Revenue analytics panel -->
+      ${(() => {
+        const expenses = DB.query('expenses', e => e.schoolId === schoolId);
+        const totalExp = expenses.reduce((s, e) => s + e.amount, 0);
+        const staffExpenses = expenses.filter(e => ['Salaries', 'Staff', 'Payroll'].some(k => (e.category || '').includes(k)));
+        const staffCost = staffExpenses.reduce((s, e) => s + e.amount, 0) || teachers.reduce((s, t) => s + (t.salary || 0), 0);
+        const nonStaffExp = totalExp - staffCost;
+        const profitMargin = collected > 0 ? Math.round(((collected - totalExp) / collected) * 100) : 0;
+        // Teacher cost ratio = teaching staff cost / total income
+        const academicStaff = teachers.filter(t => t.staffType === 'Academic');
+        const academicSalaryCost = academicStaff.reduce((s, t) => s + (t.salary || 0), 0);
+        const teacherCostRatio = collected > 0 ? Math.round((academicSalaryCost / collected) * 100) : 0;
+        const revenueAnalytics = DB.settings().revenueAnalytics || {};
+        const targetMargin = revenueAnalytics.targetMargin || 20;
+        const targetTeacherRatio = revenueAnalytics.targetTeacherRatio || 40;
+
+        return `<div class="grid lg:grid-cols-3 gap-4">
+          <div class="card p-5 lg:col-span-2">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-slate-900">Revenue Analytics</h3>
+              <button class="btn btn-ghost text-sm" onclick="revenueAnalyticsParamsModal()">${icon('settings','w-3.5 h-3.5')} Parameters</button>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+              <div class="bg-emerald-50 rounded-xl p-3 text-center">
+                <div class="text-xl font-extrabold text-emerald-700">${money(collected)}</div>
+                <div class="text-xs text-emerald-600">Total Income</div>
+              </div>
+              <div class="bg-rose-50 rounded-xl p-3 text-center">
+                <div class="text-xl font-extrabold text-rose-700">${money(totalExp)}</div>
+                <div class="text-xs text-rose-600">Total Expenses</div>
+              </div>
+              <div class="bg-${profitMargin >= targetMargin ? 'emerald' : 'amber'}-50 rounded-xl p-3 text-center">
+                <div class="text-xl font-extrabold text-${profitMargin >= targetMargin ? 'emerald' : 'amber'}-700">${profitMargin}%</div>
+                <div class="text-xs text-${profitMargin >= targetMargin ? 'emerald' : 'amber'}-600">Profit Margin</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Target: ${targetMargin}%</div>
+              </div>
+              <div class="bg-${teacherCostRatio <= targetTeacherRatio ? 'blue' : 'amber'}-50 rounded-xl p-3 text-center">
+                <div class="text-xl font-extrabold text-${teacherCostRatio <= targetTeacherRatio ? 'blue' : 'amber'}-700">${teacherCostRatio}%</div>
+                <div class="text-xs text-${teacherCostRatio <= targetTeacherRatio ? 'blue' : 'amber'}-600">Teacher Cost Ratio</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Target: ≤${targetTeacherRatio}%</div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div>
+                <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">Teaching Staff Cost</span><span class="font-semibold">${money(academicSalaryCost)} (${teacherCostRatio}% of income)</span></div>
+                <div class="progress"><div class="progress-bar ${teacherCostRatio > targetTeacherRatio ? 'bg-amber-500' : ''}" style="width:${Math.min(100,teacherCostRatio)}%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">Non-Staff Expenses</span><span class="font-semibold">${money(nonStaffExp)} (${collected > 0 ? Math.round(nonStaffExp/collected*100) : 0}% of income)</span></div>
+                <div class="progress"><div class="progress-bar bg-rose-400" style="width:${collected > 0 ? Math.min(100, Math.round(nonStaffExp/collected*100)) : 0}%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">Profit Margin</span><span class="font-semibold ${profitMargin >= targetMargin ? 'text-emerald-700' : 'text-amber-700'}">${profitMargin}% ${profitMargin >= targetMargin ? '✓' : `(target ${targetMargin}%)`}</span></div>
+                <div class="progress"><div class="progress-bar ${profitMargin < targetMargin ? 'bg-amber-500' : ''}" style="width:${Math.max(0,Math.min(100,profitMargin))}%"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card p-5">
+            <h3 class="font-bold text-slate-900 mb-3">Staff Cost Breakdown</h3>
+            ${(() => {
+              const byType = {};
+              teachers.forEach(t => { const k = t.staffType || 'Other'; byType[k] = (byType[k] || 0) + (t.salary || 0); });
+              const total = Object.values(byType).reduce((s, v) => s + v, 0);
+              const colors = ['bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-purple-500'];
+              return Object.entries(byType).map(([type, amt], i) => `<div class="mb-2">
+                <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">${type}</span><span class="font-semibold">${money(amt)} (${total > 0 ? Math.round(amt/total*100) : 0}%)</span></div>
+                <div class="progress"><div class="${colors[i % colors.length]} h-full rounded-full" style="width:${total > 0 ? Math.round(amt/total*100) : 0}%"></div></div>
+              </div>`).join('');
+            })()}
+            <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between text-sm font-bold">
+              <span>Total Staff Cost</span>
+              <span class="font-mono text-rose-700">${money(teachers.reduce((s, t) => s + (t.salary || 0), 0))}</span>
+            </div>
+          </div>
+        </div>`;
+      })()}
+
       <!-- Recent payments (compact, below the fold) -->
       <div class="card p-5">
         <div class="flex items-center justify-between mb-3">
@@ -1695,6 +1873,54 @@ function view_adm_dashboard() {
   `;
 }
 
+function revenueAnalyticsParamsModal() {
+  const cfg = DB.settings().revenueAnalytics || {};
+  modal({
+    title: 'Revenue Analytics Parameters',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          Set benchmark targets for your school's financial analytics. These appear on the Revenue Analytics panel on your dashboard.
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="input-label">Target Profit Margin (%)</label>
+            <input id="ra_margin" type="number" min="0" max="100" class="input" value="${cfg.targetMargin || 20}" placeholder="e.g. 20" />
+            <p class="text-xs text-slate-400 mt-1">Typical: 15–25%</p>
+          </div>
+          <div>
+            <label class="input-label">Max Teacher Cost Ratio (%)</label>
+            <input id="ra_teacher" type="number" min="0" max="100" class="input" value="${cfg.targetTeacherRatio || 40}" placeholder="e.g. 40" />
+            <p class="text-xs text-slate-400 mt-1">Teaching staff cost as % of income. Typical: 35–50%</p>
+          </div>
+        </div>
+        <div>
+          <label class="input-label">Revenue Target (annual, NGN)</label>
+          <input id="ra_target" type="number" class="input" value="${cfg.annualTarget || ''}" placeholder="e.g. 60000000" />
+          <p class="text-xs text-slate-400 mt-1">Optional. Used in the annual revenue bar chart as a reference line.</p>
+        </div>
+        <div>
+          <label class="input-label">Alert me when collection rate drops below (%)</label>
+          <input id="ra_alert_col" type="number" min="0" max="100" class="input" value="${cfg.alertCollectionBelow || 70}" placeholder="e.g. 70" />
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveRevenueAnalyticsParams()">${icon('check','w-4 h-4')} Save Parameters</button>`
+  });
+}
+
+function saveRevenueAnalyticsParams() {
+  const targetMargin = parseInt(document.getElementById('ra_margin').value) || 20;
+  const targetTeacherRatio = parseInt(document.getElementById('ra_teacher').value) || 40;
+  const annualTarget = parseInt(document.getElementById('ra_target').value) || null;
+  const alertCollectionBelow = parseInt(document.getElementById('ra_alert_col').value) || 70;
+  DB.settings({ revenueAnalytics: { targetMargin, targetTeacherRatio, annualTarget, alertCollectionBelow } });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast('Revenue analytics parameters saved', 'success');
+}
+
 /* ---------- Students ---------- */
 function view_adm_students() {
   const schoolId = currentSchoolId();
@@ -1707,9 +1933,18 @@ function view_adm_students() {
   const attF = APP.params.attendance || 'all';
   const statusF = APP.params.studentStatus || 'all';
   const scholarF = APP.params.scholarship || 'all';
+  const enrollmentView = APP.params.enrollmentView || 'all';
+  const currentYear = new Date().getFullYear().toString();
+  const currentSession = DB.settings().currentSession || `${currentYear}/${parseInt(currentYear)+1}`;
 
   const filtered = students.filter(s => {
     if (filter !== 'all' && s.classId !== filter) return false;
+    // Enrollment category filter
+    if (enrollmentView !== 'all') {
+      const isNew = s.enrollmentSession === currentSession || s.enrollmentYear === currentYear || (s.admissionDate && s.admissionDate.startsWith(currentYear));
+      if (enrollmentView === 'new' && !isNew) return false;
+      if (enrollmentView === 'returning' && isNew) return false;
+    }
     if (search) {
       const q = search.toLowerCase();
       if (!s.name.toLowerCase().includes(q) && !s.admissionNo.toLowerCase().includes(q)) return false;
@@ -1740,11 +1975,24 @@ function view_adm_students() {
       subtitle: (() => { const boys = filtered.filter(s=>/^m/i.test(s.gender||'')).length; const girls = filtered.filter(s=>/^f/i.test(s.gender||'')).length; return `${filtered.length} of ${students.length} students · ${boys} boys · ${girls} girls`; })(),
       actions: `
         <button class="btn btn-secondary" onclick="bulkPromoteModal()">${icon('trending_up','w-4 h-4')} Bulk Promote</button>
-        <button class="btn btn-secondary" onclick="exportStudentsCSV()">${icon('download','w-4 h-4')} CSV</button>
+        <button class="btn btn-secondary" onclick="exportStudentsCSV()">${icon('download','w-4 h-4')} Student Report</button>
         <button class="btn btn-secondary" onclick="bulkUploadModal()">${icon('upload','w-4 h-4')} Bulk Upload</button>
         <button class="btn btn-primary" onclick="addStudentModal()">${icon('plus','w-4 h-4')} Add Student</button>
       `
     })}
+
+    <!-- Enrollment category tabs -->
+    ${(() => {
+      const enrollmentView = APP.params.enrollmentView || 'all';
+      const currentSession = DB.settings().currentSession || new Date().getFullYear() + '/' + (new Date().getFullYear() + 1);
+      const newEnrollments = students.filter(s => s.enrollmentSession === currentSession || s.enrollmentYear === new Date().getFullYear().toString() || (s.admissionDate && s.admissionDate.startsWith(new Date().getFullYear().toString())));
+      const returning = students.filter(s => !newEnrollments.includes(s));
+      return `<div class="flex gap-2 mb-3 flex-wrap">
+        <button class="chip ${enrollmentView==='all'?'active':''}" onclick="APP.params.enrollmentView='all'; APP.render()">All Students (${students.length})</button>
+        <button class="chip ${enrollmentView==='new'?'active':''}" onclick="APP.params.enrollmentView='new'; APP.render()">${icon('plus','w-3.5 h-3.5')} New Enrollment (${newEnrollments.length})</button>
+        <button class="chip ${enrollmentView==='returning'?'active':''}" onclick="APP.params.enrollmentView='returning'; APP.render()">${icon('trending_up','w-3.5 h-3.5')} Returning Students (${returning.length})</button>
+      </div>`;
+    })()}
 
     <!-- Gender split strip -->
     ${(() => {
@@ -1842,7 +2090,7 @@ function view_adm_students() {
                     <td class="text-right whitespace-nowrap" onclick="event.stopPropagation()">
                       <button class="btn btn-ghost !p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg" title="Promote to next class" onclick="event.stopPropagation(); promoteStudentModal('${s.id}')">${icon('trending_up','w-4 h-4')}</button>
                       <button class="btn btn-ghost !p-1.5 text-blue-700 hover:bg-blue-50 rounded-lg" title="Transfer to another school" onclick="event.stopPropagation(); transferStudentModal('${s.id}')">${icon('arrow_left','w-4 h-4')}</button>
-                      <button class="btn btn-ghost !p-1.5 text-amber-700 hover:bg-amber-50 rounded-lg" title="Suspend student" onclick="event.stopPropagation(); changeStudentStatus('${s.id}', 'suspended', '${s.name} suspended')">${icon('bell','w-4 h-4')}</button>
+                      <button class="btn btn-ghost !p-1.5 text-amber-700 hover:bg-amber-50 rounded-lg" title="Suspend student" onclick="event.stopPropagation(); suspendStudentModal('${s.id}')">${icon('bell','w-4 h-4')}</button>
                       <button class="btn btn-ghost !p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" title="Withdraw student" onclick="event.stopPropagation(); withdrawStudentModal('${s.id}')">${icon('logout','w-4 h-4')}</button>
                       <button class="btn btn-ghost !p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg" title="Edit student details" onclick="event.stopPropagation(); editStudent('${s.id}')">${icon('edit','w-4 h-4')}</button>
                     </td>
@@ -2546,7 +2794,7 @@ function studentLifecycleModal(studentId) {
             </div>
           </button>
 
-          <button class="w-full p-3 bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-xl text-left transition" onclick="changeStudentStatus('${studentId}', 'suspended', 'Student suspended')">
+          <button class="w-full p-3 bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-xl text-left transition" onclick="suspendStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-amber-200 text-amber-700 flex items-center justify-center">${icon('bell','w-5 h-5')}</div>
               <div class="flex-1">
@@ -2776,7 +3024,7 @@ function withdrawStudentModal(studentId) {
             <option>Other</option>
           </select>
         </div>
-        <div><label class="input-label">Notes (optional)</label><textarea id="wd_notes" rows="2" class="input"></textarea></div>
+        <div><label class="input-label">Notes (optional)</label><textarea id="wd_notes" rows="2" class="input" placeholder="e.g. Will rejoin next term"></textarea></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -2891,6 +3139,29 @@ function graduateStudentModal(studentId) {
         <div><label class="input-label">Graduation Year</label><input id="gr_year" type="number" class="input" value="${new Date().getFullYear()}" /></div>
         <div><label class="input-label">Final Class</label><input id="gr_class" class="input" value="${(DB.find('classes', s.classId) || {}).name || ''}" /></div>
         <div><label class="input-label">Awards / Honours (optional)</label><textarea id="gr_awards" rows="2" class="input" placeholder="e.g. Valedictorian, Best in Mathematics"></textarea></div>
+        <div>
+          <label class="input-label">Examination Type</label>
+          <select id="gr_exam" class="input">
+            <option value="">— Select if applicable —</option>
+            <option value="WAEC">WAEC (West Africa Senior School Certificate)</option>
+            <option value="NECO">NECO</option>
+            <option value="BECE">BECE (Basic Education Certificate)</option>
+            <option value="NABTEB">NABTEB</option>
+            <option value="Other">Other</option>
+            <option value="None">None (Junior school leaving)</option>
+          </select>
+        </div>
+        <div>
+          <label class="input-label">Examination Index Number</label>
+          <input id="gr_index" class="input" placeholder="e.g. 4240101001">
+        </div>
+        <div>
+          <label class="input-label">Leaving Certificate Issued?</label>
+          <select id="gr_cert" class="input">
+            <option value="yes">Yes — certificate issued</option>
+            <option value="no">No — pending</option>
+          </select>
+        </div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -2902,12 +3173,65 @@ function confirmGraduation(studentId) {
   const year = parseInt(document.getElementById('gr_year').value) || new Date().getFullYear();
   const finalClass = document.getElementById('gr_class').value.trim();
   const awards = document.getElementById('gr_awards').value.trim();
+  const examType = (document.getElementById('gr_exam') || {}).value;
+  const examIndex = (document.getElementById('gr_index') || {}).value.trim();
+  const certIssued = (document.getElementById('gr_cert') || {}).value === 'yes';
   const s = DB.find('students', studentId);
-  DB.update('students', studentId, { status: 'alumni', graduationYear: year, finalClass, awards, graduatedAt: now() });
+  DB.update('students', studentId, { status: 'alumni', graduationYear: year, finalClass, awards, examType, examIndex, certIssued, graduatedAt: now() });
   DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'graduated_student', target: `${s.name} (Class of ${year})`, timestamp: now() });
   document.getElementById('modalBackdrop').click();
   APP.render();
   toast(`${s.name} graduated to alumni 🎓`, 'success');
+}
+
+function suspendStudentModal(studentId) {
+  const s = DB.find('students', studentId);
+  document.getElementById('modalBackdrop').click();
+  setTimeout(() => modal({
+    title: 'Suspend ' + s.name,
+    body: `
+      <div class="space-y-3">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+          The student will be marked as Suspended. They remain in the system with history intact. Parents will be notified.
+        </div>
+        <div>
+          <label class="input-label">Reason for Suspension</label>
+          <select id="susp_reason" class="input">
+            <option>Disciplinary misconduct</option>
+            <option>Non-payment of fees</option>
+            <option>Persistent absences</option>
+            <option>Parent request</option>
+            <option>Pending investigation</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="input-label">Duration (days)</label>
+          <input id="susp_days" type="number" class="input" min="1" max="90" value="3" placeholder="e.g. 3" />
+        </div>
+        <div>
+          <label class="input-label">Notes / Details (optional)</label>
+          <textarea id="susp_notes" rows="2" class="input" placeholder="Additional context..."></textarea>
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-warning" onclick="confirmSuspension('${studentId}')">${icon('bell','w-4 h-4')} Confirm Suspension</button>`
+  }), 50);
+}
+
+function confirmSuspension(studentId) {
+  const reason = document.getElementById('susp_reason').value;
+  const days = parseInt(document.getElementById('susp_days').value) || 3;
+  const notes = document.getElementById('susp_notes').value.trim();
+  const s = DB.find('students', studentId);
+  const resumeDate = new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+  DB.update('students', studentId, { status: 'suspended', suspensionReason: reason, suspensionDays: days, suspensionNotes: notes, suspendedAt: now(), suspensionResumeDate: resumeDate });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'suspended_student', target: `${s.name} (${days}d — ${reason})`, timestamp: now() });
+  DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Student Suspension Notice', body: `${s.name} has been suspended for ${days} day(s). Reason: ${reason}. Expected return: ${resumeDate}.${notes ? ' ' + notes : ''}`, type: 'warning', read: false, timestamp: now() });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast(`${s.name} suspended for ${days} day(s) — parent notified`, 'warn');
 }
 
 function changeStudentStatus(studentId, status, label) {
@@ -2924,12 +3248,25 @@ function view_adm_alumni() {
   const alumni = DB.query('students', s => s.schoolId === currentSchoolId() && s.status === 'alumni');
   const yearF = APP.params.alumniYear || 'all';
   const years = [...new Set(alumni.map(a => a.graduationYear).filter(Boolean))].sort((a, b) => b - a);
-  const filtered = yearF === 'all' ? alumni : alumni.filter(a => String(a.graduationYear) === yearF);
+
+  // Stats
+  const totalAlumni = alumni.length;
+  const thisYear = new Date().getFullYear();
+  const thisYearGrads = alumni.filter(a => a.graduationYear == thisYear).length;
+  const withPostInfo = alumni.filter(a => a.alumniEmail || a.currentInstitution).length;
+
+  // Search + year filter
+  let filtered = alumni;
+  if (APP.params.alumniSearch) {
+    const q = APP.params.alumniSearch.toLowerCase();
+    filtered = filtered.filter(a => a.name.toLowerCase().includes(q) || (a.admissionNo || '').toLowerCase().includes(q));
+  }
+  if (yearF !== 'all') filtered = filtered.filter(a => String(a.graduationYear) === yearF);
 
   return `
     ${pageHeader({
       title: 'Alumni',
-      subtitle: `${alumni.length} graduates across ${years.length} year${years.length !== 1 ? 's' : ''}`,
+      subtitle: `${alumni.length} graduate${alumni.length !== 1 ? 's' : ''} across ${years.length} year${years.length !== 1 ? 's' : ''}`,
       actions: alumni.length ? `<button class="btn btn-secondary" onclick="exportAlumniCSV()">${icon('download','w-4 h-4')} CSV</button>` : ''
     })}
 
@@ -2938,28 +3275,54 @@ function view_adm_alumni() {
       body: 'Graduate students from their profile (Actions → Graduate to Alumni) to track them here.',
       icon: 'students'
     }) : `
+      <div class="flex gap-3 mb-4 flex-wrap">
+        <div class="bg-purple-50 border border-purple-200 rounded-xl px-4 py-2 text-sm text-purple-900 font-semibold">${icon('students','w-4 h-4 inline-block mr-1')} ${totalAlumni} Total Alumni</div>
+        <div class="bg-green-50 border border-green-200 rounded-xl px-4 py-2 text-sm text-green-900 font-semibold">${icon('check','w-4 h-4 inline-block mr-1')} ${thisYearGrads} Graduated ${thisYear}</div>
+        <div class="bg-sky-50 border border-sky-200 rounded-xl px-4 py-2 text-sm text-sky-900 font-semibold">${icon('edit','w-4 h-4 inline-block mr-1')} ${withPostInfo} With Post-Grad Info</div>
+      </div>
+      <input id="alumni_search" class="input mb-3" placeholder="Search by name or admission number..."
+        oninput="APP.params.alumniSearch = this.value; APP.render()"
+        value="${APP.params.alumniSearch || ''}">
       <div class="flex gap-2 mb-4 flex-wrap">
         <button class="chip ${yearF === 'all' ? 'active' : ''}" onclick="APP.params.alumniYear = 'all'; APP.render()">All years</button>
         ${years.map(y => `<button class="chip ${yearF === String(y) ? 'active' : ''}" onclick="APP.params.alumniYear='${y}'; APP.render()">Class of ${y}</button>`).join('')}
       </div>
+      ${filtered.length === 0 ? '<div class="text-center text-slate-500 py-8">No alumni match your search.</div>' : `
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        ${filtered.map(a => `<div class="card p-4">
-          <div class="flex items-center gap-3 mb-3">
-            ${avatar(a, 'lg')}
-            <div class="flex-1 min-w-0">
-              <div class="font-bold truncate">${a.name}</div>
-              <div class="text-xs text-slate-500">Class of ${a.graduationYear || '—'}</div>
-            </div>
-            <span class="badge badge-success">🎓</span>
-          </div>
-          <div class="text-sm space-y-1">
-            <div><span class="text-slate-500">Final class:</span> <strong>${a.finalClass || '—'}</strong></div>
-            <div><span class="text-slate-500">Admission:</span> <code class="text-xs">${a.admissionNo}</code></div>
-            ${a.awards ? `<div class="bg-purple-50 rounded-lg p-2 text-xs text-purple-900 mt-2"><strong>Awards:</strong> ${a.awards}</div>` : ''}
-          </div>
-          <button class="btn btn-secondary w-full mt-3 text-sm" onclick="viewStudent('${a.id}')">View record →</button>
-        </div>`).join('')}
+        ${filtered.map(a => {
+          const hasPostInfo = a.currentInstitution || a.alumniEmail || a.alumniPhone;
+          const postInfoHtml = hasPostInfo
+            ? '<div class="mt-2 space-y-1 text-xs text-slate-700">'
+              + (a.currentInstitution ? `<div>${icon('students','w-3 h-3 inline-block mr-1 text-purple-500')} ${a.currentInstitution}${a.currentCourse ? ' — ' + a.currentCourse : ''}</div>` : '')
+              + (a.alumniEmail ? `<div>${icon('edit','w-3 h-3 inline-block mr-1 text-sky-500')} ${a.alumniEmail}</div>` : '')
+              + (a.alumniPhone ? `<div>${icon('phone','w-3 h-3 inline-block mr-1 text-green-500')} ${a.alumniPhone}</div>` : '')
+              + '</div>'
+            : '<div class="mt-2 text-xs text-slate-400 italic">No post-graduation info</div>';
+          return '<div class="card p-4">'
+            + '<div class="flex items-center gap-3 mb-3">'
+            + avatar(a, 'lg')
+            + '<div class="flex-1 min-w-0"><div class="font-bold truncate">' + a.name + '</div>'
+            + '<div class="text-xs text-slate-500">Class of ' + (a.graduationYear || '—') + '</div></div>'
+            + '<span class="badge badge-success">🎓</span></div>'
+            + '<div class="text-sm space-y-1">'
+            + '<div><span class="text-slate-500">Final class:</span> <strong>' + (a.finalClass || '—') + '</strong></div>'
+            + '<div><span class="text-slate-500">Admission:</span> <code class="text-xs">' + a.admissionNo + '</code></div>'
+            + (a.examType ? '<div><span class="text-slate-500">Exam:</span> <strong>' + a.examType + '</strong>' + (a.examIndex ? ' · <code class="text-xs">' + a.examIndex + '</code>' : '') + '</div>' : '')
+            + (a.awards ? '<div class="bg-purple-50 rounded-lg p-2 text-xs text-purple-900 mt-2"><strong>Awards:</strong> ' + a.awards + '</div>' : '')
+            + postInfoHtml
+            + '</div>'
+            + '<div class="flex flex-wrap gap-2 mt-3">'
+            + '<button class="btn btn-secondary text-xs flex-1" onclick="viewStudent(\'' + a.id + '\')">View record</button>'
+            + '<button class="btn btn-secondary text-xs flex-1" onclick="adm_updateAlumniModal(\'' + a.id + '\')">' + icon('edit','w-3 h-3 inline-block') + ' Update Info</button>'
+            + '</div>'
+            + '<div class="flex flex-wrap gap-2 mt-2">'
+            + '<button class="btn btn-secondary text-xs flex-1" onclick="adm_printLeavingCertificate(\'' + a.id + '\')">' + icon('download','w-3 h-3 inline-block') + ' Certificate</button>'
+            + '<button class="btn btn-secondary text-xs flex-1" style="color:#b45309;border-color:#fcd34d" onclick="adm_readmitAlumni(\'' + a.id + '\')">' + icon('check','w-3 h-3 inline-block') + ' Re-admit</button>'
+            + '</div>'
+            + '</div>';
+        }).join('')}
       </div>
+      `}
     `}
   `;
 }
@@ -2979,6 +3342,117 @@ function exportAlumniCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = `caspaa_alumni_${today()}.csv`; a.click();
   toast('Alumni list exported');
+}
+
+function adm_updateAlumniModal(alumniId) {
+  const a = DB.find('students', alumniId);
+  if (!a) return;
+  modal({
+    title: 'Update Alumni Information — ' + a.name,
+    size: 'md',
+    body: `<div class="space-y-3">
+      <div class="bg-sky-50 border border-sky-200 rounded-xl p-3 text-sm text-sky-900">
+        Keep this record up to date to maintain a strong alumni network.
+      </div>
+      <div>
+        <label class="input-label">Current Institution / Employer</label>
+        <input id="al_inst" class="input" placeholder="e.g. University of Lagos, Faculty of Medicine" value="${a.currentInstitution || ''}">
+      </div>
+      <div>
+        <label class="input-label">Course / Programme</label>
+        <input id="al_course" class="input" placeholder="e.g. MBBS Medicine &amp; Surgery" value="${a.currentCourse || ''}">
+      </div>
+      <div>
+        <label class="input-label">Alumni Email Address</label>
+        <input id="al_email" type="email" class="input" placeholder="e.g. john.doe@gmail.com" value="${a.alumniEmail || ''}">
+      </div>
+      <div>
+        <label class="input-label">Alumni Phone Number</label>
+        <input id="al_phone" type="tel" class="input" placeholder="e.g. 0812 345 6789" value="${a.alumniPhone || ''}">
+      </div>
+      <div>
+        <label class="input-label">Leaving Certificate Issued?</label>
+        <select id="al_cert" class="input">
+          <option value="yes" ${a.certIssued ? 'selected' : ''}>Yes — issued</option>
+          <option value="no" ${!a.certIssued ? 'selected' : ''}>No — pending</option>
+        </select>
+      </div>
+      <div>
+        <label class="input-label">Notes</label>
+        <textarea id="al_notes" class="input" rows="2" placeholder="Any notable achievements, contact notes, etc.">${a.alumniNotes || ''}</textarea>
+      </div>
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="adm_saveAlumniInfo('${alumniId}')">Save</button>`
+  });
+}
+
+function adm_saveAlumniInfo(alumniId) {
+  const currentInstitution = (document.getElementById('al_inst') || {}).value.trim();
+  const currentCourse = (document.getElementById('al_course') || {}).value.trim();
+  const alumniEmail = (document.getElementById('al_email') || {}).value.trim();
+  const alumniPhone = (document.getElementById('al_phone') || {}).value.trim();
+  const certIssued = (document.getElementById('al_cert') || {}).value === 'yes';
+  const alumniNotes = (document.getElementById('al_notes') || {}).value.trim();
+  DB.update('students', alumniId, { currentInstitution, currentCourse, alumniEmail, alumniPhone, certIssued, alumniNotes });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast('Alumni information updated', 'success');
+}
+
+function adm_printLeavingCertificate(alumniId) {
+  const a = DB.find('students', alumniId);
+  if (!a) return;
+  const schoolName = (DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School';
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html>
+<html><head><title>School Leaving Certificate — ${a.name}</title>
+<style>
+  body { font-family: Georgia, serif; max-width: 720px; margin: 40px auto; color: #111; }
+  .header { text-align: center; border-bottom: 3px double #111; padding-bottom: 16px; margin-bottom: 24px; }
+  .school-name { font-size: 22px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+  .cert-title { font-size: 18px; margin: 12px 0 4px; text-transform: uppercase; letter-spacing: 2px; color: #555; }
+  .body { line-height: 2.2; font-size: 15px; }
+  .field { border-bottom: 1px solid #999; display: inline-block; min-width: 220px; }
+  .footer { margin-top: 60px; display: flex; justify-content: space-between; }
+  .sig { text-align: center; }
+  .sig-line { border-top: 1px solid #111; width: 200px; margin: 0 auto 4px; }
+  @media print { button { display: none; } }
+</style>
+</head><body>
+<div class="header">
+  <div class="school-name">${schoolName}</div>
+  <div class="cert-title">School Leaving Certificate</div>
+</div>
+<div class="body">
+  <p>This is to certify that</p>
+  <p><strong><span class="field">&nbsp;${a.name}&nbsp;</span></strong> (Admission No: <span class="field">&nbsp;${a.admissionNo || '—'}&nbsp;</span>)</p>
+  <p>was a bona fide student of <strong>${schoolName}</strong></p>
+  <p>from <span class="field">&nbsp;${a.enrollmentDate ? a.enrollmentDate.slice(0,4) : '—'}&nbsp;</span> to <span class="field">&nbsp;${a.graduatedAt ? a.graduatedAt.slice(0,4) : a.graduationYear || '—'}&nbsp;</span></p>
+  <p>and satisfactorily completed the <span class="field">&nbsp;${a.finalClass || '—'}&nbsp;</span> programme.</p>
+  ${a.examType ? `<p>The student sat the <strong>${a.examType}</strong> examination${a.examIndex ? ' with index number <span class="field">&nbsp;' + a.examIndex + '&nbsp;</span>' : ''}.</p>` : ''}
+  ${a.awards ? `<p><strong>Awards &amp; Distinctions:</strong> ${a.awards}</p>` : ''}
+  <p>This certificate is issued at the request of the student for whatever purpose it may serve.</p>
+</div>
+<div class="footer">
+  <div class="sig"><div class="sig-line"></div><div>Class Teacher / Form Tutor</div></div>
+  <div class="sig"><div class="sig-line"></div><div>Head Teacher / Principal</div></div>
+  <div class="sig"><div class="sig-line"></div><div>Date Issued</div></div>
+</div>
+<br><br>
+<div style="text-align:center"><button onclick="window.print()">Print Certificate</button></div>
+</body></html>`);
+  w.document.close();
+}
+
+function adm_readmitAlumni(alumniId) {
+  const a = DB.find('students', alumniId);
+  if (!a) return;
+  confirm('Re-admit ' + a.name + ' as an active student? Their alumni record will be preserved but status will change to active.', () => {
+    DB.update('students', alumniId, { status: 'active', readmittedAt: now(), readmittedBy: AUTH.current.id });
+    APP.render();
+    toast(a.name + ' re-admitted as active student', 'success');
+  }, { yesLabel: 'Re-admit' });
 }
 
 function bulkUploadModal() {
@@ -3361,7 +3835,8 @@ const _staffDocTypes = [
   { key: 'cv',           label: 'CV / Resume' },
   { key: 'certificates', label: 'Educational Certificates' },
   { key: 'id',           label: 'Government ID (NIN / Passport)' },
-  { key: 'guarantor',    label: 'Guarantor Form' }
+  { key: 'guarantor',    label: 'Guarantor Form' },
+  { key: 'others',       label: 'Others' }
 ];
 
 function onStaffDocPick(ev, key) {
@@ -3422,10 +3897,16 @@ function addStaffModal() {
         </div>
         <div><label class="input-label">Title / Job Description (optional)</label><input id="stf_role" class="input" placeholder="e.g. Senior Maths Teacher, Head of Sciences" /></div>
         <div id="stf_academicFields">
-          <label class="input-label">Subjects Taught (hold Ctrl/Cmd to select multiple)</label>
-          <select id="stf_subjects" class="input" multiple size="5">
-            ${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
-          </select>
+          <label class="input-label">Subjects Taught</label>
+          <div class="space-y-2">
+            <select id="stf_subjects" class="input" multiple size="4">
+              ${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+            </select>
+            <div>
+              <p class="text-xs text-slate-400 mb-1">Or enter subjects manually (comma-separated, for subjects not listed above):</p>
+              <input id="stf_subjects_manual" class="input" placeholder="e.g. Introductory Technology, Agricultural Science" />
+            </div>
+          </div>
           <label class="input-label mt-3">Assigned Classes</label>
           <select id="stf_class" class="input" multiple size="4">
             ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
@@ -3508,6 +3989,9 @@ function saveNewStaff() {
   const subjectsSel = staffType === 'Academic'
     ? Array.from(document.getElementById('stf_subjects').selectedOptions).map(o => o.value)
     : [];
+  const subjectsManual = staffType === 'Academic'
+    ? ((document.getElementById('stf_subjects_manual') || {}).value || '').split(',').map(s => s.trim()).filter(Boolean)
+    : [];
   const classSel = staffType === 'Academic'
     ? Array.from(document.getElementById('stf_class').selectedOptions).map(o => o.value)
     : [];
@@ -3525,6 +4009,7 @@ function saveNewStaff() {
     name, email, phone,
     staffType, role, roleId,
     subjects: subjectsSel,
+    subjectsManual,
     classes: classSel,
     salary, hireDate, dob,
     bank: bankName ? { name: bankName, account: bankAcc } : null,
@@ -3648,6 +4133,12 @@ function view_adm_timetable() {
   const teachers = DB.query('teachers', t => t.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
   const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
   const periods = [1,2,3,4,5,6,7,8];
+  const ttConfig = DB.settings().timetableConfig || {};
+  const periodTimes = ttConfig.periodTimes || {1:'08:00-08:40',2:'08:40-09:20',3:'09:20-10:00',4:'10:00-10:40',5:'11:00-11:40',6:'11:40-12:20',7:'13:00-13:40',8:'13:40-14:20'};
+  const break1After = ttConfig.break1After || 4;
+  const break2After = ttConfig.break2After || 6;
+  const break1Label = ttConfig.break1Label || 'Short Break (10:40–11:00)';
+  const break2Label = ttConfig.break2Label || 'Lunch (12:20–13:00)';
 
   return `
     ${pageHeader({
@@ -3655,6 +4146,7 @@ function view_adm_timetable() {
       subtitle: 'Click any empty cell to add a period, or upload an entire week',
       actions: `
         <button class="btn btn-secondary" onclick="APP.params.ttView='school'; APP.render()">${icon('calendar','w-4 h-4')} Whole-School View</button>
+        <button class="btn btn-secondary" onclick="ttTimeConfigModal()">${icon('settings','w-4 h-4')} Times & Breaks</button>
         <button class="btn btn-secondary" onclick="bulkTimetableUploadModal()">${icon('upload','w-4 h-4')} Bulk Upload CSV</button>
         <button class="btn btn-primary" onclick="quickBuildTimetableModal('${classId}')">${icon('calendar','w-4 h-4')} Build Week</button>
       `
@@ -3677,9 +4169,16 @@ function view_adm_timetable() {
           <tbody>
             ${periods.map(p => {
               const periodEntries = days.map(d => tt.find(t => t.day === d && t.period === p));
-              // Show all 8 periods, not just filled ones — they're all clickable
-              return `<tr>
-                <td><strong class="text-slate-900">P${p}</strong><br><span class="text-xs text-slate-500">${periodEntries.find(Boolean) ? periodEntries.find(Boolean).time : ''}</span></td>
+              const timeLabel = periodTimes[p] || `P${p}`;
+              const rows = [];
+              // Insert break row before this period if configured
+              if (p === break1After + 1) {
+                rows.push(`<tr class="bg-amber-50"><td colspan="${days.length + 1}" class="text-center text-xs text-amber-800 font-semibold py-1.5">${icon('sun','w-3.5 h-3.5 inline mr-1')} ${break1Label}</td></tr>`);
+              } else if (p === break2After + 1) {
+                rows.push(`<tr class="bg-sky-50"><td colspan="${days.length + 1}" class="text-center text-xs text-sky-800 font-semibold py-1.5">${icon('food','w-3.5 h-3.5 inline mr-1')} ${break2Label}</td></tr>`);
+              }
+              rows.push(`<tr>
+                <td><strong class="text-slate-900">P${p}</strong><br><span class="text-xs text-slate-500">${timeLabel}</span></td>
                 ${days.map((d, i) => {
                   const e = periodEntries[i];
                   if (!e) {
@@ -3694,7 +4193,8 @@ function view_adm_timetable() {
                     <div class="text-xs text-slate-500">${tch ? tch.name.split(' ').slice(-1).join('') : ''}</div>
                   </td>`;
                 }).join('')}
-              </tr>`;
+              </tr>`);
+              return rows.join('');
             }).join('')}
           </tbody>
         </table>
@@ -3754,6 +4254,79 @@ function renderSchoolWideTimetable() {
     </div>
     <p class="text-xs text-slate-500 mt-3">Showing first 2 periods of each day for compactness. Click <strong>Class View</strong> to see all 8 periods for a single class.</p>
   `;
+}
+
+function ttTimeConfigModal() {
+  const s = DB.settings();
+  const cfg = s.timetableConfig || {};
+  const periodTimes = cfg.periodTimes || {1:'08:00-08:40',2:'08:40-09:20',3:'09:20-10:00',4:'10:00-10:40',5:'11:00-11:40',6:'11:40-12:20',7:'13:00-13:40',8:'13:40-14:20'};
+  const b1After = cfg.break1After || 4;
+  const b2After = cfg.break2After || 6;
+  const b1Label = cfg.break1Label || 'Short Break (10:40–11:00)';
+  const b2Label = cfg.break2Label || 'Lunch (12:20–13:00)';
+  const periods = [1,2,3,4,5,6,7,8];
+  modal({
+    title: 'Timetable Times & Break Configuration',
+    size: 'lg',
+    body: `
+      <div class="space-y-4">
+        <p class="text-sm text-slate-600">Set the start/end time for each period and define two break slots. Changes apply to all classes.</p>
+        <div class="grid grid-cols-2 gap-3">
+          ${periods.map(p => `
+            <div>
+              <label class="input-label">Period ${p}</label>
+              <input type="text" id="tt_p${p}" class="input font-mono text-sm" value="${periodTimes[p] || ''}" placeholder="HH:MM-HH:MM" />
+            </div>
+          `).join('')}
+        </div>
+        <div class="border-t border-slate-100 pt-4 space-y-3">
+          <h4 class="font-semibold text-slate-900 text-sm">Break Configuration</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="input-label">Break 1 — after period</label>
+              <select id="tt_b1after" class="input">
+                ${periods.slice(0, 7).map(p => `<option value="${p}" ${b1After===p?'selected':''}>${p}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="input-label">Break 1 Label / Time</label>
+              <input type="text" id="tt_b1label" class="input text-sm" value="${b1Label}" placeholder="Short Break (10:40–11:00)" />
+            </div>
+            <div>
+              <label class="input-label">Break 2 — after period</label>
+              <select id="tt_b2after" class="input">
+                ${periods.slice(1, 8).map(p => `<option value="${p}" ${b2After===p?'selected':''}>${p}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="input-label">Break 2 Label / Time</label>
+              <input type="text" id="tt_b2label" class="input text-sm" value="${b2Label}" placeholder="Lunch (12:20–13:00)" />
+            </div>
+          </div>
+        </div>
+      </div>
+    `,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTtTimeConfig()">${icon('check','w-4 h-4')} Save Configuration</button>
+    `
+  });
+}
+
+function saveTtTimeConfig() {
+  const periodTimes = {};
+  [1,2,3,4,5,6,7,8].forEach(p => {
+    const el = document.getElementById(`tt_p${p}`);
+    if (el) periodTimes[p] = el.value.trim() || `P${p}`;
+  });
+  const b1After = parseInt(document.getElementById('tt_b1after').value);
+  const b2After = parseInt(document.getElementById('tt_b2after').value);
+  const b1Label = document.getElementById('tt_b1label').value.trim();
+  const b2Label = document.getElementById('tt_b2label').value.trim();
+  DB.settings({ timetableConfig: { periodTimes, break1After: b1After, break2After: b2After, break1Label: b1Label, break2Label: b2Label } });
+  document.getElementById('modalBackdrop').click();
+  toast('Timetable configuration saved', 'success');
+  APP.render();
 }
 
 function bulkTimetableUploadModal() {
@@ -4010,51 +4583,174 @@ function savePeriod(classId) {
 
 /* ---------- Attendance (admin overview) ---------- */
 function view_adm_attendance() {
+  const attView = APP.params.attView || 'school';
   const classes = DB.get('classes');
-  const classId = APP.params.classId || classes[0].id;
   const date = APP.params.date || today();
-  const cls = DB.find('classes', classId);
-  const students = COMPUTE.studentsByClass(classId);
-  const recs = COMPUTE.classAttendance(classId, date);
+  const dateFrom = APP.params.dateFrom || date;
+  const dateTo = APP.params.dateTo || date;
+
+  if (attView === 'class') {
+    const classId = APP.params.classId || (classes.length ? classes[0].id : '');
+    const cls = DB.find('classes', classId);
+    const students = COMPUTE.studentsByClass(classId);
+    const recs = COMPUTE.classAttendance(classId, date);
+    return `
+      ${pageHeader({
+        title: 'Attendance — Class View',
+        subtitle: 'Attendance record for a single class and date',
+        actions: `
+          <button class="btn btn-secondary" onclick="APP.params.attView='school'; APP.render()">${icon('dashboard','w-4 h-4')} School Overview</button>
+          <button class="btn btn-secondary" onclick="exportAttendanceCSV('${classId}', '${dateFrom}', '${dateTo}')">${icon('download','w-4 h-4')} Export CSV</button>
+        `
+      })}
+      <div class="card p-4 mb-4 grid sm:grid-cols-3 gap-3">
+        <div><label class="input-label">Class</label>
+          <select class="input" onchange="APP.params.classId = this.value; APP.render()">
+            ${classes.map(c => `<option value="${c.id}" ${classId===c.id?'selected':''}>${c.name}</option>`).join('')}
+          </select>
+        </div>
+        <div><label class="input-label">Date From</label>
+          <input type="date" class="input" value="${dateFrom}" onchange="APP.params.dateFrom=this.value; APP.render()" />
+        </div>
+        <div><label class="input-label">Date To</label>
+          <input type="date" class="input" value="${dateTo}" onchange="APP.params.dateTo=this.value; APP.params.date=this.value; APP.render()" />
+        </div>
+      </div>
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-slate-900">${cls ? cls.name : ''} · ${fdate(date, { long: true })}</h3>
+          <div class="flex gap-2">
+            <span class="badge badge-success">${recs.filter(r => r.status === 'present').length} Present</span>
+            <span class="badge badge-warn">${recs.filter(r => r.status === 'late').length} Late</span>
+            <span class="badge badge-danger">${recs.filter(r => r.status === 'absent').length} Absent</span>
+          </div>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Student</th><th>Status</th><th>Marked at</th></tr></thead>
+          <tbody>
+            ${students.map(s => {
+              const r = recs.find(x => x.studentId === s.id);
+              return `<tr><td>
+                <div class="flex items-center gap-2">${avatar(s.name,'sm')}<span class="font-medium">${s.name}</span></div>
+              </td><td>${r ? statusBadge(r.status) : '<span class="text-slate-400 text-sm">Not marked</span>'}</td>
+              <td class="text-sm text-slate-500">${r ? (r.markedAt || '—') : '—'}</td></tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // School-wide attendance dashboard
+  const allRecs = DB.query('attendance', a => a.schoolId === currentSchoolId() && a.date >= dateFrom && a.date <= dateTo);
+  const dateRecs = allRecs.filter(a => a.date === date);
+  const totalPresent = dateRecs.filter(r => r.status === 'present').length;
+  const totalLate = dateRecs.filter(r => r.status === 'late').length;
+  const totalAbsent = dateRecs.filter(r => r.status === 'absent').length;
+  const totalStudents = DB.query('students', s => s.schoolId === currentSchoolId() && s.status === 'active').length;
+  const attendanceRate = totalStudents > 0 ? Math.round(((totalPresent + totalLate) / totalStudents) * 100) : 0;
 
   return `
     ${pageHeader({
-      title: 'Attendance Overview',
-      subtitle: `View and audit attendance records school-wide`
+      title: 'Attendance Dashboard',
+      subtitle: 'School-wide attendance overview with reporting',
+      actions: `
+        <button class="btn btn-secondary" onclick="APP.params.attView='class'; APP.render()">${icon('classes','w-4 h-4')} Class View</button>
+        <button class="btn btn-secondary" onclick="exportSchoolAttendanceCSV('${dateFrom}', '${dateTo}')">${icon('download','w-4 h-4')} Export Report</button>
+      `
     })}
-    <div class="card p-4 mb-4 grid sm:grid-cols-2 gap-3">
-      <div><label class="input-label">Class</label>
-        <select class="input" onchange="APP.params.classId = this.value; APP.render()">
-          ${classes.map(c => `<option value="${c.id}" ${classId===c.id?'selected':''}>${c.name}</option>`).join('')}
-        </select>
-      </div>
+
+    <div class="card p-4 mb-4 grid sm:grid-cols-3 gap-3">
       <div><label class="input-label">Date</label>
-        <input type="date" class="input" value="${date}" onchange="APP.go('adm_attendance', { classId: '${classId}', date: this.value })" />
+        <input type="date" class="input" value="${date}" onchange="APP.params.date=this.value; APP.params.dateFrom=this.value; APP.render()" />
+      </div>
+      <div><label class="input-label">Range From</label>
+        <input type="date" class="input" value="${dateFrom}" onchange="APP.params.dateFrom=this.value; APP.render()" />
+      </div>
+      <div><label class="input-label">Range To</label>
+        <input type="date" class="input" value="${dateTo}" onchange="APP.params.dateTo=this.value; APP.render()" />
       </div>
     </div>
-    <div class="card p-5">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="font-bold text-slate-900">${cls.name} · ${fdate(date, { long: true })}</h3>
-        <div class="flex gap-2">
-          <span class="badge badge-success">${recs.filter(r => r.status === 'present').length} Present</span>
-          <span class="badge badge-warn">${recs.filter(r => r.status === 'late').length} Late</span>
-          <span class="badge badge-danger">${recs.filter(r => r.status === 'absent').length} Absent</span>
-        </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      ${statCard({ label: 'Present Today', value: totalPresent, icon: 'check', color: 'brand', trend: { direction: attendanceRate >= 80 ? 'up' : 'down', label: `${attendanceRate}% rate` } })}
+      ${statCard({ label: 'Late Today', value: totalLate, icon: 'bell', color: 'gold' })}
+      ${statCard({ label: 'Absent Today', value: totalAbsent, icon: 'x', color: 'rose' })}
+      ${statCard({ label: 'Total Students', value: totalStudents, icon: 'students', color: 'blue' })}
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900">Attendance by Class · ${fdate(date, { long: true })}</h3>
+        <span class="text-xs text-slate-500">Click a class for detailed view</span>
       </div>
       <table class="tbl">
-        <thead><tr><th>Student</th><th>Status</th><th>Marked at</th></tr></thead>
+        <thead><tr><th>Class</th><th class="text-center">Total</th><th class="text-center text-emerald-700">Present</th><th class="text-center text-amber-600">Late</th><th class="text-center text-rose-600">Absent</th><th class="text-center">Rate</th><th></th></tr></thead>
         <tbody>
-          ${students.map(s => {
-            const r = recs.find(x => x.studentId === s.id);
-            return `<tr><td>
-              <div class="flex items-center gap-2">${avatar(s.name,'sm')}<span class="font-medium">${s.name}</span></div>
-            </td><td>${r ? statusBadge(r.status) : '<span class="text-slate-400 text-sm">Not marked</span>'}</td>
-            <td class="text-sm text-slate-500">${r ? (r.markedAt || '—') : '—'}</td></tr>`;
+          ${classes.map(cls => {
+            const classStudents = COMPUTE.studentsByClass(cls.id);
+            const classRecs = dateRecs.filter(r => classStudents.find(s => s.id === r.studentId));
+            const present = classRecs.filter(r => r.status === 'present').length;
+            const late = classRecs.filter(r => r.status === 'late').length;
+            const absent = classStudents.length - present - late;
+            const rate = classStudents.length > 0 ? Math.round(((present + late) / classStudents.length) * 100) : 0;
+            return `<tr class="cursor-pointer hover:bg-slate-50" onclick="APP.params.attView='class'; APP.params.classId='${cls.id}'; APP.render()">
+              <td><strong class="text-sm">${cls.name}</strong></td>
+              <td class="text-center">${classStudents.length}</td>
+              <td class="text-center font-semibold text-emerald-700">${present}</td>
+              <td class="text-center font-semibold text-amber-600">${late}</td>
+              <td class="text-center font-semibold text-rose-600">${absent}</td>
+              <td class="text-center">
+                <div class="flex items-center gap-2 justify-center">
+                  <div class="progress" style="width:80px"><div class="progress-bar" style="width:${rate}%"></div></div>
+                  <span class="text-xs font-semibold">${rate}%</span>
+                </div>
+              </td>
+              <td>${icon('arrow_left','w-4 h-4 rotate-180 text-slate-400')}</td>
+            </tr>`;
           }).join('')}
         </tbody>
       </table>
     </div>
   `;
+}
+
+function exportAttendanceCSV(classId, dateFrom, dateTo) {
+  const cls = DB.find('classes', classId);
+  const students = COMPUTE.studentsByClass(classId);
+  let csv = `Student,Date,Status,Marked At\n`;
+  const recs = DB.query('attendance', a => a.classId === classId && a.date >= dateFrom && a.date <= dateTo);
+  students.forEach(s => {
+    const sRecs = recs.filter(r => r.studentId === s.id);
+    if (sRecs.length === 0) csv += `"${s.name}","${dateFrom}","Not marked",""\n`;
+    else sRecs.forEach(r => { csv += `"${s.name}","${r.date}","${r.status}","${r.markedAt || ''}"\n`; });
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `attendance_${cls ? cls.name.replace(/\s/g,'_') : 'class'}_${dateFrom}_${dateTo}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  toast('Attendance report exported', 'success');
+}
+
+function exportSchoolAttendanceCSV(dateFrom, dateTo) {
+  const classes = DB.get('classes');
+  let csv = `Class,Student,Date,Status\n`;
+  classes.forEach(cls => {
+    const students = COMPUTE.studentsByClass(cls.id);
+    const recs = DB.query('attendance', a => a.classId === cls.id && a.date >= dateFrom && a.date <= dateTo);
+    students.forEach(s => {
+      const sRecs = recs.filter(r => r.studentId === s.id);
+      if (sRecs.length === 0) csv += `"${cls.name}","${s.name}","${dateFrom}","Not marked"\n`;
+      else sRecs.forEach(r => { csv += `"${cls.name}","${s.name}","${r.date}","${r.status}"\n`; });
+    });
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `school_attendance_${dateFrom}_${dateTo}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  toast('School attendance report exported', 'success');
 }
 
 /* ---------- Results overview ---------- */
@@ -4063,31 +4759,44 @@ function view_adm_results() {
   const classId = APP.params.classId || (classes.length ? classes[0].id : '');
   const subjects = DB.get('subjects');
   const students = COMPUTE.studentsByClass(classId);
-  const results = DB.query('results', r => r.classId === classId);
-  const pending = results.filter(r => !r.approved);
+  const resType = APP.params.resType || 'all';
+  const allResults = DB.query('results', r => r.classId === classId);
+  const results = resType === 'all' ? allResults : allResults.filter(r => (r.examType || 'examination').toLowerCase() === resType);
+  const pending = allResults.filter(r => !r.approved);
+  const typeCounts = { extracurricular: 0, midterm: 0, examination: 0 };
+  allResults.forEach(r => { const t = (r.examType || 'examination').toLowerCase(); if (typeCounts[t] !== undefined) typeCounts[t]++; });
 
   return `
     ${pageHeader({
       title: 'Results',
       subtitle: 'Broadsheet view, approvals, and reports',
-      actions: `<button class="btn btn-secondary" onclick="exportBroadsheet('${classId}')">${icon('download','w-4 h-4')} Export PDF</button>`
+      actions: `
+        <button class="btn btn-secondary" onclick="exportBroadsheet('${classId}')">${icon('download','w-4 h-4')} Export PDF</button>
+        ${pending.length ? `<button class="btn btn-primary" onclick="approveAllResults('${classId}')">${icon('check','w-4 h-4')} Approve ${pending.length}</button>` : ''}
+      `
     })}
-    <div class="card p-4 mb-4">
-      <div class="flex flex-col sm:flex-row gap-3 items-end">
-        <div class="flex-1">
-          <label class="input-label">Class</label>
-          <select class="input" onchange="APP.params.classId = this.value; APP.render()">
-            ${classes.map(c => `<option value="${c.id}" ${classId===c.id?'selected':''}>${c.name}</option>`).join('')}
-          </select>
+    <div class="card p-4 mb-4 grid sm:grid-cols-2 gap-3">
+      <div>
+        <label class="input-label">Class</label>
+        <select class="input" onchange="APP.params.classId = this.value; APP.render()">
+          ${classes.map(c => `<option value="${c.id}" ${classId===c.id?'selected':''}>${c.name}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="input-label">Exam Type</label>
+        <div class="flex flex-wrap gap-2 mt-1">
+          <button class="chip ${resType==='all'?'active':''}" onclick="APP.params.resType='all'; APP.render()">All (${allResults.length})</button>
+          <button class="chip ${resType==='examination'?'active':''}" onclick="APP.params.resType='examination'; APP.render()">${icon('results','w-3.5 h-3.5')} Examination (${typeCounts.examination})</button>
+          <button class="chip ${resType==='midterm'?'active':''}" onclick="APP.params.resType='midterm'; APP.render()">${icon('book','w-3.5 h-3.5')} Midterm (${typeCounts.midterm})</button>
+          <button class="chip ${resType==='extracurricular'?'active':''}" onclick="APP.params.resType='extracurricular'; APP.render()">${icon('check','w-3.5 h-3.5')} Extracurricular (${typeCounts.extracurricular})</button>
         </div>
-        ${pending.length ? `<button class="btn btn-primary" onclick="approveAllResults('${classId}')">${icon('check','w-4 h-4')} Approve ${pending.length} pending</button>` : ''}
       </div>
     </div>
     <div class="card overflow-hidden">
       <div class="overflow-x-auto">
         <table class="tbl">
           <thead>
-            <tr><th>Student</th>${subjects.map(s => `<th class="text-center">${s.name.split(' ')[0]}</th>`).join('')}<th class="text-center">Avg</th><th class="text-center">Pos</th><th class="text-center">Result</th></tr>
+            <tr><th>Student</th>${subjects.map(s => `<th class="text-center">${s.name.split(' ')[0]}</th>`).join('')}<th class="text-center">Avg</th><th class="text-center">Pos</th><th class="text-center">Type</th><th class="text-center">Result</th></tr>
           </thead>
           <tbody>
             ${(() => {
@@ -4112,6 +4821,11 @@ function view_adm_results() {
                 }).join('')}
                 <td class="text-center font-bold">${s._avg}%</td>
                 <td class="text-center">${s._rank}</td>
+                <td class="text-center">${(() => {
+                  const t = (studRes[0] && studRes[0].examType) || 'examination';
+                  const colors = { examination: 'badge-success', midterm: 'badge-info', extracurricular: 'badge-warn' };
+                  return studRes.length ? `<span class="badge ${colors[t.toLowerCase()] || 'badge-neutral'} text-xs">${t}</span>` : '';
+                })()}</td>
                 <td class="text-center">${studRes.length
                   ? `<button class="btn btn-primary !py-1 !px-2 text-xs" title="Generate this student's result and share with the parent" onclick="generateStudentResult('${s.id}')">${icon('send','w-3.5 h-3.5')} Generate</button>`
                   : `<span class="text-xs text-slate-400">No scores</span>`}</td>
@@ -4276,36 +4990,386 @@ function exportBroadsheet(classId) {
 
 /* ---------- Fees (admin view) ---------- */
 function view_adm_fees() { return view_fin_fees(); }
-function view_adm_reports() { return view_fin_reports(); }
+function view_adm_reports() {
+  const rTab = APP.params.rTab || 'enrollment';
+  const schoolId = currentSchoolId();
+  const tabs_list = [
+    { key: 'enrollment', label: 'Enrollment' },
+    { key: 'leavers',    label: 'Leavers' },
+    { key: 'attendance', label: 'Attendance' },
+    { key: 'financial',  label: 'Financial' },
+    { key: 'applications', label: 'Applications' }
+  ];
+  return `
+    ${pageHeader({
+      title: 'School Reports',
+      subtitle: 'Consolidated view — enrollment, leavers, attendance, financial, and admissions data',
+      actions: `<button class="btn btn-secondary" onclick="exportConsolidatedReport('${rTab}')">${icon('download','w-4 h-4')} Export</button>`
+    })}
+    ${tabs(tabs_list, rTab, k => { APP.params.rTab = k; APP.render(); })}
+    <div class="pt-4">${
+      rTab === 'leavers'     ? renderLeaversReport(schoolId) :
+      rTab === 'attendance'  ? renderAttendanceReport(schoolId) :
+      rTab === 'financial'   ? view_fin_reports() :
+      rTab === 'applications' ? renderApplicationsReport(schoolId) :
+      renderEnrollmentReport(schoolId)
+    }</div>
+  `;
+}
+
+function renderEnrollmentReport(schoolId) {
+  const students = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
+  const classes = DB.get('classes');
+  const currentYear = new Date().getFullYear().toString();
+  const currentSession = DB.settings().currentSession || `${currentYear}/${parseInt(currentYear)+1}`;
+  const newEnrolled = students.filter(s => s.enrollmentSession === currentSession || s.enrollmentYear === currentYear || (s.admissionDate && s.admissionDate.startsWith(currentYear)));
+  const returning = students.filter(s => !newEnrolled.includes(s));
+  const byClass = classes.map(c => {
+    const cls = students.filter(s => s.classId === c.id);
+    const male = cls.filter(s => s.gender === 'M').length;
+    const female = cls.filter(s => s.gender !== 'M').length;
+    return { cls: c, count: cls.length, male, female };
+  }).filter(x => x.count > 0);
+
+  return `
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      ${statCard({ label: 'Total Active', value: students.length, icon: 'user', color: 'brand' })}
+      ${statCard({ label: 'New Enrollment', value: newEnrolled.length, icon: 'plus', color: 'blue' })}
+      ${statCard({ label: 'Returning', value: returning.length, icon: 'trending_up', color: 'brand' })}
+      ${statCard({ label: 'Classes', value: byClass.length, icon: 'academic', color: 'gold' })}
+    </div>
+    <div class="grid lg:grid-cols-2 gap-4 mb-4">
+      <div class="card p-5">
+        <h3 class="font-bold text-slate-900 mb-3">Enrollment by Class</h3>
+        <table class="tbl">
+          <thead><tr><th>Class</th><th class="text-center">Total</th><th class="text-center">Male</th><th class="text-center">Female</th></tr></thead>
+          <tbody>
+            ${byClass.map(({ cls, count, male, female }) => `<tr>
+              <td class="font-medium">${cls.name}</td>
+              <td class="text-center font-semibold">${count}</td>
+              <td class="text-center text-blue-700">${male}</td>
+              <td class="text-center text-rose-600">${female}</td>
+            </tr>`).join('')}
+            <tr class="font-bold bg-slate-50"><td>Total</td><td class="text-center">${students.length}</td><td class="text-center text-blue-700">${students.filter(s=>s.gender==='M').length}</td><td class="text-center text-rose-600">${students.filter(s=>s.gender!=='M').length}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card p-5">
+        <h3 class="font-bold text-slate-900 mb-3">New vs Returning (${currentSession})</h3>
+        <div class="space-y-3">
+          <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
+            <div><div class="font-semibold text-blue-900">New Enrollment</div><div class="text-xs text-blue-700">First time joining this session</div></div>
+            <div class="text-2xl font-extrabold text-blue-700">${newEnrolled.length}</div>
+          </div>
+          <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+            <div><div class="font-semibold text-emerald-900">Returning Students</div><div class="text-xs text-emerald-700">Enrolled from previous sessions</div></div>
+            <div class="text-2xl font-extrabold text-emerald-700">${returning.length}</div>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl">
+            <div class="text-xs text-slate-500 mb-1">Retention rate</div>
+            <div class="flex items-center gap-2">
+              <div class="flex-1 progress"><div class="progress-bar" style="width:${students.length > 0 ? Math.round(returning.length/students.length*100) : 0}%"></div></div>
+              <span class="font-semibold text-sm">${students.length > 0 ? Math.round(returning.length/students.length*100) : 0}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLeaversReport(schoolId) {
+  const leavers = DB.query('students', s => s.schoolId === schoolId && ['withdrawn','transferred','suspended','alumni'].includes(s.status));
+  const withdrawn = leavers.filter(s => s.status === 'withdrawn');
+  const transferred = leavers.filter(s => s.status === 'transferred');
+  const alumni = leavers.filter(s => s.status === 'alumni');
+  const suspended = leavers.filter(s => s.status === 'suspended');
+
+  return `
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      ${statCard({ label: 'Total Leavers', value: leavers.length, icon: 'logout', color: 'rose' })}
+      ${statCard({ label: 'Withdrawn', value: withdrawn.length, icon: 'x', color: 'rose' })}
+      ${statCard({ label: 'Transferred Out', value: transferred.length, icon: 'arrow_left', color: 'blue' })}
+      ${statCard({ label: 'Alumni', value: alumni.length, icon: 'check', color: 'brand' })}
+    </div>
+    <div class="card overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900">Leavers Register</h3>
+        <button class="btn btn-secondary text-sm" onclick="exportLeaversCSV()">${icon('download','w-4 h-4')} CSV</button>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>Student</th><th>Class</th><th>Status</th><th>Reason</th><th>Date</th><th>Destination</th></tr></thead>
+        <tbody>
+          ${leavers.length === 0 ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No leavers recorded yet</td></tr>` : leavers.map(s => {
+            const cls = DB.find('classes', s.classId);
+            const date = s.withdrawnAt || s.transferredAt || s.graduatedAt || s.suspendedAt || s.updatedAt || '';
+            return `<tr>
+              <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-500">${s.admissionNo || ''}</div></div></div></td>
+              <td class="text-sm">${cls ? cls.name : '—'}</td>
+              <td>${statusBadge(s.status)}</td>
+              <td class="text-sm text-slate-500">${s.withdrawReason || s.transferReason || s.suspensionReason || '—'}</td>
+              <td class="text-xs text-slate-500">${date ? fdate(date, { short: true }) : '—'}</td>
+              <td class="text-sm">${s.transferDest || (s.status === 'alumni' ? s.finalClass || 'Graduated' : '—')}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderAttendanceReport(schoolId) {
+  const dateFrom = APP.params.rAttFrom || daysAgo(30);
+  const dateTo = APP.params.rAttTo || today();
+  const classes = DB.get('classes');
+  const students = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
+  const recs = DB.query('attendance', a => a.schoolId === schoolId && a.date >= dateFrom && a.date <= dateTo);
+  const byClass = classes.map(c => {
+    const classStudents = students.filter(s => s.classId === c.id);
+    const classRecs = recs.filter(r => classStudents.find(s => s.id === r.studentId));
+    const present = classRecs.filter(r => r.status === 'present').length;
+    const total = classRecs.length;
+    return { cls: c, count: classStudents.length, recs: total, present, rate: total > 0 ? Math.round(present/total*100) : 0 };
+  }).filter(x => x.count > 0);
+
+  return `
+    <div class="card p-4 mb-4 flex items-end gap-3 flex-wrap">
+      <div><label class="input-label">From</label><input type="date" class="input" value="${dateFrom}" onchange="APP.params.rAttFrom=this.value; APP.render()" /></div>
+      <div><label class="input-label">To</label><input type="date" class="input" value="${dateTo}" onchange="APP.params.rAttTo=this.value; APP.render()" /></div>
+      <button class="btn btn-secondary" onclick="exportSchoolAttendanceCSV('${dateFrom}','${dateTo}')">${icon('download','w-4 h-4')} Export CSV</button>
+    </div>
+    <div class="card overflow-hidden">
+      <table class="tbl">
+        <thead><tr><th>Class</th><th class="text-center">Students</th><th class="text-center">Records</th><th class="text-center">Present</th><th>Attendance Rate</th></tr></thead>
+        <tbody>
+          ${byClass.map(({ cls, count, recs: total, present, rate }) => `<tr>
+            <td class="font-medium">${cls.name}</td>
+            <td class="text-center">${count}</td>
+            <td class="text-center text-slate-500">${total}</td>
+            <td class="text-center text-emerald-700 font-semibold">${present}</td>
+            <td>
+              <div class="flex items-center gap-2">
+                <div class="progress flex-1"><div class="progress-bar ${rate < 70 ? 'bg-rose-500' : ''}" style="width:${rate}%"></div></div>
+                <span class="text-xs font-semibold w-10 text-right">${rate}%</span>
+              </div>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderApplicationsReport(schoolId) {
+  const apps = DB.query('admissionApplications', a => a.schoolId === schoolId);
+  const pending = apps.filter(a => a.status === 'pending');
+  const reviewing = apps.filter(a => a.status === 'reviewing');
+  const accepted = apps.filter(a => a.status === 'accepted');
+  const rejected = apps.filter(a => a.status === 'rejected');
+
+  return `
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      ${statCard({ label: 'Total Applications', value: apps.length, icon: 'user', color: 'brand' })}
+      ${statCard({ label: 'Pending', value: pending.length, icon: 'bell', color: 'gold' })}
+      ${statCard({ label: 'Accepted', value: accepted.length, icon: 'check', color: 'brand' })}
+      ${statCard({ label: 'Rejected', value: rejected.length, icon: 'x', color: 'rose' })}
+    </div>
+    <div class="card overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900">All Applications</h3>
+        <button class="btn btn-secondary text-sm" onclick="exportApplicationsCSV()">${icon('download','w-4 h-4')} Export CSV</button>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>Applicant</th><th>Parent</th><th>Class</th><th>Location</th><th>Applied</th><th>Status</th></tr></thead>
+        <tbody>
+          ${apps.length === 0 ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No applications yet</td></tr>` : apps.map(a => {
+            const cls = DB.find('classes', a.requestedClass);
+            return `<tr class="cursor-pointer" onclick="viewApplication('${a.id}')">
+              <td><div class="flex items-center gap-2">${avatar(a.applicantName,'sm')}<div><div class="font-medium text-sm">${a.applicantName}</div><div class="text-xs text-slate-500">${a.gender === 'M' ? 'Male' : 'Female'} · ${calcAge(a.dob)} yrs</div></div></div></td>
+              <td class="text-sm">${a.parentName}<div class="text-xs text-slate-500">${a.parentPhone}</div></td>
+              <td class="text-sm">${cls ? cls.name : '—'}</td>
+              <td class="text-sm text-slate-500">${a.location || a.address || '—'}</td>
+              <td class="text-xs text-slate-500">${fdate(a.appliedAt, { short: true })}</td>
+              <td>${statusBadge(a.status)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function exportConsolidatedReport(rTab) {
+  if (rTab === 'financial') { exportPL(); return; }
+  if (rTab === 'attendance') { exportSchoolAttendanceCSV(APP.params.rAttFrom || daysAgo(30), APP.params.rAttTo || today()); return; }
+  if (rTab === 'leavers') { exportLeaversCSV(); return; }
+  if (rTab === 'applications') { exportApplicationsCSV(); return; }
+  exportEnrollmentCSV();
+}
+
+function exportLeaversCSV() {
+  const schoolId = currentSchoolId();
+  const leavers = DB.query('students', s => s.schoolId === schoolId && ['withdrawn','transferred','suspended','alumni'].includes(s.status));
+  const rows = [['Name','Admission No','Class','Status','Reason','Date','Destination']];
+  leavers.forEach(s => {
+    const cls = DB.find('classes', s.classId);
+    const date = s.withdrawnAt || s.transferredAt || s.graduatedAt || s.suspendedAt || '';
+    rows.push([s.name, s.admissionNo || '', cls ? cls.name : '', s.status, s.withdrawReason || s.transferReason || s.suspensionReason || '', date ? fdate(date, { short: true }) : '', s.transferDest || '']);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'leavers_report.csv'; a.click(); URL.revokeObjectURL(a.href);
+  toast('Leavers report exported');
+}
+
+function exportEnrollmentCSV() {
+  const schoolId = currentSchoolId();
+  const students = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
+  const rows = [['Name','Admission No','Class','Gender','Status','Admission Date']];
+  students.forEach(s => {
+    const cls = DB.find('classes', s.classId);
+    rows.push([s.name, s.admissionNo || '', cls ? cls.name : '', s.gender === 'M' ? 'Male' : 'Female', s.status, s.admissionDate || '']);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'enrollment_report.csv'; a.click(); URL.revokeObjectURL(a.href);
+  toast('Enrollment report exported');
+}
+
+function exportApplicationsCSV() {
+  const schoolId = currentSchoolId();
+  const apps = DB.query('admissionApplications', a => a.schoolId === schoolId);
+  const rows = [['Applicant','Gender','DOB','Parent Name','Parent Phone','Parent Email','Class','Location','Status','Applied','Review Notes']];
+  apps.forEach(a => {
+    const cls = DB.find('classes', a.requestedClass);
+    rows.push([a.applicantName, a.gender === 'M' ? 'Male' : 'Female', a.dob || '', a.parentName, a.parentPhone, a.parentEmail || '', cls ? cls.name : '', a.location || a.address || '', a.status, a.appliedAt ? fdate(a.appliedAt, { short: true }) : '', a.reviewNotes || '']);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'applications_export.csv'; a.click(); URL.revokeObjectURL(a.href);
+  toast('Applications data exported');
+}
 
 /* ---------- Discipline ---------- */
 function view_adm_discipline() {
   const records = DB.query('discipline', d => d.schoolId === currentSchoolId());
+  const students = DB.query('students', s => s.schoolId === currentSchoolId());
+  const discView = APP.params.discView || 'list';
+  const selStudent = APP.params.discStudent || '';
+
+  if (discView === 'student' && selStudent) {
+    const s = DB.find('students', selStudent);
+    const sRecs = records.filter(r => r.studentId === selStudent);
+    const totalPoints = sRecs.reduce((sum, r) => sum + (r.points || 0), 0);
+    const admissionRecord = DB.find('admissions', a => a.studentId === selStudent) || null;
+    return `
+      ${pageHeader({
+        title: `Discipline — ${s ? s.name : 'Student'}`,
+        subtitle: 'Full discipline history linked to admission record',
+        actions: `
+          <button class="btn btn-secondary" onclick="APP.params.discView='list'; APP.render()">${icon('arrow_left','w-4 h-4')} All Records</button>
+          <button class="btn btn-primary" onclick="addDisciplineModal('${selStudent}')">${icon('plus','w-4 h-4')} New Record</button>
+        `
+      })}
+      <div class="grid lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 space-y-3">
+          <div class="card p-4 flex items-center gap-4">
+            ${avatar(s ? s.name : '?', 'xl')}
+            <div class="flex-1">
+              <div class="font-bold text-slate-900 text-lg">${s ? s.name : '—'}</div>
+              <div class="text-sm text-slate-500">${s ? (DB.find('classes', s.classId) || {}).name || 'No class' : ''} · Admission #${s ? (s.admissionNumber || s.id.slice(-6)) : '—'}</div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="badge ${totalPoints >= 0 ? 'badge-success' : 'badge-danger'}">Net Points: ${totalPoints > 0 ? '+' : ''}${totalPoints}</span>
+                <span class="badge badge-neutral">${sRecs.length} records</span>
+              </div>
+            </div>
+          </div>
+          <div class="card overflow-hidden">
+            ${sRecs.length === 0 ? emptyState({ title: 'No discipline records', icon: 'check' }) : `
+              <table class="tbl">
+                <thead><tr><th>Type</th><th>Points</th><th>Note</th><th>Recorded By</th><th>Date</th></tr></thead>
+                <tbody>
+                  ${sRecs.sort((a,b)=>b.date.localeCompare(a.date)).map(r => {
+                    const recorder = DB.find('teachers', r.recordedBy) || DB.find('teachers', r.recordedBy);
+                    return `<tr>
+                      <td><span class="badge ${r.type === 'commendation' ? 'badge-success' : 'badge-danger'}">${r.type}</span></td>
+                      <td class="font-mono font-bold ${r.points > 0 ? 'text-emerald-600' : 'text-rose-600'}">${r.points > 0 ? '+' : ''}${r.points}</td>
+                      <td class="text-sm">${r.note}</td>
+                      <td class="text-xs text-slate-500">${recorder ? recorder.name : 'Admin'}</td>
+                      <td class="text-sm text-slate-500">${fdate(r.date, { short: true })}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            `}
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="card p-4">
+            <h4 class="font-bold text-slate-900 mb-2 text-sm">${icon('check','w-4 h-4 inline')} Admission Portal Link</h4>
+            <p class="text-xs text-slate-500 mb-3">Discipline records are synced with this student's admission profile for comprehensive tracking.</p>
+            ${admissionRecord ? `
+              <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 mb-2">
+                ${icon('check','w-3.5 h-3.5 inline')} Admission record found
+              </div>
+              <div class="text-xs space-y-1">
+                <div><span class="text-slate-500">Status:</span> <span class="font-semibold">${admissionRecord.status || 'enrolled'}</span></div>
+                <div><span class="text-slate-500">Admitted:</span> <span class="font-semibold">${fdate(admissionRecord.admittedAt || admissionRecord.createdAt || '', { short: true })}</span></div>
+              </div>
+            ` : `
+              <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+                ${icon('bell','w-3.5 h-3.5 inline')} No separate admission record found. Records are tracked here.
+              </div>
+            `}
+            <button class="btn btn-secondary w-full mt-3 text-xs" onclick="APP.go('adm_people', { peopleTab: 'admissions' })">${icon('arrow_left','w-3.5 h-3.5 rotate-180')} View Admission</button>
+          </div>
+          <div class="card p-4">
+            <h4 class="font-bold text-slate-900 mb-2 text-sm">Points Summary</h4>
+            <div class="space-y-1 text-sm">
+              <div class="flex justify-between"><span class="text-slate-500">Commendations</span><span class="text-emerald-700 font-semibold">+${sRecs.filter(r=>r.points>0).reduce((s,r)=>s+r.points,0)}</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Deductions</span><span class="text-rose-600 font-semibold">${sRecs.filter(r=>r.points<0).reduce((s,r)=>s+r.points,0)}</span></div>
+              <div class="flex justify-between border-t pt-1 mt-1 font-bold"><span>Net Total</span><span class="${totalPoints>=0?'text-emerald-700':'text-rose-600'}">${totalPoints>0?'+':''}${totalPoints}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Aggregate list view with student search
+  const searchQ = (APP.params.discSearch || '').toLowerCase();
+  const filteredStudents = searchQ ? students.filter(s => s.name.toLowerCase().includes(searchQ)) : students;
+  const studentsWithRecords = filteredStudents.map(s => ({ ...s, _recs: records.filter(r => r.studentId === s.id), _points: records.filter(r => r.studentId === s.id).reduce((sum, r) => sum + (r.points || 0), 0) })).filter(s => s._recs.length > 0 || searchQ);
+
   return `
     ${pageHeader({
       title: 'Discipline & Behaviour',
-      subtitle: 'Commendations, misconduct, and reward points',
+      subtitle: 'Commendations, misconduct, and reward points · Synced with admission records',
       actions: `<button class="btn btn-primary" onclick="addDisciplineModal()">${icon('plus','w-4 h-4')} New Record</button>`
     })}
-    <div class="card overflow-hidden">
-      ${records.length === 0 ? emptyState({ title: 'No records yet', body: 'Record commendations or misconduct to track student behavior.', icon: 'check' }) : `
-        <table class="tbl">
-          <thead><tr><th>Student</th><th>Type</th><th>Points</th><th>Note</th><th>Date</th></tr></thead>
-          <tbody>
-            ${records.map(r => {
-              const s = DB.find('students', r.studentId);
-              return `<tr>
-                <td><div class="flex items-center gap-2">${avatar(s ? s.name : '?', 'sm')}<span>${s ? s.name : '—'}</span></div></td>
-                <td><span class="badge ${r.type === 'commendation' ? 'badge-success' : 'badge-danger'}">${r.type}</span></td>
-                <td class="font-mono font-bold ${r.points > 0 ? 'text-emerald-600' : 'text-rose-600'}">${r.points > 0 ? '+' : ''}${r.points}</td>
-                <td class="text-sm">${r.note}</td>
-                <td class="text-sm text-slate-500">${fdate(r.date, { short: true })}</td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      `}
+    <div class="card p-4 mb-4 flex gap-3">
+      <input type="text" class="input flex-1" placeholder="Search students…" value="${APP.params.discSearch || ''}" oninput="APP.params.discSearch=this.value; APP.render()" />
     </div>
+    ${studentsWithRecords.length === 0
+      ? emptyState({ title: 'No discipline records yet', body: searchQ ? 'No matching students found.' : 'Record commendations or misconduct to track student behavior.', icon: 'check',
+          action: `<button class="btn btn-primary" onclick="addDisciplineModal()">${icon('plus','w-4 h-4')} New Record</button>` })
+      : `<div class="card overflow-hidden">
+          <table class="tbl">
+            <thead><tr><th>Student</th><th class="text-center">Records</th><th class="text-center">Net Points</th><th>Latest</th><th></th></tr></thead>
+            <tbody>
+              ${studentsWithRecords.map(s => {
+                const latest = s._recs.sort((a,b)=>b.date.localeCompare(a.date))[0];
+                return `<tr class="cursor-pointer hover:bg-slate-50" onclick="APP.params.discView='student'; APP.params.discStudent='${s.id}'; APP.render()">
+                  <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<span class="font-medium">${s.name}</span></div></td>
+                  <td class="text-center">${s._recs.length}</td>
+                  <td class="text-center font-mono font-bold ${s._points>=0?'text-emerald-700':'text-rose-600'}">${s._points>0?'+':''}${s._points}</td>
+                  <td class="text-sm">${latest ? `<span class="badge ${latest.type==='commendation'?'badge-success':'badge-danger'} mr-1">${latest.type}</span>${fdate(latest.date,{short:true})}` : '—'}</td>
+                  <td>${icon('arrow_left','w-4 h-4 rotate-180 text-slate-400')}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>`}
   `;
 }
 
@@ -4527,27 +5591,169 @@ function view_adm_hr() {
   const todayAttendance = DB.query('staffAttendance', a => a.schoolId === currentSchoolId() && a.date === today_);
 
   return `
-    ${pageHeader({ title: 'HR Hub', subtitle: 'Leave requests, staff attendance, payroll snapshot' })}
+    ${pageHeader({
+      title: 'HR Hub',
+      subtitle: 'Leave requests and HR management',
+      actions: `<button class="btn btn-secondary" onclick="APP.go('adm_staff_att')">${icon('attendance','w-4 h-4')} Staff Attendance Report</button>`
+    })}
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Total Staff', value: teachers.length, icon: 'teacher', color: 'brand' })}
       ${statCard({ label: 'Pending Leave', value: pendingLeaves.length, icon: 'bell', color: pendingLeaves.length ? 'gold' : 'brand' })}
-      ${statCard({ label: 'In Today', value: todayAttendance.length, icon: 'check', color: 'blue' })}
+      ${statCard({ label: 'In Today', value: todayAttendance.length, icon: 'check', color: 'blue', action: { label: 'View report →', onclick: "APP.go('adm_staff_att')" } })}
       ${statCard({ label: 'Monthly Payroll', value: money(teachers.reduce((s, t) => s + (t.salary || 0), 0)), icon: 'fees', color: 'purple' })}
     </div>
 
     ${tabs([
-      { key: 'leave',      label: 'Leave Requests', badge: pendingLeaves.length || null },
-      { key: 'attendance', label: 'Staff Attendance' }
+      { key: 'leave', label: 'Leave Requests', badge: pendingLeaves.length || null }
     ], tab, k => { APP.params.hrTab = k; APP.render(); })}
 
     <div class="pt-4">
-      ${tab === 'attendance' ? renderHRAttendance() : renderHRLeave()}
-      <div class="mt-4 text-center text-xs text-slate-500">
+      ${renderHRLeave()}
+      <div class="mt-4 p-3 bg-slate-50 rounded-xl flex items-center justify-between">
+        <span class="text-sm text-slate-600">${icon('attendance','w-4 h-4 inline')} Staff Attendance has been moved for better visibility.</span>
+        <button class="btn btn-secondary text-sm" onclick="APP.go('adm_staff_att')">${icon('arrow_left','w-4 h-4 rotate-180')} Go to Staff Attendance</button>
+      </div>
+      <div class="mt-2 text-center text-xs text-slate-500">
         Looking for payroll? It's been moved to <button class="text-brand-700 font-semibold underline" onclick="APP.go('adm_finance_hub', { financeTab: 'payroll' })">Finance → Payroll</button> (handled by the bursar/accountant).
       </div>
     </div>
   `;
+}
+
+/* ---------- Staff Attendance — Standalone Dashboard ---------- */
+function view_adm_staff_att() {
+  const date = APP.params.staffAttDate || today();
+  const dateFrom = APP.params.staffAttFrom || daysAgo(30);
+  const dateTo = APP.params.staffAttTo || today();
+  const all = DB.query('staffAttendance', a => a.schoolId === currentSchoolId());
+  const rangeRecs = all.filter(a => a.date >= dateFrom && a.date <= dateTo);
+  const todayRecs = all.filter(a => a.date === date);
+  const teachers = DB.query('teachers', t => t.schoolId === currentSchoolId());
+  const absent = teachers.filter(t => !todayRecs.find(r => r.staffId === t.id));
+  const isToday = date === today();
+  const days = []; const dayCounts = [];
+  for (let d = 6; d >= 0; d--) {
+    const dt = daysAgo(d);
+    const wd = new Date(dt).getDay();
+    if (wd === 0 || wd === 6) continue;
+    days.push(fdate(dt, { short: true }));
+    dayCounts.push(all.filter(a => a.date === dt).length);
+  }
+  window.afterRender = () => {
+    const c = document.getElementById('staffAttChart2');
+    if (c) new Chart(c, {
+      type: 'bar',
+      data: { labels: days, datasets: [{ label: 'Staff present', data: dayCounts, backgroundColor: '#10b981', borderRadius: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+  };
+  return `
+    ${pageHeader({
+      title: 'Staff Attendance Report',
+      subtitle: 'Daily and range reporting for all staff members',
+      actions: `
+        <button class="btn btn-secondary" onclick="APP.go('adm_workforce', { hrTab: 'leave' })">${icon('arrow_left','w-4 h-4')} Back to HR</button>
+        <button class="btn btn-secondary" onclick="exportStaffAttendanceCSV('${dateFrom}', '${dateTo}')">${icon('download','w-4 h-4')} Export CSV</button>
+        <button class="btn btn-primary" onclick="adminMarkStaffAttendanceModal('${date}')">${icon('check','w-4 h-4')} Mark Attendance</button>
+      `
+    })}
+
+    <div class="card p-4 mb-4 grid sm:grid-cols-3 gap-3">
+      <div><label class="input-label">View Date</label>
+        <input type="date" class="input" value="${date}" onchange="APP.params.staffAttDate=this.value; APP.render()" />
+      </div>
+      <div><label class="input-label">Report From</label>
+        <input type="date" class="input" value="${dateFrom}" onchange="APP.params.staffAttFrom=this.value; APP.render()" />
+      </div>
+      <div><label class="input-label">Report To</label>
+        <input type="date" class="input" value="${dateTo}" onchange="APP.params.staffAttTo=this.value; APP.render()" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      ${statCard({ label: 'Present Today', value: todayRecs.filter(r=>r.status==='present').length, icon: 'check', color: 'brand' })}
+      ${statCard({ label: 'Late Today', value: todayRecs.filter(r=>r.status==='late').length, icon: 'bell', color: 'gold' })}
+      ${statCard({ label: 'Absent Today', value: absent.length, icon: 'x', color: 'rose' })}
+      ${statCard({ label: 'Range Records', value: rangeRecs.length, icon: 'reports', color: 'blue', tooltip: `Records between ${dateFrom} and ${dateTo}` })}
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-4 mb-4">
+      <div class="card p-5">
+        <h3 class="font-bold text-slate-900 mb-3 text-sm">7-Day Attendance Trend</h3>
+        <div style="height: 200px;"><canvas id="staffAttChart2"></canvas></div>
+      </div>
+      <div class="card p-5 lg:col-span-2 overflow-hidden">
+        <h3 class="font-bold text-slate-900 mb-3 text-sm">Clock-in Records · ${fdate(date, { long: true })}</h3>
+        <div class="overflow-x-auto">
+          <table class="tbl">
+            <thead><tr><th>Staff</th><th>Department</th><th>Clock In</th><th>Clock Out</th><th>Status</th></tr></thead>
+            <tbody>
+              ${teachers.map(t => {
+                const rec = todayRecs.find(r => r.staffId === t.id);
+                return `<tr>
+                  <td><div class="flex items-center gap-2">${avatar(t.name,'sm')}<div><div class="font-medium text-sm">${t.name}</div><div class="text-xs text-slate-500">${t.role || t.staffType || ''}</div></div></div></td>
+                  <td class="text-sm text-slate-500">${t.department || t.staffType || '—'}</td>
+                  <td class="font-mono text-sm">${rec ? rec.clockIn : '—'}</td>
+                  <td class="font-mono text-sm">${rec ? (rec.clockOut || (isToday ? `<button class="btn btn-ghost !py-1 !px-2 text-xs text-rose-600" onclick="adm_clockOutStaff('${rec.id}')">${icon('logout','w-3.5 h-3.5')} Out</button>` : '—')) : '—'}</td>
+                  <td>${rec ? statusBadge(rec.status) : statusBadge('absent')}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    ${rangeRecs.length > 0 ? `
+    <div class="card overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900">Attendance Summary (${dateFrom} → ${dateTo})</h3>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>Staff</th><th class="text-center">Days Present</th><th class="text-center">Late</th><th class="text-center">Absent</th><th class="text-center">Attendance %</th></tr></thead>
+        <tbody>
+          ${teachers.map(t => {
+            const tRecs = rangeRecs.filter(r => r.staffId === t.id);
+            const present = tRecs.filter(r => r.status === 'present').length;
+            const late = tRecs.filter(r => r.status === 'late').length;
+            const workDays = Math.max(1, Math.round((new Date(dateTo) - new Date(dateFrom)) / 86400000 * 5 / 7));
+            const rate = Math.min(100, Math.round(((present + late) / workDays) * 100));
+            return `<tr>
+              <td><div class="flex items-center gap-2">${avatar(t.name,'sm')}<span class="font-medium text-sm">${t.name}</span></div></td>
+              <td class="text-center font-semibold text-emerald-700">${present}</td>
+              <td class="text-center font-semibold text-amber-600">${late}</td>
+              <td class="text-center font-semibold text-rose-600">${workDays - present - late < 0 ? 0 : workDays - present - late}</td>
+              <td class="text-center">
+                <div class="flex items-center gap-2 justify-center">
+                  <div class="progress" style="width:80px"><div class="progress-bar ${rate < 70 ? 'bg-rose-500' : ''}" style="width:${rate}%"></div></div>
+                  <span class="text-xs font-semibold">${rate}%</span>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    ` : ''}
+  `;
+}
+
+function exportStaffAttendanceCSV(dateFrom, dateTo) {
+  const teachers = DB.query('teachers', t => t.schoolId === currentSchoolId());
+  const recs = DB.query('staffAttendance', a => a.schoolId === currentSchoolId() && a.date >= dateFrom && a.date <= dateTo);
+  let csv = `Staff,Date,Status,Clock In,Clock Out\n`;
+  teachers.forEach(t => {
+    const tRecs = recs.filter(r => r.staffId === t.id);
+    if (tRecs.length === 0) csv += `"${t.name}","${dateFrom}","absent","",""\n`;
+    else tRecs.forEach(r => { csv += `"${t.name}","${r.date}","${r.status}","${r.clockIn || ''}","${r.clockOut || ''}"\n`; });
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `staff_attendance_${dateFrom}_${dateTo}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  toast('Staff attendance report exported', 'success');
 }
 
 function renderHRLeave() {
@@ -4726,7 +5932,7 @@ function newLeaveRequestModal() {
           <div><label class="input-label">From</label><input id="lv_from" type="date" class="input" /></div>
           <div><label class="input-label">To</label><input id="lv_to" type="date" class="input" /></div>
         </div>
-        <div><label class="input-label">Reason</label><textarea id="lv_reason" rows="2" class="input"></textarea></div>
+        <div><label class="input-label">Reason</label><textarea id="lv_reason" rows="2" class="input" placeholder="e.g. Attending hospital for knee surgery"></textarea></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -4846,13 +6052,35 @@ function adminMarkStaffAttendanceModal(date) {
   });
   const defaultIn = new Date().toTimeString().slice(0, 5);
 
+  // Group staff: academic (self-clock) vs non-academic (admin-marked)
+  const academic = teachers.filter(t => t.staffType === 'Academic');
+  const nonAcademic = teachers.filter(t => t.staffType !== 'Academic');
+
+  const renderStaffRow = (t) => {
+    const rec = todayRecs.find(r => r.staffId === t.id);
+    const status = rec ? rec.status : null;
+    return `<div class="flex items-center gap-2 p-2 bg-slate-50 rounded-xl flex-wrap" id="satt_row_${t.id}">
+      ${avatar(t.name, 'sm')}
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold text-sm truncate">${t.name}</div>
+        <div class="text-xs text-slate-500 truncate">${t.role || t.staffType}</div>
+      </div>
+      <input type="time" id="satt_time_${t.id}" class="input !w-24 !py-1 text-xs" value="${rec ? rec.clockIn : defaultIn}" />
+      <div class="flex gap-1">
+        <button onclick="setStaffStatus('${t.id}','present')" data-stf="${t.id}" data-st="present" class="satt-btn px-2.5 py-1 rounded-lg text-xs font-semibold border-2 ${status==='present'?'bg-emerald-500 text-white border-emerald-500':'bg-white border-slate-200 text-slate-600 hover:border-emerald-500'}">Present</button>
+        <button onclick="setStaffStatus('${t.id}','late')" data-stf="${t.id}" data-st="late" class="satt-btn px-2.5 py-1 rounded-lg text-xs font-semibold border-2 ${status==='late'?'bg-amber-500 text-white border-amber-500':'bg-white border-slate-200 text-slate-600 hover:border-amber-500'}">Late</button>
+        <button onclick="setStaffStatus('${t.id}','absent')" data-stf="${t.id}" data-st="absent" class="satt-btn px-2.5 py-1 rounded-lg text-xs font-semibold border-2 ${status==='absent'?'bg-rose-500 text-white border-rose-500':'bg-white border-slate-200 text-slate-600 hover:border-rose-500'}">Absent</button>
+      </div>
+    </div>`;
+  };
+
   modal({
     title: `Mark Staff Attendance · ${fdate(date, { long: true })}`,
     size: 'lg',
     body: `
       <div class="space-y-3">
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
-          Use this when entering staff from the sign-in book at the gate. Anything after <strong>08:00</strong> is marked late by default.
+          Enter staff attendance from the sign-in book. Non-academic staff (security, cleaners, drivers, etc.) are marked manually by admin. Academic staff can also be overridden here. Anything after <strong>08:00</strong> is marked late by default.
         </div>
         <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
           <div class="text-sm text-slate-600">${teachers.length} staff members</div>
@@ -4861,25 +6089,16 @@ function adminMarkStaffAttendanceModal(date) {
             <button class="btn btn-secondary text-xs" onclick="bulkMarkStaff('absent')">${icon('x','w-3 h-3')} All absent</button>
           </div>
         </div>
-        <div class="space-y-1.5 max-h-96 overflow-y-auto">
-          ${teachers.map(t => {
-            const rec = todayRecs.find(r => r.staffId === t.id);
-            const status = rec ? rec.status : null;
-            return `<div class="flex items-center gap-2 p-2 bg-slate-50 rounded-xl flex-wrap" id="satt_row_${t.id}">
-              ${avatar(t.name, 'sm')}
-              <div class="flex-1 min-w-0">
-                <div class="font-semibold text-sm truncate">${t.name}</div>
-                <div class="text-xs text-slate-500 truncate">${t.role || t.staffType}</div>
-              </div>
-              <input type="time" id="satt_time_${t.id}" class="input !w-24 !py-1 text-xs" value="${rec ? rec.clockIn : defaultIn}" />
-              <div class="flex gap-1">
-                <button onclick="setStaffStatus('${t.id}','present')" data-stf="${t.id}" data-st="present" class="satt-btn px-2.5 py-1 rounded-lg text-xs font-semibold border-2 ${status==='present'?'bg-emerald-500 text-white border-emerald-500':'bg-white border-slate-200 text-slate-600 hover:border-emerald-500'}">Present</button>
-                <button onclick="setStaffStatus('${t.id}','late')" data-stf="${t.id}" data-st="late" class="satt-btn px-2.5 py-1 rounded-lg text-xs font-semibold border-2 ${status==='late'?'bg-amber-500 text-white border-amber-500':'bg-white border-slate-200 text-slate-600 hover:border-amber-500'}">Late</button>
-                <button onclick="setStaffStatus('${t.id}','absent')" data-stf="${t.id}" data-st="absent" class="satt-btn px-2.5 py-1 rounded-lg text-xs font-semibold border-2 ${status==='absent'?'bg-rose-500 text-white border-rose-500':'bg-white border-slate-200 text-slate-600 hover:border-rose-500'}">Absent</button>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
+        ${nonAcademic.length > 0 ? `
+        <div>
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Non-Academic Staff (${nonAcademic.length})</div>
+          <div class="space-y-1.5">${nonAcademic.map(renderStaffRow).join('')}</div>
+        </div>` : ''}
+        ${academic.length > 0 ? `
+        <div>
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Academic / Teaching Staff (${academic.length})</div>
+          <div class="space-y-1.5 max-h-64 overflow-y-auto">${academic.map(renderStaffRow).join('')}</div>
+        </div>` : ''}
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -4969,10 +6188,13 @@ function renderHRPayroll() {
 function view_adm_settings() {
   const tab = APP.params.setTab || 'branding';
   return `
-    ${pageHeader({ title: 'School Settings', subtitle: 'Branding · Academic · Calendar · Notifications · Roles · AI · Payments · Backup' })}
+    ${pageHeader({ title: 'School Settings', subtitle: 'Branding · Academic · Exams · Appraisal · Budget · Calendar · Notifications · Roles · AI · Payments · Backup' })}
     ${tabs([
       { key: 'branding',     label: 'Branding' },
       { key: 'academic',     label: 'Academic' },
+      { key: 'exams',        label: 'Exam Structure' },
+      { key: 'appraisal',    label: 'Appraisal' },
+      { key: 'budget',       label: 'Budget Categories' },
       { key: 'calendar',     label: 'Calendar' },
       { key: 'roles',        label: 'Roles & Permissions' },
       { key: 'notifications',label: 'Notifications' },
@@ -4982,6 +6204,9 @@ function view_adm_settings() {
     ], tab, k => { APP.params.setTab = k; APP.render(); })}
     <div class="pt-4">
       ${tab === 'academic' ? renderAcademicStructure() :
+        tab === 'exams' ? renderExamStructureSettings() :
+        tab === 'appraisal' ? renderAppraisalSettings() :
+        tab === 'budget' ? renderBudgetCategoriesSettings() :
         tab === 'calendar' ? renderAcademicCalendar() :
         tab === 'roles' ? renderRolesSettings() :
         tab === 'notifications' ? renderNotificationSettings() :
@@ -5077,7 +6302,7 @@ function roleEditorModal(roleId) {
             </div>
           </div>
         </div>
-        <div><label class="input-label">Description</label><textarea id="ro_desc" rows="2" class="input">${existing ? existing.description : ''}</textarea></div>
+        <div><label class="input-label">Description</label><textarea id="ro_desc" rows="2" class="input" placeholder="Describe what this role can access and do...">${existing ? existing.description : ''}</textarea></div>
         <div>
           <label class="input-label">Permissions</label>
           <div class="space-y-3 max-h-72 overflow-y-auto bg-slate-50 rounded-xl p-3">
@@ -5346,6 +6571,20 @@ function renderBrandingSettings() {
               ${branding.logoImage ? `<button type="button" class="btn btn-ghost text-sm" onclick="clearLogo()">Remove</button>` : ''}
             </div>
           </div>
+          <div>
+            <label class="input-label">Custom Letterhead</label>
+            <p class="text-xs text-slate-500 mb-2">Used on official documents: invoices, transfer certificates, report cards. Recommended: A4 header image (PNG/JPG, max 1MB, transparent background).</p>
+            <input type="file" id="br_letterheadFile" accept="image/*" class="hidden" onchange="onLetterheadPick(event)" />
+            <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+              ${branding.letterheadImage
+                ? `<img src="${branding.letterheadImage}" class="h-16 object-contain rounded-lg border border-slate-200 bg-white" />`
+                : `<div class="h-16 w-32 rounded-lg border-2 border-dashed border-slate-300 bg-white flex items-center justify-center text-slate-400 text-xs">No letterhead</div>`}
+              <div class="flex gap-2">
+                <button type="button" class="btn btn-secondary text-sm" onclick="document.getElementById('br_letterheadFile').click()">${icon('upload','w-4 h-4')} Upload</button>
+                ${branding.letterheadImage ? `<button type="button" class="btn btn-ghost text-sm" onclick="clearLetterhead()">Remove</button>` : ''}
+              </div>
+            </div>
+          </div>
           <button class="btn btn-primary w-full" onclick="saveBranding()">${icon('check','w-4 h-4')} Save Branding</button>
         </div>
       </div>
@@ -5370,6 +6609,7 @@ function renderBrandingSettings() {
 }
 
 let _logoBuffer = null;
+let _letterheadBuffer = null;
 function onLogoPick(ev) {
   const file = ev.target.files[0];
   if (!file) return;
@@ -5383,6 +6623,18 @@ function onLogoPick(ev) {
   reader.readAsDataURL(file);
 }
 
+function onLetterheadPick(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  if (file.size > 1024 * 1024) { toast('Letterhead too large (max 1MB)', 'danger'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    _letterheadBuffer = e.target.result;
+    toast('Letterhead ready — click Save Branding to apply', 'info');
+  };
+  reader.readAsDataURL(file);
+}
+
 function clearLogo() {
   _logoBuffer = null;
   const school = DB.find('schools', AUTH.current.id);
@@ -5392,16 +6644,27 @@ function clearLogo() {
   toast('Logo removed');
 }
 
+function clearLetterhead() {
+  _letterheadBuffer = null;
+  const school = DB.find('schools', AUTH.current.id);
+  if (school && school.branding) school.branding.letterheadImage = null;
+  DB.update('schools', school.id, { branding: school.branding });
+  APP.render();
+  toast('Letterhead removed');
+}
+
 function saveBranding() {
   const school = DB.find('schools', AUTH.current.id);
   const branding = {
     primaryColor: document.getElementById('br_color').value,
     logoText: document.getElementById('br_logoText').value.trim().toUpperCase(),
     motto: document.getElementById('br_motto').value.trim(),
-    logoImage: _logoBuffer !== null ? _logoBuffer : (school.branding && school.branding.logoImage) || null
+    logoImage: _logoBuffer !== null ? _logoBuffer : (school.branding && school.branding.logoImage) || null,
+    letterheadImage: _letterheadBuffer !== null ? _letterheadBuffer : (school.branding && school.branding.letterheadImage) || null
   };
   const name = document.getElementById('br_name').value.trim() || school.name;
   DB.update('schools', school.id, { branding, name });
+  _logoBuffer = null; _letterheadBuffer = null;
   toast('Branding saved', 'success');
   APP.render();
 }
@@ -5488,6 +6751,233 @@ function tcw_remindDebtors() {
 function tcw_promote() {
   document.getElementById('modalBackdrop').click();
   setTimeout(() => bulkPromoteModal(), 100);
+}
+
+/* ---------- Exam Structure Settings ---------- */
+function renderExamStructureSettings() {
+  const s = DB.settings();
+  const examStructure = s.examStructure || {
+    terms: [
+      { name: 'First Term', types: [{ label: 'CA 1', weight: 10 }, { label: 'CA 2', weight: 10 }, { label: 'Midterm', weight: 20 }, { label: 'Exam', weight: 60 }] },
+      { name: 'Second Term', types: [{ label: 'CA 1', weight: 10 }, { label: 'CA 2', weight: 10 }, { label: 'Midterm', weight: 20 }, { label: 'Exam', weight: 60 }] },
+      { name: 'Third Term', types: [{ label: 'CA 1', weight: 15 }, { label: 'Mock', weight: 25 }, { label: 'Exam', weight: 60 }] }
+    ]
+  };
+  return `
+    <div class="space-y-4">
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        ${icon('info','w-4 h-4 inline mr-1')} Define the assessment types (CBT, midterm, mock, final exam) and their weighting for each term. Teachers will see these categories when entering results.
+      </div>
+      ${examStructure.terms.map((term, ti) => `
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="font-bold text-slate-900">${term.name}</h4>
+            <button class="btn btn-secondary text-xs" onclick="addExamTypeToTerm(${ti})">${icon('plus','w-3.5 h-3.5')} Add Type</button>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Assessment Type</th><th>Category</th><th>Weight (%)</th><th></th></tr></thead>
+            <tbody>
+              ${term.types.map((t, xi) => `<tr>
+                <td><input type="text" class="input input-sm" value="${t.label}" onchange="updateExamType(${ti},${xi},'label',this.value)" /></td>
+                <td>
+                  <select class="input input-sm" onchange="updateExamType(${ti},${xi},'category',this.value)">
+                    <option ${(t.category||'examination')==='examination'?'selected':''}>examination</option>
+                    <option ${(t.category||'')==='midterm'?'selected':''}>midterm</option>
+                    <option ${(t.category||'')==='extracurricular'?'selected':''}>extracurricular</option>
+                    <option ${(t.category||'')==='cbt'?'selected':''}>cbt</option>
+                    <option ${(t.category||'')==='mock'?'selected':''}>mock</option>
+                  </select>
+                </td>
+                <td><input type="number" class="input input-sm w-20" value="${t.weight}" min="0" max="100" onchange="updateExamType(${ti},${xi},'weight',parseInt(this.value))" /></td>
+                <td><button class="btn btn-ghost !p-1.5 text-rose-600" onclick="removeExamType(${ti},${xi})">${icon('trash','w-4 h-4')}</button></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+          <div class="text-right text-xs mt-2 ${term.types.reduce((s,t)=>s+t.weight,0)!==100?'text-rose-600 font-semibold':'text-slate-500'}">
+            Total: ${term.types.reduce((s,t)=>s+t.weight,0)}% ${term.types.reduce((s,t)=>s+t.weight,0)!==100?'⚠ must equal 100%':'✓'}
+          </div>
+        </div>
+      `).join('')}
+      <button class="btn btn-primary" onclick="saveExamStructure()">${icon('check','w-4 h-4')} Save Exam Structure</button>
+    </div>
+  `;
+}
+
+function updateExamType(termIdx, typeIdx, field, value) {
+  const s = DB.settings();
+  const es = s.examStructure || { terms: [] };
+  if (es.terms[termIdx] && es.terms[termIdx].types[typeIdx]) {
+    es.terms[termIdx].types[typeIdx][field] = value;
+    DB.settings({ examStructure: es });
+    APP.render();
+  }
+}
+
+function addExamTypeToTerm(termIdx) {
+  const s = DB.settings();
+  const es = s.examStructure || { terms: [] };
+  if (es.terms[termIdx]) {
+    es.terms[termIdx].types.push({ label: 'New Type', weight: 0, category: 'examination' });
+    DB.settings({ examStructure: es });
+    APP.render();
+  }
+}
+
+function removeExamType(termIdx, typeIdx) {
+  const s = DB.settings();
+  const es = s.examStructure || { terms: [] };
+  if (es.terms[termIdx]) {
+    es.terms[termIdx].types.splice(typeIdx, 1);
+    DB.settings({ examStructure: es });
+    APP.render();
+  }
+}
+
+function saveExamStructure() {
+  toast('Exam structure saved successfully', 'success');
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'updated_exam_structure', target: 'Exam Structure Settings', timestamp: now() });
+}
+
+/* ---------- Appraisal Parameters Settings ---------- */
+function renderAppraisalSettings() {
+  const s = DB.settings();
+  const appraisalParams = s.appraisalParams || {
+    cycle: 'termly',
+    parameters: [
+      { key: 'punctuality', label: 'Punctuality & Attendance', weight: 15, description: 'Arrives on time, consistent attendance' },
+      { key: 'lesson_delivery', label: 'Lesson Delivery', weight: 25, description: 'Quality and clarity of teaching' },
+      { key: 'student_outcomes', label: 'Student Outcomes', weight: 25, description: 'Student performance and progress' },
+      { key: 'professionalism', label: 'Professionalism', weight: 20, description: 'Conduct, dress, communication' },
+      { key: 'collaboration', label: 'Collaboration', weight: 15, description: 'Team work and peer support' }
+    ]
+  };
+  return `
+    <div class="space-y-4">
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        ${icon('info','w-4 h-4 inline mr-1')} Define how teacher appraisals are scored. Weights must total 100%. These parameters appear on appraisal forms for principals and department heads.
+      </div>
+      <div class="card p-5">
+        <div class="grid sm:grid-cols-2 gap-3 mb-4">
+          <div>
+            <label class="input-label">Appraisal Cycle</label>
+            <select id="apr_cycle" class="input" onchange="">
+              <option ${appraisalParams.cycle==='termly'?'selected':''}>termly</option>
+              <option ${appraisalParams.cycle==='annual'?'selected':''}>annual</option>
+              <option ${appraisalParams.cycle==='bi-annual'?'selected':''}>bi-annual</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button class="btn btn-secondary" onclick="addAppraisalParam()">${icon('plus','w-4 h-4')} Add Parameter</button>
+          </div>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Parameter</th><th>Description</th><th>Weight (%)</th><th></th></tr></thead>
+          <tbody>
+            ${appraisalParams.parameters.map((p, i) => `<tr>
+              <td><input type="text" class="input input-sm" value="${p.label}" onchange="updateAppraisalParam(${i},'label',this.value)" /></td>
+              <td><input type="text" class="input input-sm" value="${p.description}" onchange="updateAppraisalParam(${i},'description',this.value)" /></td>
+              <td><input type="number" class="input input-sm w-20" value="${p.weight}" min="0" max="100" onchange="updateAppraisalParam(${i},'weight',parseInt(this.value)||0)" /></td>
+              <td><button class="btn btn-ghost !p-1.5 text-rose-600" onclick="removeAppraisalParam(${i})">${icon('trash','w-4 h-4')}</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="flex items-center justify-between mt-3">
+          <span class="text-xs ${appraisalParams.parameters.reduce((s,p)=>s+p.weight,0)!==100?'text-rose-600 font-semibold':'text-slate-500'}">
+            Total: ${appraisalParams.parameters.reduce((s,p)=>s+p.weight,0)}% ${appraisalParams.parameters.reduce((s,p)=>s+p.weight,0)!==100?'⚠ must equal 100%':'✓'}
+          </span>
+          <button class="btn btn-primary" onclick="saveAppraisalSettings()">${icon('check','w-4 h-4')} Save Parameters</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function updateAppraisalParam(idx, field, value) {
+  const s = DB.settings();
+  const ap = s.appraisalParams || { parameters: [] };
+  if (ap.parameters[idx]) { ap.parameters[idx][field] = value; DB.settings({ appraisalParams: ap }); APP.render(); }
+}
+
+function addAppraisalParam() {
+  const s = DB.settings();
+  const ap = s.appraisalParams || { cycle: 'termly', parameters: [] };
+  ap.parameters.push({ key: `param_${Date.now()}`, label: 'New Parameter', description: '', weight: 0 });
+  DB.settings({ appraisalParams: ap }); APP.render();
+}
+
+function removeAppraisalParam(idx) {
+  const s = DB.settings();
+  const ap = s.appraisalParams || { parameters: [] };
+  ap.parameters.splice(idx, 1); DB.settings({ appraisalParams: ap }); APP.render();
+}
+
+function saveAppraisalSettings() {
+  const cycle = document.getElementById('apr_cycle') ? document.getElementById('apr_cycle').value : 'termly';
+  const s = DB.settings();
+  const ap = s.appraisalParams || { parameters: [] };
+  ap.cycle = cycle; DB.settings({ appraisalParams: ap });
+  toast('Appraisal parameters saved', 'success');
+}
+
+/* ---------- Budget Categories Settings ---------- */
+function renderBudgetCategoriesSettings() {
+  const s = DB.settings();
+  const budgetCats = s.budgetCategories || ['Salaries','Utilities','Maintenance','Supplies','Internet','Transport','Events','Other'];
+  return `
+    <div class="space-y-4">
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        ${icon('info','w-4 h-4 inline mr-1')} These categories appear in the Expenses and Budget sections. Edit, reorder, or add your own categories to match your school's accounting structure.
+      </div>
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="font-bold text-slate-900">Budget Categories</h4>
+          <button class="btn btn-secondary text-sm" onclick="addBudgetCategory()">${icon('plus','w-4 h-4')} Add Category</button>
+        </div>
+        <div class="space-y-2" id="budgetCatList">
+          ${budgetCats.map((cat, i) => `
+            <div class="flex items-center gap-2 p-2 bg-slate-50 rounded-xl">
+              <div class="text-slate-400 cursor-grab">${icon('menu','w-4 h-4')}</div>
+              <input type="text" class="input flex-1" value="${cat}" id="bcat_${i}" onchange="updateBudgetCategory(${i}, this.value)" />
+              <button class="btn btn-ghost !p-1.5 text-rose-600" onclick="removeBudgetCategory(${i})">${icon('trash','w-4 h-4')}</button>
+            </div>
+          `).join('')}
+        </div>
+        <div class="mt-4 flex gap-2">
+          <button class="btn btn-primary" onclick="saveBudgetCategories()">${icon('check','w-4 h-4')} Save Categories</button>
+          <button class="btn btn-secondary" onclick="resetBudgetCategories()">Reset to Default</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function addBudgetCategory() {
+  const s = DB.settings();
+  const cats = [...(s.budgetCategories || ['Salaries','Utilities','Maintenance','Supplies','Internet','Transport','Events','Other']), 'New Category'];
+  DB.settings({ budgetCategories: cats }); APP.render();
+}
+
+function removeBudgetCategory(idx) {
+  const s = DB.settings();
+  const cats = [...(s.budgetCategories || [])];
+  cats.splice(idx, 1); DB.settings({ budgetCategories: cats }); APP.render();
+}
+
+function updateBudgetCategory(idx, value) {
+  const s = DB.settings();
+  const cats = [...(s.budgetCategories || [])];
+  cats[idx] = value; DB.settings({ budgetCategories: cats });
+}
+
+function saveBudgetCategories() {
+  const cats = Array.from(document.querySelectorAll('#budgetCatList input')).map(el => el.value.trim()).filter(Boolean);
+  DB.settings({ budgetCategories: cats });
+  toast('Budget categories saved', 'success');
+}
+
+function resetBudgetCategories() {
+  DB.settings({ budgetCategories: ['Salaries','Utilities','Maintenance','Supplies','Internet','Transport','Events','Other'] });
+  toast('Categories reset to default', 'info'); APP.render();
 }
 
 function renderAcademicStructure() {
@@ -5599,7 +7089,7 @@ function saveTerm() {
 function newArmModal() {
   modal({
     title: 'New Arm',
-    body: `<div><label class="input-label">Arm Name (e.g. A, B, Gold)</label><input id="arm_name" class="input" /></div>`,
+    body: `<div><label class="input-label">Arm Name (e.g. A, B, Gold)</label><input id="arm_name" class="input" placeholder="e.g. A, B, Gold, Diamond" /></div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveArm()">Save</button>`
   });
@@ -5656,7 +7146,7 @@ function newCalendarEventModal() {
   modal({
     title: 'Add Calendar Event',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Title</label><input id="cal_title" class="input" /></div>
+      <div><label class="input-label">Title</label><input id="cal_title" class="input" placeholder="e.g. Inter-House Sports Day" /></div>
       <div class="grid grid-cols-2 gap-2">
         <div><label class="input-label">Date</label><input id="cal_date" type="date" class="input" /></div>
         <div><label class="input-label">Type</label>
@@ -5749,10 +7239,12 @@ function view_adm_admissions() {
       <p class="text-xs text-brand-200 mt-2">Share this with prospective parents on your website, WhatsApp, or in print. They can apply without creating an account.</p>
     </div>
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-      ${statCard({ label: 'Total Applications', value: apps.length, icon: 'plus', color: 'brand' })}
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+      ${statCard({ label: 'Total', value: apps.length, icon: 'plus', color: 'brand' })}
       ${statCard({ label: 'Pending Review', value: apps.filter(a => a.status === 'pending').length, icon: 'bell', color: 'gold' })}
       ${statCard({ label: 'Reviewing', value: apps.filter(a => a.status === 'reviewing').length, icon: 'chat', color: 'blue' })}
+      ${statCard({ label: 'Visit Booked', value: apps.filter(a => a.status === 'visit_scheduled').length, icon: 'calendar', color: 'brand' })}
+      ${statCard({ label: 'Visit Done', value: apps.filter(a => a.status === 'visit_confirmed').length, icon: 'check', color: 'gold' })}
       ${statCard({ label: 'Accepted', value: apps.filter(a => a.status === 'accepted').length, icon: 'check', color: 'brand' })}
     </div>
 
@@ -5760,6 +7252,8 @@ function view_adm_admissions() {
       <button class="chip ${filter==='all'?'active':''}" onclick="APP.params.appFilter='all'; APP.render()">All ${apps.length}</button>
       <button class="chip ${filter==='pending'?'active':''}" onclick="APP.params.appFilter='pending'; APP.render()">Pending</button>
       <button class="chip ${filter==='reviewing'?'active':''}" onclick="APP.params.appFilter='reviewing'; APP.render()">Reviewing</button>
+      <button class="chip ${filter==='visit_scheduled'?'active':''}" onclick="APP.params.appFilter='visit_scheduled'; APP.render()">Visit Booked</button>
+      <button class="chip ${filter==='visit_confirmed'?'active':''}" onclick="APP.params.appFilter='visit_confirmed'; APP.render()">Visit Done</button>
       <button class="chip ${filter==='accepted'?'active':''}" onclick="APP.params.appFilter='accepted'; APP.render()">Accepted</button>
       <button class="chip ${filter==='rejected'?'active':''}" onclick="APP.params.appFilter='rejected'; APP.render()">Rejected</button>
     </div>
@@ -5777,7 +7271,7 @@ function view_adm_admissions() {
               <td>${cls ? cls.name : '—'}</td>
               <td class="text-xs text-slate-500">${fdate(a.appliedAt, { relative: true })}</td>
               <td><span class="badge ${docsCount >= 3 ? 'badge-success' : docsCount >= 1 ? 'badge-warn' : 'badge-danger'}">${docsCount}/4</span></td>
-              <td>${statusBadge(a.status === 'reviewing' ? 'pending' : a.status === 'accepted' ? 'successful' : a.status === 'rejected' ? 'failed' : 'pending')}</td>
+              <td>${statusBadge(a.status)}</td>
               <td><button class="btn btn-ghost !p-1.5" onclick="event.stopPropagation(); viewApplication('${a.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button></td>
             </tr>`;
           }).join('')}
@@ -5802,7 +7296,8 @@ function viewApplication(appId) {
     { key: 'birthCert',    label: 'Birth Certificate' },
     { key: 'parentId',     label: 'Parent ID' },
     { key: 'immunization', label: 'Immunization Card' },
-    { key: 'photo',        label: 'Passport Photograph' }
+    { key: 'photo',        label: 'Passport Photograph' },
+    { key: 'others',       label: 'Others' }
   ];
 
   modal({
@@ -5824,8 +7319,25 @@ function viewApplication(appId) {
           <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Current School</div><div>${a.currentSchool || '—'}</div></div>
           <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Parent Name</div><div>${a.parentName}</div></div>
           <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Parent Phone</div><div>${a.parentPhone}</div></div>
-          <div class="col-span-2"><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Parent Email</div><div>${a.parentEmail}</div></div>
+          <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Parent Email</div><div>${a.parentEmail}</div></div>
+          <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Home Address / Location</div><div>${a.location || a.address || '—'}</div></div>
         </div>
+
+        ${a.reviewNotes ? `<div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
+          <div class="text-xs uppercase text-blue-600 font-semibold mb-1">Review Notes</div>
+          <div class="text-sm text-blue-900">${a.reviewNotes}</div>
+          ${a.reviewedAt ? `<div class="text-xs text-blue-500 mt-1">Noted ${fdate(a.reviewedAt, { relative: true })}</div>` : ''}
+        </div>` : ''}
+
+        ${(a.visitDate || a.visitConfirmed) ? `<div class="rounded-xl p-3 border ${a.visitConfirmed ? 'bg-emerald-50 border-emerald-200' : 'bg-brand-50 border-brand-200'}">
+          <div class="text-xs uppercase font-semibold mb-1 flex items-center gap-1.5 ${a.visitConfirmed ? 'text-emerald-600' : 'text-brand-600'}">
+            ${icon('calendar','w-3.5 h-3.5')} School Visit — ${a.visitConfirmed ? 'Completed' : 'Scheduled'}
+          </div>
+          ${a.visitDate ? `<div class="text-sm font-semibold text-slate-900">${fdate(a.visitDate, { long: true })}${a.visitTime ? ' at ' + a.visitTime : ''}</div>` : ''}
+          ${a.visitNotes ? `<div class="text-xs text-slate-600 mt-0.5">${a.visitNotes}</div>` : ''}
+          ${a.visitCompletionNotes ? `<div class="text-xs text-emerald-700 mt-0.5 italic">${a.visitCompletionNotes}</div>` : ''}
+          ${a.visitConfirmedAt ? `<div class="text-xs text-emerald-500 mt-1">Confirmed ${fdate(a.visitConfirmedAt, { relative: true })}</div>` : ''}
+        </div>` : ''}
 
         <div>
           <div class="text-xs uppercase text-slate-500 font-semibold mb-1">Reason for Application</div>
@@ -5861,7 +7373,11 @@ function viewApplication(appId) {
     `,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
-      ${a.status === 'pending' ? `<button class="btn btn-secondary" onclick="setAppStatus('${a.id}', 'reviewing')">Mark Reviewing</button>` : ''}
+      ${a.status === 'pending' ? `<button class="btn btn-secondary" onclick="reviewApplicationModal('${a.id}')">${icon('search','w-4 h-4')} Review</button>` : ''}
+      ${a.status === 'reviewing' ? `<button class="btn btn-secondary" onclick="reviewApplicationModal('${a.id}')">${icon('search','w-4 h-4')} Update Review</button>` : ''}
+      ${a.status === 'reviewing' ? `<button class="btn btn-gold" onclick="scheduleVisitModal('${a.id}')">${icon('calendar','w-4 h-4')} Schedule Visit</button>` : ''}
+      ${a.status === 'visit_scheduled' ? `<button class="btn btn-gold" onclick="scheduleVisitModal('${a.id}')">${icon('calendar','w-4 h-4')} Reschedule</button>` : ''}
+      ${a.status === 'visit_scheduled' ? `<button class="btn btn-secondary" onclick="markVisitCompleteModal('${a.id}')">${icon('check','w-4 h-4')} Mark Visit Done</button>` : ''}
       ${a.status !== 'rejected' && a.status !== 'accepted' ? `<button class="btn btn-danger" onclick="setAppStatus('${a.id}', 'rejected')">Reject</button>` : ''}
       ${a.status !== 'accepted' ? `<button class="btn btn-primary" onclick="acceptApplication('${a.id}')">${icon('check','w-4 h-4')} Accept &amp; Enrol</button>` : ''}
     `
@@ -5918,6 +7434,48 @@ function previewAdmissionDoc(appId, docKey) {
   }), 50);
 }
 
+function reviewApplicationModal(appId) {
+  const a = DB.find('admissionApplications', appId);
+  document.getElementById('modalBackdrop').click();
+  setTimeout(() => modal({
+    title: 'Review Application — ' + a.applicantName,
+    body: `
+      <div class="space-y-3">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          Mark this application as under review and record notes. The application remains visible to your team but is clearly flagged as being actively reviewed.
+        </div>
+        <div>
+          <label class="input-label">Review Notes (optional)</label>
+          <textarea id="rev_notes" rows="3" class="input" placeholder="e.g. Awaiting last term report card from parent, scheduled school visit on Friday...">${a.reviewNotes || ''}</textarea>
+        </div>
+        <div>
+          <label class="input-label">Follow-up Action</label>
+          <select id="rev_followup" class="input">
+            <option value="">— None —</option>
+            <option value="request_docs">Request additional documents</option>
+            <option value="schedule_visit">Schedule school visit</option>
+            <option value="interview">Arrange interview</option>
+            <option value="contact_school">Contact previous school</option>
+          </select>
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="confirmReview('${appId}')">${icon('search','w-4 h-4')} Save Review</button>`
+  }), 50);
+}
+
+function confirmReview(appId) {
+  const notes = document.getElementById('rev_notes').value.trim();
+  const followup = document.getElementById('rev_followup').value;
+  DB.update('admissionApplications', appId, { status: 'reviewing', reviewNotes: notes, reviewFollowup: followup, reviewedAt: now(), reviewedBy: AUTH.current.id });
+  const a = DB.find('admissionApplications', appId);
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'reviewing_application', target: a.applicantName + (followup ? ` (${followup})` : ''), timestamp: now() });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast(`${a.applicantName} — marked as Reviewing`);
+}
+
 function setAppStatus(appId, status) {
   DB.update('admissionApplications', appId, { status, decidedAt: now() });
   const a = DB.find('admissionApplications', appId);
@@ -5925,6 +7483,136 @@ function setAppStatus(appId, status) {
   toast(`Application ${status}`);
   APP.render();
   document.getElementById('modalBackdrop')?.click();
+}
+
+function scheduleVisitModal(appId) {
+  const a = DB.find('admissionApplications', appId);
+  document.getElementById('modalBackdrop').click();
+  setTimeout(() => modal({
+    title: 'Schedule School Visit — ' + a.applicantName,
+    body: `
+      <div class="space-y-3">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+          Schedule a visit for <strong>${a.parentName}</strong> to bring <strong>${a.applicantName}</strong> to school.
+          Fee information will only be revealed to the parent <strong>after</strong> the visit is confirmed as complete.
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="input-label">Visit Date <span class="text-red-500">*</span></label>
+            <input type="date" id="vis_date" class="input" value="${a.visitDate || ''}" min="${today()}">
+          </div>
+          <div>
+            <label class="input-label">Preferred Time</label>
+            <input type="time" id="vis_time" class="input" value="${a.visitTime || '10:00'}">
+          </div>
+        </div>
+        <div>
+          <label class="input-label">Instructions for Parent (optional)</label>
+          <textarea id="vis_notes" rows="2" class="input" placeholder="e.g. Please bring last term's report card and the child's birth certificate…">${a.visitNotes || ''}</textarea>
+        </div>
+        <div class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+          ${icon('bell','w-4 h-4 flex-shrink-0 mt-0.5')}
+          <span>A notification will be sent to the parent with visit details. Fees remain hidden until you mark the visit as done.</span>
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-gold" onclick="confirmScheduleVisit('${appId}')">${icon('calendar','w-4 h-4')} Confirm Schedule</button>`
+  }), 50);
+}
+
+function confirmScheduleVisit(appId) {
+  const date = document.getElementById('vis_date').value;
+  if (!date) { toast('Please select a visit date', 'error'); return; }
+  const time = document.getElementById('vis_time').value;
+  const notes = document.getElementById('vis_notes').value.trim();
+  DB.update('admissionApplications', appId, {
+    status: 'visit_scheduled',
+    visitDate: date, visitTime: time, visitNotes: notes,
+    visitScheduledAt: now(), visitScheduledBy: AUTH.current.id
+  });
+  const a = DB.find('admissionApplications', appId);
+  const parent = DB.query('parents', p => p.phone === a.parentPhone)[0];
+  if (parent) {
+    DB.insert('notifications', {
+      id: uid('not'), userId: parent.id,
+      title: 'School Visit Scheduled',
+      body: `Your visit for ${a.applicantName} is booked for ${fdate(date, { long: true })}${time ? ' at ' + time : ''}.${notes ? ' Note: ' + notes : ''} Fee details will be shared after your visit.`,
+      type: 'info', read: false, timestamp: now(),
+      link: { view: 'par_fees' }
+    });
+  }
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'scheduled_visit', target: `${a.applicantName} — ${fdate(date, { long: true })}`, timestamp: now() });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast(`Visit scheduled for ${fdate(date, { long: true })}`);
+}
+
+function markVisitCompleteModal(appId) {
+  const a = DB.find('admissionApplications', appId);
+  document.getElementById('modalBackdrop').click();
+  setTimeout(() => modal({
+    title: 'Confirm Visit Attended — ' + a.applicantName,
+    body: `
+      <div class="space-y-3">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+          <div class="font-semibold mb-0.5">${icon('check','w-4 h-4 inline')} Confirm ${a.applicantName} visited the school</div>
+          <div class="text-xs text-emerald-700">After confirmation the parent will gain access to fee information for their child's class.</div>
+        </div>
+        ${a.visitDate ? `<div class="flex items-center gap-2 p-3 bg-slate-50 rounded-xl text-sm">
+          <span class="text-brand-600">${icon('calendar','w-4 h-4')}</span>
+          <div><span class="font-semibold">Scheduled:</span> ${fdate(a.visitDate, { long: true })}${a.visitTime ? ' at ' + a.visitTime : ''}</div>
+        </div>` : ''}
+        <div>
+          <label class="input-label">Visit Notes (optional)</label>
+          <textarea id="vc_notes" rows="2" class="input" placeholder="e.g. Child participated well in assessment. Parent asked questions about transport..."></textarea>
+        </div>
+        <div class="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+          ${icon('bell','w-4 h-4 flex-shrink-0 mt-0.5')}
+          <span>If the parent has no portal account yet, one will be created and login credentials sent to them so they can view fees.</span>
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="confirmVisitComplete('${appId}')">${icon('check','w-4 h-4')} Confirm Visit Done</button>`
+  }), 50);
+}
+
+function confirmVisitComplete(appId) {
+  const visitNotes = document.getElementById('vc_notes').value.trim();
+  const a = DB.find('admissionApplications', appId);
+  let parent = DB.query('parents', p => p.phone === a.parentPhone)[0];
+  const isNewParent = !parent;
+  let tempPassword = null;
+  if (!parent) {
+    tempPassword = 'Caspaa' + Math.floor(Math.random() * 9000 + 1000);
+    parent = {
+      id: uid('par'), schoolId: currentSchoolId(),
+      name: a.parentName, phone: a.parentPhone, email: a.parentEmail || '',
+      occupation: '—', monthlyIncome: 0, address: a.location || a.address || '',
+      credentials: { username: a.parentPhone, tempPassword, createdAt: now() },
+      firstLogin: true, prospectApplicationId: appId
+    };
+    DB.insert('parents', parent);
+  }
+  DB.update('admissionApplications', appId, {
+    status: 'visit_confirmed', visitConfirmed: true,
+    visitCompletionNotes: visitNotes,
+    visitConfirmedAt: now(), visitConfirmedBy: AUTH.current.id,
+    prospectParentId: parent.id
+  });
+  const school = DB.find('schools', currentSchoolId());
+  DB.insert('notifications', {
+    id: uid('not'), userId: parent.id,
+    title: 'Visit Confirmed — Fees Now Visible',
+    body: `Thank you for visiting ${school ? school.name : 'the school'} with ${a.applicantName}. The fee structure for your child's class is now available in your portal.${isNewParent ? ' Login with phone: ' + a.parentPhone + ' · Password: ' + tempPassword : ''}`,
+    type: 'success', read: false, timestamp: now(),
+    link: { view: 'par_fees' }
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'confirmed_visit', target: a.applicantName, timestamp: now() });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast(`Visit confirmed — ${a.applicantName}'s parent can now view fees${isNewParent ? ' · Credentials sent' : ''}`);
 }
 
 function acceptApplication(appId) {
@@ -6077,7 +7765,7 @@ function newSickBayModal() {
         <div><label class="input-label">Temperature (°C)</label><input id="sb_temp" type="number" step="0.1" class="input" value="36.5" /></div>
         <div><label class="input-label">Attended By</label><input id="sb_attendedBy" class="input" value="School Nurse" /></div>
       </div>
-      <div><label class="input-label">Treatment / Action</label><textarea id="sb_treatment" rows="2" class="input"></textarea></div>
+      <div><label class="input-label">Treatment / Action</label><textarea id="sb_treatment" rows="2" class="input" placeholder="e.g. Paracetamol 500mg given, advised to rest"></textarea></div>
       <label class="flex items-center gap-2 text-sm"><input id="sb_referred" type="checkbox" /> Referred to hospital</label>
       <label class="flex items-center gap-2 text-sm"><input id="sb_notify" type="checkbox" checked /> Notify parent via WhatsApp</label>
     </div>`,
@@ -6149,9 +7837,9 @@ function newVisitorModal() {
   modal({
     title: 'Check-in Visitor',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Visitor Name</label><input id="vis_name" class="input" /></div>
+      <div><label class="input-label">Visitor Name</label><input id="vis_name" class="input" placeholder="e.g. Mrs. Amaka Okonkwo" /></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Phone</label><input id="vis_phone" class="input" /></div>
+        <div><label class="input-label">Phone</label><input id="vis_phone" class="input" placeholder="e.g. 0803 123 4567" /></div>
         <div><label class="input-label">Relation</label>
           <select id="vis_rel" class="input"><option>Parent</option><option>Vendor</option><option>Maintenance</option><option>Government Official</option><option>Visitor</option><option>Delivery</option></select>
         </div>
@@ -6159,7 +7847,7 @@ function newVisitorModal() {
       <div><label class="input-label">To See</label>
         <select id="vis_tosee" class="input"><option>Mr. Olusegun Adebayo (Proprietor)</option>${teachers.map(t => `<option>${t.name}</option>`).join('')}</select>
       </div>
-      <div><label class="input-label">Purpose</label><input id="vis_purpose" class="input" /></div>
+      <div><label class="input-label">Purpose</label><input id="vis_purpose" class="input" placeholder="e.g. Collect report card" /></div>
       <div><label class="input-label">Vehicle (or "Foot")</label><input id="vis_vehicle" class="input" placeholder="e.g. Toyota Camry LSD-241-AB" /></div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -6284,10 +7972,10 @@ function addBookModal() {
   modal({
     title: 'Add Book',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Title</label><input id="bk_title" class="input" /></div>
+      <div><label class="input-label">Title</label><input id="bk_title" class="input" placeholder="e.g. New General Mathematics JSS1" /></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Author</label><input id="bk_author" class="input" /></div>
-        <div><label class="input-label">ISBN</label><input id="bk_isbn" class="input" /></div>
+        <div><label class="input-label">Author</label><input id="bk_author" class="input" placeholder="e.g. M.F. Macrae" /></div>
+        <div><label class="input-label">ISBN</label><input id="bk_isbn" class="input" placeholder="e.g. 978-0-582-60324-0" /></div>
       </div>
       <div class="grid grid-cols-3 gap-3">
         <div><label class="input-label">Category</label>

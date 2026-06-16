@@ -149,7 +149,12 @@ function renderLogin() {
             </div>
             <div>
               <label class="input-label">Password</label>
-              <input type="password" class="input" id="loginPassword" placeholder="••••••••" value="demo1234" />
+              <div class="relative">
+                <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" value="demo1234" />
+                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" tabindex="-1">
+                  <svg id="loginEyeIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </button>
+              </div>
               <p class="text-xs text-slate-400 mt-1">Use password <strong>demo1234</strong> for any demo email</p>
             </div>
             <button class="btn btn-primary w-full" id="emailLoginBtn">Sign in</button>
@@ -178,6 +183,7 @@ function bindLoginHandlers() {
         AUTH.login(acc);
         toast(`Welcome back, ${acc.name.split(' ')[0]}!`, 'success');
         APP.render();
+        if (acc.firstLogin) promptFirstLoginPasswordChange(acc);
       }
     };
   });
@@ -192,9 +198,74 @@ function bindLoginHandlers() {
     if (pwd !== 'demo1234') { toast('Incorrect password', 'danger'); return; }
     const acc = DEMO_ACCOUNTS.find(a => a.email.toLowerCase() === email);
     if (!acc) { toast('No account found with that email', 'danger'); return; }
-    if (acc.role === 'superadmin' || acc.role === 'finance') { showOTPModal(acc); }
-    else { AUTH.login(acc); APP.render(); toast(`Welcome back, ${acc.name.split(' ')[0]}!`); }
+    if (acc.role === 'superadmin' || acc.role === 'finance') {
+      showOTPModal(acc);
+    } else {
+      AUTH.login(acc); APP.render(); toast(`Welcome back, ${acc.name.split(' ')[0]}!`);
+      if (acc.firstLogin) promptFirstLoginPasswordChange(acc);
+    }
   };
+}
+
+function togglePwVisibility(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  const isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  // Toggle icon between eye and eye-off
+  btn.innerHTML = isHidden
+    ? `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>`
+    : `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>`;
+}
+
+function promptFirstLoginPasswordChange(account) {
+  setTimeout(() => modal({
+    title: 'Change Your Password',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+          <strong>Action required:</strong> For your security, please set a personal password before continuing. You will not be able to proceed until this is done.
+        </div>
+        <div>
+          <label class="input-label">New Password</label>
+          <div class="relative">
+            <input type="password" id="fl_pw_new" class="input pr-10" placeholder="Minimum 8 characters" />
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_new',this)" tabindex="-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="input-label">Confirm Password</label>
+          <div class="relative">
+            <input type="password" id="fl_pw_confirm" class="input pr-10" placeholder="Repeat new password" />
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_confirm',this)" tabindex="-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn btn-primary w-full" onclick="saveFirstLoginPassword('${account.id}')">Set Password &amp; Continue</button>`
+  }), 300);
+}
+
+function saveFirstLoginPassword(accountId) {
+  const pw = document.getElementById('fl_pw_new').value;
+  const confirm = document.getElementById('fl_pw_confirm').value;
+  if (pw.length < 8) { toast('Password must be at least 8 characters', 'danger'); return; }
+  if (pw !== confirm) { toast('Passwords do not match', 'danger'); return; }
+  // Mark password as changed — in a real app this would hash and store server-side
+  const collection = AUTH.current.role === 'parent' ? 'parents' : AUTH.current.role === 'teacher' ? 'teachers' : 'staff';
+  const record = DB.find(collection, accountId);
+  if (record) {
+    DB.update(collection, accountId, { firstLogin: false, passwordChanged: true, passwordChangedAt: now() });
+  }
+  // Update current session flag
+  AUTH.current.firstLogin = false;
+  document.getElementById('modalBackdrop')?.click();
+  toast('Password updated — welcome to CASPAA!', 'success');
+  APP.render();
 }
 
 function showOTPModal(account) {

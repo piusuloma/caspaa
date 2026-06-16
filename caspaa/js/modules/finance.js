@@ -86,7 +86,7 @@ function view_fin_dashboard() {
                   ${avatar(s ? s.name : '?', 'sm')}
                   <div>
                     <div class="font-semibold text-sm">${s ? s.name : '—'}</div>
-                    <div class="text-xs text-slate-500">${t.method.toUpperCase()} · ${fdate(t.timestamp, { relative: true })}</div>
+                    <div class="text-xs text-slate-500">${t.method.toUpperCase()} · ${fdate(t.timestamp, { relative: true })}${s ? ` · ID: ${s.studentId || s.id.slice(-6)}` : ''}</div>
                   </div>
                 </div>
                 <div class="font-bold font-mono text-emerald-700">${money(t.amount)}</div>
@@ -97,7 +97,8 @@ function view_fin_dashboard() {
 
         <div class="card p-5">
           <div class="flex items-center justify-between mb-3">
-            <h3 class="font-bold text-slate-900">Top Debtors</h3>
+            <h3 class="font-bold text-slate-900">Outstanding Balances</h3>
+            <button class="btn btn-secondary text-xs" onclick="sendBulkReminders()">${icon('send','w-3.5 h-3.5')} Remind All</button>
           </div>
           <div class="space-y-2">
             ${invoices.filter(i => i.balance > 0).sort((a,b) => b.balance - a.balance).slice(0, 5).map(i => {
@@ -107,26 +108,308 @@ function view_fin_dashboard() {
               return `<div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                 <div>
                   <div class="font-semibold text-sm">${s.name}</div>
-                  <div class="text-xs text-slate-500">${p ? p.name : ''}</div>
+                  <div class="text-xs text-slate-500">${p ? p.name : ''} · ID: ${s.studentId || s.id.slice(-6)}</div>
                 </div>
                 <div class="text-right">
                   <div class="font-bold font-mono text-rose-700">${money(i.balance)}</div>
-                  <button class="text-xs text-brand-700 font-semibold" onclick="sendReminder('${i.id}')">Send reminder</button>
+                  <button class="text-xs text-brand-700 font-semibold" onclick="sendManualReminder('${i.id}')">Send reminder</button>
                 </div>
               </div>`;
             }).join('')}
           </div>
         </div>
       </div>
+
+      <!-- Per-Child Financial Breakdown -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="font-bold text-slate-900">Income Breakdown per Student</h3>
+          <button class="btn btn-secondary text-xs" onclick="exportPerChildReport()">${icon('download','w-3.5 h-3.5')} Export CSV</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Student</th><th>Student ID</th><th>Class</th>
+                <th class="text-right">Total Billed</th>
+                <th class="text-right">Paid</th>
+                <th class="text-right">Balance</th>
+                <th class="text-right">Expenses*</th>
+                <th class="text-right">Net Income</th>
+                <th class="text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(() => {
+                const allStudents = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && s.status === 'active');
+                const perCapitaExp = allStudents.length > 0 ? expense / allStudents.length : 0;
+                return allStudents.slice(0, 20).map(s => {
+                  const inv = COMPUTE.studentInvoice(s.id);
+                  const cls = DB.find('classes', s.classId);
+                  const paid = inv ? inv.paid : 0;
+                  const balance = inv ? inv.balance : 0;
+                  const total = inv ? inv.total : 0;
+                  const netIncome = paid - perCapitaExp;
+                  return `<tr>
+                    <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<span class="font-medium text-sm">${s.name}</span></div></td>
+                    <td class="font-mono text-xs text-slate-500">${s.studentId || s.id.slice(-6).toUpperCase()}</td>
+                    <td class="text-sm text-slate-500">${cls ? cls.name : '—'}</td>
+                    <td class="text-right font-mono text-sm">${money(total)}</td>
+                    <td class="text-right font-mono text-sm text-emerald-700">${money(paid)}</td>
+                    <td class="text-right font-mono text-sm ${balance>0?'text-rose-600 font-semibold':'text-slate-400'}">${money(balance)}</td>
+                    <td class="text-right font-mono text-xs text-slate-500">${money(Math.round(perCapitaExp))}</td>
+                    <td class="text-right font-mono text-sm ${netIncome>=0?'text-emerald-700 font-bold':'text-rose-600 font-bold'}">${money(Math.round(netIncome))}</td>
+                    <td class="text-center">${inv ? statusBadge(inv.status) : '<span class="text-xs text-slate-400">No invoice</span>'}</td>
+                  </tr>`;
+                }).join('');
+              })()}
+            </tbody>
+          </table>
+        </div>
+        <div class="px-5 py-2 text-xs text-slate-400 border-t border-slate-100">* Expenses per child = total operating costs ÷ number of active students (estimated)</div>
+      </div>
     </div>
   `;
 }
 
-function sendReminder(invoiceId) {
+function sendReminder(invoiceId) { sendManualReminder(invoiceId); }
+
+function sendManualReminder(invoiceId) {
   const inv = DB.find('invoices', invoiceId);
+  if (!inv) return;
   const s = DB.find('students', inv.studentId);
-  DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Fee Payment Reminder', body: `Your outstanding balance of ${money(inv.balance)} is overdue.`, type: 'warn', read: false, timestamp: now() });
-  toast(`Reminder sent for ${s.name}`, 'success');
+  if (!s) return;
+  const studentRef = s.studentId || s.id.slice(-6).toUpperCase();
+  DB.insert('notifications', {
+    id: uid('not'), userId: s.parentId, title: 'Fee Payment Reminder',
+    body: `Dear Parent, the outstanding balance of ${money(inv.balance)} for ${s.name} (Student ID: ${studentRef}) for ${DB.settings().currentTerm} is due. Please log in to pay or contact the school.`,
+    type: 'warn', read: false, timestamp: now(), link: { view: 'par_fees' }
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: AUTH.current.schoolId || 'sch_brightlights', actor: AUTH.current.id, action: 'manual_reminder_sent', target: `${s.name} · ${money(inv.balance)}`, timestamp: now() });
+  toast(`Reminder sent for ${s.name} (ID: ${studentRef})`, 'success');
+}
+
+function sendBulkReminders() {
+  const invoices = DB.query('invoices', i => i.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && i.balance > 0);
+  if (invoices.length === 0) { toast('No outstanding invoices to remind', 'info'); return; }
+  modal({
+    title: 'Send Bulk Reminders',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+          ${icon('bell','w-4 h-4 inline')} This will send a payment reminder to <strong>${invoices.length} parent(s)</strong> with outstanding balances. Each reminder includes the student's unique ID for reference.
+        </div>
+        <div>
+          <label class="input-label">Custom Message (optional)</label>
+          <textarea id="bulk_reminder_msg" class="input" rows="3" placeholder="Dear Parent, please be reminded that your child's school fees are due…"></textarea>
+        </div>
+      </div>
+    `,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmBulkReminders()">${icon('send','w-4 h-4')} Send ${invoices.length} Reminders</button>
+    `
+  });
+}
+
+function confirmBulkReminders() {
+  const customMsg = document.getElementById('bulk_reminder_msg') ? document.getElementById('bulk_reminder_msg').value.trim() : '';
+  const invoices = DB.query('invoices', i => i.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && i.balance > 0);
+  let sent = 0;
+  invoices.forEach(inv => {
+    const s = DB.find('students', inv.studentId);
+    if (!s || !s.parentId) return;
+    const studentRef = s.studentId || s.id.slice(-6).toUpperCase();
+    const msg = customMsg || `Dear Parent, the outstanding school fee balance of ${money(inv.balance)} for ${s.name} (Student ID: ${studentRef}) is due for ${DB.settings().currentTerm}. Please pay promptly.`;
+    DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Fee Payment Reminder', body: msg, type: 'warn', read: false, timestamp: now(), link: { view: 'par_fees' } });
+    sent++;
+  });
+  document.getElementById('modalBackdrop').click();
+  DB.insert('auditLog', { id: uid('aud'), schoolId: AUTH.current.schoolId || 'sch_brightlights', actor: AUTH.current.id, action: 'bulk_reminders_sent', target: `${sent} parents notified`, timestamp: now() });
+  toast(`${sent} reminder${sent !== 1 ? 's' : ''} sent to parents`, 'success');
+  APP.render();
+}
+
+function invoiceReminderSettingsModal() {
+  const s = DB.settings();
+  const reminderCfg = s.invoiceReminders || { autoEnabled: false, daysBeforeDue: 3, daysAfterDue: 7, frequency: 'weekly', includeStudentId: true };
+  modal({
+    title: 'Invoice Reminder Settings',
+    size: 'lg',
+    body: `
+      <div class="space-y-4">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          ${icon('info','w-4 h-4 inline')} Configure automated reminders that the system sends to parents. You can also trigger manual reminders from the Invoices page.
+        </div>
+        <div class="card p-4 space-y-3">
+          <h4 class="font-bold text-slate-900">Automated Reminders</h4>
+          <div class="flex items-center gap-3">
+            <input type="checkbox" id="rem_auto" class="w-4 h-4" ${reminderCfg.autoEnabled ? 'checked' : ''} />
+            <label for="rem_auto" class="text-sm font-medium">Enable automated invoice reminders</label>
+          </div>
+          <div class="grid sm:grid-cols-3 gap-3">
+            <div>
+              <label class="input-label">Days before due</label>
+              <input type="number" id="rem_before" class="input" value="${reminderCfg.daysBeforeDue}" min="1" max="30" />
+            </div>
+            <div>
+              <label class="input-label">Days after due (overdue)</label>
+              <input type="number" id="rem_after" class="input" value="${reminderCfg.daysAfterDue}" min="1" max="90" />
+            </div>
+            <div>
+              <label class="input-label">Frequency</label>
+              <select id="rem_freq" class="input">
+                <option ${reminderCfg.frequency==='daily'?'selected':''}>daily</option>
+                <option ${reminderCfg.frequency==='weekly'?'selected':''}>weekly</option>
+                <option ${reminderCfg.frequency==='bi-weekly'?'selected':''}>bi-weekly</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <input type="checkbox" id="rem_sid" class="w-4 h-4" ${reminderCfg.includeStudentId ? 'checked' : ''} />
+            <label for="rem_sid" class="text-sm">Include Student ID in reminder message</label>
+          </div>
+        </div>
+        <div class="card p-4">
+          <h4 class="font-bold text-slate-900 mb-2">Manual Reminder Trigger</h4>
+          <p class="text-sm text-slate-600 mb-2">You can send manual reminders any time from the Invoices page using the <strong>"Send reminder"</strong> button per student, or <strong>"Remind All"</strong> to notify all parents with outstanding balances.</p>
+          <button class="btn btn-secondary text-sm" onclick="document.getElementById('modalBackdrop').click(); setTimeout(sendBulkReminders, 300)">${icon('send','w-4 h-4')} Open Bulk Reminder Trigger</button>
+        </div>
+      </div>
+    `,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveInvoiceReminderSettings()">${icon('check','w-4 h-4')} Save Settings</button>
+    `
+  });
+}
+
+function saveInvoiceReminderSettings() {
+  const autoEnabled = document.getElementById('rem_auto') ? document.getElementById('rem_auto').checked : false;
+  const daysBeforeDue = parseInt(document.getElementById('rem_before').value) || 3;
+  const daysAfterDue = parseInt(document.getElementById('rem_after').value) || 7;
+  const frequency = document.getElementById('rem_freq').value;
+  const includeStudentId = document.getElementById('rem_sid') ? document.getElementById('rem_sid').checked : true;
+  DB.settings({ invoiceReminders: { autoEnabled, daysBeforeDue, daysAfterDue, frequency, includeStudentId } });
+  document.getElementById('modalBackdrop').click();
+  toast('Reminder settings saved', 'success');
+}
+
+function bulkGenerateInvoicesModal() {
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const students = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
+  const feeStructures = DB.get('feeStructures');
+  const currentTerm = DB.settings().currentTerm;
+  const currentYear = new Date().getFullYear().toString();
+  const currentSession = DB.settings().currentSession || `${currentYear}/${parseInt(currentYear)+1}`;
+
+  // Check who already has an invoice for this term
+  const existingInvoiceStudents = new Set(DB.query('invoices', i => i.schoolId === schoolId && i.term === currentTerm).map(i => i.studentId));
+
+  const returning = students.filter(s => {
+    const isNew = s.enrollmentSession === currentSession || s.enrollmentYear === currentYear || (s.admissionDate && s.admissionDate.startsWith(currentYear));
+    return !isNew;
+  });
+  const noInvoiceYet = returning.filter(s => !existingInvoiceStudents.has(s.id));
+
+  modal({
+    title: 'Bulk Invoice Generation',
+    size: 'lg',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          Generate invoices for all returning students who don't yet have one for <strong>${currentTerm}</strong>. New enrollments are excluded — their invoices are created during student registration.
+        </div>
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div class="bg-slate-50 rounded-xl p-3">
+            <div class="text-2xl font-extrabold text-slate-900">${returning.length}</div>
+            <div class="text-xs text-slate-500">Returning students</div>
+          </div>
+          <div class="bg-amber-50 rounded-xl p-3">
+            <div class="text-2xl font-extrabold text-amber-700">${existingInvoiceStudents.size}</div>
+            <div class="text-xs text-amber-600">Already invoiced</div>
+          </div>
+          <div class="bg-emerald-50 rounded-xl p-3">
+            <div class="text-2xl font-extrabold text-emerald-700">${noInvoiceYet.length}</div>
+            <div class="text-xs text-emerald-600">Will be invoiced</div>
+          </div>
+        </div>
+        ${noInvoiceYet.length === 0 ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">All returning students already have invoices for this term. Nothing to generate.</div>` : `
+        <div class="bg-slate-50 rounded-xl p-3 text-sm space-y-1 max-h-48 overflow-y-auto">
+          <div class="font-semibold text-slate-700 mb-2">Students to be invoiced:</div>
+          ${noInvoiceYet.map(s => {
+            const cls = DB.find('classes', s.classId);
+            const fs = feeStructures.find(f => f.classId === s.classId && f.term === currentTerm);
+            const total = fs ? fs.tuition + fs.books + fs.uniform + fs.pta : 0;
+            return `<div class="flex items-center justify-between py-1 border-b border-slate-200 last:border-0">
+              <div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-xs">${s.name}</div><div class="text-xs text-slate-400">${cls ? cls.name : '—'}</div></div></div>
+              <span class="text-xs font-mono ${total > 0 ? 'text-slate-700' : 'text-amber-600'}">${total > 0 ? money(total) : 'No fee structure'}</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="text-xs text-slate-500 bg-amber-50 border border-amber-200 rounded-xl p-3">
+          Students without a matching fee structure for ${currentTerm} will be skipped. Set up fee structures under <strong>Fee Structure → New Structure</strong>.
+        </div>`}
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             ${noInvoiceYet.length > 0 ? `<button class="btn btn-primary" onclick="confirmBulkGenerateInvoices()">${icon('check','w-4 h-4')} Generate ${noInvoiceYet.length} Invoices</button>` : ''}`
+  });
+}
+
+function confirmBulkGenerateInvoices() {
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const students = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
+  const feeStructures = DB.get('feeStructures');
+  const currentTerm = DB.settings().currentTerm;
+  const currentYear = new Date().getFullYear().toString();
+  const currentSession = DB.settings().currentSession || `${currentYear}/${parseInt(currentYear)+1}`;
+  const existingInvoiceStudents = new Set(DB.query('invoices', i => i.schoolId === schoolId && i.term === currentTerm).map(i => i.studentId));
+  const returning = students.filter(s => {
+    const isNew = s.enrollmentSession === currentSession || s.enrollmentYear === currentYear || (s.admissionDate && s.admissionDate.startsWith(currentYear));
+    return !isNew && !existingInvoiceStudents.has(s.id);
+  });
+  let created = 0, skipped = 0;
+  returning.forEach(s => {
+    const fs = feeStructures.find(f => f.classId === s.classId && f.term === currentTerm);
+    if (!fs) { skipped++; return; }
+    const total = fs.tuition + fs.books + fs.uniform + fs.pta;
+    DB.insert('invoices', {
+      id: uid('inv'), schoolId, studentId: s.id, term: currentTerm,
+      lineItems: [{ name: 'Tuition Fee', amount: fs.tuition }, { name: 'Books & Materials', amount: fs.books }, { name: 'Uniform', amount: fs.uniform }, { name: 'PTA Levy', amount: fs.pta }],
+      total, paid: 0, balance: total, status: 'outstanding', dueDate: fs.dueDate, createdAt: now()
+    });
+    // Notify parent
+    if (s.parentId) DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'New Invoice', body: `${s.name}'s invoice for ${currentTerm} is ready. Total: ${money(total)}.`, type: 'info', read: false, timestamp: now(), link: { view: 'par_fees' } });
+    created++;
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId, actor: AUTH.current.id, action: 'bulk_invoiced', target: `${created} students · ${currentTerm}`, timestamp: now() });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast(`${created} invoices generated${skipped > 0 ? ` · ${skipped} skipped (no fee structure)` : ''}`, 'success');
+}
+
+function exportPerChildReport() {
+  const students = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && s.status === 'active');
+  const expenses = DB.query('expenses', e => e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const totalExp = expenses.reduce((s, e) => s + e.amount, 0);
+  const perCap = students.length > 0 ? totalExp / students.length : 0;
+  let csv = `Student,Student ID,Class,Total Billed,Paid,Balance,Per-Child Expenses,Net Income,Status\n`;
+  students.forEach(s => {
+    const inv = COMPUTE.studentInvoice(s.id);
+    const cls = DB.find('classes', s.classId);
+    const paid = inv ? inv.paid : 0;
+    const balance = inv ? inv.balance : 0;
+    const total = inv ? inv.total : 0;
+    const net = paid - perCap;
+    csv += `"${s.name}","${s.studentId || s.id.slice(-6)}","${cls ? cls.name : ''}",${total},${paid},${balance},${Math.round(perCap)},${Math.round(net)},"${inv ? inv.status : 'no invoice'}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `per_child_finance_${DB.settings().currentTerm.replace(/\s/g,'_')}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  toast('Per-child report exported', 'success');
 }
 
 /* ---------- Fee Structure (tabs: Class Fees + Activities) ---------- */
@@ -457,6 +740,34 @@ function feeStructureModal(editingId) {
           <span class="font-semibold text-brand-800">Total per student</span>
           <span class="text-xl font-extrabold text-brand-700" id="fs_total">${money((existing ? existing.tuition + existing.books + existing.uniform + existing.pta : 250000))}</span>
         </div>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <div class="relative">
+              <input type="checkbox" id="fs_installment" class="sr-only peer" ${existing && existing.installmentEnabled ? 'checked' : ''} onchange="toggleInstallmentOptions()" />
+              <div class="w-10 h-5 bg-slate-300 peer-checked:bg-brand-600 rounded-full transition-colors"></div>
+              <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+            </div>
+            <div>
+              <div class="font-semibold text-sm text-slate-900">Allow Instalment Payments</div>
+              <div class="text-xs text-slate-500">Parents can pay in 2 or 3 parts instead of in full upfront</div>
+            </div>
+          </label>
+          <div id="fs_installmentOptions" class="${existing && existing.installmentEnabled ? '' : 'hidden'} mt-3 pt-3 border-t border-slate-200 space-y-2">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="input-label text-xs">Max Instalments</label>
+                <select id="fs_maxInstalments" class="input">
+                  <option value="2" ${existing && existing.maxInstalments === 2 ? 'selected' : ''}>2 parts</option>
+                  <option value="3" ${existing && existing.maxInstalments === 3 ? 'selected' : ''}>3 parts</option>
+                </select>
+              </div>
+              <div>
+                <label class="input-label text-xs">Minimum 1st Payment (%)</label>
+                <input id="fs_minFirstPct" type="number" min="20" max="80" class="input" value="${existing && existing.minFirstPct ? existing.minFirstPct : 50}" placeholder="e.g. 50" />
+              </div>
+            </div>
+          </div>
+        </div>
         ${isEdit ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
           <strong>Note:</strong> Editing this structure does not retroactively change existing invoices. New invoices generated from this point will use the updated amounts.
         </div>` : ''}
@@ -467,6 +778,12 @@ function feeStructureModal(editingId) {
   });
 }
 
+function toggleInstallmentOptions() {
+  const el = document.getElementById('fs_installmentOptions');
+  const cb = document.getElementById('fs_installment');
+  if (el && cb) el.classList.toggle('hidden', !cb.checked);
+}
+
 function updateFeeTotal() {
   const total = ['fs_tuition','fs_books','fs_uniform','fs_pta'].reduce((s, id) => { const el = document.getElementById(id); return s + (el ? (parseInt(el.value) || 0) : 0); }, 0);
   const el = document.getElementById('fs_total');
@@ -474,6 +791,7 @@ function updateFeeTotal() {
 }
 
 function saveFeeStructure(editingId) {
+  const installmentEnabled = (document.getElementById('fs_installment') || {}).checked || false;
   const data = {
     schoolId: 'sch_brightlights',
     classId: document.getElementById('fs_class').value,
@@ -482,7 +800,10 @@ function saveFeeStructure(editingId) {
     books: parseInt(document.getElementById('fs_books').value) || 0,
     uniform: parseInt(document.getElementById('fs_uniform').value) || 0,
     pta: parseInt(document.getElementById('fs_pta').value) || 0,
-    dueDate: document.getElementById('fs_due').value
+    dueDate: document.getElementById('fs_due').value,
+    installmentEnabled,
+    maxInstalments: installmentEnabled ? parseInt((document.getElementById('fs_maxInstalments') || {}).value) || 2 : null,
+    minFirstPct: installmentEnabled ? parseInt((document.getElementById('fs_minFirstPct') || {}).value) || 50 : null
   };
   if (!data.term) { toast('Term is required', 'danger'); return; }
   if (editingId) {
@@ -508,17 +829,27 @@ function deleteFeeStructure(id) {
 
 /* ---------- Invoices ---------- */
 function view_fin_invoices() {
-  const invoices = DB.query('invoices', i => i.schoolId === 'sch_brightlights');
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const invoices = DB.query('invoices', i => i.schoolId === schoolId);
   const filter = APP.params.invStatus || 'all';
   const q = (APP.params.invQ || '').toLowerCase();
   const byStatus = filter === 'all' ? invoices : invoices.filter(i => i.status === filter);
   const filtered = q ? byStatus.filter(i => {
     const s = DB.find('students', i.studentId);
-    return s && s.name.toLowerCase().includes(q);
+    return s && (s.name.toLowerCase().includes(q) || (s.studentId || '').toLowerCase().includes(q));
   }) : byStatus;
+  const overdueCount = invoices.filter(i => i.balance > 0 && i.dueDate && i.dueDate < today()).length;
 
   return `
-    ${pageHeader({ title: 'Invoices', subtitle: `${invoices.length} invoices for ${DB.settings().currentTerm}` })}
+    ${pageHeader({
+      title: 'Invoices',
+      subtitle: `${invoices.length} invoices for ${DB.settings().currentTerm}`,
+      actions: `
+        <button class="btn btn-secondary" onclick="invoiceReminderSettingsModal()">${icon('settings','w-4 h-4')} Reminder Settings</button>
+        <button class="btn btn-secondary" onclick="bulkGenerateInvoicesModal()">${icon('plus','w-4 h-4')} Bulk Generate</button>
+        ${overdueCount > 0 ? `<button class="btn btn-primary" onclick="sendBulkReminders()">${icon('send','w-4 h-4')} Remind ${overdueCount} Overdue</button>` : ''}
+      `
+    })}
     <div class="card p-3 mb-3">
       <div class="relative">
         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${icon('search','w-4 h-4')}</span>
@@ -756,58 +1087,188 @@ function exportPayments() {
 
 /* ---------- Reconciliation ---------- */
 function view_fin_recon() {
-  const unrec = DB.query('transactions', t => t.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && !t.reconciled);
-  // Create a synthetic unreconciled transaction for demo
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const unrec = DB.query('transactions', t => t.schoolId === schoolId && !t.reconciled);
   if (unrec.length === 0) {
     DB.insert('transactions', {
-      id: uid('txn'), schoolId: 'sch_brightlights',
+      id: uid('txn'), schoolId,
       invoiceId: null, studentId: null,
       amount: 280000, method: 'transfer',
-      reference: 'TRF-' + Math.random().toString(36).slice(2,10).toUpperCase(),
+      reference: 'TRF-' + Math.floor(Math.random()*99999999).toString(16).toUpperCase(),
       status: 'successful', gateway: 'Paystack',
       timestamp: now(), reconciled: false,
-      narration: 'TRSF/OKAFOR/SCH FEES JSS1'
+      narration: 'TRSF/OKAFOR/SCH FEES JSS1', studentRef: ''
     });
   }
-  const unreconciled = DB.query('transactions', t => t.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && !t.reconciled);
+  const unreconciled = DB.query('transactions', t => t.schoolId === schoolId && !t.reconciled);
+  const allStudents = DB.query('students', s => s.schoolId === schoolId);
   return `
-    ${pageHeader({ title: 'Payment Reconciliation', subtitle: 'Match incoming payments to student invoices' })}
+    ${pageHeader({
+      title: 'Payment Reconciliation',
+      subtitle: 'Match incoming payments to student invoices using Student ID',
+      actions: `
+        <button class="btn btn-secondary" onclick="recordCashPaymentModal()">${icon('fees','w-4 h-4')} Record Cash Payment</button>
+        <button class="btn btn-secondary" onclick="autoMatchAllTransactions()">${icon('ai','w-4 h-4')} Auto-Match All</button>
+      `
+    })}
     <div class="card bg-blue-50 border border-blue-200 p-3 mb-4 text-sm text-blue-900">
-      <strong>${unreconciled.length}</strong> incoming payment${unreconciled.length!==1?'s':''} need${unreconciled.length===1?'s':''} to be matched to a student. Auto-matching uses payment narration and amount.
+      ${icon('info','w-4 h-4 inline mr-1')} <strong>${unreconciled.length}</strong> payment${unreconciled.length!==1?'s':''} need${unreconciled.length===1?'s':''} matching. Primary match: <strong>Student ID</strong> in payment narration or reference. Fallback: name-based matching. You can also enter the Student ID manually.
     </div>
     <div class="card overflow-hidden">
-      <table class="tbl">
-        <thead><tr><th>Reference</th><th>Narration</th><th>Amount</th><th>Method</th><th>Suggested Match</th><th></th></tr></thead>
-        <tbody>
-          ${unreconciled.map(t => {
-            // AI/heuristic match: find a student with similar surname in narration
-            const allStudents = DB.query('students', s => s.schoolId === 'sch_brightlights');
-            const match = allStudents.find(s => (t.narration || '').toUpperCase().includes(s.name.split(' ').slice(-1)[0].toUpperCase()));
-            return `<tr>
-              <td><code class="text-xs">${t.reference}</code></td>
-              <td class="text-sm">${t.narration || '—'}</td>
-              <td class="font-mono font-bold">${money(t.amount)}</td>
-              <td><span class="badge badge-neutral uppercase">${t.method}</span></td>
-              <td>${match ? `<div class="flex items-center gap-2"><span class="badge badge-success">${icon('ai','w-3 h-3')} ${match.name}</span></div>` : '<span class="text-slate-400 text-sm">Manual</span>'}</td>
-              <td><button class="btn btn-primary !py-1.5 text-xs" onclick="reconcileTxn('${t.id}', '${match ? match.id : ''}')">${icon('check','w-3 h-3')} Match</button></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
+      <div class="overflow-x-auto">
+        <table class="tbl">
+          <thead><tr><th>Reference</th><th>Narration</th><th>Amount</th><th>Method</th><th>Student ID Match</th><th>Suggested Student</th><th></th></tr></thead>
+          <tbody>
+            ${unreconciled.map(t => {
+              // Primary match: student ID in narration or reference
+              const narrationUpper = (t.narration || '').toUpperCase();
+              const refUpper = (t.reference || '').toUpperCase();
+              const idMatch = allStudents.find(s => {
+                const sid = (s.studentId || '').toUpperCase();
+                return sid && (narrationUpper.includes(sid) || refUpper.includes(sid));
+              });
+              // Fallback: surname match
+              const nameMatch = !idMatch ? allStudents.find(s => narrationUpper.includes(s.name.split(' ').slice(-1)[0].toUpperCase())) : null;
+              const finalMatch = idMatch || nameMatch;
+              const matchType = idMatch ? 'ID' : nameMatch ? 'Name' : null;
+              return `<tr>
+                <td><code class="text-xs">${t.reference}</code></td>
+                <td class="text-sm max-w-xs">${t.narration || '—'}</td>
+                <td class="font-mono font-bold">${money(t.amount)}</td>
+                <td><span class="badge badge-neutral uppercase text-xs">${t.method}</span></td>
+                <td>${matchType === 'ID' ? `<span class="badge badge-success text-xs">${icon('check','w-3 h-3')} ID matched</span>` : matchType === 'Name' ? `<span class="badge badge-warn text-xs">${icon('ai','w-3 h-3')} Name match</span>` : `<div class="flex gap-1"><input type="text" class="input input-sm w-28 font-mono" placeholder="Student ID" id="sid_${t.id}" /><button class="btn btn-ghost !p-1 text-xs" onclick="lookupStudentId('${t.id}')">${icon('search','w-3.5 h-3.5')}</button></div>`}</td>
+                <td>${finalMatch ? `<div class="font-semibold text-sm">${finalMatch.name}</div><div class="text-xs text-slate-500">ID: ${finalMatch.studentId || finalMatch.id.slice(-6)}</div>` : '<span class="text-slate-400 text-sm">Not found</span>'}</td>
+                <td class="whitespace-nowrap">
+                  <button class="btn btn-primary !py-1.5 text-xs" onclick="reconcileTxn('${t.id}', '${finalMatch ? finalMatch.id : ''}')">${icon('check','w-3 h-3')} Match</button>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
     </div>
   `;
 }
 
+function lookupStudentId(txnId) {
+  const input = document.getElementById(`sid_${txnId}`);
+  if (!input) return;
+  const sid = input.value.trim().toUpperCase();
+  const allStudents = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const found = allStudents.find(s => (s.studentId || '').toUpperCase() === sid || s.id.slice(-6).toUpperCase() === sid);
+  if (found) {
+    toast(`Found: ${found.name} — click Match to confirm`, 'success');
+    reconcileTxn(txnId, found.id);
+  } else {
+    toast('No student found with that ID', 'danger');
+  }
+}
+
+function autoMatchAllTransactions() {
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const unreconciled = DB.query('transactions', t => t.schoolId === schoolId && !t.reconciled);
+  const allStudents = DB.query('students', s => s.schoolId === schoolId);
+  let matched = 0;
+  unreconciled.forEach(t => {
+    const narUp = (t.narration || '').toUpperCase();
+    const refUp = (t.reference || '').toUpperCase();
+    const idMatch = allStudents.find(s => { const sid = (s.studentId || '').toUpperCase(); return sid && (narUp.includes(sid) || refUp.includes(sid)); });
+    if (idMatch) { reconcileTxnSilent(t.id, idMatch.id); matched++; }
+  });
+  toast(matched > 0 ? `${matched} transaction${matched > 1 ? 's' : ''} auto-matched by student ID` : 'No ID-based matches found — manual review needed', matched > 0 ? 'success' : 'warn');
+  APP.render();
+}
+
+function reconcileTxnSilent(txnId, studentId) {
+  if (!studentId) return;
+  const inv = DB.query('invoices', i => i.studentId === studentId)[0];
+  const txn = DB.find('transactions', txnId);
+  if (inv && txn && !txn.reconciled) {
+    DB.update('invoices', inv.id, { paid: inv.paid + txn.amount, balance: Math.max(0, inv.balance - txn.amount), status: (inv.balance - txn.amount <= 0) ? 'paid' : 'partial' });
+    DB.update('transactions', txnId, { reconciled: true, studentId, invoiceId: inv.id });
+  }
+}
+
 function reconcileTxn(txnId, studentId) {
-  if (!studentId) { toast('No matching student found — manual match needed', 'warn'); return; }
+  if (!studentId) {
+    const input = document.getElementById(`sid_${txnId}`);
+    const sid = input ? input.value.trim() : '';
+    if (!sid) { toast('Enter a Student ID to match manually', 'warn'); return; }
+    lookupStudentId(txnId); return;
+  }
   const inv = DB.query('invoices', i => i.studentId === studentId)[0];
   const txn = DB.find('transactions', txnId);
   if (inv && txn) {
     DB.update('invoices', inv.id, { paid: inv.paid + txn.amount, balance: Math.max(0, inv.balance - txn.amount), status: (inv.balance - txn.amount <= 0) ? 'paid' : 'partial' });
     DB.update('transactions', txnId, { reconciled: true, studentId, invoiceId: inv.id });
-    toast('Transaction matched and student balance updated', 'success');
+    const s = DB.find('students', studentId);
+    toast(`Matched: ${s ? s.name : 'Student'} — balance updated`, 'success');
     APP.render();
+  } else {
+    toast('Could not complete match — check student invoice', 'warn');
   }
+}
+
+function recordCashPaymentModal() {
+  const allStudents = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && s.status === 'active');
+  modal({
+    title: 'Record Cash Payment',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+          ${icon('check','w-4 h-4 inline')} Use the student's unique ID to ensure accurate payment matching.
+        </div>
+        <div>
+          <label class="input-label">Student ID</label>
+          <div class="flex gap-2">
+            <input type="text" id="cash_sid" class="input font-mono flex-1" placeholder="e.g. STU-2024-001" oninput="cashLookupStudent(this.value)" />
+          </div>
+          <div id="cash_student_info" class="mt-1 text-sm text-slate-600"></div>
+        </div>
+        <div><label class="input-label">Amount (₦)</label><input type="number" id="cash_amount" class="input" placeholder="0.00" /></div>
+        <div><label class="input-label">Date</label><input type="date" id="cash_date" class="input" value="${today()}" /></div>
+        <div><label class="input-label">Receipt Note</label><input type="text" id="cash_note" class="input" placeholder="School fees payment — First Term" /></div>
+      </div>
+    `,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCashPayment()">${icon('check','w-4 h-4')} Record Payment</button>
+    `
+  });
+}
+
+function cashLookupStudent(sid) {
+  const allStudents = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const found = allStudents.find(s => (s.studentId || '').toUpperCase() === sid.toUpperCase() || s.id.slice(-6).toUpperCase() === sid.toUpperCase());
+  const info = document.getElementById('cash_student_info');
+  if (info) info.textContent = found ? `✓ ${found.name} — ${(DB.find('classes', found.classId) || {}).name || ''}` : sid ? '✗ No student found' : '';
+}
+
+function saveCashPayment() {
+  const sidInput = document.getElementById('cash_sid');
+  const amount = parseFloat(document.getElementById('cash_amount').value);
+  const date = document.getElementById('cash_date').value;
+  const note = document.getElementById('cash_note').value.trim();
+  if (!amount || amount <= 0) { toast('Enter a valid amount', 'danger'); return; }
+  const sid = sidInput ? sidInput.value.trim() : '';
+  const allStudents = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const student = allStudents.find(s => (s.studentId || '').toUpperCase() === sid.toUpperCase() || s.id.slice(-6).toUpperCase() === sid.toUpperCase());
+  if (!student) { toast('Enter a valid Student ID first', 'danger'); return; }
+  const inv = DB.query('invoices', i => i.studentId === student.id)[0];
+  const txnId = uid('txn');
+  DB.insert('transactions', {
+    id: txnId, schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    studentId: student.id, invoiceId: inv ? inv.id : null,
+    amount, method: 'cash', status: 'successful',
+    reference: `CASH-${Date.now().toString(36).toUpperCase()}`,
+    narration: note || 'Cash payment recorded', timestamp: now(), reconciled: true
+  });
+  if (inv) {
+    DB.update('invoices', inv.id, { paid: inv.paid + amount, balance: Math.max(0, inv.balance - amount), status: (inv.balance - amount <= 0) ? 'paid' : 'partial' });
+  }
+  document.getElementById('modalBackdrop').click();
+  toast(`Cash payment of ${money(amount)} recorded for ${student.name}`, 'success');
+  APP.render();
 }
 
 /* ---------- Expenses ---------- */
@@ -1165,7 +1626,7 @@ function view_fin_payroll() {
   return `
     ${pageHeader({
       title: 'Payroll',
-      subtitle: '4-stage approval: HR computes → Accounting validates → Pay → Post-payroll',
+      subtitle: 'HR manages adjustments & initiates · Accountant confirms funds & authorizes disbursement',
       actions: `<button class="btn btn-secondary" onclick="exportPayrollCSV()">${icon('download','w-4 h-4')} Export Payroll Schedule</button>`
     })}
 
@@ -1285,21 +1746,25 @@ function renderPayrollStageAction(run) {
     `;
   }
   if (run.stage === 'pending_approval') {
+    const txns = DB.query('transactions', t => t.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && t.status === 'successful');
+    const cashOnHand = txns.reduce((s, t) => s + t.amount, 0) - (DB.query('expenses', e => e.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).reduce((s, e) => s + e.amount, 0));
+    const sufficient = cashOnHand >= run.netTotal;
     return `
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-lg bg-blue-200 text-blue-800 flex items-center justify-center flex-shrink-0">${icon('check','w-5 h-5')}</div>
           <div class="flex-1">
-            <div class="font-bold text-blue-900">Accounting — Validate &amp; Approve</div>
-            <p class="text-sm text-blue-800 mt-1">Submitted by HR on ${fdate(run.submittedAt, { long: true })}. Check fund availability, then approve to disburse.</p>
+            <div class="font-bold text-blue-900">Accountant — Confirm Funds &amp; Authorize Disbursement</div>
+            <p class="text-sm text-blue-800 mt-1">HR submitted this payroll on ${fdate(run.submittedAt, { long: true })}. As Accountant, your role is to confirm fund availability and authorize the payment. HR cannot disburse without your authorization.</p>
             <div class="bg-white rounded-lg p-3 mt-2 grid grid-cols-3 gap-3 text-sm">
-              <div><div class="text-xs text-slate-500">Required</div><div class="font-mono font-bold">${money(run.netTotal)}</div></div>
-              <div><div class="text-xs text-slate-500">Cash on hand</div><div class="font-mono font-bold text-emerald-700">${money(8500000)}</div></div>
-              <div><div class="text-xs text-slate-500">Status</div><div class="font-bold text-emerald-700">${icon('check','w-3 h-3 inline')} Sufficient</div></div>
+              <div><div class="text-xs text-slate-500">Amount Required</div><div class="font-mono font-bold">${money(run.netTotal)}</div></div>
+              <div><div class="text-xs text-slate-500">Available Balance</div><div class="font-mono font-bold ${sufficient ? 'text-emerald-700' : 'text-rose-700'}">${money(Math.max(0, cashOnHand))}</div></div>
+              <div><div class="text-xs text-slate-500">Fund Status</div><div class="font-bold ${sufficient ? 'text-emerald-700' : 'text-rose-700'}">${sufficient ? icon('check','w-3 h-3 inline') + ' Sufficient' : icon('x','w-3 h-3 inline') + ' Insufficient'}</div></div>
             </div>
+            ${!sufficient ? `<div class="bg-rose-50 border border-rose-200 rounded-lg p-2 mt-2 text-xs text-rose-900">${icon('bell','w-3.5 h-3.5 inline')} Available funds may be insufficient. Review expenses and collections before authorizing.</div>` : ''}
             <div class="flex gap-2 mt-3 flex-wrap">
-              <button class="btn btn-secondary text-sm" onclick="sendBackPayroll('${run.id}')">${icon('arrow_left','w-3.5 h-3.5')} Send back to HR</button>
-              <button class="btn btn-primary" onclick="approvePayrollRun('${run.id}')">${icon('check','w-4 h-4')} Approve for Payment →</button>
+              <button class="btn btn-secondary text-sm" onclick="sendBackPayroll('${run.id}')">${icon('arrow_left','w-3.5 h-3.5')} Return to HR</button>
+              <button class="btn btn-primary ${!sufficient ? '!bg-amber-600' : ''}" onclick="approvePayrollRun('${run.id}')">${icon('check','w-4 h-4')} ${sufficient ? 'Authorize Disbursement →' : 'Authorize Anyway →'}</button>
             </div>
           </div>
         </div>
@@ -1714,9 +2179,9 @@ function renderProfitLoss() {
     <div class="card p-5 mb-4">
       <h3 class="font-bold text-slate-900 mb-4">Profit & Loss · ${DB.settings().currentTerm}</h3>
       <table class="w-full text-sm"><tbody>
-        <tr class="border-b"><td class="py-3 font-bold text-slate-900">REVENUE</td><td></td></tr>
+        <tr class="border-b"><td class="py-3 font-bold text-slate-900">INCOME</td><td></td></tr>
         ${[['Tuition Fees', f.collected * 0.65], ['Other Fees', f.collected * 0.35]].map(([n, a]) => `<tr class="border-b"><td class="py-2 pl-4">${n}</td><td class="text-right font-mono">${money(a)}</td></tr>`).join('')}
-        <tr class="border-b bg-emerald-50"><td class="py-2 font-bold">Total Revenue</td><td class="text-right font-bold font-mono text-emerald-700">${money(f.collected)}</td></tr>
+        <tr class="border-b bg-emerald-50"><td class="py-2 font-bold">Total Income</td><td class="text-right font-bold font-mono text-emerald-700">${money(f.collected)}</td></tr>
         <tr class="border-b"><td class="py-3 font-bold text-slate-900 pt-4">EXPENSES</td><td></td></tr>
         ${expByCat.map(([n, a]) => `<tr class="border-b"><td class="py-2 pl-4">${n}</td><td class="text-right font-mono">${money(a)}</td></tr>`).join('')}
         <tr class="border-b bg-rose-50"><td class="py-2 font-bold">Total Expenses</td><td class="text-right font-bold font-mono text-rose-700">${money(f.totalExp)}</td></tr>
@@ -1757,7 +2222,7 @@ function renderTrialBalance() {
     ['Expenses', f.totalExp]
   ];
   const credits = [
-    ['Fee Revenue', f.billed],
+    ['Fee Income', f.billed],
     ['Sundry Payables', f.totalExp]
   ];
   const totalDr = debits.reduce((s, d) => s + d[1], 0);

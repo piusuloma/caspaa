@@ -1386,9 +1386,9 @@ function createLessonModal() {
           <div><label class="input-label">Week</label><input id="lp_week" class="input" placeholder="e.g. Week 7" /></div>
           <div><label class="input-label">Topic</label><input id="lp_topic" class="input" placeholder="e.g. Quadratic Equations" /></div>
         </div>
-        <div><label class="input-label">Objectives</label><textarea id="lp_obj" rows="2" class="input"></textarea></div>
-        <div><label class="input-label">Activities</label><textarea id="lp_act" rows="2" class="input"></textarea></div>
-        <div><label class="input-label">Resources / Materials</label><input id="lp_res" class="input" /></div>
+        <div><label class="input-label">Objectives</label><textarea id="lp_obj" rows="2" class="input" placeholder="e.g. Students will be able to solve quadratic equations using the factorisation method"></textarea></div>
+        <div><label class="input-label">Activities</label><textarea id="lp_act" rows="2" class="input" placeholder="e.g. Group work, think-pair-share, guided practice on the board"></textarea></div>
+        <div><label class="input-label">Resources / Materials</label><input id="lp_res" class="input" placeholder="e.g. Textbook p.55, graph paper, coloured markers" /></div>
         <div>
           <label class="input-label">Attach Lesson Plan File (PDF / Word / Image — optional)</label>
           <input type="file" id="lp_fileInput" accept="application/pdf,.doc,.docx,image/*" class="hidden" onchange="onLessonFilePick(event)" />

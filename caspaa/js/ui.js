@@ -248,7 +248,14 @@ function statusBadge(status) {
     failed: { cls: 'badge-danger', label: 'Failed' },
     present: { cls: 'badge-success', label: 'Present' },
     absent: { cls: 'badge-danger', label: 'Absent' },
-    late: { cls: 'badge-warn', label: 'Late' }
+    late: { cls: 'badge-warn', label: 'Late' },
+    reviewing: { cls: 'badge-info', label: 'Reviewing' },
+    accepted: { cls: 'badge-success', label: 'Accepted' },
+    transferred: { cls: 'badge-neutral', label: 'Transferred' },
+    withdrawn: { cls: 'badge-neutral', label: 'Withdrawn' },
+    alumni: { cls: 'badge-info', label: 'Alumni' },
+    visit_scheduled: { cls: 'badge-info', label: 'Visit Scheduled' },
+    visit_confirmed: { cls: 'badge-success', label: 'Visit Confirmed' }
   };
   const m = map[status] || { cls: 'badge-neutral', label: status };
   return `<span class="badge ${m.cls}">${m.label}</span>`;
