@@ -227,32 +227,13 @@ function view_adm_appraisal_cycles() {
   const sid = currentSchoolId();
   const cycleId = APP.params.aprCycle || null;
   const cycles = DB.query('appraisalCycles', c => c.schoolId === sid).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
-  const needsManager = DB.query('appraisals', a => a.schoolId === sid && a.status === 'manager_pending').length;
-  const needsPrincipal = DB.query('appraisals', a => a.schoolId === sid && a.status === 'principal_pending').length;
-  const needsOutcome = DB.query('appraisals', a => a.schoolId === sid && a.status === 'outcome_pending').length;
-  const actionNeeded = needsManager + needsPrincipal + needsOutcome;
-
-  return `
-    <div class="grid grid-cols-3 gap-3 mb-4">
-      ${statCard({ label: 'Active Cycles', value: cycles.filter(c=>c.status!=='closed').length, icon: 'calendar', color: 'brand' })}
-      ${statCard({ label: 'Need Your Action', value: actionNeeded, icon: 'bell', color: actionNeeded ? 'rose' : 'brand', trend: actionNeeded ? { direction: 'down', label: `${needsManager} manager · ${needsPrincipal} principal` } : { direction: 'up', label: 'all up to date' } })}
-      ${statCard({ label: 'Completed', value: DB.query('appraisals', a => a.schoolId === sid && a.status === 'completed').length, icon: 'check', color: 'brand' })}
-    </div>
-    ${_renderCycles(cycles, cycleId)}
-  `;
+  return _renderCycles(cycles, cycleId);
 }
 
 function view_adm_salary_advances() {
   const sid = currentSchoolId();
   const advances = DB.query('salaryAdvances', a => a.schoolId === sid).sort((a,b) => b.requestedAt.localeCompare(a.requestedAt));
-  const pendingAdv = advances.filter(a => a.status === 'pending');
-  return `
-    <div class="grid grid-cols-2 gap-3 mb-4">
-      ${statCard({ label: 'Pending Advances', value: pendingAdv.length, icon: 'fees', color: pendingAdv.length ? 'gold' : 'brand' })}
-      ${statCard({ label: 'Total Requests', value: advances.length, icon: 'reports', color: 'brand' })}
-    </div>
-    ${_renderSalaryAdvances(advances)}
-  `;
+  return _renderSalaryAdvances(advances);
 }
 
 /* ---- Cycles list ---- */
@@ -827,7 +808,7 @@ function view_adm_curriculum() {
       title: 'Curriculum (Schemes of Work)',
       subtitle: 'Term-by-term, week-by-week topic plans · NERDC / UBEC aligned',
       actions: `
-        <button class="btn btn-secondary" onclick="importExcelCurriculumModal()">${icon('upload','w-4 h-4')} Import Excel</button>
+        <button class="btn btn-secondary" onclick="importFullSchoolCurriculumModal()">${icon('upload','w-4 h-4')} Import Full School CSV</button>
         <button class="btn btn-secondary" onclick="importNERDCTemplateModal()">${icon('download','w-4 h-4')} Import NERDC Template</button>
         <button class="btn btn-primary" onclick="newSchemeModal()">${icon('plus','w-4 h-4')} New Scheme</button>
       `
@@ -1260,6 +1241,98 @@ function processExcelCurriculum() {
   document.getElementById('modalBackdrop').click();
   toast(`${created} subject scheme${created !== 1 ? 's' : ''} imported for ${cls ? cls.name : 'class'}`, 'success');
   APP.render();
+}
+
+/* School-wide curriculum CSV import
+   Expected CSV columns: Class, Subject, Week, Topic, Objectives, Activities, Resources
+   One row per week per subject per class. */
+function importFullSchoolCurriculumModal() {
+  const term = DB.settings().currentTerm;
+  modal({
+    title: 'Import Full-School Curriculum (CSV)',
+    size: 'lg',
+    body: `
+      <div class="space-y-4">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          ${icon('info','w-4 h-4 inline mr-1')} Upload one CSV file covering <strong>all classes and subjects</strong> for the school. Each row = one week of a subject.
+          <div class="mt-2 font-mono text-xs bg-white rounded p-2 border border-blue-100 text-slate-700">
+            Class,Subject,Week,Topic,Objectives,Activities,Resources<br>
+            JSS 1,Mathematics,1,Number Bases,Understand base 10 and 2,Group work,Textbook<br>
+            JSS 1,Mathematics,2,Algebraic Expressions,…,…,…
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div><label class="input-label">Term</label><input id="fsc_term" class="input" value="${term}" readonly /></div>
+          <div><label class="input-label">CSV File</label><input type="file" id="fsc_file" class="input" accept=".csv" onchange="previewFullSchoolCSV()" /></div>
+        </div>
+        <div id="fsc_preview" class="hidden">
+          <div class="text-xs font-semibold text-slate-600 mb-2">Preview (first 10 rows)</div>
+          <div class="card overflow-hidden"><div class="overflow-x-auto" id="fsc_preview_table"></div></div>
+          <div id="fsc_summary" class="mt-2 text-sm text-slate-700"></div>
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button id="fsc_import_btn" class="btn btn-primary hidden" onclick="confirmFullSchoolImport()">${icon('check','w-4 h-4')} Import All Schemes</button>`
+  });
+}
+
+function previewFullSchoolCSV() {
+  const file = document.getElementById('fsc_file').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+    const rows = lines.map(l => l.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+    const headers = rows[0] || [];
+    const data = rows.slice(1).filter(r => r.length >= 4 && r[0]);
+    const preview = data.slice(0, 10);
+    // Count unique class×subject combos
+    const combos = new Set(data.map(r => `${r[0]}|${r[1]}`));
+    document.getElementById('fsc_preview_table').innerHTML = `
+      <table class="tbl text-xs">
+        <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>${preview.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>`;
+    document.getElementById('fsc_summary').innerHTML = `<span class="text-brand-700 font-semibold">${data.length} rows</span> · <span class="text-brand-700 font-semibold">${combos.size} class-subject schemes</span> will be created.`;
+    document.getElementById('fsc_preview').classList.remove('hidden');
+    document.getElementById('fsc_import_btn').classList.remove('hidden');
+    window._fscCSVData = data;
+  };
+  reader.readAsText(file);
+}
+
+function confirmFullSchoolImport() {
+  const data = window._fscCSVData;
+  if (!data || !data.length) { toast('No data to import', 'danger'); return; }
+  const term = document.getElementById('fsc_term').value.trim();
+  const classes = DB.get('classes');
+  const subjects = DB.get('subjects');
+  const sid = currentSchoolId();
+  // Group rows by class name × subject name
+  const schemeMap = {};
+  data.forEach(r => {
+    const [className, subjectName, weekStr, topic, objectives, activities, resources] = r;
+    const cls = classes.find(c => c.name.toLowerCase() === className.toLowerCase());
+    const sub = subjects.find(s => s.name.toLowerCase() === subjectName.toLowerCase());
+    if (!cls || !sub) return;
+    const key = `${cls.id}|${sub.id}`;
+    if (!schemeMap[key]) schemeMap[key] = { classId: cls.id, subjectId: sub.id, weeks: [] };
+    const weekNum = parseInt(weekStr) || (schemeMap[key].weeks.length + 1);
+    schemeMap[key].weeks.push({ week: weekNum, topic: topic || `Week ${weekNum}`, objectives: objectives || '', activities: activities || '', resources: resources || '', methods: 'Lecture, group work', duration: '3 periods', covered: false, subtopics: [] });
+  });
+  let created = 0, skipped = 0;
+  Object.values(schemeMap).forEach(({ classId, subjectId, weeks }) => {
+    weeks.sort((a, b) => a.week - b.week);
+    const existing = DB.query('schemesOfWork', s => s.classId === classId && s.subjectId === subjectId && s.term === term)[0];
+    if (existing) { skipped++; return; }
+    DB.insert('schemesOfWork', { id: uid('sow'), schoolId: sid, classId, subjectId, term, source: 'CSV Import', status: 'draft', weeks, createdAt: now() });
+    created++;
+  });
+  delete window._fscCSVData;
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast(`${created} scheme${created !== 1 ? 's' : ''} imported${skipped ? ` · ${skipped} skipped (already exist)` : ''}`, 'success');
 }
 
 function importNERDCTemplateModal() {
@@ -6273,7 +6346,6 @@ function view_adm_leave_requests() {
     ${pageHeader({
       title: 'Leave Requests',
       subtitle: `${leaves.length} total · ${pending.length} pending`,
-      actions: `<button class="btn btn-secondary" onclick="APP.params.workforceTab='attendance'; APP.render()">${icon('attendance','w-4 h-4')} Staff Attendance</button>`
     })}
     ${renderHRLeave()}
   `;
@@ -6351,7 +6423,6 @@ function view_adm_staff_att() {
       title: 'Staff Attendance Report',
       subtitle: 'Daily and range reporting for all staff members',
       actions: `
-        <button class="btn btn-secondary" onclick="APP.go('adm_workforce', { hrTab: 'leave' })">${icon('arrow_left','w-4 h-4')} Back to HR</button>
         <button class="btn btn-secondary" onclick="exportStaffAttendanceCSV('${dateFrom}', '${dateTo}')">${icon('download','w-4 h-4')} Export CSV</button>
         <button class="btn btn-primary" onclick="adminMarkStaffAttendanceModal('${date}')">${icon('check','w-4 h-4')} Mark Attendance</button>
       `
@@ -6369,11 +6440,10 @@ function view_adm_staff_att() {
       </div>
     </div>
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+    <div class="grid grid-cols-3 gap-3 mb-4">
       ${statCard({ label: 'Present Today', value: todayRecs.filter(r=>r.status==='present').length, icon: 'check', color: 'brand' })}
       ${statCard({ label: 'Late Today', value: todayRecs.filter(r=>r.status==='late').length, icon: 'bell', color: 'gold' })}
       ${statCard({ label: 'Absent Today', value: absent.length, icon: 'x', color: 'rose' })}
-      ${statCard({ label: 'Range Records', value: rangeRecs.length, icon: 'reports', color: 'blue', tooltip: `Records between ${dateFrom} and ${dateTo}` })}
     </div>
 
     <div class="grid lg:grid-cols-3 gap-4 mb-4">
