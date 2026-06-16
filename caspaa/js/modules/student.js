@@ -668,6 +668,12 @@ function view_stu_results() {
   const cbtSubs = DB.query('cbtSubmissions', x => x.studentId === s.id);
   const reportComment = DB.query('reportComments', rc => rc.studentId === s.id && rc.term === DB.settings().currentTerm)[0];
   const canDownload = results.length > 0 && !!reportComment;
+  const rTerm = (APP.params && APP.params.term) || (results.length > 0 && results[0].term) || DB.settings().currentTerm;
+  const _es = DB.settings().examStructure || {};
+  const _esTypes = _es.terms ? ((_es.terms.find(t => t.name === rTerm) || {}).types || []) : [];
+  const ca1Label = _esTypes[0] ? _esTypes[0].label : 'CA 1';
+  const ca2Label = _esTypes[1] ? _esTypes[1].label : 'CA 2';
+  const examLabel = _esTypes.length > 2 ? _esTypes[_esTypes.length - 1].label : 'Exam';
   return `
     ${pageHeader({ title: 'My Results', subtitle: `${(APP.params && APP.params.term) || (results.length > 0 && results[0].term) || DB.settings().currentTerm} · academic performance`, actions: results.length ? `
       <div class="flex items-center gap-2">
@@ -687,7 +693,7 @@ function view_stu_results() {
       <div class="px-4 py-3 border-b border-slate-100"><h3 class="font-bold text-slate-900">Subject Results</h3></div>
       ${results.length === 0 ? `<div class="p-6 text-center text-sm text-slate-500">No results published yet.</div>` : `
         <div class="overflow-x-auto"><table class="tbl">
-          <thead><tr><th>Subject</th><th class="text-center">CA1</th><th class="text-center">CA2</th><th class="text-center">Exam</th><th class="text-center">Total</th><th class="text-center">Grade</th></tr></thead>
+          <thead><tr><th>Subject</th><th class="text-center">${ca1Label}</th><th class="text-center">${ca2Label}</th><th class="text-center">${examLabel}</th><th class="text-center">Total</th><th class="text-center">Grade</th></tr></thead>
           <tbody>
             ${results.map(r => `<tr>
               <td class="font-medium">${subjName(r.subjectId)}</td>

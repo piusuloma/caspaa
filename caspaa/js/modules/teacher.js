@@ -640,6 +640,7 @@ function recalcResult(studentId) {
 
 function saveResults(classId, subjectId) {
   const students = COMPUTE.studentsByClass(classId);
+  const sub = DB.find('subjects', subjectId);
   let count = 0;
   students.forEach(s => {
     const ca1 = parseInt(document.getElementById(`res_ca1_${s.id}`).value) || 0;
@@ -652,6 +653,15 @@ function saveResults(classId, subjectId) {
     const existing = DB.query('results', r => r.studentId === s.id && r.subjectId === subjectId && r.classId === classId)[0];
     if (existing) DB.update('results', existing.id, { ca1, ca2, exam, total, grade, comment, approved: false });
     else DB.insert('results', { id: uid('res'), schoolId: AUTH.current.schoolId || 'sch_brightlights', studentId: s.id, classId, subjectId, term: DB.settings().currentTerm, ca1, ca2, exam, total, grade, comment, approved: false });
+    if (s.parentId) {
+      DB.insert('notifications', {
+        id: uid('not'), userId: s.parentId,
+        title: `Score update — ${s.name.split(' ')[0]}`,
+        body: `${s.name.split(' ')[0]}'s ${sub ? sub.name : 'subject'} scores have been recorded: CA1 ${ca1} · CA2 ${ca2} · Exam ${exam} | Total ${total}/100 · Grade: ${grade}`,
+        type: 'result', read: false, timestamp: now(),
+        link: { view: 'par_results' }
+      });
+    }
     count++;
   });
   toast(`${count} result${count !== 1 ? 's' : ''} submitted for approval`, 'success');

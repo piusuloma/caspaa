@@ -30,10 +30,11 @@ function buildHub(title, subtitle, tabsList, defaultTab, paramKey) {
 }
 
 function view_adm_people() {
-  return buildHub('Students', 'Students, admissions, alumni', [
+  return buildHub('Students', 'Students, admissions, alumni, enrollment trends', [
     { key: 'students',   label: 'Students',   view: 'view_adm_students' },
     { key: 'admissions', label: 'Admissions', view: 'view_adm_admissions', badge: () => DB.query('admissionApplications', a => a.schoolId === currentSchoolId() && a.status !== 'accepted' && a.status !== 'rejected').length || null },
-    { key: 'alumni',     label: 'Alumni',     view: 'view_adm_alumni' }
+    { key: 'alumni',     label: 'Alumni',     view: 'view_adm_alumni' },
+    { key: 'analytics',  label: 'Analytics',  view: 'view_adm_enrollment_analytics' }
   ], 'students', 'peopleTab');
 }
 
@@ -3329,6 +3330,149 @@ function view_adm_alumni() {
   `;
 }
 
+/* ---------- Enrollment Analytics ---------- */
+function view_adm_enrollment_analytics() {
+  const schoolId = currentSchoolId();
+  const allStudents = DB.query('students', s => s.schoolId === schoolId);
+  const active = allStudents.filter(s => s.status === 'active');
+  const alumni = allStudents.filter(s => s.status === 'alumni');
+  const classes = DB.get('classes');
+
+  // Enrollment by academic year (from admissionDate)
+  const yearMap = {};
+  allStudents.forEach(s => {
+    if (!s.admissionDate) return;
+    const y = s.admissionDate.slice(0, 4);
+    yearMap[y] = (yearMap[y] || 0) + 1;
+  });
+  const yearLabels = Object.keys(yearMap).sort();
+  const yearData = yearLabels.map(y => yearMap[y]);
+
+  // Class distribution
+  const classMap = {};
+  active.forEach(s => {
+    const cls = DB.find('classes', s.classId);
+    const label = cls ? cls.name : 'Unassigned';
+    classMap[label] = (classMap[label] || 0) + 1;
+  });
+  const classLabels = Object.keys(classMap).sort();
+  const classData = classLabels.map(k => classMap[k]);
+
+  // Gender breakdown
+  const maleCount = active.filter(s => /^m/i.test(s.gender || '')).length;
+  const femaleCount = active.filter(s => /^f/i.test(s.gender || '')).length;
+  const otherCount = active.length - maleCount - femaleCount;
+
+  window.afterRender = () => {
+    const yearCtx = document.getElementById('enrolYearChart');
+    if (yearCtx) {
+      new Chart(yearCtx, {
+        type: 'bar',
+        data: {
+          labels: yearLabels.map(y => `${y}/${String(parseInt(y)+1).slice(-2)}`),
+          datasets: [{ label: 'New Students', data: yearData,
+            backgroundColor: '#f59e0b', borderRadius: 6 }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      });
+    }
+    const classCtx = document.getElementById('enrolClassChart');
+    if (classCtx) {
+      new Chart(classCtx, {
+        type: 'bar',
+        data: {
+          labels: classLabels,
+          datasets: [{ label: 'Students', data: classData,
+            backgroundColor: '#3b82f6', borderRadius: 6 }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      });
+    }
+    const genderCtx = document.getElementById('enrolGenderChart');
+    if (genderCtx) {
+      new Chart(genderCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Male', 'Female', 'Other'],
+          datasets: [{ data: [maleCount, femaleCount, otherCount],
+            backgroundColor: ['#3b82f6', '#f472b6', '#94a3b8'] }]
+        },
+        options: { responsive: true, cutout: '65%',
+          plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+  };
+
+  return `
+    ${pageHeader({
+      title: 'Enrollment Analytics',
+      subtitle: 'Trends, class distribution and demographic breakdown',
+      actions: `<button class="btn btn-secondary" onclick="exportEnrollmentCSV()">${icon('download','w-4 h-4')} Export</button>`
+    })}
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      ${statCard({ label: 'Active Students', value: active.length, icon: 'students', color: 'brand' })}
+      ${statCard({ label: 'Alumni', value: alumni.length, icon: 'check', color: 'blue' })}
+      ${statCard({ label: 'Male', value: maleCount, icon: 'students', color: 'blue' })}
+      ${statCard({ label: 'Female', value: femaleCount, icon: 'students', color: 'rose' })}
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-4 mb-4">
+      <div class="lg:col-span-2 card p-5">
+        <h3 class="font-bold text-slate-900 mb-4">New Enrollments by Academic Year</h3>
+        <canvas id="enrolYearChart" height="180"></canvas>
+      </div>
+      <div class="card p-5 flex flex-col items-center">
+        <h3 class="font-bold text-slate-900 mb-4 self-start">Gender Split</h3>
+        <canvas id="enrolGenderChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="card p-5 mb-4">
+      <h3 class="font-bold text-slate-900 mb-4">Students by Class</h3>
+      <canvas id="enrolClassChart" height="120"></canvas>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900">Enrollment by Year Detail</h3>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>Academic Year</th><th class="text-center">New Students</th><th class="text-center">Cumulative</th></tr></thead>
+        <tbody>
+          ${yearLabels.map((y, i) => {
+            const cumulative = yearData.slice(0, i + 1).reduce((s, n) => s + n, 0);
+            return `<tr>
+              <td class="font-medium">${y}/${String(parseInt(y)+1).slice(-2)}</td>
+              <td class="text-center font-bold">${yearMap[y]}</td>
+              <td class="text-center text-slate-600">${cumulative}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function exportEnrollmentCSV() {
+  const schoolId = currentSchoolId();
+  const students = DB.query('students', s => s.schoolId === schoolId);
+  const headers = ['Name', 'Admission No', 'Class', 'Gender', 'Admission Date', 'Status'];
+  const rows = students.map(s => {
+    const cls = DB.find('classes', s.classId);
+    return [s.name, s.admissionNo || s.id, cls ? cls.name : '', s.gender || '', s.admissionDate || '', s.status];
+  });
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `enrollment_report_${today()}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  toast('Enrollment report exported', 'success');
+}
+
 function exportAlumniCSV() {
   const alumni = DB.query('students', s => s.schoolId === currentSchoolId() && s.status === 'alumni');
   const headers = ['Name', 'Admission No', 'Graduation Year', 'Final Class', 'Awards', 'Parent Phone'];
@@ -5406,6 +5550,7 @@ function view_adm_discipline() {
     const sRecs = records.filter(r => r.studentId === selStudent);
     const totalPoints = sRecs.reduce((sum, r) => sum + (r.points || 0), 0);
     const admissionRecord = DB.find('admissions', a => a.studentId === selStudent) || null;
+    const studentParent = s && s.parentId ? DB.find('parents', s.parentId) : null;
     return `
       ${pageHeader({
         title: `Discipline — ${s ? s.name : 'Student'}`,
@@ -5466,6 +5611,22 @@ function view_adm_discipline() {
               </div>
             `}
             <button class="btn btn-secondary w-full mt-3 text-xs" onclick="APP.go('adm_people', { peopleTab: 'admissions' })">${icon('arrow_left','w-3.5 h-3.5 rotate-180')} View Admission</button>
+          </div>
+          <div class="card p-4">
+            <h4 class="font-bold text-slate-900 mb-2 text-sm">${icon('parent','w-4 h-4 inline')} Parent / Guardian</h4>
+            ${studentParent ? `
+              <div class="flex items-center gap-2 mb-2">
+                ${avatar(studentParent.name, 'sm')}
+                <span class="font-semibold text-slate-900 text-sm">${studentParent.name}</span>
+              </div>
+              <div class="text-xs text-slate-600 space-y-1 mt-2">
+                <div>${icon('phone','w-3.5 h-3.5 inline mr-1 text-slate-400')}${studentParent.phone || '—'}</div>
+                ${studentParent.email ? `<div>${icon('edit','w-3.5 h-3.5 inline mr-1 text-slate-400')}${studentParent.email}</div>` : ''}
+              </div>
+              <a href="https://wa.me/${(studentParent.phone || '').replace(/\D/g, '')}" target="_blank" class="btn btn-secondary w-full mt-3 text-xs text-emerald-700" style="border-color:#86efac">
+                ${icon('check','w-3.5 h-3.5 inline mr-1')} WhatsApp Parent
+              </a>
+            ` : `<p class="text-xs text-slate-500">No parent linked to this student.</p>`}
           </div>
           <div class="card p-4">
             <h4 class="font-bold text-slate-900 mb-2 text-sm">Points Summary</h4>
