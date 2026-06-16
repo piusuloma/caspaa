@@ -343,7 +343,7 @@ function renderChildCard(child) {
           <div class="h-full bg-emerald-500 rounded-full" style="width: ${inv.total ? Math.round((inv.paid / inv.total) * 100) : 0}%"></div>
         </div>
       </div>` : '<div class="bg-slate-50 rounded-lg p-3 mb-3 text-xs text-slate-500 text-center">No invoice yet for this term</div>'}
-      <button class="btn btn-secondary w-full text-sm">View full profile →</button>
+      <button class="btn btn-secondary w-full text-sm" onclick="event.stopPropagation(); viewChildDetail('${child.id}')">View full profile →</button>
     </div>
   `;
 }

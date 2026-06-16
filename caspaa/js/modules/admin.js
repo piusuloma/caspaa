@@ -1769,6 +1769,15 @@ function view_adm_dashboard() {
               // Overdue library books
               const overdueBooks = DB.query('libraryLoans', l => l.schoolId === schoolId && !l.returnedAt && new Date(l.dueDate) < new Date()).length;
               if (overdueBooks) items.push({ icon: 'book', tone: 'amber', text: `${overdueBooks} overdue library book${overdueBooks !== 1 ? 's' : ''}`, go: "APP.go('adm_operations',{opsTab:'library'})" });
+              // Students at academic risk (F grade in approved results)
+              const atRiskIds = new Set(DB.query('results', r => r.schoolId === schoolId && r.grade === 'F' && r.approved).map(r => r.studentId));
+              if (atRiskIds.size > 0) items.push({ icon: 'students', tone: atRiskIds.size > 3 ? 'rose' : 'amber', text: `${atRiskIds.size} student${atRiskIds.size !== 1 ? 's' : ''} failing in at least one subject`, go: "APP.go('adm_academic',{academicTab:'results',resView:'overview'})" });
+              // Pending leave requests
+              const pendingLeave = DB.query('leaveRequests', l => l.schoolId === schoolId && l.status === 'pending').length;
+              if (pendingLeave) items.push({ icon: 'calendar', tone: 'amber', text: `${pendingLeave} staff leave request${pendingLeave !== 1 ? 's' : ''} awaiting decision`, go: "APP.go('adm_workforce',{workforceTab:'leave'})" });
+              // Open appraisal cycle with staff yet to self-assess
+              const pendingSelf = DB.query('appraisals', a => a.schoolId === schoolId && a.status === 'self_pending').length;
+              if (pendingSelf) items.push({ icon: 'reports', tone: 'amber', text: `${pendingSelf} staff yet to complete appraisal self-assessment`, go: "APP.go('adm_workforce',{workforceTab:'apr_cycles'})" });
               if (items.length === 0) items.push({ icon: 'check', tone: 'emerald', text: 'All clear — no urgent items.' });
               // Sort by urgency: rose (critical) → amber (warning) → emerald (ok)
               const toneRank = { rose: 0, amber: 1, emerald: 2 };
@@ -7135,7 +7144,7 @@ function renderPaymentSettings() {
             <div class="font-semibold text-emerald-900">Paystack — Connected</div>
             <div class="text-xs text-emerald-700">Business name on receipts: <strong>Bright Lights Academy</strong></div>
           </div>
-          <button class="btn btn-ghost text-sm">Reconnect</button>
+          <button class="btn btn-ghost text-sm" onclick="reconnectPaystackModal()">Reconnect</button>
         </div>
         <div class="grid sm:grid-cols-2 gap-3">
           <div><label class="input-label">Public Key</label><input class="input font-mono text-xs" value="pk_test_••••••••••••••5f3a" readonly /></div>
@@ -7160,6 +7169,36 @@ function renderPaymentSettings() {
       </div>
     </div>
   `;
+}
+
+function reconnectPaystackModal() {
+  const school = DB.find('schools', currentSchoolId()) || {};
+  modal({
+    title: 'Reconnect Paystack',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          ${icon('info','w-4 h-4 inline mr-1')} Get your API keys from the Paystack dashboard under <strong>Settings › API Keys & Webhooks</strong>.
+        </div>
+        <div><label class="input-label">Public Key</label><input id="ps_pk" class="input font-mono text-sm" placeholder="pk_live_…" /></div>
+        <div><label class="input-label">Secret Key</label><input id="ps_sk" class="input font-mono text-sm" type="password" placeholder="sk_live_…" /></div>
+        <div><label class="input-label">Business Name (shown on receipts)</label><input id="ps_name" class="input" value="${school.name || ''}" /></div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="savePaystackConfig()">${icon('check','w-4 h-4')} Save & Reconnect</button>`
+  });
+}
+
+function savePaystackConfig() {
+  const pk = document.getElementById('ps_pk').value.trim();
+  const sk = document.getElementById('ps_sk').value.trim();
+  const name = document.getElementById('ps_name').value.trim();
+  if (!pk || !sk) { toast('Enter both public and secret keys', 'danger'); return; }
+  DB.settings({ paystackPk: pk, paystackName: name });
+  document.getElementById('modalBackdrop').click();
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'updated_paystack_config', target: 'Payment Gateway', timestamp: now() });
+  toast('Paystack configuration updated', 'success');
 }
 
 function renderBackupSettings() {
