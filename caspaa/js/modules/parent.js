@@ -779,6 +779,8 @@ function viewInvoice(invoiceId) {
   const s = DB.find('students', inv.studentId);
   const cls = DB.find('classes', s.classId);
   const isFinance = AUTH.current && (AUTH.current.role === 'finance' || AUTH.current.role === 'schooladmin');
+  const invFs = s ? DB.query('feeStructures', f => f.classId === s.classId && f.term === inv.term)[0] : null;
+  const installmentsAllowed = invFs ? (invFs.installmentEnabled === true) : false;
   modal({
     title: 'Invoice Details',
     body: `
@@ -833,7 +835,7 @@ function viewInvoice(invoiceId) {
     footer: `
       <button class="btn btn-secondary no-print" onclick="window.print()">${icon('download','w-4 h-4')} Print</button>
       ${isFinance ? `<button class="btn btn-secondary no-print" onclick="applyDiscountModal('${invoiceId}')">${icon('plus','w-4 h-4')} Discount</button>` : ''}
-      ${(isFinance || AUTH.current.role === 'parent') && inv.balance > 0 ? `<button class="btn btn-secondary no-print" onclick="installmentPlanModal('${invoiceId}')">${icon('calendar','w-4 h-4')} Installment Plan</button>` : ''}
+      ${(isFinance || AUTH.current.role === 'parent') && inv.balance > 0 && installmentsAllowed ? `<button class="btn btn-secondary no-print" onclick="installmentPlanModal('${invoiceId}')">${icon('calendar','w-4 h-4')} Installment Plan</button>` : ''}
       ${inv.balance > 0 ? `<button class="btn btn-primary no-print" onclick="document.getElementById('modalBackdrop').click(); payInvoiceModal('${invoiceId}')">Pay Now</button>` : ''}
     `
   });
@@ -926,6 +928,10 @@ function saveInstallmentPlan(invoiceId) {
 
 function applyDiscountModal(invoiceId) {
   const inv = DB.find('invoices', invoiceId);
+  const dcStudent = DB.find('students', inv.studentId);
+  const dcFs = dcStudent ? DB.query('feeStructures', f => f.classId === dcStudent.classId && f.term === inv.term)[0] : null;
+  const dcDeadline = dcFs ? dcFs.discountDeadline : null;
+  const promptExpired = dcDeadline && today() > dcDeadline;
   modal({
     title: 'Apply Discount / Scholarship',
     body: `
@@ -933,13 +939,18 @@ function applyDiscountModal(invoiceId) {
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
           The discount appears as a negative line item on the invoice. The student's balance reduces immediately.
         </div>
+        ${promptExpired ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+          ${icon('bell','w-4 h-4 inline')} The <strong>Prompt Payment Discount</strong> deadline was ${fdate(dcDeadline, { long: true })} — this discount type is no longer available.
+        </div>` : dcDeadline ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+          ${icon('check','w-4 h-4 inline')} Prompt Payment Discount available until <strong>${fdate(dcDeadline, { long: true })}</strong>.
+        </div>` : ''}
         <div>
           <label class="input-label">Type</label>
           <select id="dc_type" class="input" onchange="onDiscountTypeChange()">
             <option value="sibling">Sibling Discount (10% of tuition)</option>
             <option value="scholarship">Scholarship — Full Tuition Waiver</option>
             <option value="partial">Partial Scholarship — % off tuition</option>
-            <option value="prompt">Prompt Payment Discount</option>
+            <option value="prompt" ${promptExpired ? 'disabled' : ''}>Prompt Payment Discount (5%)${promptExpired ? ' — Expired' : ''}</option>
             <option value="custom">Custom amount</option>
           </select>
         </div>
@@ -976,6 +987,14 @@ function onDiscountTypeChange() {
 function saveDiscount(invoiceId) {
   const inv = DB.find('invoices', invoiceId);
   const type = document.getElementById('dc_type').value;
+  // Block expired prompt payment discounts
+  if (type === 'prompt') {
+    const dcStu = DB.find('students', inv.studentId);
+    const dcFs2 = dcStu ? DB.query('feeStructures', f => f.classId === dcStu.classId && f.term === inv.term)[0] : null;
+    if (dcFs2 && dcFs2.discountDeadline && today() > dcFs2.discountDeadline) {
+      toast('Prompt Payment Discount deadline has passed — cannot apply', 'error'); return;
+    }
+  }
   const label = document.getElementById('dc_label').value.trim() || 'Discount';
   const tuitionLine = inv.lineItems.find(l => l.name.toLowerCase().includes('tuition'));
   const tuitionAmt = tuitionLine ? tuitionLine.amount : 0;

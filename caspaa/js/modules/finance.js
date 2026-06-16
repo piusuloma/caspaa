@@ -732,9 +732,16 @@ function feeStructureModal(editingId) {
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
           ${icon('info','w-4 h-4 inline mr-1')} Extracurricular fees (swimming, ballet, music, etc.) are <strong>per student</strong> — set them under the <strong>Activities tab</strong> and assign to each student from their profile.
         </div>
-        <div>
-          <label class="input-label">Due Date</label>
-          <input id="fs_due" type="date" class="input" value="${existing ? existing.dueDate : daysAhead(15)}" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="input-label">Fee Due Date</label>
+            <input id="fs_due" type="date" class="input" value="${existing ? existing.dueDate : daysAhead(15)}" />
+          </div>
+          <div>
+            <label class="input-label">Prompt Payment Discount Deadline</label>
+            <input id="fs_discountDeadline" type="date" class="input" value="${existing ? (existing.discountDeadline || '') : ''}" />
+            <p class="text-xs text-slate-400 mt-1">Prompt payment discounts expire after this date</p>
+          </div>
         </div>
         <div class="bg-brand-50 rounded-xl p-3 flex items-center justify-between">
           <span class="font-semibold text-brand-800">Total per student</span>
@@ -801,6 +808,7 @@ function saveFeeStructure(editingId) {
     uniform: parseInt(document.getElementById('fs_uniform').value) || 0,
     pta: parseInt(document.getElementById('fs_pta').value) || 0,
     dueDate: document.getElementById('fs_due').value,
+    discountDeadline: (document.getElementById('fs_discountDeadline') || {}).value || null,
     installmentEnabled,
     maxInstalments: installmentEnabled ? parseInt((document.getElementById('fs_maxInstalments') || {}).value) || 2 : null,
     minFirstPct: installmentEnabled ? parseInt((document.getElementById('fs_minFirstPct') || {}).value) || 50 : null

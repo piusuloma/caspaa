@@ -1102,7 +1102,7 @@ function view_tch_lessons(params) {
   }
 
   if (tab === 'notes') {
-    const notes = DB.query('learningMaterials', m => m.teacherId === AUTH.current.id && m.type === 'note')
+    const notes = DB.query('learningMaterials', m => m.teacherId === AUTH.current.id && m.type === 'note' && !m.archived)
                     .sort((a,b) => b.createdAt.localeCompare(a.createdAt));
     return `
       ${pageHeader({ title: 'Lessons & Content', subtitle: 'Class notes posted to your students',
@@ -1131,8 +1131,12 @@ function view_tch_lessons(params) {
                   </a>` : ''}
                 </div>
                 <div class="text-right flex-shrink-0">
-                  <div class="text-xs text-slate-400">${fdate(m.createdAt, { short: true })}</div>
+                  <div class="text-xs text-slate-400">${fdate(m.createdAt, { short: true })}${m.updatedAt ? ' · edited' : ''}</div>
                   ${classStudents.length ? `<div class="mt-1 text-xs font-semibold ${readViews.length >= classStudents.length ? 'text-emerald-600' : 'text-amber-600'}">${readViews.length}/${classStudents.length} read</div>` : ''}
+                  <div class="flex gap-1 justify-end mt-2">
+                    <button class="btn btn-ghost !p-1.5" onclick="tch_editNoteModal('${m.id}')" title="Edit note">${icon('edit','w-3.5 h-3.5')}</button>
+                    <button class="btn btn-ghost !p-1.5 text-red-500" onclick="tch_deleteNote('${m.id}')" title="Delete note">${icon('trash','w-3.5 h-3.5')}</button>
+                  </div>
                 </div>
               </div>
             </div>`;
@@ -1207,7 +1211,7 @@ function tch_postNoteModal() {
         <div><label class="input-label">Note Title</label><input id="cn_title" class="input" placeholder="e.g. Quadratic Equations — Notes"></div>
       </div>
       <div><label class="input-label">Note Content</label>
-        <textarea id="cn_content" rows="5" class="input" placeholder="Type the full note here. Students will read this directly..."></textarea></div>
+        <textarea id="cn_content" rows="6" class="input" placeholder="Type the full note here. Students will read this directly...&#10;&#10;Tip: you can paste content copied from Word — text and basic structure are preserved."></textarea></div>
       <div><label class="input-label">Description / Summary (shown on card)</label>
         <input id="cn_desc" class="input" placeholder="One-line summary for students"></div>
       <div>
@@ -1260,6 +1264,67 @@ function tch_saveNote() {
   document.getElementById('modalBackdrop').click();
   APP.go('tch_lessons', { tab: 'notes' });
   toast('Note posted · students notified', 'success');
+}
+
+function tch_editNoteModal(noteId) {
+  const m = DB.find('learningMaterials', noteId);
+  if (!m) return;
+  const classes = teacherClasses();
+  const subjects = DB.get('subjects');
+  modal({
+    title: 'Edit Note',
+    size: 'lg',
+    body: `
+      <div class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Class</label>
+            <select id="en_class" class="input">${classes.map(c => `<option value="${c.id}" ${c.id === m.classId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>
+          </div>
+          <div><label class="input-label">Subject</label>
+            <select id="en_subject" class="input">${subjects.map(s => `<option value="${s.id}" ${s.id === m.subjectId ? 'selected' : ''}>${s.name}</option>`).join('')}</select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Week (optional)</label><input id="en_week" class="input" value="${m.week || ''}"></div>
+          <div><label class="input-label">Note Title</label><input id="en_title" class="input" value="${m.title}"></div>
+        </div>
+        <div><label class="input-label">Note Content</label>
+          <textarea id="en_content" rows="8" class="input">${m.content || ''}</textarea>
+          <p class="text-xs text-slate-400 mt-1">You can paste content copied from Word — text structure is preserved.</p>
+        </div>
+        <div><label class="input-label">Description / Summary</label>
+          <input id="en_desc" class="input" value="${m.description || ''}"></div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="tch_updateNote('${noteId}')">${icon('check','w-4 h-4')} Save Changes</button>`
+  });
+}
+
+function tch_updateNote(noteId) {
+  const title = (document.getElementById('en_title') || {}).value.trim();
+  if (!title) { toast('Title is required', 'danger'); return; }
+  DB.update('learningMaterials', noteId, {
+    classId: document.getElementById('en_class').value,
+    subjectId: document.getElementById('en_subject').value,
+    week: document.getElementById('en_week').value.trim() || null,
+    title,
+    description: document.getElementById('en_desc').value.trim(),
+    content: document.getElementById('en_content').value.trim(),
+    updatedAt: now()
+  });
+  document.getElementById('modalBackdrop').click();
+  APP.go('tch_lessons', { tab: 'notes' });
+  toast('Note updated', 'success');
+}
+
+function tch_deleteNote(noteId) {
+  const m = DB.find('learningMaterials', noteId);
+  if (!m) return;
+  if (!confirm(`Delete "${m.title}"? Students will lose access to this note.`)) return;
+  DB.remove('learningMaterials', noteId);
+  APP.go('tch_lessons', { tab: 'notes' });
+  toast('Note deleted', 'success');
 }
 
 function tch_postVideoModal() {
