@@ -7423,12 +7423,68 @@ function saveArm() {
 }
 
 function renderAcademicCalendar() {
+  const s = DB.settings();
+  const atd = s.academicTermDates || {
+    session: '',
+    terms: [
+      { name: 'First Term',  staffPDDate: '', resumptionDate: '', firstHalfEnd: '', openDayDate: '', midtermStart: '', midtermEnd: '', secondHalfStart: '', termEndDate: '', vacationStart: '', vacationEnd: '' },
+      { name: 'Second Term', staffPDDate: '', resumptionDate: '', firstHalfEnd: '', openDayDate: '', midtermStart: '', midtermEnd: '', secondHalfStart: '', termEndDate: '', vacationStart: '', vacationEnd: '' },
+      { name: 'Third Term',  staffPDDate: '', resumptionDate: '', firstHalfEnd: '', openDayDate: '', midtermStart: '', midtermEnd: '', secondHalfStart: '', termEndDate: '', vacationStart: '', vacationEnd: '' }
+    ]
+  };
+
+  const termDateFields = [
+    { key: 'staffPDDate',      label: 'Staff PD / Inservice Day' },
+    { key: 'resumptionDate',   label: 'Resumption Date' },
+    { key: 'firstHalfEnd',     label: 'First Half Ends' },
+    { key: 'openDayDate',      label: 'Open Day' },
+    { key: 'midtermStart',     label: 'Mid-Term Break Starts' },
+    { key: 'midtermEnd',       label: 'Mid-Term Break Ends' },
+    { key: 'secondHalfStart',  label: 'Second Half Starts' },
+    { key: 'termEndDate',      label: 'Last Day of Term' },
+    { key: 'vacationStart',    label: 'Vacation Starts' },
+    { key: 'vacationEnd',      label: 'Vacation Ends / Next Resumption' }
+  ];
+
   const events = DB.query('academicCalendar', e => e.schoolId === currentSchoolId()).sort((a, b) => a.date.localeCompare(b.date));
   const upcoming = events.filter(e => new Date(e.date) >= new Date());
   const past = events.filter(e => new Date(e.date) < new Date());
   return `
+    <!-- Academic Year Term Dates -->
+    <div class="card p-5 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="font-bold text-slate-900">Academic Year Term Dates</h3>
+          <p class="text-xs text-slate-500 mt-0.5">These dates power the Academic Year overview on the Calendar page</p>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="input-label">Session (e.g. 2025/2026)</label>
+        <input id="atd_session" class="input w-48" value="${atd.session || ''}" placeholder="2025/2026" />
+      </div>
+      <div class="space-y-5">
+        ${atd.terms.map((term, ti) => `
+          <div>
+            <h4 class="font-semibold text-slate-800 mb-2 text-sm border-b border-slate-100 pb-1">${term.name}</h4>
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+              ${termDateFields.map(f => `
+                <div>
+                  <label class="input-label text-xs">${f.label}</label>
+                  <input type="date" id="atd_${ti}_${f.key}" class="input input-sm" value="${term[f.key] || ''}" />
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="mt-4">
+        <button class="btn btn-primary" onclick="saveAcademicTermDates()">${icon('check','w-4 h-4')} Save Term Dates</button>
+      </div>
+    </div>
+
+    <!-- Ad-hoc Calendar Events -->
     <div class="flex items-center justify-between mb-3">
-      <h3 class="font-bold text-slate-900">Calendar Events</h3>
+      <h3 class="font-bold text-slate-900">Additional Calendar Events</h3>
       <button class="btn btn-primary text-sm" onclick="newCalendarEventModal()">${icon('plus','w-3.5 h-3.5')} Add Event</button>
     </div>
     <div class="space-y-2 mb-5">
@@ -7493,6 +7549,23 @@ function saveCalendarEvent() {
   document.getElementById('modalBackdrop').click();
   APP.render();
   toast('Event added');
+}
+
+function saveAcademicTermDates() {
+  const termDateKeys = ['staffPDDate','resumptionDate','firstHalfEnd','openDayDate','midtermStart','midtermEnd','secondHalfStart','termEndDate','vacationStart','vacationEnd'];
+  const session = (document.getElementById('atd_session') || {}).value.trim();
+  const terms = [0, 1, 2].map(ti => {
+    const names = ['First Term', 'Second Term', 'Third Term'];
+    const obj = { name: names[ti] };
+    termDateKeys.forEach(k => {
+      const el = document.getElementById(`atd_${ti}_${k}`);
+      obj[k] = el ? el.value : '';
+    });
+    return obj;
+  });
+  DB.settings({ academicTermDates: { session, terms } });
+  toast('Term dates saved', 'success');
+  APP.render();
 }
 
 function renderNotificationSettings() {

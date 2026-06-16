@@ -139,6 +139,9 @@ function view_cal_main(params) {
     <button onclick="APP.params.calTab='calendar'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'calendar' ? 'bg-white border border-b-white border-slate-200 text-sky-600' : 'text-slate-500 hover:text-slate-700'}">
       <i class="ph ph-calendar mr-1"></i>Calendar
     </button>
+    <button onclick="APP.params.calTab='academic_year'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'academic_year' ? 'bg-white border border-b-white border-slate-200 text-sky-600' : 'text-slate-500 hover:text-slate-700'}">
+      <i class="ph ph-graduation-cap mr-1"></i>Academic Year
+    </button>
     <button onclick="APP.params.calTab='noticeboard'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'noticeboard' ? 'bg-white border border-b-white border-slate-200 text-sky-600' : 'text-slate-500 hover:text-slate-700'}">
       <i class="ph ph-note mr-1"></i>Notice Board
     </button>
@@ -150,7 +153,9 @@ function view_cal_main(params) {
     actions: isAdmin && activeTab === 'calendar' ? `<button class="btn btn-primary" onclick="cal_addEventModal()">${icon('plus','w-4 h-4')} Add Event</button>` : ''
   });
 
-  const content = activeTab === 'noticeboard' ? cal_renderNoticeBoard() : cal_renderCalendar(params);
+  const content = activeTab === 'noticeboard' ? cal_renderNoticeBoard() :
+                  activeTab === 'academic_year' ? cal_renderAcademicYear() :
+                  cal_renderCalendar(params);
 
   return `${header}${tabBar}${content}`;
 }
@@ -312,6 +317,137 @@ function cal_saveEdit(id) {
   document.getElementById('modalBackdrop').click();
   APP.render();
   toast('Event updated', 'success');
+}
+
+/* ============================================================
+   ACADEMIC YEAR OVERVIEW
+   ============================================================ */
+
+function cal_schoolDays(startDate, endDate, excludeRanges, holidayDates) {
+  // Count Mon–Fri days between startDate and endDate (inclusive), minus excluded ranges and holidays
+  if (!startDate || !endDate || endDate < startDate) return 0;
+  let count = 0;
+  const d = new Date(startDate);
+  const end = new Date(endDate);
+  const excluded = new Set(holidayDates || []);
+  while (d <= end) {
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) {
+      const ds = d.toISOString().slice(0, 10);
+      const inBreak = (excludeRanges || []).some(r => ds >= r.start && ds <= r.end);
+      if (!inBreak && !excluded.has(ds)) count++;
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return count;
+}
+
+function cal_renderAcademicYear() {
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const isAdmin = AUTH.current.role === 'schooladmin' || AUTH.current.role === 'principal';
+  const s = DB.settings();
+  const atd = s.academicTermDates;
+
+  if (!atd || !atd.terms || !atd.terms.some(t => t.resumptionDate)) {
+    return `
+      <div class="card p-8 text-center">
+        <div class="text-4xl mb-3">📅</div>
+        <h3 class="font-bold text-slate-900 mb-2">Academic Year Not Configured</h3>
+        <p class="text-sm text-slate-500 mb-4">Set the term dates in Settings → Calendar to generate the academic year overview.</p>
+        ${isAdmin ? `<button class="btn btn-primary" onclick="APP.go('adm_settings', { setTab: 'calendar' })">${icon('settings','w-4 h-4')} Configure Term Dates</button>` : '<p class="text-sm text-slate-400">Please ask your school admin to configure the academic calendar.</p>'}
+      </div>
+    `;
+  }
+
+  // All school holiday events (for tagging celebrations per term)
+  const holidays = DB.query('schoolEvents', e => e.schoolId === schoolId && (e.type === 'holiday' || e.type === 'milestone'));
+  const holidayDates = holidays.map(h => h.startDate);
+
+  const termColors = [
+    { bg: 'bg-blue-50', border: 'border-blue-300', header: 'bg-blue-600', text: 'text-blue-900', label: 'text-blue-700' },
+    { bg: 'bg-emerald-50', border: 'border-emerald-300', header: 'bg-emerald-600', text: 'text-emerald-900', label: 'text-emerald-700' },
+    { bg: 'bg-amber-50', border: 'border-amber-300', header: 'bg-amber-600', text: 'text-amber-900', label: 'text-amber-700' }
+  ];
+
+  const rows = (term, ti) => {
+    const c = termColors[ti] || termColors[0];
+    const midBreak = (term.midtermStart && term.midtermEnd) ? [{ start: term.midtermStart, end: term.midtermEnd }] : [];
+    const totalDays = cal_schoolDays(term.resumptionDate, term.termEndDate, midBreak, holidayDates);
+
+    // Celebrations = public holidays from schoolEvents that fall within this term
+    const termHolidays = holidays.filter(h =>
+      term.resumptionDate && term.termEndDate &&
+      h.startDate >= term.resumptionDate && h.startDate <= term.termEndDate
+    );
+
+    const row = (label, value, highlight) => value ? `
+      <tr class="${highlight ? c.bg : 'bg-white'}">
+        <td class="px-4 py-2.5 text-sm font-semibold text-slate-700 whitespace-nowrap w-48">${label}</td>
+        <td class="px-4 py-2.5 text-sm text-slate-800">${value}</td>
+        <td class="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap text-right"></td>
+      </tr>` : '';
+
+    const fmt = d => d ? fdate(d, { long: true }) : '—';
+    const fmtRange = (s, e) => (s && e) ? `${fdate(s, { long: true })} – ${fdate(e, { long: true })}` : (s ? fdate(s, { long: true }) : '—');
+
+    const midtermDays = cal_schoolDays(term.midtermStart, term.midtermEnd, [], []);
+    const firstHalfDays = cal_schoolDays(term.resumptionDate, term.firstHalfEnd, [], holidayDates);
+    const secondHalfDays = cal_schoolDays(term.secondHalfStart, term.termEndDate, [], holidayDates);
+
+    return `
+      <div class="card overflow-hidden mb-5 border ${c.border}">
+        <div class="${c.header} text-white px-5 py-3 flex items-center justify-between">
+          <div class="font-bold text-lg">${term.name}</div>
+          ${atd.session ? `<div class="text-sm opacity-80">${atd.session}</div>` : ''}
+        </div>
+        <table class="w-full">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200">
+              <th class="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 text-left w-48">Description</th>
+              <th class="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 text-left">Date</th>
+              <th class="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 text-right">Duration</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            ${term.staffPDDate ? `<tr class="bg-white"><td class="px-4 py-2.5 text-sm font-semibold text-slate-700">Staff PD / Inservice</td><td class="px-4 py-2.5 text-sm text-slate-800">${fmt(term.staffPDDate)}</td><td class="px-4 py-2.5 text-xs text-right text-slate-500">1 day</td></tr>` : ''}
+            ${term.resumptionDate ? `<tr class="${c.bg}"><td class="px-4 py-2.5 text-sm font-bold ${c.label}">Resumption</td><td class="px-4 py-2.5 text-sm font-semibold text-slate-900">${fmt(term.resumptionDate)}</td><td class="px-4 py-2.5 text-xs text-right text-slate-500"></td></tr>` : ''}
+            ${(term.resumptionDate && term.firstHalfEnd) ? `<tr class="bg-white"><td class="px-4 py-2.5 text-sm font-semibold text-slate-700">First Half</td><td class="px-4 py-2.5 text-sm text-slate-800">${fmtRange(term.resumptionDate, term.firstHalfEnd)}</td><td class="px-4 py-2.5 text-xs text-right ${c.label} font-bold">${firstHalfDays} days</td></tr>` : ''}
+            ${term.openDayDate ? `<tr class="bg-white"><td class="px-4 py-2.5 text-sm font-semibold text-slate-700">Open Day</td><td class="px-4 py-2.5 text-sm text-slate-800">${fmt(term.openDayDate)}</td><td class="px-4 py-2.5 text-xs text-right text-slate-500">1 day</td></tr>` : ''}
+            ${(term.midtermStart && term.midtermEnd) ? `<tr class="bg-red-50"><td class="px-4 py-2.5 text-sm font-semibold text-red-700">Mid-Term Break</td><td class="px-4 py-2.5 text-sm text-red-800">${fmtRange(term.midtermStart, term.midtermEnd)}</td><td class="px-4 py-2.5 text-xs text-right text-red-600 font-bold">${midtermDays} days</td></tr>` : ''}
+            ${(term.secondHalfStart && term.termEndDate) ? `<tr class="bg-white"><td class="px-4 py-2.5 text-sm font-semibold text-slate-700">Second Half</td><td class="px-4 py-2.5 text-sm text-slate-800">${fmtRange(term.secondHalfStart, term.termEndDate)}</td><td class="px-4 py-2.5 text-xs text-right ${c.label} font-bold">${secondHalfDays} days</td></tr>` : ''}
+            ${termHolidays.length ? `
+              <tr class="bg-purple-50">
+                <td class="px-4 py-2.5 text-sm font-semibold text-purple-700 align-top">Celebrations / Holidays</td>
+                <td class="px-4 py-2.5 text-sm text-slate-800" colspan="2">
+                  <div class="space-y-1">
+                    ${termHolidays.map(h => `<div>${h.title} – <span class="text-slate-500">${fdate(h.startDate, {long: true})}${h.endDate && h.endDate !== h.startDate ? ' – ' + fdate(h.endDate, {long:true}) : ''}</span></div>`).join('')}
+                  </div>
+                </td>
+              </tr>` : ''}
+            ${term.vacationStart ? `<tr class="${c.bg}"><td class="px-4 py-2.5 text-sm font-bold ${c.label}">Vacation</td><td class="px-4 py-2.5 text-sm text-slate-800">${fmtRange(term.vacationStart, term.vacationEnd)}</td><td class="px-4 py-2.5 text-xs text-right text-slate-500">${cal_schoolDays(term.vacationStart, term.vacationEnd || term.vacationStart, [], [])} days</td></tr>` : ''}
+          </tbody>
+          ${totalDays ? `
+          <tfoot>
+            <tr class="${c.header} text-white">
+              <td class="px-4 py-3 font-bold text-sm" colspan="2">Total Days in School (${term.name})</td>
+              <td class="px-4 py-3 font-extrabold text-lg text-right">${totalDays} Days</td>
+            </tr>
+          </tfoot>` : ''}
+        </table>
+      </div>
+    `;
+  };
+
+  return `
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="font-bold text-slate-900 text-lg">Academic Calendar ${atd.session ? `— ${atd.session}` : ''}</h2>
+        <p class="text-xs text-slate-500 mt-0.5">Lagos State Harmonised Academic Calendar · Term-by-term overview</p>
+      </div>
+      ${isAdmin ? `<button class="btn btn-secondary text-sm" onclick="APP.go('adm_settings', { setTab: 'calendar' })">${icon('settings','w-4 h-4')} Edit Term Dates</button>` : ''}
+    </div>
+    ${atd.terms.map((term, ti) => rows(term, ti)).join('')}
+  `;
 }
 
 /* ============================================================
