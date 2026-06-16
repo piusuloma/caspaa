@@ -78,7 +78,6 @@ function assess_tch_formativeList() {
   const ftTab     = APP.params.ftTab || 'active';
   const allTests  = DB.query('formativeTests', t => t.schoolId === schoolId && t.teacherId === teacherId);
   const tabTests  = allTests.filter(t => t.status === ftTab);
-  const schoolId  = AUTH.current.schoolId || 'sch_brightlights';
   const classes   = DB.query('classes', c => c.schoolId === schoolId);
   const subjects  = DB.get('subjects');
 
@@ -148,7 +147,7 @@ function view_stu_assessments(params) {
 
   // Badge counts for tabs
   const pendingAssign = DB.query('assignments', a => a.classId === s.classId)
-    .filter(a => !a.submissions.find(x => x.studentId === s.id) && new Date(a.dueDate) >= new Date()).length;
+    .filter(a => !(a.submissions || []).find(x => x.studentId === s.id) && new Date(a.dueDate) >= new Date()).length;
   const pendingCbt = DB.query('cbtExams', e => e.classId === s.classId && e.status === 'published')
     .filter(e => !DB.query('cbtSubmissions', x => x.studentId === s.id && x.examId === e.id).length).length;
   const pendingFt  = DB.query('formativeTests', t => t.classId === s.classId && t.status === 'active' && t.dueDate >= today())
@@ -181,7 +180,7 @@ function assess_stu_assignments(s, sName) {
   if (!assignments.length) return emptyState({ title: 'No assignments yet', body: 'Nothing has been set yet — check back later.', icon: 'book' });
   return `<div class="space-y-3">
     ${assignments.map(a => {
-      const sub     = a.submissions.find(x => x.studentId === s.id);
+      const sub     = (a.submissions || []).find(x => x.studentId === s.id);
       const graded  = sub && sub.grade != null;
       const overdue = !sub && new Date(a.dueDate) < new Date();
       const subj    = DB.find('subjects', a.subjectId);

@@ -1651,6 +1651,7 @@ function view_adm_dashboard() {
         },
         options: {
           responsive: true, maintainAspectRatio: false,
+          animation: { duration: 0 },
           plugins: { legend: { display: false } },
           scales: { y: { ticks: { callback: v => '₦' + (v/1000000).toFixed(1) + 'M' } } }
         }
@@ -1672,6 +1673,7 @@ function view_adm_dashboard() {
         },
         options: {
           responsive: true, maintainAspectRatio: false,
+          animation: { duration: 0 },
           cutout: '65%',
           plugins: {
             legend: { position: 'bottom', labels: { boxWidth: 12, padding: 16, font: { size: 12 } } },
@@ -1809,9 +1811,9 @@ function view_adm_dashboard() {
       <!-- Revenue chart + Notifications -->
       <div class="grid lg:grid-cols-3 gap-4">
         <div class="card p-5 lg:col-span-2">
-          <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
-            <h3 class="font-bold text-slate-900">Revenue · <span class="text-brand-700 font-extrabold">${revenueView === 'monthly' ? 'Monthly' : revenueView === 'annually' ? 'Annual' : 'Per Term'}</span></h3>
-            <div class="flex items-center gap-2">
+          <div class="flex items-center justify-between mb-3 gap-2 min-w-0">
+            <h3 class="font-bold text-slate-900 truncate">Revenue · <span class="text-brand-700 font-extrabold">${revenueView === 'monthly' ? 'Monthly' : revenueView === 'annually' ? 'Annual' : 'Per Term'}</span></h3>
+            <div class="flex items-center gap-2 flex-shrink-0">
               <div class="flex rounded-lg border border-slate-200 overflow-hidden text-xs">
                 <button class="px-2.5 py-1.5 ${revenueView==='monthly'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='monthly'; APP.render()">Monthly</button>
                 <button class="px-2.5 py-1.5 border-l border-r border-slate-200 ${revenueView==='termly'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='termly'; APP.render()">Termly</button>
