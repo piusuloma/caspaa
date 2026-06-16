@@ -5137,10 +5137,11 @@ function view_adm_reports() {
   const rTab = APP.params.rTab || 'enrollment';
   const schoolId = currentSchoolId();
   const tabs_list = [
-    { key: 'enrollment', label: 'Enrollment' },
-    { key: 'leavers',    label: 'Leavers' },
-    { key: 'attendance', label: 'Attendance' },
-    { key: 'financial',  label: 'Financial' },
+    { key: 'insights',    label: 'Insights', badge: () => { const i = computeInsights(schoolId); return i.filter(x => x.level === 'critical').length || null; } },
+    { key: 'enrollment',  label: 'Enrollment' },
+    { key: 'leavers',     label: 'Leavers' },
+    { key: 'attendance',  label: 'Attendance' },
+    { key: 'financial',   label: 'Financial' },
     { key: 'applications', label: 'Applications' }
   ];
   return `
@@ -5151,6 +5152,7 @@ function view_adm_reports() {
     })}
     ${tabs(tabs_list, rTab, k => { APP.params.rTab = k; APP.render(); })}
     <div class="pt-4">${
+      rTab === 'insights'    ? renderAIInsights(schoolId) :
       rTab === 'leavers'     ? renderLeaversReport(schoolId) :
       rTab === 'attendance'  ? renderAttendanceReport(schoolId) :
       rTab === 'financial'   ? view_fin_reports() :
