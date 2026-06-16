@@ -27,7 +27,6 @@ const APP = {
         { key: 'adm_dashboard',     label: 'Dashboard',         icon: 'dashboard' },
         { key: 'adm_people',        label: 'Students',          icon: 'students' },
         { key: 'adm_workforce',     label: 'Staff & HR',        icon: 'teacher' },
-        { key: 'adm_staff_att',     label: 'Staff Attendance',  icon: 'attendance' },
         { key: 'adm_academic',      label: 'Academic',          icon: 'classes' },
         { key: 'adm_finance_hub',   label: 'Finance',           icon: 'fees' },
         { key: 'adm_operations',    label: 'Operations',        icon: 'package' },

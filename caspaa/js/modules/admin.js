@@ -51,10 +51,11 @@ function view_adm_returning_students() {
 }
 
 function view_adm_workforce() {
-  return buildHub('Staff & HR', 'Staff directory, leave requests, appraisal', [
-    { key: 'staff',     label: 'Staff Directory',  view: 'view_adm_staff' },
-    { key: 'leave',     label: 'Leave Requests',   view: 'view_adm_leave_requests', badge: () => DB.query('leaveRequests', l => l.schoolId === currentSchoolId() && l.status === 'pending').length || null },
-    { key: 'appraisal', label: 'Appraisal',        view: 'view_adm_appraisal', badge: () => { const sid=currentSchoolId(); return DB.query('appraisals', a => a.schoolId===sid && ['manager_pending','principal_pending','outcome_pending'].includes(a.status)).length + DB.query('salaryAdvances', a => a.schoolId===sid && a.status==='pending').length || null; } }
+  return buildHub('Staff & HR', 'Staff directory, attendance, leave requests, appraisal', [
+    { key: 'staff',       label: 'Staff Directory',   view: 'view_adm_staff' },
+    { key: 'attendance',  label: 'Staff Attendance',  view: 'view_adm_staff_att' },
+    { key: 'leave',       label: 'Leave Requests',    view: 'view_adm_leave_requests', badge: () => DB.query('leaveRequests', l => l.schoolId === currentSchoolId() && l.status === 'pending').length || null },
+    { key: 'appraisal',   label: 'Appraisal',         view: 'view_adm_appraisal', badge: () => { const sid=currentSchoolId(); return DB.query('appraisals', a => a.schoolId===sid && ['manager_pending','principal_pending','outcome_pending'].includes(a.status)).length + DB.query('salaryAdvances', a => a.schoolId===sid && a.status==='pending').length || null; } }
   ], 'staff', 'workforceTab');
 }
 
@@ -5892,7 +5893,7 @@ function view_adm_leave_requests() {
     ${pageHeader({
       title: 'Leave Requests',
       subtitle: `${leaves.length} total · ${pending.length} pending`,
-      actions: `<button class="btn btn-secondary" onclick="APP.go('adm_staff_att')">${icon('attendance','w-4 h-4')} Staff Attendance</button>`
+      actions: `<button class="btn btn-secondary" onclick="APP.params.workforceTab='attendance'; APP.render()">${icon('attendance','w-4 h-4')} Staff Attendance</button>`
     })}
     ${renderHRLeave()}
   `;
