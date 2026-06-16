@@ -1365,11 +1365,12 @@ function view_adm_finance_hub() {
 }
 
 function view_adm_operations() {
-  return buildHub('Operations', 'Welfare, library, gate, inventory', [
-    { key: 'sickbay',   label: 'Sick Bay',     view: 'view_adm_sickbay' },
-    { key: 'visitors',  label: 'Visitor Log',  view: 'view_adm_visitors' },
-    { key: 'library',   label: 'Library',      view: 'view_adm_library' },
-    { key: 'inventory', label: 'Inventory',    view: 'view_adm_inventory' }
+  return buildHub('Operations', 'Welfare, library, gate, inventory, activities', [
+    { key: 'sickbay',     label: 'Sick Bay',    view: 'view_adm_sickbay' },
+    { key: 'visitors',    label: 'Visitor Log', view: 'view_adm_visitors' },
+    { key: 'library',     label: 'Library',     view: 'view_adm_library' },
+    { key: 'inventory',   label: 'Inventory',   view: 'view_adm_inventory' },
+    { key: 'activities',  label: 'Activities',  view: 'view_adm_activities' }
   ], 'sickbay', 'opsTab');
 }
 
@@ -2262,11 +2263,86 @@ function viewStudent(id) {
     `,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
+      <button class="btn btn-secondary" onclick="printStudentID('${s.id}')">${icon('download','w-4 h-4')} Print ID</button>
       <button class="btn btn-secondary" onclick="studentLifecycleModal('${s.id}')">${icon('settings','w-4 h-4')} Actions</button>
       <button class="btn btn-secondary" onclick="editStudent('${s.id}')">${icon('edit','w-4 h-4')} Edit</button>
       <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); viewAsParent('${s.parentId}')">View as Parent</button>
     `
   });
+}
+
+function printStudentID(studentId) {
+  const s = DB.find('students', studentId);
+  if (!s) return;
+  const cls = DB.find('classes', s.classId);
+  const parent = DB.find('parents', s.parentId);
+  const school = DB.find('schools', s.schoolId) || {};
+  const house = s.houseId ? DB.find('houses', s.houseId) : null;
+  const acts = DB.query('studentActivities', sa => sa.studentId === s.id).map(sa => DB.find('activities', sa.activityId)).filter(Boolean);
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Student ID — ${s.name}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    body { background: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .card { width: 86mm; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
+    .header { background: linear-gradient(135deg, #1e3a5f, #2563eb); color: white; padding: 16px; text-align: center; }
+    .school-name { font-size: 13px; font-weight: bold; letter-spacing: 0.5px; }
+    .school-sub { font-size: 9px; opacity: 0.8; margin-top: 2px; text-transform: uppercase; }
+    .id-label { font-size: 10px; font-weight: bold; background: rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 8px; margin-top: 8px; display: inline-block; letter-spacing: 1px; }
+    .body { padding: 16px; }
+    .avatar { width: 64px; height: 64px; border-radius: 50%; background: #dbeafe; color: #1d4ed8; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 12px; border: 3px solid #2563eb; }
+    .name { font-size: 16px; font-weight: bold; color: #0f172a; text-align: center; }
+    .class { font-size: 11px; color: #64748b; text-align: center; margin-top: 2px; }
+    .adm { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px; font-family: monospace; }
+    .divider { height: 1px; background: #e2e8f0; margin: 12px 0; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .info-item .label { font-size: 8px; color: #94a3b8; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+    .info-item .value { font-size: 11px; color: #1e293b; font-weight: 600; margin-top: 1px; }
+    .footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .footer-label { font-size: 8px; color: #94a3b8; text-transform: uppercase; }
+    .footer-val { font-size: 10px; color: #475569; font-weight: 600; }
+    @media print { body { background: white; } .card { box-shadow: none; margin: 0; } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="school-name">${school.name || 'Bright Lights Academy'}</div>
+      <div class="school-sub">${school.address || ''}</div>
+      <div class="id-label">Student ID Card</div>
+    </div>
+    <div class="body">
+      <div class="avatar">${s.name.charAt(0)}</div>
+      <div class="name">${s.name}</div>
+      <div class="class">${cls ? cls.name : '—'}</div>
+      <div class="adm">${s.admissionNo || s.id}</div>
+      <div class="divider"></div>
+      <div class="info-grid">
+        <div class="info-item"><div class="label">Blood Group</div><div class="value">${s.bloodGroup || '—'}</div></div>
+        <div class="info-item"><div class="label">Allergies</div><div class="value">${s.allergies || 'None'}</div></div>
+        <div class="info-item"><div class="label">House</div><div class="value">${house ? house.name : '—'}</div></div>
+        <div class="info-item"><div class="label">Admission Date</div><div class="value">${(s.admissionDate || '').slice(0, 4) || '—'}</div></div>
+        <div class="info-item"><div class="label">Parent / Guardian</div><div class="value">${parent ? parent.name : '—'}</div></div>
+        <div class="info-item"><div class="label">Parent Phone</div><div class="value">${parent ? parent.phone : '—'}</div></div>
+      </div>
+      ${acts.length ? `<div class="divider"></div><div class="info-item"><div class="label">Activities</div><div class="value" style="font-size:10px">${acts.map(a=>a.icon+' '+a.name).join(' · ')}</div></div>` : ''}
+    </div>
+    <div class="footer">
+      <div><div class="footer-label">Session</div><div class="footer-val">${DB.settings().currentSession || DB.settings().currentTerm || '—'}</div></div>
+      <div style="text-align:right"><div class="footer-label">In emergency call</div><div class="footer-val">${parent ? parent.phone : school.phone || '—'}</div></div>
+    </div>
+  </div>
+  <script>window.onload = () => window.print();<\/script>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  if (win) { win.document.write(html); win.document.close(); }
+  else toast('Allow pop-ups to print the ID card', 'warn');
 }
 
 function toggleStudentActivity(studentId, activityId, isCurrentlyEnrolled) {
@@ -2305,6 +2381,181 @@ function toggleStudentActivity(studentId, activityId, isCurrentlyEnrolled) {
     toast(`${a.icon} ${a.name} enrolled · ${money(a.price)} added to ${s.name.split(' ')[0]}'s invoice`, 'success');
   }
   viewStudent(studentId);
+}
+
+/* ---------- Activities Management ---------- */
+function view_adm_activities() {
+  const schoolId = currentSchoolId();
+  const activities = DB.query('activities', a => a.schoolId === schoolId);
+  const allEnrollments = DB.query('studentActivities', sa => {
+    const s = DB.find('students', sa.studentId);
+    return s && s.schoolId === schoolId;
+  });
+
+  const rows = activities.map(a => {
+    const enrolled = allEnrollments.filter(sa => sa.activityId === a.id);
+    const revenue = enrolled.length * (a.price || 0);
+    const cost = enrolled.length * (a.instructorCost || 0);
+    const net = revenue - cost;
+    return { ...a, enrolledCount: enrolled.length, revenue, cost, net };
+  });
+
+  const totalRevenue = rows.reduce((s, r) => s + r.revenue, 0);
+  const totalCost = rows.reduce((s, r) => s + r.cost, 0);
+  const totalNet = totalRevenue - totalCost;
+
+  return `
+    ${pageHeader({
+      title: 'Extracurricular Activities',
+      subtitle: 'Manage clubs, sports and enrichment programmes · track revenue vs instructor cost',
+      actions: `<button class="btn btn-primary" onclick="newActivityModal()">${icon('plus','w-4 h-4')} Add Activity</button>`
+    })}
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      ${statCard({ label: 'Activities', value: activities.length, icon: 'check', color: 'brand' })}
+      ${statCard({ label: 'Total Revenue', value: money(totalRevenue), icon: 'fees', color: 'blue' })}
+      ${statCard({ label: 'Total Cost', value: money(totalCost), icon: 'trending_up', color: 'gold' })}
+      ${statCard({ label: 'Net Income', value: money(totalNet), icon: 'reports', color: totalNet >= 0 ? 'brand' : 'rose' })}
+    </div>
+
+    ${rows.length === 0
+      ? emptyState({ title: 'No activities yet', body: 'Add clubs, sports and enrichment programmes to start tracking enrollment and revenue.', icon: 'check', action: `<button class="btn btn-primary" onclick="newActivityModal()">${icon('plus','w-4 h-4')} Add Activity</button>` })
+      : `<div class="card overflow-hidden">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Activity</th>
+                <th class="text-center">Enrolled</th>
+                <th class="text-right">Fee / Student</th>
+                <th class="text-right">Instructor Cost / Student</th>
+                <th class="text-right">Total Revenue</th>
+                <th class="text-right">Total Cost</th>
+                <th class="text-right">Net</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(a => `<tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">${a.icon || '📋'}</span>
+                    <div>
+                      <div class="font-semibold text-slate-900">${a.name}</div>
+                      ${a.description ? `<div class="text-xs text-slate-400 truncate max-w-xs">${a.description}</div>` : ''}
+                    </div>
+                  </div>
+                </td>
+                <td class="text-center font-bold">${a.enrolledCount}</td>
+                <td class="text-right">${money(a.price || 0)}</td>
+                <td class="text-right text-rose-600">${a.instructorCost ? money(a.instructorCost) : '<span class="text-slate-300">—</span>'}</td>
+                <td class="text-right font-semibold text-emerald-700">${money(a.revenue)}</td>
+                <td class="text-right text-rose-600">${money(a.cost)}</td>
+                <td class="text-right font-bold ${a.net >= 0 ? 'text-emerald-700' : 'text-rose-600'}">${money(a.net)}</td>
+                <td>
+                  <div class="flex gap-1">
+                    <button class="btn btn-ghost !p-1.5" onclick="editActivityModal('${a.id}')">${icon('edit','w-4 h-4')}</button>
+                    <button class="btn btn-ghost !p-1.5 text-rose-400" onclick="deleteActivity('${a.id}')">${icon('trash','w-4 h-4')}</button>
+                  </div>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+            <tfoot>
+              <tr class="bg-slate-50 font-bold border-t-2 border-slate-200">
+                <td class="px-4 py-3 text-slate-700" colspan="4">Totals</td>
+                <td class="px-4 py-3 text-right text-emerald-700">${money(totalRevenue)}</td>
+                <td class="px-4 py-3 text-right text-rose-600">${money(totalCost)}</td>
+                <td class="px-4 py-3 text-right ${totalNet >= 0 ? 'text-emerald-700' : 'text-rose-600'}">${money(totalNet)}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>`}
+  `;
+}
+
+function newActivityModal() {
+  modal({
+    title: 'New Activity',
+    body: `<div class="space-y-3">
+      <div class="grid grid-cols-4 gap-3">
+        <div><label class="input-label">Icon</label><input id="act_icon" class="input text-center text-xl" value="🏫" maxlength="2" /></div>
+        <div class="col-span-3"><label class="input-label">Activity Name *</label><input id="act_name" class="input" placeholder="e.g. Swimming, Debate Club, Ballet" /></div>
+      </div>
+      <div><label class="input-label">Description</label><input id="act_desc" class="input" placeholder="Brief description of the activity" /></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="input-label">Student Fee (₦)</label><input id="act_price" type="number" class="input" placeholder="0" min="0" /></div>
+        <div><label class="input-label">Instructor Cost per Student (₦)</label><input id="act_cost" type="number" class="input" placeholder="0" min="0" /></div>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
+        ${icon('info','w-3.5 h-3.5 inline mr-1')} Net income per student = Fee − Instructor Cost. This drives the revenue report above.
+      </div>
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveNewActivity()">Add Activity</button>`
+  });
+}
+
+function saveNewActivity() {
+  const name = (document.getElementById('act_name') || {}).value.trim();
+  if (!name) { toast('Activity name is required', 'danger'); return; }
+  DB.insert('activities', {
+    id: uid('act'), schoolId: currentSchoolId(),
+    name,
+    icon: (document.getElementById('act_icon') || {}).value.trim() || '📋',
+    description: (document.getElementById('act_desc') || {}).value.trim(),
+    price: parseInt((document.getElementById('act_price') || {}).value) || 0,
+    instructorCost: parseInt((document.getElementById('act_cost') || {}).value) || 0
+  });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast('Activity added', 'success');
+}
+
+function editActivityModal(id) {
+  const a = DB.find('activities', id);
+  if (!a) return;
+  modal({
+    title: 'Edit Activity',
+    body: `<div class="space-y-3">
+      <div class="grid grid-cols-4 gap-3">
+        <div><label class="input-label">Icon</label><input id="eact_icon" class="input text-center text-xl" value="${a.icon || '📋'}" maxlength="2" /></div>
+        <div class="col-span-3"><label class="input-label">Activity Name *</label><input id="eact_name" class="input" value="${a.name}" /></div>
+      </div>
+      <div><label class="input-label">Description</label><input id="eact_desc" class="input" value="${a.description || ''}" /></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="input-label">Student Fee (₦)</label><input id="eact_price" type="number" class="input" value="${a.price || 0}" min="0" /></div>
+        <div><label class="input-label">Instructor Cost per Student (₦)</label><input id="eact_cost" type="number" class="input" value="${a.instructorCost || 0}" min="0" /></div>
+      </div>
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveEditActivity('${id}')">Save Changes</button>`
+  });
+}
+
+function saveEditActivity(id) {
+  const name = (document.getElementById('eact_name') || {}).value.trim();
+  if (!name) { toast('Activity name is required', 'danger'); return; }
+  DB.update('activities', id, {
+    name,
+    icon: (document.getElementById('eact_icon') || {}).value.trim() || '📋',
+    description: (document.getElementById('eact_desc') || {}).value.trim(),
+    price: parseInt((document.getElementById('eact_price') || {}).value) || 0,
+    instructorCost: parseInt((document.getElementById('eact_cost') || {}).value) || 0
+  });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast('Activity updated', 'success');
+}
+
+function deleteActivity(id) {
+  const a = DB.find('activities', id);
+  if (!a) return;
+  const enrolled = DB.query('studentActivities', sa => sa.activityId === id).length;
+  confirm(`Delete "${a.name}"?${enrolled ? ` ${enrolled} student(s) are currently enrolled.` : ''}`, () => {
+    DB.remove('activities', id);
+    APP.render();
+    toast('Activity deleted', 'info');
+  }, { danger: true });
 }
 
 // Holds the in-flight photo and documents while the student form is open

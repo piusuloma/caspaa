@@ -65,6 +65,7 @@ const APP = {
       ],
       teacher: [
         { key: 'tch_dashboard',  label: 'Dashboard',         icon: 'dashboard' },
+        { key: 'tch_profile',    label: 'My Profile',        icon: 'teacher' },
         { key: 'tch_classes',    label: 'My Classes',        icon: 'classes' },
         { key: 'tch_attendance', label: 'Attendance',        icon: 'attendance' },
         { key: 'tch_results',    label: 'Enter Results',     icon: 'results' },

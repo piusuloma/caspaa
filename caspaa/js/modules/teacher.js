@@ -2315,3 +2315,134 @@ function _aprStatusBadge(status) {
   const labels = { self_pending: 'Self pending', manager_pending: 'Manager review', principal_pending: 'Principal review', outcome_pending: 'Setting outcome', ack_pending: 'Awaiting ack', completed: 'Completed' };
   return `<span class="badge ${map[status]||'badge-neutral'}">${labels[status]||status}</span>`;
 }
+
+/* ============================================================
+   TEACHER PROFILE (self-service)
+   ============================================================ */
+function view_tch_profile() {
+  const t = DB.find('teachers', AUTH.current.id);
+  if (!t) return emptyState({ title: 'Profile not found', icon: 'teacher' });
+
+  const classes = teacherClasses();
+  const subjects = DB.query('subjects', s => (t.subjectIds || []).includes(s.id));
+  const schoolId = t.schoolId || AUTH.current.schoolId;
+  const attRecs = DB.query('staffAttendance', a => a.schoolId === schoolId && a.staffId === t.id).sort((a,b) => b.date.localeCompare(a.date));
+  const last30 = attRecs.filter(a => a.date >= daysAgo(30));
+  const presentDays = last30.filter(a => a.status === 'present').length;
+  const lateDays = last30.filter(a => a.status === 'late').length;
+  const absentDays = last30.filter(a => a.status === 'absent').length;
+  const latestAppraisal = DB.query('appraisals', a => a.staffId === t.id).sort((a,b) => b.createdAt.localeCompare(a.createdAt))[0];
+
+  return `
+    ${pageHeader({
+      title: 'My Profile',
+      subtitle: 'Your personal and professional information',
+      actions: `<button class="btn btn-primary" onclick="tch_editProfileModal()">${icon('edit','w-4 h-4')} Edit Profile</button>`
+    })}
+
+    <div class="grid lg:grid-cols-3 gap-4">
+      <!-- Identity card -->
+      <div class="space-y-4">
+        <div class="card p-5 text-center">
+          ${avatar(t.name, 'xxl')}
+          <div class="font-bold text-slate-900 text-xl mt-3">${t.name}</div>
+          <div class="text-sm text-slate-500 mt-0.5">${t.role || 'Teacher'}</div>
+          ${t.department ? `<span class="badge badge-info mt-2">${t.department}</span>` : ''}
+          ${t.staffId ? `<div class="text-xs text-slate-400 mt-2">Staff ID: <strong>${t.staffId}</strong></div>` : ''}
+        </div>
+        <div class="card p-4 space-y-2 text-sm">
+          <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wide mb-3">Contact</h4>
+          <div class="flex items-center gap-2 text-slate-700">${icon('phone','w-4 h-4 text-slate-400')} ${t.phone || '—'}</div>
+          <div class="flex items-center gap-2 text-slate-700">${icon('edit','w-4 h-4 text-slate-400')} ${t.email || '—'}</div>
+          ${t.address ? `<div class="flex items-start gap-2 text-slate-700">${icon('package','w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0')} <span>${t.address}</span></div>` : ''}
+        </div>
+      </div>
+
+      <!-- Teaching assignments + attendance -->
+      <div class="lg:col-span-2 space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          ${statCard({ label: 'Present (30d)', value: presentDays, icon: 'check', color: 'brand' })}
+          ${statCard({ label: 'Late (30d)', value: lateDays, icon: 'bell', color: 'gold' })}
+          ${statCard({ label: 'Absent (30d)', value: absentDays, icon: 'attendance', color: absentDays > 3 ? 'rose' : 'blue' })}
+        </div>
+
+        <div class="card p-4">
+          <h4 class="font-bold text-slate-900 mb-3">Teaching Assignments</h4>
+          ${classes.length === 0 ? `<p class="text-sm text-slate-400">No classes assigned.</p>` : `
+            <div class="space-y-2">
+              ${classes.map(c => {
+                const students = COMPUTE.studentsByClass(c.id);
+                const classSubs = subjects.filter(s => !s.classId || s.classId === c.id);
+                return `<div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                  <div>
+                    <div class="font-semibold text-slate-900">${c.name}</div>
+                    <div class="text-xs text-slate-500">${classSubs.map(s=>s.name).join(' · ') || 'Subjects not listed'}</div>
+                  </div>
+                  <span class="badge badge-neutral">${students.length} students</span>
+                </div>`;
+              }).join('')}
+            </div>`}
+        </div>
+
+        ${latestAppraisal ? `
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="font-bold text-slate-900">Latest Appraisal</h4>
+            ${_aprStatusBadge(latestAppraisal.status)}
+          </div>
+          <div class="text-sm text-slate-500">Cycle: <strong class="text-slate-800">${latestAppraisal.cycle || '—'}</strong></div>
+          <button class="btn btn-secondary text-xs mt-3" onclick="APP.go('tch_appraisal')">${icon('arrow_left','w-3.5 h-3.5 rotate-180')} View Appraisal</button>
+        </div>` : ''}
+
+        ${attRecs.length ? `
+        <div class="card overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <h4 class="font-bold text-slate-900">Recent Attendance</h4>
+            <span class="text-xs text-slate-400">Last ${Math.min(attRecs.length, 10)} records</span>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Date</th><th class="text-center">Status</th><th>Note</th></tr></thead>
+            <tbody>
+              ${attRecs.slice(0,10).map(a => `<tr>
+                <td class="text-sm">${fdate(a.date, { short: true })}</td>
+                <td class="text-center">${statusBadge(a.status)}</td>
+                <td class="text-xs text-slate-500">${a.note || '—'}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function tch_editProfileModal() {
+  const t = DB.find('teachers', AUTH.current.id);
+  if (!t) return;
+  modal({
+    title: 'Edit My Profile',
+    body: `<div class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="input-label">Phone</label><input id="tp_phone" class="input" value="${t.phone || ''}" /></div>
+        <div><label class="input-label">Email</label><input id="tp_email" class="input" type="email" value="${t.email || ''}" /></div>
+      </div>
+      <div><label class="input-label">Address</label><textarea id="tp_address" class="input" rows="2">${t.address || ''}</textarea></div>
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="tch_saveProfile()">Save</button>`
+  });
+}
+
+function tch_saveProfile() {
+  const t = DB.find('teachers', AUTH.current.id);
+  if (!t) return;
+  DB.update('teachers', t.id, {
+    phone: (document.getElementById('tp_phone') || {}).value.trim(),
+    email: (document.getElementById('tp_email') || {}).value.trim(),
+    address: (document.getElementById('tp_address') || {}).value.trim()
+  });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast('Profile updated', 'success');
+}
+
