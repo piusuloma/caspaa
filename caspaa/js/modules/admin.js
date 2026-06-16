@@ -797,14 +797,22 @@ function decideSalaryAdvance(id, decision) {
 }
 
 function view_adm_academic() {
-  return buildHub('Academic', 'Classes, curriculum, timetable, attendance, results, discipline', [
-    { key: 'classes',    label: 'Classes',    view: 'view_adm_classes' },
-    { key: 'curriculum', label: 'Curriculum', view: 'view_adm_curriculum' },
-    { key: 'timetable',  label: 'Timetable',  view: 'view_adm_timetable' },
-    { key: 'attendance', label: 'Attendance', view: 'view_adm_attendance' },
-    { key: 'results',    label: 'Results',    view: 'view_adm_results' },
-    { key: 'discipline', label: 'Discipline', view: 'view_adm_discipline' }
+  return buildHub('Academic', 'Classes, curriculum, timetable, attendance, results, discipline, assessment setup', [
+    { key: 'classes',    label: 'Classes',          view: 'view_adm_classes' },
+    { key: 'curriculum', label: 'Curriculum',        view: 'view_adm_curriculum' },
+    { key: 'timetable',  label: 'Timetable',         view: 'view_adm_timetable' },
+    { key: 'attendance', label: 'Attendance',        view: 'view_adm_attendance' },
+    { key: 'results',    label: 'Results',           view: 'view_adm_results' },
+    { key: 'discipline', label: 'Discipline',        view: 'view_adm_discipline' },
+    { key: 'assessment', label: 'Assessment Setup',  view: 'view_adm_exam_structure' }
   ], 'classes', 'academicTab');
+}
+
+function view_adm_exam_structure() {
+  return `
+    ${pageHeader({ title: 'Assessment Setup', subtitle: 'Define CA count, weights, mock exams, and pre-tests per term. Teachers see these columns when entering results.' })}
+    ${renderExamStructureSettings()}
+  `;
 }
 
 function view_adm_curriculum() {
@@ -6869,11 +6877,10 @@ function renderHRPayroll() {
 function view_adm_settings() {
   const tab = APP.params.setTab || 'branding';
   return `
-    ${pageHeader({ title: 'School Settings', subtitle: 'Branding · Academic · Exams · Appraisal · Budget · Calendar · Notifications · Roles · AI · Payments · Backup' })}
+    ${pageHeader({ title: 'School Settings', subtitle: 'Branding · Academic · Appraisal · Budget · Calendar · Notifications · Roles · AI · Payments · Backup' })}
     ${tabs([
       { key: 'branding',     label: 'Branding' },
       { key: 'academic',     label: 'Academic' },
-      { key: 'exams',        label: 'Exam Structure' },
       { key: 'appraisal',    label: 'Appraisal' },
       { key: 'budget',       label: 'Budget Categories' },
       { key: 'calendar',     label: 'Calendar' },
@@ -6885,7 +6892,6 @@ function view_adm_settings() {
     ], tab, k => { APP.params.setTab = k; APP.render(); })}
     <div class="pt-4">
       ${tab === 'academic' ? renderAcademicStructure() :
-        tab === 'exams' ? renderExamStructureSettings() :
         tab === 'appraisal' ? renderAppraisalSettings() :
         tab === 'budget' ? renderBudgetCategoriesSettings() :
         tab === 'calendar' ? renderAcademicCalendar() :
