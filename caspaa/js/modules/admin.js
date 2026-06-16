@@ -31,19 +31,30 @@ function buildHub(title, subtitle, tabsList, defaultTab, paramKey) {
 
 function view_adm_people() {
   return buildHub('Students', 'Students, admissions, alumni, enrollment trends', [
-    { key: 'students',   label: 'Students',   view: 'view_adm_students' },
-    { key: 'admissions', label: 'Admissions', view: 'view_adm_admissions', badge: () => DB.query('admissionApplications', a => a.schoolId === currentSchoolId() && a.status !== 'accepted' && a.status !== 'rejected').length || null },
-    { key: 'alumni',     label: 'Alumni',     view: 'view_adm_alumni' },
-    { key: 'analytics',  label: 'Analytics',  view: 'view_adm_enrollment_analytics' }
+    { key: 'students',       label: 'Students',        view: 'view_adm_students' },
+    { key: 'new_enrollment', label: 'New Enrollment',  view: 'view_adm_new_enrollment' },
+    { key: 'returning',      label: 'Returning',       view: 'view_adm_returning_students' },
+    { key: 'admissions',     label: 'Admissions',      view: 'view_adm_admissions', badge: () => DB.query('admissionApplications', a => a.schoolId === currentSchoolId() && a.status !== 'accepted' && a.status !== 'rejected').length || null },
+    { key: 'alumni',         label: 'Alumni',          view: 'view_adm_alumni' },
+    { key: 'analytics',      label: 'Analytics',       view: 'view_adm_enrollment_analytics' }
   ], 'students', 'peopleTab');
 }
 
+function view_adm_new_enrollment() {
+  APP.params.enrollmentView = 'new';
+  return view_adm_students();
+}
+
+function view_adm_returning_students() {
+  APP.params.enrollmentView = 'returning';
+  return view_adm_students();
+}
+
 function view_adm_workforce() {
-  return buildHub('Staff & HR', 'Staff, attendance, leave, appraisal, permissions', [
-    { key: 'staff',       label: 'Staff Directory', view: 'view_adm_staff' },
-    { key: 'hr',          label: 'HR Hub',          view: 'view_adm_hr',  badge: () => DB.query('leaveRequests', l => l.schoolId === currentSchoolId() && l.status === 'pending').length || null },
-    { key: 'appraisal',   label: 'Appraisal',       view: 'view_adm_appraisal', badge: () => { const sid=currentSchoolId(); return DB.query('appraisals', a => a.schoolId===sid && ['manager_pending','principal_pending','outcome_pending'].includes(a.status)).length + DB.query('salaryAdvances', a => a.schoolId===sid && a.status==='pending').length || null; } },
-    { key: 'permissions', label: 'Permissions Report', view: 'view_adm_permissions' }
+  return buildHub('Staff & HR', 'Staff directory, leave requests, appraisal', [
+    { key: 'staff',     label: 'Staff Directory',  view: 'view_adm_staff' },
+    { key: 'leave',     label: 'Leave Requests',   view: 'view_adm_leave_requests', badge: () => DB.query('leaveRequests', l => l.schoolId === currentSchoolId() && l.status === 'pending').length || null },
+    { key: 'appraisal', label: 'Appraisal',        view: 'view_adm_appraisal', badge: () => { const sid=currentSchoolId(); return DB.query('appraisals', a => a.schoolId===sid && ['manager_pending','principal_pending','outcome_pending'].includes(a.status)).length + DB.query('salaryAdvances', a => a.schoolId===sid && a.status==='pending').length || null; } }
   ], 'staff', 'workforceTab');
 }
 
@@ -1983,19 +1994,6 @@ function view_adm_students() {
         <button class="btn btn-primary" onclick="addStudentModal()">${icon('plus','w-4 h-4')} Add Student</button>
       `
     })}
-
-    <!-- Enrollment category tabs -->
-    ${(() => {
-      const enrollmentView = APP.params.enrollmentView || 'all';
-      const currentSession = DB.settings().currentSession || new Date().getFullYear() + '/' + (new Date().getFullYear() + 1);
-      const newEnrollments = students.filter(s => s.enrollmentSession === currentSession || s.enrollmentYear === new Date().getFullYear().toString() || (s.admissionDate && s.admissionDate.startsWith(new Date().getFullYear().toString())));
-      const returning = students.filter(s => !newEnrollments.includes(s));
-      return `<div class="flex gap-2 mb-3 flex-wrap">
-        <button class="chip ${enrollmentView==='all'?'active':''}" onclick="APP.params.enrollmentView='all'; APP.render()">All Students (${students.length})</button>
-        <button class="chip ${enrollmentView==='new'?'active':''}" onclick="APP.params.enrollmentView='new'; APP.render()">${icon('plus','w-3.5 h-3.5')} New Enrollment (${newEnrollments.length})</button>
-        <button class="chip ${enrollmentView==='returning'?'active':''}" onclick="APP.params.enrollmentView='returning'; APP.render()">${icon('trending_up','w-3.5 h-3.5')} Returning Students (${returning.length})</button>
-      </div>`;
-    })()}
 
     <!-- Gender split strip -->
     ${(() => {
@@ -5884,6 +5882,20 @@ function saveInventory() {
   document.getElementById('modalBackdrop').click();
   APP.render();
   toast('Item added to inventory');
+}
+
+/* ---------- Leave Requests (top-level tab) ---------- */
+function view_adm_leave_requests() {
+  const leaves = DB.query('leaveRequests', l => l.schoolId === currentSchoolId());
+  const pending = leaves.filter(l => l.status === 'pending');
+  return `
+    ${pageHeader({
+      title: 'Leave Requests',
+      subtitle: `${leaves.length} total · ${pending.length} pending`,
+      actions: `<button class="btn btn-secondary" onclick="APP.go('adm_staff_att')">${icon('attendance','w-4 h-4')} Staff Attendance</button>`
+    })}
+    ${renderHRLeave()}
+  `;
 }
 
 /* ---------- HR Hub (Leave + Staff Attendance) ---------- */
