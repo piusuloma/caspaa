@@ -1684,6 +1684,8 @@ function view_adm_dashboard() {
         })()}
       </div>
 
+      ${renderAIInsights(schoolId)}
+
       <!-- Gender split — supplies planning, moved up for quick visibility -->
       <div class="grid lg:grid-cols-3 gap-4">
         <div class="card p-5 flex flex-col justify-center">
@@ -5004,7 +5006,7 @@ function view_adm_reports() {
     ${pageHeader({
       title: 'School Reports',
       subtitle: 'Consolidated view — enrollment, leavers, attendance, financial, and admissions data',
-      actions: `<button class="btn btn-secondary" onclick="exportConsolidatedReport('${rTab}')">${icon('download','w-4 h-4')} Export</button>`
+      actions: `${rTab === 'financial' ? `<button class="btn btn-secondary" onclick="exportPeachtreeJournal()">${icon('download','w-4 h-4')} Peachtree Export</button> ` : ''}<button class="btn btn-secondary" onclick="exportConsolidatedReport('${rTab}')">${icon('download','w-4 h-4')} Export</button>`
     })}
     ${tabs(tabs_list, rTab, k => { APP.params.rTab = k; APP.render(); })}
     <div class="pt-4">${
@@ -5015,6 +5017,148 @@ function view_adm_reports() {
       renderEnrollmentReport(schoolId)
     }</div>
   `;
+}
+
+function computeInsights(schoolId) {
+  const insights = [];
+
+  // Overdue invoices
+  const overdueInvs = DB.query('invoices', i => i.schoolId === schoolId && i.balance > 0 && i.dueDate && i.dueDate < today());
+  if (overdueInvs.length) {
+    const tot = overdueInvs.reduce((s, i) => s + i.balance, 0);
+    insights.push({ level: 'critical', cat: 'Finance', msg: `${overdueInvs.length} overdue invoice${overdueInvs.length > 1 ? 's' : ''} · ${money(tot)} uncollected past due date`, view: 'view_fin_invoices' });
+  }
+
+  // Fee collection below target
+  const allInvs = DB.query('invoices', i => i.schoolId === schoolId);
+  const billed = allInvs.reduce((s, i) => s + i.total, 0);
+  const paidTotal = allInvs.reduce((s, i) => s + i.paid, 0);
+  const collRate = billed ? Math.round(paidTotal / billed * 100) : 100;
+  const target = ((DB.settings().revenueAnalytics || {}).alertCollectionBelow) || 80;
+  if (collRate < target) {
+    insights.push({ level: 'warn', cat: 'Finance', msg: `Fee collection at ${collRate}% — below ${target}% target`, view: 'view_fin_invoices' });
+  }
+
+  // Stale pending applications (>7 days unreviewed)
+  const d7 = new Date(); d7.setDate(d7.getDate() - 7);
+  const weekAgoStr = d7.toISOString().substring(0, 10);
+  const staleApps = DB.query('admissionApplications', a => a.schoolId === schoolId && a.status === 'pending' && a.appliedAt && a.appliedAt.substring(0, 10) < weekAgoStr);
+  if (staleApps.length) {
+    insights.push({ level: 'info', cat: 'Admissions', msg: `${staleApps.length} application${staleApps.length > 1 ? 's' : ''} pending for 7+ days without a review`, view: 'view_adm_admissions' });
+  }
+
+  // Visits scheduled but past date and not confirmed
+  const staleVisits = DB.query('admissionApplications', a => a.schoolId === schoolId && a.status === 'visit_scheduled' && a.visitDate && a.visitDate < today());
+  if (staleVisits.length) {
+    insights.push({ level: 'warn', cat: 'Admissions', msg: `${staleVisits.length} school visit${staleVisits.length > 1 ? 's' : ''} past scheduled date — confirm or reschedule`, view: 'view_adm_admissions' });
+  }
+
+  // At-risk students (3+ consecutive absences)
+  const activeStudents = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
+  const allAtt = DB.query('attendance', a => a.schoolId === schoolId);
+  const attByStudent = {};
+  allAtt.forEach(a => { if (!attByStudent[a.studentId]) attByStudent[a.studentId] = []; attByStudent[a.studentId].push(a); });
+  const atRisk = [];
+  activeStudents.forEach(s => {
+    const sAtt = (attByStudent[s.id] || []).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+    let cons = 0;
+    for (const r of sAtt) { if (r.status === 'absent') cons++; else break; }
+    if (cons >= 3) atRisk.push(s.name);
+  });
+  if (atRisk.length) {
+    insights.push({ level: 'critical', cat: 'Attendance', msg: `${atRisk.length} student${atRisk.length > 1 ? 's' : ''} absent 3+ consecutive days: ${atRisk.slice(0, 3).join(', ')}${atRisk.length > 3 ? ` +${atRisk.length - 3} more` : ''}`, view: 'view_adm_attendance' });
+  }
+
+  // Club viability (enrolled < 5)
+  const activities = DB.query('activities', a => a.schoolId === schoolId);
+  activities.forEach(act => {
+    const enrolled = DB.query('studentActivities', sa => sa.activityId === act.id).length;
+    if (enrolled > 0 && enrolled < 5) {
+      insights.push({ level: 'info', cat: 'Clubs', msg: `${act.icon || '🎯'} ${act.name} has only ${enrolled} student${enrolled !== 1 ? 's' : ''} — review viability or run a promotion`, view: 'view_adm_activities' });
+    }
+  });
+
+  if (insights.length === 0) {
+    insights.push({ level: 'ok', cat: 'All Clear', msg: 'No critical issues detected — school operations look healthy' });
+  }
+  return insights;
+}
+
+function renderAIInsights(schoolId) {
+  const insights = computeInsights(schoolId);
+  const levelCfg = {
+    critical: { cls: 'bg-red-50 border-red-200 text-red-900', dot: 'bg-red-500', icon: '🔴' },
+    warn:     { cls: 'bg-amber-50 border-amber-200 text-amber-900', dot: 'bg-amber-400', icon: '🟡' },
+    info:     { cls: 'bg-blue-50 border-blue-200 text-blue-900', dot: 'bg-blue-400', icon: '🔵' },
+    ok:       { cls: 'bg-emerald-50 border-emerald-200 text-emerald-900', dot: 'bg-emerald-500', icon: '🟢' }
+  };
+  return `
+    <div class="card p-4 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">✨</span>
+          <h3 class="font-bold text-slate-900">Operational Insights</h3>
+        </div>
+        <span class="text-xs text-slate-400">Auto-detected · updated on load</span>
+      </div>
+      <div class="space-y-2">
+        ${insights.map(ins => {
+          const cfg = levelCfg[ins.level] || levelCfg.info;
+          return `<div class="flex items-start gap-3 p-3 rounded-xl border ${cfg.cls}">
+            <span class="text-sm mt-0.5">${cfg.icon}</span>
+            <div class="flex-1 min-w-0">
+              <span class="text-xs font-bold uppercase tracking-wide opacity-60">${ins.cat}</span>
+              <div class="text-sm">${ins.msg}</div>
+            </div>
+            ${ins.view ? `<button class="btn btn-ghost !py-1 !px-2 text-xs flex-shrink-0" onclick="APP.go('${ins.view}')" title="Go to ${ins.cat}">View ${icon('arrow_left','w-3 h-3 rotate-180')}</button>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function exportPeachtreeJournal() {
+  const schoolId = currentSchoolId();
+  const school = DB.find('schools', schoolId);
+  const headers = ['Journal', 'Date', 'Reference', 'G/L Account No.', 'Account Description', 'Debit', 'Credit', 'Memo'];
+  const rows = [];
+
+  // Payments received → Debit Cash, Credit Income
+  const payments = DB.query('payments', p => p.schoolId === schoolId);
+  payments.forEach(p => {
+    const s = DB.find('students', p.studentId);
+    const ref = p.id.slice(-8).toUpperCase();
+    const d = (p.date || p.createdAt || today()).substring(0, 10);
+    const memo = `Fee payment — ${s ? s.name : 'Student'}`;
+    rows.push(['GJ', d, ref, '1100', 'Cash & Bank', p.amount, '', memo]);
+    rows.push(['GJ', d, ref, '4000', 'School Fees Income', '', p.amount, memo]);
+  });
+
+  // Invoices raised → Debit AR, Credit Income (if no payment record)
+  const invoices = DB.query('invoices', i => i.schoolId === schoolId);
+  invoices.forEach(inv => {
+    const s = DB.find('students', inv.studentId);
+    const ref = inv.id.slice(-8).toUpperCase();
+    const d = (inv.createdAt || today()).substring(0, 10);
+    const memo = `Invoice — ${s ? s.name : 'Student'} (${inv.term})`;
+    rows.push(['GJ', d, ref, '1200', 'Accounts Receivable', inv.total, '', memo]);
+    rows.push(['GJ', d, ref, '4000', 'School Fees Income', '', inv.total, memo]);
+  });
+
+  const csv = [headers, ...rows].map(r => r.map(v => {
+    const str = String(v == null ? '' : v);
+    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+  }).join(',')).join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(school ? school.name : 'school').replace(/\s+/g, '_')}_peachtree_${today()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Peachtree journal exported — import into Sage 50 via Maintain → Chart of Accounts → Import', 'success');
 }
 
 function renderEnrollmentReport(schoolId) {

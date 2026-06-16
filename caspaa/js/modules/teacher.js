@@ -930,12 +930,27 @@ function openAssignment(assignmentId) {
                   ${sub.text ? `<div class="text-sm text-slate-700 bg-white rounded-lg p-2 border border-slate-200">${sub.text}</div>` : ''}
                   ${sub.file ? `<a href="${sub.file.data}" download="${sub.file.name}" class="inline-flex items-center gap-1.5 text-xs text-brand-700 font-semibold">${icon('paperclip','w-3.5 h-3.5')} ${sub.file.name}</a>` : ''}
                 </div>` : ''}
-                ${sub && !graded ? `<div class="mt-2 pl-11 flex items-center gap-2 flex-wrap">
-                  <input type="number" min="0" max="100" placeholder="/100" class="input !w-20 text-sm" id="grd_${s.id}" />
-                  <input type="text" placeholder="Feedback (optional)" class="input !w-48 text-sm flex-1" id="fb_${s.id}" />
-                  <button class="btn btn-primary !py-1.5 !px-3 text-xs" onclick="gradeSubmission('${a.id}', '${s.id}')">${icon('check','w-3.5 h-3.5')} Grade</button>
+                ${sub && !graded ? `<div class="mt-2 pl-11 space-y-2">
+                  <div class="flex items-center gap-2">
+                    <input type="number" min="0" max="100" placeholder="/100" class="input !w-20 text-sm" id="grd_${s.id}" />
+                    <select id="mk_${s.id}" class="input text-sm flex-1">
+                      <option value="">— Mark status —</option>
+                      <option value="excellent">⭐ Excellent</option>
+                      <option value="satisfactory">✓ Satisfactory</option>
+                      <option value="needs_revision">🔄 Needs Revision</option>
+                    </select>
+                  </div>
+                  <textarea id="fb_${s.id}" rows="2" class="input text-sm w-full" placeholder="Comments for student (they will see this)…"></textarea>
+                  <div class="flex gap-2">
+                    <button class="btn btn-primary !py-1.5 !px-3 text-xs" onclick="gradeSubmission('${a.id}', '${s.id}')">${icon('check','w-3.5 h-3.5')} Grade</button>
+                    <button class="btn btn-secondary !py-1.5 !px-3 text-xs" onclick="tch_returnToStudent('${a.id}', '${s.id}')">${icon('arrow_left','w-3.5 h-3.5 rotate-180')} Return to Student</button>
+                  </div>
                 </div>` : ''}
-                ${graded && sub.feedback ? `<div class="mt-2 pl-11 text-xs text-emerald-700"><strong>Your feedback:</strong> ${sub.feedback}</div>` : ''}
+                ${graded ? `<div class="mt-2 pl-11 space-y-1">
+                  ${sub.markStatus ? `<span class="text-xs font-semibold ${sub.markStatus === 'excellent' ? 'text-emerald-600' : sub.markStatus === 'satisfactory' ? 'text-blue-600' : 'text-amber-600'}">${sub.markStatus === 'excellent' ? '⭐ Excellent' : sub.markStatus === 'needs_revision' ? '🔄 Needs Revision' : '✓ Satisfactory'}</span>` : ''}
+                  ${sub.feedback ? `<div class="text-xs text-slate-700 bg-white rounded-lg p-2 border border-slate-200"><strong class="text-slate-500">Teacher comments:</strong> ${sub.feedback}</div>` : ''}
+                  ${sub.returned ? `<div class="text-xs text-brand-700 font-semibold">${icon('check','w-3 h-3 inline')} Returned to student ${fdate(sub.returnedAt, { relative: true })}</div>` : `<button class="btn btn-ghost !py-0.5 !px-2 text-xs text-slate-500" onclick="tch_returnToStudent('${a.id}', '${s.id}')">Mark as returned</button>`}
+                </div>` : ''}
               </div>`;
             }).join('')}
           </div>
@@ -945,6 +960,7 @@ function openAssignment(assignmentId) {
     footer: `
       <button class="btn btn-danger" onclick="deleteAssignmentConfirm('${a.id}')">${icon('trash','w-4 h-4')} Delete</button>
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
+      ${a.submissions.some(s => s.grade != null) ? `<button class="btn btn-secondary" onclick="tch_pushToResultsModal('${a.id}')">${icon('reports','w-4 h-4')} Push to Results</button>` : ''}
       <button class="btn btn-primary" onclick="editAssignmentModal('${a.id}')">${icon('edit','w-4 h-4')} Edit</button>
     `
   });
@@ -957,17 +973,21 @@ function gradeSubmission(assignmentId, studentId) {
   if (isNaN(grade) || grade < 0 || grade > 100) { toast('Enter a grade 0–100', 'danger'); return; }
   const fbEl = document.getElementById('fb_' + studentId);
   const feedback = fbEl ? fbEl.value.trim() : '';
+  const mkEl = document.getElementById('mk_' + studentId);
+  const markStatus = mkEl ? mkEl.value : '';
   const idx = a.submissions.findIndex(s => s.studentId === studentId);
   if (idx === -1) return;
   a.submissions[idx].grade = grade;
   a.submissions[idx].feedback = feedback;
+  a.submissions[idx].markStatus = markStatus;
   a.submissions[idx].gradedAt = now();
   DB.update('assignments', assignmentId, { submissions: a.submissions });
   const student = DB.find('students', studentId);
+  const statusLabel = markStatus === 'excellent' ? ' · ⭐ Excellent' : markStatus === 'needs_revision' ? ' · 🔄 Needs Revision' : markStatus === 'satisfactory' ? ' · ✓ Satisfactory' : '';
   // Notify the student directly
-  if (student) DB.insert('notifications', { id: uid('not'), userId: student.id, title: 'Assignment Graded', body: `${a.title}: ${grade}/100${feedback ? ' — ' + feedback : ''}`, type: 'success', read: false, timestamp: now(), link: { view: 'stu_assignments' } });
+  if (student) DB.insert('notifications', { id: uid('not'), userId: student.id, title: 'Assignment Graded', body: `${a.title}: ${grade}/100${statusLabel}${feedback ? ' — ' + feedback : ''}`, type: 'success', read: false, timestamp: now(), link: { view: 'stu_assignments' } });
   // And keep the parent informed
-  if (student) DB.insert('notifications', { id: uid('not'), userId: student.parentId, title: 'Assignment Graded', body: `${student.name}: ${a.title} — ${grade}/100`, type: 'info', read: false, timestamp: now(), link: { view: 'par_dashboard' } });
+  if (student) DB.insert('notifications', { id: uid('not'), userId: student.parentId, title: 'Assignment Graded', body: `${student.name}: ${a.title} — ${grade}/100${statusLabel}`, type: 'info', read: false, timestamp: now(), link: { view: 'par_dashboard' } });
   toast(`${student ? student.name : 'Student'} graded ${grade}/100`, 'success');
   openAssignment(assignmentId);
 }
@@ -1325,6 +1345,103 @@ function tch_deleteNote(noteId) {
   DB.remove('learningMaterials', noteId);
   APP.go('tch_lessons', { tab: 'notes' });
   toast('Note deleted', 'success');
+}
+
+function tch_returnToStudent(assignmentId, studentId) {
+  const a = DB.find('assignments', assignmentId);
+  const idx = a.submissions.findIndex(s => s.studentId === studentId);
+  if (idx === -1) { toast('Student has not submitted', 'warn'); return; }
+  const gradeEl = document.getElementById('grd_' + studentId);
+  const grade = gradeEl ? parseInt(gradeEl.value) : a.submissions[idx].grade;
+  if (isNaN(grade) || grade < 0 || grade > 100) { toast('Enter a grade 0–100 before returning', 'danger'); return; }
+  const feedback = (document.getElementById('fb_' + studentId) || {}).value || a.submissions[idx].feedback || '';
+  const markStatus = (document.getElementById('mk_' + studentId) || {}).value || a.submissions[idx].markStatus || 'satisfactory';
+  a.submissions[idx].grade = grade;
+  a.submissions[idx].feedback = (typeof feedback === 'string' ? feedback.trim() : feedback);
+  a.submissions[idx].markStatus = markStatus;
+  a.submissions[idx].gradedAt = a.submissions[idx].gradedAt || now();
+  a.submissions[idx].returned = true;
+  a.submissions[idx].returnedAt = now();
+  DB.update('assignments', assignmentId, { submissions: a.submissions });
+  const student = DB.find('students', studentId);
+  const statusLabel = markStatus === 'excellent' ? '⭐ Excellent' : markStatus === 'needs_revision' ? '🔄 Needs Revision' : '✓ Satisfactory';
+  if (student) {
+    DB.insert('notifications', { id: uid('not'), userId: student.id, title: `Work Returned — ${a.title}`, body: `Your work has been marked and returned: ${grade}/100 (${statusLabel}).${feedback ? ' Comments: ' + feedback : ''}`, type: 'success', read: false, timestamp: now(), link: { view: 'stu_assignments' } });
+    if (student.parentId) DB.insert('notifications', { id: uid('not'), userId: student.parentId, title: `Assignment returned: ${a.title}`, body: `${student.name}'s work was marked: ${grade}/100 (${statusLabel}).`, type: 'info', read: false, timestamp: now(), link: { view: 'par_dashboard' } });
+  }
+  toast(`Returned to ${student ? student.name : 'student'} · ${grade}/100`, 'success');
+  openAssignment(assignmentId);
+}
+
+function tch_pushToResultsModal(assignmentId) {
+  const a = DB.find('assignments', assignmentId);
+  const gradedSubs = a.submissions.filter(s => s.grade != null);
+  if (!gradedSubs.length) { toast('Grade submissions first', 'warn'); return; }
+  document.getElementById('modalBackdrop').click();
+  setTimeout(() => modal({
+    title: 'Push Grades to Academic Results',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          Sync ${gradedSubs.length} graded submission${gradedSubs.length > 1 ? 's' : ''} into academic records as CA scores (scaled to 20 marks). Existing scores for the chosen slot will be overwritten.
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">CA Slot</label>
+            <select id="pr_slot" class="input">
+              <option value="ca1">CA 1 (max 20 marks)</option>
+              <option value="ca2">CA 2 (max 20 marks)</option>
+            </select>
+          </div>
+          <div><label class="input-label">Term</label>
+            <input id="pr_term" class="input" value="${DB.settings().currentTerm || ''}"></div>
+        </div>
+        <div class="card overflow-hidden">
+          <table class="tbl text-sm">
+            <thead><tr><th>Student</th><th>Score</th><th>→ CA (scaled)</th></tr></thead>
+            <tbody>
+              ${gradedSubs.map(sub => {
+                const st = DB.find('students', sub.studentId);
+                const caScore = Math.round(sub.grade * 20 / 100);
+                return `<tr><td>${st ? st.name : '—'}</td><td class="font-mono">${sub.grade}/100</td><td class="font-semibold text-brand-700">${caScore}/20</td></tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="tch_confirmPushToResults('${assignmentId}')">${icon('check','w-4 h-4')} Push to Results</button>`
+  }), 50);
+}
+
+function tch_confirmPushToResults(assignmentId) {
+  const a = DB.find('assignments', assignmentId);
+  const slot = document.getElementById('pr_slot').value;
+  const term = document.getElementById('pr_term').value.trim();
+  const gradedSubs = a.submissions.filter(s => s.grade != null);
+  let synced = 0;
+  gradedSubs.forEach(sub => {
+    const caScore = Math.round(sub.grade * 20 / 100);
+    const existing = DB.query('results', r => r.studentId === sub.studentId && r.subjectId === a.subjectId && r.classId === a.classId && r.term === term)[0];
+    if (existing) {
+      const ca1 = slot === 'ca1' ? caScore : (existing.ca1 || 0);
+      const ca2 = slot === 'ca2' ? caScore : (existing.ca2 || 0);
+      const exam = existing.exam || 0;
+      const total = ca1 + ca2 + exam;
+      const grade = total >= 70 ? 'A' : total >= 60 ? 'B' : total >= 50 ? 'C' : total >= 45 ? 'D' : 'F';
+      const patch = { [slot]: caScore, total, grade };
+      DB.update('results', existing.id, patch);
+    } else {
+      const ca1 = slot === 'ca1' ? caScore : 0;
+      const ca2 = slot === 'ca2' ? caScore : 0;
+      const total = ca1 + ca2;
+      const grade = total >= 70 ? 'A' : total >= 60 ? 'B' : total >= 50 ? 'C' : total >= 45 ? 'D' : 'F';
+      DB.insert('results', { id: uid('res'), schoolId: AUTH.current.schoolId || 'sch_brightlights', studentId: sub.studentId, classId: a.classId, subjectId: a.subjectId, term, ca1, ca2, exam: 0, total, grade, comment: '', approved: false });
+    }
+    synced++;
+  });
+  document.getElementById('modalBackdrop').click();
+  toast(`${synced} result${synced > 1 ? 's' : ''} synced to academic records`, 'success');
 }
 
 function tch_postVideoModal() {
