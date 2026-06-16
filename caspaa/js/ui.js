@@ -267,9 +267,18 @@ function printElement(html) {
   w.document.write(`
     <!DOCTYPE html><html><head><title>Print</title>
     <script src="https://cdn.tailwindcss.com"></` + `script>
-    <style>body { font-family: system-ui; padding: 32px; }</style>
+    <style>body{font-family:system-ui;padding:32px} table{width:100%;border-collapse:collapse} th,td{border:1px solid #e2e8f0;padding:8px 10px;text-align:left;font-size:13px} thead th{background:#f8fafc;font-weight:700;color:#374151} tr:nth-child(even){background:#f8fafc} tfoot td{font-weight:700;background:#f1f5f9} @media print{button{display:none}}</style>
     </head><body>${html}<script>setTimeout(()=>window.print(),500);</` + `script></body></html>
   `);
+}
+
+/* ---------- CSV download helper ---------- */
+function downloadCSV(filename, headers, rows) {
+  const esc = v => { const s = String(v ?? ''); return (s.includes(',') || s.includes('"') || s.includes('\n')) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+  const csv = [headers, ...rows].map(r => r.map(esc).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = filename; a.click();
 }
 
 /* ---------- Network/offline simulation ---------- */

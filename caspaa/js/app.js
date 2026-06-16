@@ -29,6 +29,8 @@ const APP = {
         { key: 'adm_workforce',     label: 'Staff & HR',        icon: 'teacher' },
         { key: 'adm_academic',      label: 'Academic',          icon: 'classes' },
         { key: 'adm_finance_hub',   label: 'Finance',           icon: 'fees' },
+        { key: 'adm_store',         label: 'School Store',      icon: 'package' },
+        { key: 'adm_reports',       label: 'Reports',           icon: 'reports' },
         { key: 'adm_operations',    label: 'Operations',        icon: 'package' },
         { key: 'adm_comms',         label: 'Communications',    icon: 'chat' },
         { key: 'cal_main',          label: 'Calendar',          icon: 'calendar' },
@@ -44,6 +46,7 @@ const APP = {
         { key: 'adm_people',     label: 'Students',       icon: 'students' },
         { key: 'adm_workforce',  label: 'Staff & HR',     icon: 'teacher' },
         { key: 'adm_academic',   label: 'Academic',       icon: 'classes' },
+        { key: 'adm_reports',    label: 'Reports',        icon: 'reports' },
         { key: 'adm_operations', label: 'Operations',     icon: 'package' },
         { key: 'adm_comms',      label: 'Communications', icon: 'chat' },
         { key: 'cal_main',       label: 'Calendar',       icon: 'calendar' },
@@ -60,6 +63,7 @@ const APP = {
         { key: 'fin_payments',   label: 'Payments',        icon: 'fees' },
         { key: 'fin_recon',      label: 'Reconciliation',  icon: 'check' },
         { key: 'fin_expenses',   label: 'Expenses',        icon: 'trending_down' },
+        { key: 'fin_store',      label: 'School Store',    icon: 'package' },
         { key: 'fin_lending',    label: 'Lending',         icon: 'loan' },
         { key: 'fin_reports',    label: 'Financial Reports', icon: 'reports' }
       ],
@@ -368,7 +372,7 @@ function openNotification(notifId) {
 function markAllRead() {
   const user = AUTH.current;
   DB.get('notifications').filter(n => n.userId === user.id && !n.read).forEach(n => DB.update('notifications', n.id, { read: true }));
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('All notifications marked read');
 }
@@ -404,7 +408,7 @@ function showProfile() {
       <div class="space-y-2 mt-3 pt-3 border-t border-slate-100">
         <button class="btn btn-secondary w-full justify-start" onclick="showLoginSessions()">${icon('user','w-4 h-4')} Active sessions &amp; security</button>
         <button class="btn btn-secondary w-full justify-start" onclick="resetDemo()">${icon('settings', 'w-4 h-4')} Reset demo data</button>
-        <button class="btn btn-danger w-full justify-start" onclick="document.getElementById('modalBackdrop').click(); AUTH.logout()">${icon('logout', 'w-4 h-4')} Sign out</button>
+        <button class="btn btn-danger w-full justify-start" onclick="document.getElementById('modalBackdrop')?.click(); AUTH.logout()">${icon('logout', 'w-4 h-4')} Sign out</button>
       </div>
     `
   });
@@ -465,7 +469,7 @@ function showLoginSessions() {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
       ${other.length ? `<button class="btn btn-danger" onclick="revokeAllOtherSessions()">${icon('logout','w-4 h-4')} Sign out everywhere else</button>` : ''}
     `
   }), 50);
@@ -550,7 +554,7 @@ function openGlobalSearch() {
       </div>
       <div id="globalSearchResults" class="mt-3 max-h-96 overflow-y-auto"></div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
   setTimeout(() => {
     const input = document.getElementById('globalSearchInput');
@@ -577,33 +581,33 @@ function runGlobalSearch() {
     label: 'Students',
     items: students.map(s => {
       const cls = DB.find('classes', s.classId);
-      return { icon: 'students', title: s.name, meta: `${cls ? cls.name : '—'} · ${s.admissionNo}`, action: () => { document.getElementById('modalBackdrop').click(); viewStudent(s.id); } };
+      return { icon: 'students', title: s.name, meta: `${cls ? cls.name : '—'} · ${s.admissionNo}`, action: () => { document.getElementById('modalBackdrop')?.click(); viewStudent(s.id); } };
     })
   });
   // Staff
   const staff = DB.get('teachers').filter(t => matches(t.name) || matches(t.email)).slice(0, 5);
   if (staff.length) sections.push({
     label: 'Staff',
-    items: staff.map(t => ({ icon: 'teacher', title: t.name, meta: `${t.staffType || 'Academic'} · ${t.role || t.email}`, action: () => { document.getElementById('modalBackdrop').click(); viewStaff(t.id); } }))
+    items: staff.map(t => ({ icon: 'teacher', title: t.name, meta: `${t.staffType || 'Academic'} · ${t.role || t.email}`, action: () => { document.getElementById('modalBackdrop')?.click(); viewStaff(t.id); } }))
   });
   // Classes
   const classes = DB.get('classes').filter(c => matches(c.name)).slice(0, 5);
   if (classes.length) sections.push({
     label: 'Classes',
-    items: classes.map(c => ({ icon: 'classes', title: c.name, meta: `${c.level} · ${COMPUTE.studentsByClass(c.id).length} students`, action: () => { document.getElementById('modalBackdrop').click(); APP.go('adm_people', { peopleTab: 'students', classFilter: c.id }); } }))
+    items: classes.map(c => ({ icon: 'classes', title: c.name, meta: `${c.level} · ${COMPUTE.studentsByClass(c.id).length} students`, action: () => { document.getElementById('modalBackdrop')?.click(); APP.go('adm_people', { peopleTab: 'students', classFilter: c.id }); } }))
   });
   // Parents
   const parents = DB.get('parents').filter(p => matches(p.name) || matches(p.phone) || matches(p.email)).slice(0, 5);
   if (parents.length) sections.push({
     label: 'Parents',
-    items: parents.map(p => ({ icon: 'user', title: p.name, meta: `${p.phone} · ${p.email || ''}`, action: () => { document.getElementById('modalBackdrop').click(); viewAsParent(p.id); } }))
+    items: parents.map(p => ({ icon: 'user', title: p.name, meta: `${p.phone} · ${p.email || ''}`, action: () => { document.getElementById('modalBackdrop')?.click(); viewAsParent(p.id); } }))
   });
   // Schools (super admin only)
   if (AUTH.current.role === 'superadmin') {
     const schools = DB.get('schools').filter(s => matches(s.name) || matches(s.proprietor)).slice(0, 5);
     if (schools.length) sections.push({
       label: 'Schools',
-      items: schools.map(s => ({ icon: 'building', title: s.name, meta: `${s.proprietor} · ${s.subscriptionPlan}`, action: () => { document.getElementById('modalBackdrop').click(); viewSchoolDetail(s.id); } }))
+      items: schools.map(s => ({ icon: 'building', title: s.name, meta: `${s.proprietor} · ${s.subscriptionPlan}`, action: () => { document.getElementById('modalBackdrop')?.click(); viewSchoolDetail(s.id); } }))
     });
   }
   // Navigation jump
@@ -611,7 +615,7 @@ function runGlobalSearch() {
   const navMatches = nav.filter(n => matches(n.label)).slice(0, 5);
   if (navMatches.length) sections.push({
     label: 'Pages',
-    items: navMatches.map(n => ({ icon: n.icon, title: n.label, meta: 'Go to ' + n.label, action: () => { document.getElementById('modalBackdrop').click(); APP.go(n.key); } }))
+    items: navMatches.map(n => ({ icon: n.icon, title: n.label, meta: 'Go to ' + n.label, action: () => { document.getElementById('modalBackdrop')?.click(); APP.go(n.key); } }))
   });
 
   if (sections.length === 0) {
@@ -659,7 +663,7 @@ function showMobileMore() {
     title: 'All sections',
     body: `
       <div class="grid grid-cols-3 gap-3">
-        ${overflow.map(n => `<button class="flex flex-col items-center gap-2 p-3 rounded-xl ${APP.view === n.key ? 'bg-brand-50 text-brand-700' : 'bg-slate-50 text-slate-700'} hover:bg-brand-100" onclick="document.getElementById('modalBackdrop').click(); APP.go('${n.key}')">
+        ${overflow.map(n => `<button class="flex flex-col items-center gap-2 p-3 rounded-xl ${APP.view === n.key ? 'bg-brand-50 text-brand-700' : 'bg-slate-50 text-slate-700'} hover:bg-brand-100" onclick="document.getElementById('modalBackdrop')?.click(); APP.go('${n.key}')">
           ${icon(n.icon, 'w-6 h-6')}
           <span class="text-xs font-semibold text-center">${n.label}</span>
         </button>`).join('')}

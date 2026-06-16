@@ -381,7 +381,7 @@ function openAppraisalCycleModal() {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveAppraisalCycle()">${icon('check','w-4 h-4')} Open Cycle & Notify Staff</button>`
   });
 }
@@ -416,7 +416,7 @@ function saveAppraisalCycle() {
     });
   });
   DB.insert('auditLog', { id: uid('aud'), schoolId: sid, actor: AUTH.current.id, action: 'opened_appraisal_cycle', target: title, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.params.aprCycle = cycle.id;
   APP.render();
   toast(`Cycle opened · ${staffIds.length} staff notified to complete self-assessment`, 'success');
@@ -468,7 +468,7 @@ function aprManagerReviewModal(aprId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveManagerReview('${aprId}')">${icon('check','w-4 h-4')} Submit Manager Review</button>`
   });
   setTimeout(aprUpdateMgrTotal, 50);
@@ -499,7 +499,7 @@ function saveManagerReview(aprId) {
   const apr = DB.find('appraisals', aprId);
   const t = DB.find('teachers', apr.staffId);
   DB.insert('notifications', { id: uid('not'), userId: 'prn_001', title: 'Appraisal Awaiting Principal Approval', body: `${t.name}'s appraisal is ready for your review and sign-off.`, type: 'info', read: false, timestamp: now(), link: { view: 'adm_workforce', params: { workforceTab: 'appraisal' } } });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`Manager review submitted for ${t.name} · sent to principal`, 'success');
 }
@@ -544,7 +544,7 @@ function aprPrincipalModal(aprId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-danger" onclick="aprReturnForRevision('${aprId}')">${icon('arrow_left','w-4 h-4')} Return for Revision</button>
              <button class="btn btn-primary" onclick="savePrincipalApproval('${aprId}')">${icon('check','w-4 h-4')} Approve & Move to Outcome</button>`
   });
@@ -560,7 +560,7 @@ function savePrincipalApproval(aprId) {
     principalComment: comment, principalBy: AUTH.current.id, principalAt: now(),
     finalScores, finalOverall, status: 'outcome_pending'
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   const t = DB.find('teachers', apr.staffId);
   toast(`Approved · ${t.name} · ${finalOverall}% — now set the outcome`, 'success');
@@ -568,7 +568,7 @@ function savePrincipalApproval(aprId) {
 
 function aprReturnForRevision(aprId) {
   DB.update('appraisals', aprId, { status: 'manager_pending', managerScores: null, managerComment: '', managerBy: null, managerSubmittedAt: null });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Returned to manager for revision', 'info');
 }
@@ -609,7 +609,7 @@ function aprOutcomeModal(aprId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveAppraisalOutcome('${aprId}')">${icon('check','w-4 h-4')} Confirm & Notify Staff</button>`
   });
 }
@@ -643,7 +643,7 @@ function saveAppraisalOutcome(aprId) {
     DB.update('teachers', t.id, { salary: Math.round(t.salary * (1 + incrementPct / 100)) });
   }
   DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'appraisal_outcome_set', target: `${t.name} · ${type} · ${apr.finalOverall}%`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`Outcome set · ${t.name} notified to acknowledge`, 'success');
 }
@@ -686,7 +686,7 @@ function aprViewTimeline(aprId) {
         <div class="text-sm text-slate-600 mt-1">Final Score · ${apr.outcome ? ({increment:'Increment',commendation:'Commendation',training:'Training',pip:'PIP',none:'No action'})[apr.outcome.type] : 'Outcome pending'}</div>
       </div>` : ''}
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
 }
 
@@ -747,7 +747,7 @@ function newSalaryAdvanceModal() {
         <div><label class="input-label">Reason</label><textarea id="adv_reason" rows="2" class="input" placeholder="e.g. Medical emergency"></textarea></div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveSalaryAdvance()">Submit Request</button>`
   });
 }
@@ -760,7 +760,7 @@ function saveSalaryAdvance() {
     amount, reason: document.getElementById('adv_reason').value.trim() || 'Not specified',
     status: 'pending', requestedAt: now(), decidedAt: null
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Salary advance request recorded', 'success');
 }
@@ -1000,7 +1000,7 @@ function openSchemeEditor(schemeId) {
         <button class="btn btn-secondary w-full text-sm" onclick="addSchemeWeek('${schemeId}')">${icon('plus','w-3.5 h-3.5')} Add Week</button>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
              <button class="btn btn-danger" onclick="deleteScheme('${schemeId}')">${icon('trash','w-4 h-4')} Delete</button>
              <button class="btn btn-primary" onclick="exportSchemePDF('${schemeId}')">${icon('download','w-4 h-4')} Export PDF</button>`
   });
@@ -1021,7 +1021,7 @@ function toggleWeekCovered(schemeId, weekIdx, covered) {
 function editSchemeWeek(schemeId, weekIdx) {
   const sch = DB.find('schemesOfWork', schemeId);
   const w = sch.weeks[weekIdx];
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => modal({
     title: `Edit Week ${w.week}`,
     body: `
@@ -1036,7 +1036,7 @@ function editSchemeWeek(schemeId, weekIdx) {
         <div><label class="input-label">Resources</label><input id="wk_res" class="input" value="${w.resources || ''}" placeholder="e.g. Textbook p.42, diagram chart, whiteboard" /></div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click(); openSchemeEditor('${schemeId}')">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); openSchemeEditor('${schemeId}')">Cancel</button>
              <button class="btn btn-primary" onclick="saveSchemeWeek('${schemeId}', ${weekIdx})">Save Week</button>`
   }), 50);
 }
@@ -1053,7 +1053,7 @@ function saveSchemeWeek(schemeId, weekIdx) {
   });
   DB.update('schemesOfWork', schemeId, { weeks: sch.weeks });
   toast('Week updated');
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => openSchemeEditor(schemeId), 50);
 }
 
@@ -1067,7 +1067,7 @@ function addSchemeWeek(schemeId) {
   };
   sch.weeks.push(newWeek);
   DB.update('schemesOfWork', schemeId, { weeks: sch.weeks });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => editSchemeWeek(schemeId, sch.weeks.length - 1), 50);
 }
 
@@ -1077,7 +1077,7 @@ function deleteScheme(schemeId) {
   const cls = DB.find('classes', sch.classId);
   confirm(`Delete the scheme of work for ${sub ? sub.name : ''} in ${cls ? cls.name : ''}? Coverage history will be lost.`, () => {
     DB.remove('schemesOfWork', schemeId);
-    document.getElementById('modalBackdrop').click();
+    document.getElementById('modalBackdrop')?.click();
     APP.render();
     toast('Scheme deleted', 'info');
   }, { yesLabel: 'Delete', danger: true });
@@ -1113,7 +1113,7 @@ function newSchemeModal(prefilledClassId) {
         <div><label class="input-label">Number of weeks</label><input id="nsch_weeks" type="number" class="input" value="12" min="4" max="16" /></div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="createNewScheme()">${icon('plus','w-4 h-4')} Create Scheme</button>`
   });
 }
@@ -1138,7 +1138,7 @@ function createNewScheme() {
     status: 'draft', weeks,
     createdAt: now()
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Scheme of work created · open it to edit weeks');
 }
@@ -1193,7 +1193,7 @@ function importExcelCurriculumModal() {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
       <button class="btn btn-primary" onclick="processExcelCurriculum()">${icon('upload','w-4 h-4')} Import Curriculum</button>
     `
   });
@@ -1238,7 +1238,7 @@ function processExcelCurriculum() {
       created++;
     }
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   toast(`${created} subject scheme${created !== 1 ? 's' : ''} imported for ${cls ? cls.name : 'class'}`, 'success');
   APP.render();
 }
@@ -1272,7 +1272,7 @@ function importFullSchoolCurriculumModal() {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button id="fsc_import_btn" class="btn btn-primary hidden" onclick="confirmFullSchoolImport()">${icon('check','w-4 h-4')} Import All Schemes</button>`
   });
 }
@@ -1330,7 +1330,7 @@ function confirmFullSchoolImport() {
     created++;
   });
   delete window._fscCSVData;
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${created} scheme${created !== 1 ? 's' : ''} imported${skipped ? ` · ${skipped} skipped (already exist)` : ''}`, 'success');
 }
@@ -1358,7 +1358,7 @@ function importNERDCTemplateModal() {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="importNERDCTemplate()">${icon('download','w-4 h-4')} Import Template</button>`
   });
 }
@@ -1396,7 +1396,7 @@ function importNERDCTemplate() {
     status: 'draft', weeks,
     createdAt: now()
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${source} template imported for ${sub.name} (${cls.name}) · 12 weeks ready to customise`, 'success');
 }
@@ -1534,7 +1534,7 @@ function createConsentModal() {
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">${icon('info','w-4 h-4 inline mr-1')} Parents will be notified instantly and can approve with a one-tap e-signature. Every response is timestamped for your records.</div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveConsentForm()">${icon('send','w-4 h-4')} Create & Notify Parents</button>`
   });
 }
@@ -1558,7 +1558,7 @@ function saveConsentForm() {
   parents.forEach(pid => {
     DB.insert('notifications', { id: uid('not'), userId: pid, title: 'Consent Required', body: `${title} — please review and respond.`, type: 'warn', read: false, timestamp: now(), link: { view: 'par_consent' } });
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`Consent form created · ${parents.length} parents notified`, 'success');
 }
@@ -1589,7 +1589,7 @@ function viewConsentResponses(formId) {
         }).join('')}
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
 }
 
@@ -2009,7 +2009,7 @@ function revenueAnalyticsParamsModal() {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveRevenueAnalyticsParams()">${icon('check','w-4 h-4')} Save Parameters</button>`
   });
 }
@@ -2020,7 +2020,7 @@ function saveRevenueAnalyticsParams() {
   const annualTarget = parseInt(document.getElementById('ra_target').value) || null;
   const alertCollectionBelow = parseInt(document.getElementById('ra_alert_col').value) || 70;
   DB.settings({ revenueAnalytics: { targetMargin, targetTeacherRatio, annualTarget, alertCollectionBelow } });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Revenue analytics parameters saved', 'success');
 }
@@ -2352,11 +2352,11 @@ function viewStudent(id) {
       })()}
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
       <button class="btn btn-secondary" onclick="printStudentID('${s.id}')">${icon('download','w-4 h-4')} Print ID</button>
       <button class="btn btn-secondary" onclick="studentLifecycleModal('${s.id}')">${icon('settings','w-4 h-4')} Actions</button>
       <button class="btn btn-secondary" onclick="editStudent('${s.id}')">${icon('edit','w-4 h-4')} Edit</button>
-      <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); viewAsParent('${s.parentId}')">View as Parent</button>
+      <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); viewAsParent('${s.parentId}')">View as Parent</button>
     `
   });
 }
@@ -2580,7 +2580,7 @@ function newActivityModal() {
         ${icon('info','w-3.5 h-3.5 inline mr-1')} Net income per student = Fee − Instructor Cost. This drives the revenue report above.
       </div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveNewActivity()">Add Activity</button>`
   });
 }
@@ -2596,7 +2596,7 @@ function saveNewActivity() {
     price: parseInt((document.getElementById('act_price') || {}).value) || 0,
     instructorCost: parseInt((document.getElementById('act_cost') || {}).value) || 0
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Activity added', 'success');
 }
@@ -2617,7 +2617,7 @@ function editActivityModal(id) {
         <div><label class="input-label">Instructor Cost per Student (₦)</label><input id="eact_cost" type="number" class="input" value="${a.instructorCost || 0}" min="0" /></div>
       </div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveEditActivity('${id}')">Save Changes</button>`
   });
 }
@@ -2632,7 +2632,7 @@ function saveEditActivity(id) {
     price: parseInt((document.getElementById('eact_price') || {}).value) || 0,
     instructorCost: parseInt((document.getElementById('eact_cost') || {}).value) || 0
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Activity updated', 'success');
 }
@@ -2824,7 +2824,7 @@ function addStudentModal(editingId) {
       </details>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
       <button class="btn btn-primary" onclick="saveStudent(${isEdit ? "'" + editingId + "'" : 'null'})">${icon('check','w-4 h-4')} ${isEdit ? 'Save Changes' : 'Save Student'}</button>
     `
   });
@@ -2864,7 +2864,7 @@ function onStudentDocPick(ev, key) {
     // Re-render the modal in-place to show the green check (cheap: rebuild via addStudentModal with same edit context)
     const editingMatch = /saveStudent\('([^']+)'\)/.exec(document.querySelector('#modalRoot .btn-primary')?.getAttribute('onclick') || '');
     const editingId = editingMatch ? editingMatch[1] : null;
-    document.getElementById('modalBackdrop').click();
+    document.getElementById('modalBackdrop')?.click();
     setTimeout(() => addStudentModal(editingId), 50);
     toast('Document uploaded');
   };
@@ -2875,7 +2875,7 @@ function clearStudentDoc(key) {
   delete _studentDocsBuffer[key];
   const editingMatch = /saveStudent\('([^']+)'\)/.exec(document.querySelector('#modalRoot .btn-primary')?.getAttribute('onclick') || '');
   const editingId = editingMatch ? editingMatch[1] : null;
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => addStudentModal(editingId), 50);
 }
 
@@ -2936,7 +2936,7 @@ function saveStudent(editingId) {
       ...extras
     });
     DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'updated_student', target: name, timestamp: now() });
-    document.getElementById('modalBackdrop').click();
+    document.getElementById('modalBackdrop')?.click();
     APP.render();
     toast(`${name} updated`);
     return;
@@ -3003,7 +3003,7 @@ function saveStudent(editingId) {
     type: 'info', read: false, timestamp: now(),
     link: { view: 'par_fees' }
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   if (invoiceCreated) {
     toast(`${name} added · invoice for ${money(invoiceCreated.total)} created`, 'success');
@@ -3076,8 +3076,8 @@ function showParentCredentialsModal(parent, student, invoice) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Done</button>
-             <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); viewAsParent('${parent.id}')">Login as parent (demo) →</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Done</button>
+             <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); viewAsParent('${parent.id}')">Login as parent (demo) →</button>`
   });
 }
 
@@ -3093,7 +3093,7 @@ function copyParentCredentials(parentId) {
 function saveNewStudent() { saveStudent(null); }
 
 function editStudent(id) {
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => addStudentModal(id), 50);
 }
 
@@ -3101,7 +3101,7 @@ function editStudent(id) {
 function studentLifecycleModal(studentId) {
   const s = DB.find('students', studentId);
   const cls = DB.find('classes', s.classId);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => {
     modal({
       title: s.name + ' — Lifecycle Actions',
@@ -3179,7 +3179,7 @@ function studentLifecycleModal(studentId) {
           </button>
         </div>
       `,
-      footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>`
+      footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>`
     });
   }, 50);
 }
@@ -3210,7 +3210,7 @@ function bulkPromoteModal() {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="previewBulkPromote()">Preview Changes</button>`
   });
 }
@@ -3222,7 +3222,7 @@ function previewBulkPromote() {
   const toCls = toId === '__graduate__' ? null : DB.find('classes', toId);
   const students = COMPUTE.studentsByClass(fromId).filter(s => s.status === 'active');
   if (students.length === 0) { toast('No active students in that class', 'warn'); return; }
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => modal({
     title: 'Confirm Bulk Promotion',
     size: 'lg',
@@ -3241,7 +3241,7 @@ function previewBulkPromote() {
           : `All ${students.length} students will be marked as Alumni. Their full academic records remain on file.`}
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="executeBulkPromote('${fromId}', '${toId}')">${icon('check','w-4 h-4')} Promote ${students.length} Students</button>`
   }), 50);
 }
@@ -3265,7 +3265,7 @@ function executeBulkPromote(fromId, toId) {
     count++;
   });
   DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: toId === '__graduate__' ? 'bulk_graduated' : 'bulk_promoted', target: `${count} students from ${(DB.find('classes', fromId) || {}).name}${toCls ? ' → ' + toCls.name : ' → Alumni'}`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${count} students ${toId === '__graduate__' ? 'graduated 🎓' : 'promoted'}`, 'success');
 }
@@ -3281,7 +3281,7 @@ function promoteStudentModal(studentId) {
   const currentIdx = classes.findIndex(c => c.id === s.classId);
   const currentCls = classes[currentIdx];
   const nextCls = currentIdx >= 0 && currentIdx < classes.length - 1 ? classes[currentIdx + 1] : null;
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => modal({
     title: 'Promote ' + s.name,
     body: `
@@ -3307,7 +3307,7 @@ function promoteStudentModal(studentId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="confirmPromotion('${studentId}')">${icon('trending_up','w-4 h-4')} Confirm</button>`
   }), 50);
 }
@@ -3320,14 +3320,14 @@ function confirmPromotion(studentId) {
 
   if (newClassId === '__repeat__') {
     DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'deferred_promotion', target: `${s.name} repeats ${currentClsName}${reason ? ' — ' + reason : ''}`, timestamp: now() });
-    document.getElementById('modalBackdrop').click();
+    document.getElementById('modalBackdrop')?.click();
     APP.render();
     toast(`${s.name} will repeat ${currentClsName}`, 'info');
     return;
   }
 
   if (newClassId === '__graduate__') {
-    document.getElementById('modalBackdrop').click();
+    document.getElementById('modalBackdrop')?.click();
     setTimeout(() => graduateStudentModal(studentId), 50);
     return;
   }
@@ -3337,14 +3337,14 @@ function confirmPromotion(studentId) {
   DB.update('students', studentId, { classId: newClassId });
   DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'promoted_student', target: `${s.name} → ${newCls.name}${reason ? ' (' + reason + ')' : ''}`, timestamp: now() });
   if (s.parentId) DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Class Promotion', body: `${s.name} has been promoted to ${newCls.name}. Congratulations! This takes effect from the new session.`, type: 'success', read: false, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${s.name} promoted to ${newCls.name}`, 'success');
 }
 
 function transferStudentModal(studentId) {
   const s = DB.find('students', studentId);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => modal({
     title: 'Transfer ' + s.name,
     body: `
@@ -3356,7 +3356,7 @@ function transferStudentModal(studentId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="confirmTransfer('${studentId}')">Generate Transfer Certificate</button>`
   }), 50);
 }
@@ -3368,7 +3368,7 @@ function confirmTransfer(studentId) {
   const s = DB.find('students', studentId);
   DB.update('students', studentId, { status: 'transferred', transferDest: destSchool, transferReason: reason, transferredAt: now() });
   DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'transferred_student', target: `${s.name} → ${destSchool}`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   // Print certificate
   printTransferCertificate(studentId, destSchool, reason);
   APP.render();
@@ -3400,7 +3400,7 @@ function printTransferCertificate(studentId, destSchool, reason) {
 
 function withdrawStudentModal(studentId) {
   const s = DB.find('students', studentId);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => modal({
     title: 'Withdraw ' + s.name,
     body: `
@@ -3420,7 +3420,7 @@ function withdrawStudentModal(studentId) {
         <div><label class="input-label">Notes (optional)</label><textarea id="wd_notes" rows="2" class="input" placeholder="e.g. Will rejoin next term"></textarea></div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-danger" onclick="confirmWithdraw('${studentId}')">${icon('logout','w-4 h-4')} Confirm Withdrawal</button>`
   }), 50);
 }
@@ -3431,7 +3431,7 @@ function confirmWithdraw(studentId) {
   const notes = document.getElementById('wd_notes').value.trim();
   DB.update('students', studentId, { status: 'withdrawn', withdrawReason: reason, withdrawNotes: notes, withdrawnAt: now() });
   DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'withdrew_student', target: `${s.name} (${reason})`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
 
   // Check if there's a refund-eligible balance
   const inv = COMPUTE.studentInvoice(studentId);
@@ -3481,7 +3481,7 @@ function offerRefundModal(studentId, suggested, totalPaid, usedPct) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click(); APP.render()">Skip refund</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); APP.render()">Skip refund</button>
              <button class="btn btn-primary" onclick="processRefund('${studentId}')">${icon('check','w-4 h-4')} Issue Refund</button>`
   });
 }
@@ -3489,7 +3489,7 @@ function offerRefundModal(studentId, suggested, totalPaid, usedPct) {
 function processRefund(studentId) {
   const amount = parseInt(document.getElementById('rf_amount').value) || 0;
   const method = document.getElementById('rf_method').value;
-  if (amount <= 0) { document.getElementById('modalBackdrop').click(); APP.render(); return; }
+  if (amount <= 0) { document.getElementById('modalBackdrop')?.click(); APP.render(); return; }
   const s = DB.find('students', studentId);
   const inv = COMPUTE.studentInvoice(studentId);
   // Record refund as a negative transaction
@@ -3514,14 +3514,14 @@ function processRefund(studentId) {
   }
   DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'issued_refund', target: `${money(amount)} to ${s.name} (${method})`, timestamp: now() });
   DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Refund Issued', body: `A refund of ${money(amount)} has been issued for ${s.name}'s withdrawal via ${method}. Please allow 3–5 business days.`, type: 'success', read: false, timestamp: now(), link: { view: 'par_fees' } });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`Refund of ${money(amount)} issued · parent notified`, 'success');
 }
 
 function graduateStudentModal(studentId) {
   const s = DB.find('students', studentId);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => modal({
     title: 'Graduate ' + s.name + ' to Alumni',
     body: `
@@ -3557,7 +3557,7 @@ function graduateStudentModal(studentId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="confirmGraduation('${studentId}')">${icon('check','w-4 h-4')} Graduate</button>`
   }), 50);
 }
@@ -3572,14 +3572,14 @@ function confirmGraduation(studentId) {
   const s = DB.find('students', studentId);
   DB.update('students', studentId, { status: 'alumni', graduationYear: year, finalClass, awards, examType, examIndex, certIssued, graduatedAt: now() });
   DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'graduated_student', target: `${s.name} (Class of ${year})`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${s.name} graduated to alumni 🎓`, 'success');
 }
 
 function suspendStudentModal(studentId) {
   const s = DB.find('students', studentId);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => modal({
     title: 'Suspend ' + s.name,
     body: `
@@ -3622,7 +3622,7 @@ function suspendStudentModal(studentId) {
         </label>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-danger" onclick="confirmSuspension('${studentId}')">${icon('bell','w-4 h-4')} Suspend Student</button>`
   }), 50);
 }
@@ -3640,7 +3640,7 @@ function confirmSuspension(studentId) {
   if (notify && s.parentId) {
     DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: `Suspension Notice — ${s.name}`, body: `Your child ${s.name} has been suspended. Reason: ${reason}. Expected return: ${fdate(resumeDate, { long: true })}. Please contact the school to discuss.${notes ? ' Details: ' + notes : ''}`, type: 'danger', read: false, timestamp: now() });
   }
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${s.name} suspended${notify ? ' · parent notified' : ''}`, 'warn');
 }
@@ -3649,7 +3649,7 @@ function changeStudentStatus(studentId, status, label) {
   const s = DB.find('students', studentId);
   DB.update('students', studentId, { status });
   DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'changed_status', target: `${s.name}: ${status}`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(label || `${s.name} status: ${status}`, status === 'suspended' ? 'warn' : undefined);
 }
@@ -3657,7 +3657,7 @@ function changeStudentStatus(studentId, status, label) {
 function reinstateStudentModal(studentId) {
   const s = DB.find('students', studentId);
   if (!s) return;
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => modal({
     title: 'Reinstate ' + s.name,
     body: `
@@ -3675,7 +3675,7 @@ function reinstateStudentModal(studentId) {
         </label>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="confirmReinstatement('${studentId}')">${icon('check','w-4 h-4')} Reinstate Student</button>`
   }), 50);
 }
@@ -3689,7 +3689,7 @@ function confirmReinstatement(studentId) {
   if (notify && s.parentId) {
     DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: `${s.name} — Reinstated`, body: `${s.name} has been reinstated and may resume school activities immediately.${notes ? ' ' + notes : ''}`, type: 'success', read: false, timestamp: now() });
   }
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${s.name} reinstated · active`, 'success');
 }
@@ -3976,7 +3976,7 @@ function adm_updateAlumniModal(alumniId) {
         <textarea id="al_notes" class="input" rows="2" placeholder="Any notable achievements, contact notes, etc.">${a.alumniNotes || ''}</textarea>
       </div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="adm_saveAlumniInfo('${alumniId}')">Save</button>`
   });
 }
@@ -3989,7 +3989,7 @@ function adm_saveAlumniInfo(alumniId) {
   const certIssued = (document.getElementById('al_cert') || {}).value === 'yes';
   const alumniNotes = (document.getElementById('al_notes') || {}).value.trim();
   DB.update('students', alumniId, { currentInstitution, currentCourse, alumniEmail, alumniPhone, certIssued, alumniNotes });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Alumni information updated', 'success');
 }
@@ -4196,7 +4196,7 @@ function parseBulkCSV(csvText, fileName) {
   }
 
   if (created.length) DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'bulk_import', target: `${created.length} students from ${fileName}`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   if (created.length && !errors.length) toast(`Imported ${created.length} student${created.length!==1?'s':''} from ${fileName}`, 'success');
   else if (created.length && errors.length) {
@@ -4204,7 +4204,7 @@ function parseBulkCSV(csvText, fileName) {
       title: `Partial import: ${created.length} ok, ${errors.length} skipped`,
       body: `<div class="space-y-2"><div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm">${created.length} student${created.length!==1?'s':''} successfully imported.</div>
       <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm"><strong class="block mb-1">Skipped rows:</strong>${errors.map(e=>`<div>• ${e}</div>`).join('')}</div></div>`,
-      footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click()">OK</button>`
+      footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">OK</button>`
     });
   } else toast(`No students imported. ${errors[0] || 'Check the file.'}`, 'danger');
 }
@@ -4419,7 +4419,7 @@ function viewStaff(id) {
         </div>` : ''}
       </div>
     `,
-    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
 }
 
@@ -4560,7 +4560,7 @@ function addStaffModal() {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
       <button class="btn btn-primary" onclick="saveNewStaff()">${icon('check','w-4 h-4')} Save Staff</button>
     `
   });
@@ -4611,7 +4611,7 @@ function saveNewStaff() {
     permissions,
     invitation: { username, tempPassword, sentAt: now(), accepted: false, channels }
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   // Show invitation confirmation
   modal({
@@ -4630,7 +4630,7 @@ function saveNewStaff() {
       </div>
       <p class="text-xs text-slate-400 text-center mt-3">${name.split(' ').slice(-1)} will be asked to change the password on first login.</p>
     `,
-    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click()">Done</button>`
+    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">Done</button>`
   });
 }
 
@@ -4700,7 +4700,7 @@ function addClassModal() {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveClass()">Save Class</button>`
   });
 }
@@ -4711,7 +4711,7 @@ function saveClass() {
   const teacherId = document.getElementById('cl_teacher').value || null;
   if (!name) { toast('Class name required', 'danger'); return; }
   DB.insert('classes', { id: uid('cls'), schoolId: currentSchoolId(), name, level, teacherId });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${name} created`);
 }
@@ -4901,7 +4901,7 @@ function ttTimeConfigModal() {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
       <button class="btn btn-primary" onclick="saveTtTimeConfig()">${icon('check','w-4 h-4')} Save Configuration</button>
     `
   });
@@ -4918,7 +4918,7 @@ function saveTtTimeConfig() {
   const b1Label = document.getElementById('tt_b1label').value.trim();
   const b2Label = document.getElementById('tt_b2label').value.trim();
   DB.settings({ timetableConfig: { periodTimes, break1After: b1After, break2After: b2After, break1Label: b1Label, break2Label: b2Label } });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   toast('Timetable configuration saved', 'success');
   APP.render();
 }
@@ -4998,7 +4998,7 @@ function handleBulkTimetable(ev) {
       if (existing) { DB.update('timetable', existing.id, { time, subjectId: sub.id, teacherId: tch.id }); replaced++; }
       else { DB.insert('timetable', { id: uid('tt'), schoolId: currentSchoolId(), classId: cls.id, day, period, time, subjectId: sub.id, teacherId: tch.id }); added++; }
     }
-    document.getElementById('modalBackdrop').click();
+    document.getElementById('modalBackdrop')?.click();
     APP.render();
     if (errors.length) {
       modal({
@@ -5007,7 +5007,7 @@ function handleBulkTimetable(ev) {
           <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm">${added} new · ${replaced} replaced · ${skipped} skipped</div>
           <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm"><strong>Errors:</strong>${errors.slice(0, 10).map(e => `<div>• ${e}</div>`).join('')}</div>
         </div>`,
-        footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click()">OK</button>`
+        footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">OK</button>`
       });
     } else toast(`Imported ${added + replaced} timetable entries`, 'success');
   };
@@ -5041,7 +5041,7 @@ function addPeriodModal(classId, preDay, prePeriod) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="savePeriod('${classId}')">Add Period</button>`
   });
 }
@@ -5065,7 +5065,7 @@ function editTimetableCell(periodId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-danger" onclick="deletePeriod('${periodId}')">${icon('trash','w-4 h-4')} Remove</button>
              <button class="btn btn-primary" onclick="updatePeriod('${periodId}')">${icon('check','w-4 h-4')} Save</button>`
   });
@@ -5077,14 +5077,14 @@ function updatePeriod(periodId) {
     subjectId: document.getElementById('tte_subject').value,
     teacherId: document.getElementById('tte_teacher').value
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Period updated');
 }
 
 function deletePeriod(periodId) {
   DB.remove('timetable', periodId);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Period removed', 'info');
 }
@@ -5134,7 +5134,7 @@ function quickBuildTimetableModal(classId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveQuickBuildTimetable('${classId}')">${icon('check','w-4 h-4')} Save Week</button>`
   });
 }
@@ -5155,7 +5155,7 @@ function saveQuickBuildTimetable(classId) {
       DB.remove('timetable', existing.id); removed++;
     }
   }));
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`Week saved · ${added} added · ${removed} removed`);
 }
@@ -5170,7 +5170,7 @@ function savePeriod(classId) {
   const conflict = DB.query('timetable', t => t.teacherId === teacherId && t.day === day && t.period === period);
   if (conflict.length) { toast(`Conflict: teacher is already teaching ${day} P${period}`, 'danger'); return; }
   DB.insert('timetable', { id: uid('tt'), schoolId: currentSchoolId(), classId, day, period, time, subjectId, teacherId });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Period added');
 }
@@ -5616,7 +5616,7 @@ function reportCommentModal(studentId, onSave) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveReportComment('${studentId}')">${icon('check','w-4 h-4')} Save & Generate</button>`
   });
   // Store callback for after save
@@ -5649,7 +5649,7 @@ function saveReportComment(studentId) {
     id: uid('rc'), schoolId: currentSchoolId(), studentId, term: DB.settings().currentTerm,
     comment, classTeacher, headTeacher, createdBy: AUTH.current.id, createdAt: now()
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   toast('Comment saved', 'success');
   if (typeof window._onReportCommentSaved === 'function') {
     setTimeout(() => { window._onReportCommentSaved(); window._onReportCommentSaved = null; }, 100);
@@ -5705,13 +5705,14 @@ function view_adm_reports() {
     { key: 'leavers',     label: 'Leavers' },
     { key: 'attendance',  label: 'Attendance' },
     { key: 'financial',   label: 'Financial' },
-    { key: 'applications', label: 'Applications' }
+    { key: 'applications', label: 'Applications' },
+    { key: 'print',       label: 'Print & Export' }
   ];
   return `
     ${pageHeader({
       title: 'School Reports',
       subtitle: 'Consolidated view — enrollment, leavers, attendance, financial, and admissions data',
-      actions: `${rTab === 'financial' ? `<button class="btn btn-secondary" onclick="exportPeachtreeJournal()">${icon('download','w-4 h-4')} Peachtree Export</button> ` : ''}<button class="btn btn-secondary" onclick="exportConsolidatedReport('${rTab}')">${icon('download','w-4 h-4')} Export</button>`
+      actions: `${rTab === 'financial' ? `<button class="btn btn-secondary" onclick="exportPeachtreeJournal()">${icon('download','w-4 h-4')} Peachtree Export</button> ` : ''}${rTab !== 'print' ? `<button class="btn btn-secondary" onclick="exportConsolidatedReport('${rTab}')">${icon('download','w-4 h-4')} Export</button>` : ''}`
     })}
     ${tabs(tabs_list, rTab, k => { APP.params.rTab = k; APP.render(); })}
     <div class="pt-4">${
@@ -5720,6 +5721,7 @@ function view_adm_reports() {
       rTab === 'attendance'  ? renderAttendanceReport(schoolId) :
       rTab === 'financial'   ? view_fin_reports() :
       rTab === 'applications' ? renderApplicationsReport(schoolId) :
+      rTab === 'print'       ? _renderPrintCenter() :
       renderEnrollmentReport(schoolId)
     }</div>
   `;
@@ -6256,7 +6258,7 @@ function addDisciplineModal() {
         <div><label class="input-label">Note</label><textarea id="dc_note" class="input" rows="3" placeholder="What happened?"></textarea></div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveDiscipline()">Save Record</button>`
   });
 }
@@ -6268,7 +6270,7 @@ function saveDiscipline() {
   const note = document.getElementById('dc_note').value.trim();
   if (!note) { toast('Please enter a note', 'danger'); return; }
   DB.insert('discipline', { id: uid('dis'), schoolId: currentSchoolId(), studentId, type, points, note, recordedBy: AUTH.current.id, date: today() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Discipline record saved');
 }
@@ -6350,7 +6352,7 @@ function viewInventoryHistory(itemId) {
         `).join('')}
       </div>
     `,
-    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
 }
 
@@ -6382,7 +6384,7 @@ function adjustStockModal(itemId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveStockAdjustment('${itemId}')">Apply</button>`
   });
 }
@@ -6400,7 +6402,7 @@ function saveStockAdjustment(itemId) {
   if (newQty < it.minStock && it.quantity >= it.minStock) {
     DB.insert('notifications', { id: uid('not'), userId: AUTH.current.id, title: 'Low Stock Alert', body: `${it.name} dropped below minimum (${newQty}/${it.minStock})`, type: 'warn', read: false, timestamp: now() });
   }
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`Stock ${delta > 0 ? 'added' : 'removed'}: ${reason}`);
 }
@@ -6424,7 +6426,7 @@ function addInventoryModal() {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveInventory()">Save Item</button>`
   });
 }
@@ -6443,7 +6445,7 @@ function saveInventory() {
   };
   if (!item.name) { toast('Item name required', 'danger'); return; }
   DB.insert('inventory', item);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Item added to inventory');
 }
@@ -6744,7 +6746,7 @@ function suggestSubstituteCoverageModal(leaveId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click(); APP.render()">Skip for now</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); APP.render()">Skip for now</button>`
   });
 }
 
@@ -6769,7 +6771,7 @@ function assignSubstitute(leaveId, substituteId) {
     actionable: { coverageId, type: 'substitute' }
   });
   DB.insert('auditLog', { id: uid('aud'), schoolId: l.schoolId, actor: AUTH.current.id, action: 'assigned_substitute', target: `${sub.name} for ${original.name}`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${sub.name.split(' ').slice(-1)} notified · awaiting acceptance`, 'success');
 }
@@ -6813,7 +6815,7 @@ function newLeaveRequestModal() {
         <div><label class="input-label">Reason</label><textarea id="lv_reason" rows="2" class="input" placeholder="e.g. Attending hospital for knee surgery"></textarea></div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveLeaveRequest()">Submit</button>`
   });
 }
@@ -6829,7 +6831,7 @@ function saveLeaveRequest() {
     id: uid('lv'), schoolId: currentSchoolId(), staffId, type, from, to, reason,
     status: 'pending', requestedAt: now()
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Leave request submitted');
 }
@@ -6979,7 +6981,7 @@ function adminMarkStaffAttendanceModal(date) {
         </div>` : ''}
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveStaffAttendance('${date}')">${icon('check','w-4 h-4')} Save Attendance</button>`
   });
 }
@@ -7029,7 +7031,7 @@ function saveStaffAttendance(date) {
   });
   Object.keys(_staffAttBuffer).forEach(k => delete _staffAttBuffer[k]);
   DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'recorded_staff_attendance', target: `${saved} entries for ${date}`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`Saved ${saved} staff attendance entries`, 'success');
 }
@@ -7197,7 +7199,7 @@ function roleEditorModal(roleId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveRole(${isEdit ? "'" + roleId + "'" : 'null'})">${icon('check','w-4 h-4')} ${isEdit ? 'Save Changes' : 'Create Role'}</button>`
   });
 }
@@ -7226,7 +7228,7 @@ function saveRole(roleId) {
     });
     toast(`Role "${name}" created`);
   }
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
 }
 
@@ -7365,7 +7367,7 @@ function reconnectPaystackModal() {
         <div><label class="input-label">Business Name (shown on receipts)</label><input id="ps_name" class="input" value="${school.name || ''}" /></div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="savePaystackConfig()">${icon('check','w-4 h-4')} Save & Reconnect</button>`
   });
 }
@@ -7376,7 +7378,7 @@ function savePaystackConfig() {
   const name = document.getElementById('ps_name').value.trim();
   if (!pk || !sk) { toast('Enter both public and secret keys', 'danger'); return; }
   DB.settings({ paystackPk: pk, paystackName: name });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'updated_paystack_config', target: 'Payment Gateway', timestamp: now() });
   toast('Paystack configuration updated', 'success');
 }
@@ -7443,8 +7445,8 @@ function restoreBackupModal() {
       </div>
       <div><label class="input-label">Reason for restore</label><textarea class="input" rows="2" placeholder="e.g. Accidental bulk delete"></textarea></div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
-             <button class="btn btn-danger" onclick="document.getElementById('modalBackdrop').click(); toast('Restore request logged — Super Admin approval required', 'info')">Request Restore</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-danger" onclick="document.getElementById('modalBackdrop')?.click(); toast('Restore request logged — Super Admin approval required', 'info')">Request Restore</button>`
   });
 }
 
@@ -7614,7 +7616,7 @@ function termClosingWizard() {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close wizard</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close wizard</button>`
   });
 }
 
@@ -7655,7 +7657,7 @@ function tcw_remindDebtors() {
 }
 
 function tcw_promote() {
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => bulkPromoteModal(), 100);
 }
 
@@ -7943,7 +7945,7 @@ function newSessionModal() {
         <div><label class="input-label">End</label><input id="ses_end" type="date" class="input" /></div>
       </div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveSession()">Save</button>`
   });
 }
@@ -7952,7 +7954,7 @@ function saveSession() {
   const name = document.getElementById('ses_name').value.trim();
   if (!name) { toast('Name required', 'danger'); return; }
   DB.insert('academicSessions', { id: uid('sess'), schoolId: currentSchoolId(), name, startDate: document.getElementById('ses_start').value, endDate: document.getElementById('ses_end').value, current: false });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Session added');
 }
@@ -7973,7 +7975,7 @@ function newTermModal() {
         <div><label class="input-label">End</label><input id="tm_end" type="date" class="input" /></div>
       </div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveTerm()">Save</button>`
   });
 }
@@ -7987,7 +7989,7 @@ function saveTerm() {
     endDate: document.getElementById('tm_end').value,
     current: false
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Term added');
 }
@@ -7996,7 +7998,7 @@ function newArmModal() {
   modal({
     title: 'New Arm',
     body: `<div><label class="input-label">Arm Name (e.g. A, B, Gold)</label><input id="arm_name" class="input" placeholder="e.g. A, B, Gold, Diamond" /></div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveArm()">Save</button>`
   });
 }
@@ -8005,7 +8007,7 @@ function saveArm() {
   const name = document.getElementById('arm_name').value.trim();
   if (!name) { toast('Name required', 'danger'); return; }
   DB.insert('arms', { id: uid('arm'), schoolId: currentSchoolId(), name });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Arm added');
 }
@@ -8119,7 +8121,7 @@ function newCalendarEventModal() {
         <select id="cal_audience" class="input"><option>all</option><option>parents</option><option>students</option><option>teachers</option></select>
       </div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveCalendarEvent()">Add</button>`
   });
 }
@@ -8134,7 +8136,7 @@ function saveCalendarEvent() {
     type: document.getElementById('cal_type').value,
     audience: document.getElementById('cal_audience').value
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Event added');
 }
@@ -8351,7 +8353,7 @@ function viewApplication(appId) {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
       ${a.status === 'pending' ? `<button class="btn btn-secondary" onclick="reviewApplicationModal('${a.id}')">${icon('search','w-4 h-4')} Review</button>` : ''}
       ${a.status === 'reviewing' ? `<button class="btn btn-secondary" onclick="reviewApplicationModal('${a.id}')">${icon('search','w-4 h-4')} Update Review</button>` : ''}
       ${a.status === 'reviewing' ? `<button class="btn btn-gold" onclick="scheduleVisitModal('${a.id}')">${icon('calendar','w-4 h-4')} Schedule Visit</button>` : ''}
@@ -8408,14 +8410,14 @@ function previewAdmissionDoc(appId, docKey) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click(); viewApplication('${appId}')">← Back to application</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); viewApplication('${appId}')">← Back to application</button>
              <button class="btn btn-primary" onclick="toast('Download started','success')">${icon('download','w-4 h-4')} Download</button>`
   }), 50);
 }
 
 function reviewApplicationModal(appId) {
   const a = DB.find('admissionApplications', appId);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => modal({
     title: 'Review Application — ' + a.applicantName,
     body: `
@@ -8439,7 +8441,7 @@ function reviewApplicationModal(appId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="confirmReview('${appId}')">${icon('search','w-4 h-4')} Save Review</button>`
   }), 50);
 }
@@ -8450,7 +8452,7 @@ function confirmReview(appId) {
   DB.update('admissionApplications', appId, { status: 'reviewing', reviewNotes: notes, reviewFollowup: followup, reviewedAt: now(), reviewedBy: AUTH.current.id });
   const a = DB.find('admissionApplications', appId);
   DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'reviewing_application', target: a.applicantName + (followup ? ` (${followup})` : ''), timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${a.applicantName} — marked as Reviewing`);
 }
@@ -8466,7 +8468,7 @@ function setAppStatus(appId, status) {
 
 function scheduleVisitModal(appId) {
   const a = DB.find('admissionApplications', appId);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => modal({
     title: 'Schedule School Visit — ' + a.applicantName,
     body: `
@@ -8495,7 +8497,7 @@ function scheduleVisitModal(appId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-gold" onclick="confirmScheduleVisit('${appId}')">${icon('calendar','w-4 h-4')} Confirm Schedule</button>`
   }), 50);
 }
@@ -8522,14 +8524,14 @@ function confirmScheduleVisit(appId) {
     });
   }
   DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'scheduled_visit', target: `${a.applicantName} — ${fdate(date, { long: true })}`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`Visit scheduled for ${fdate(date, { long: true })}`);
 }
 
 function markVisitCompleteModal(appId) {
   const a = DB.find('admissionApplications', appId);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => modal({
     title: 'Confirm Visit Attended — ' + a.applicantName,
     body: `
@@ -8552,7 +8554,7 @@ function markVisitCompleteModal(appId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="confirmVisitComplete('${appId}')">${icon('check','w-4 h-4')} Confirm Visit Done</button>`
   }), 50);
 }
@@ -8589,7 +8591,7 @@ function confirmVisitComplete(appId) {
     link: { view: 'par_fees' }
   });
   DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'confirmed_visit', target: a.applicantName, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`Visit confirmed — ${a.applicantName}'s parent can now view fees${isNewParent ? ' · Credentials sent' : ''}`);
 }
@@ -8682,8 +8684,8 @@ function acceptApplication(appId) {
       <p class="text-xs text-slate-500 text-center mt-3">What would you like to do next?</p>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Done</button>
-      ${isNewParent ? `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); showParentCredentialsModal(DB.find('parents','${parent.id}'), DB.find('students','${newStudent.id}'), ${newInvoice ? "DB.find('invoices','" + newInvoice.id + "')" : 'null'})">Send Login Credentials →</button>` : `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); viewStudent('${newStudent.id}')">View ${a.applicantName.split(' ')[0]}'s profile →</button>`}
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Done</button>
+      ${isNewParent ? `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); showParentCredentialsModal(DB.find('parents','${parent.id}'), DB.find('students','${newStudent.id}'), ${newInvoice ? "DB.find('invoices','" + newInvoice.id + "')" : 'null'})">Send Login Credentials →</button>` : `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); viewStudent('${newStudent.id}')">View ${a.applicantName.split(' ')[0]}'s profile →</button>`}
     `
   });
   toast(`${a.applicantName} enrolled · invoice and welcome message sent`, 'success');
@@ -8748,7 +8750,7 @@ function newSickBayModal() {
       <label class="flex items-center gap-2 text-sm"><input id="sb_referred" type="checkbox" /> Referred to hospital</label>
       <label class="flex items-center gap-2 text-sm"><input id="sb_notify" type="checkbox" checked /> Notify parent via WhatsApp</label>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveSickBay()">Save Record</button>`
   });
 }
@@ -8771,7 +8773,7 @@ function saveSickBay() {
     const s = DB.find('students', studentId);
     if (s) DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Sick Bay Visit', body: `${s.name} visited the school clinic today. Complaint: ${complaint}. Please contact the school for details.`, type: 'warn', read: false, timestamp: now() });
   }
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Sick bay record saved' + (notify ? ' · parent notified' : ''));
 }
@@ -8829,7 +8831,7 @@ function newVisitorModal() {
       <div><label class="input-label">Purpose</label><input id="vis_purpose" class="input" placeholder="e.g. Collect report card" /></div>
       <div><label class="input-label">Vehicle (or "Foot")</label><input id="vis_vehicle" class="input" placeholder="e.g. Toyota Camry LSD-241-AB" /></div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveVisitor()">${icon('check','w-4 h-4')} Check In</button>`
   });
 }
@@ -8849,7 +8851,7 @@ function saveVisitor() {
     checkIn: stamp,
     checkOut: null
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${name} checked in`);
 }
@@ -8964,7 +8966,7 @@ function addBookModal() {
         <div><label class="input-label">Location</label><input id="bk_location" class="input" placeholder="Shelf A-01" /></div>
       </div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveBook()">Add Book</button>`
   });
 }
@@ -8981,7 +8983,7 @@ function saveBook() {
     copiesTotal: copies, copiesAvailable: copies,
     location: document.getElementById('bk_location').value.trim()
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Book added to catalog');
 }
@@ -8998,7 +9000,7 @@ function issueBookModal(bookId) {
       <div><label class="input-label">Due Date</label><input id="iss_due" type="date" class="input" value="${daysAhead(14)}" /></div>
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">${book.copiesAvailable} of ${book.copiesTotal} copies available · ${book.location}</div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="issueBook('${bookId}')">Issue Book</button>`
   });
 }
@@ -9017,7 +9019,7 @@ function issueBook(bookId) {
   DB.update('libraryBooks', bookId, { copiesAvailable: book.copiesAvailable - 1 });
   const s = DB.find('students', studentId);
   toast(`${book.title} issued to ${s ? s.name : 'student'}`);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
 }
 
@@ -9134,7 +9136,7 @@ function raiseTicketModal() {
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">${icon('info','w-4 h-4 inline mr-1')} Our team responds within the SLA based on priority (High: 4h, Medium: 24h, Low: 48h).</div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveSupportTicket()">${icon('send','w-4 h-4')} Submit Ticket</button>`
   });
 }
@@ -9149,7 +9151,7 @@ function saveSupportTicket() {
     requester: AUTH.current.name, subject, description: document.getElementById('tk_desc').value.trim(),
     priority, status: 'open', channel: 'platform', assignedTo: null, createdAt: now(), slaHours: sla, notes: []
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Ticket submitted · our team will respond within ' + sla + 'h', 'success');
 }
@@ -9183,4 +9185,548 @@ function renderHelpCentre() {
       </div>
     `}
   `;
+}
+
+/* ============================================================
+   REPORT CENTER  —  _renderPrintCenter()
+   Every report available to school owners, no jargon.
+   Rendered as the "Print & Export" tab inside view_adm_reports().
+   ============================================================ */
+
+function _renderPrintCenter() {
+  const card = ({ title, desc, onPrint, onCsv }) => `
+    <div class="card p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
+      <div class="flex-1">
+        <div class="font-bold text-slate-900 mb-1">${title}</div>
+        <p class="text-xs text-slate-500 leading-relaxed">${desc}</p>
+      </div>
+      <div class="space-y-2">
+        <button class="btn btn-primary w-full !text-sm" onclick="${onPrint}">${icon('download','w-4 h-4')} Print / Save as PDF</button>
+        ${onCsv ? `<button class="btn btn-secondary w-full !text-xs" onclick="${onCsv}">${icon('download','w-3 h-3')} Download Spreadsheet (.csv)</button>` : ''}
+      </div>
+    </div>`;
+
+  const section = (label, iconKey, color, cards) => `
+    <div class="mb-7">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-7 h-7 rounded-lg bg-${color}-100 text-${color}-700 flex items-center justify-center">${icon(iconKey,'w-4 h-4')}</div>
+        <h3 class="font-bold text-slate-900">${label}</h3>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">${cards}</div>
+    </div>`;
+
+  return `
+    <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-900 mb-5 flex items-start gap-3">
+      ${icon('reports','w-5 h-5 flex-shrink-0 mt-0.5')}
+      <span>Click <strong>Print / Save as PDF</strong> on any report to open a formatted, ready-to-print document you can save, share or file. <strong>Download Spreadsheet</strong> gives you an Excel-compatible file for those who want to work with the numbers.</span>
+    </div>
+
+    ${section('Student Reports', 'students', 'brand', `
+      ${card({ title: 'Full Student Register', desc: 'All active students with their class, admission number, date of birth, parent name and contact number.', onPrint: 'rpt_studentRegister()', onCsv: 'rpt_studentRegisterCSV()' })}
+      ${card({ title: 'Outstanding Fees', desc: 'Students who have not fully paid their fees this term — with the exact amount each person still owes, sorted from highest to lowest.', onPrint: 'rpt_outstandingFees()', onCsv: 'rpt_outstandingFeesCSV()' })}
+      ${card({ title: 'Attendance Summary', desc: 'Each student\'s days present, absent and late this term with their overall attendance percentage.', onPrint: 'rpt_attendanceSummary()', onCsv: 'rpt_attendanceSummaryCSV()' })}
+      ${card({ title: 'New Admissions This Term', desc: 'Students who joined the school during the current term, with their class and parent contact details.', onPrint: 'rpt_newAdmissions()' })}
+    `)}
+
+    ${section('Finance Reports', 'fees', 'emerald', `
+      ${card({ title: 'Fee Collection Report', desc: 'Class-by-class breakdown showing what each student was billed, how much has been paid, and what is still outstanding.', onPrint: 'rpt_feeCollection()', onCsv: 'rpt_feeCollectionCSV()' })}
+      ${card({ title: 'Income & Expenses Summary', desc: 'Total money received this term minus all recorded costs (salaries, electricity, maintenance, etc.) — shows your net profit or loss.', onPrint: 'rpt_incomeExpenses()' })}
+      ${card({ title: 'All Payments Received', desc: 'Every payment made by parents this term — student name, amount paid, date, and how the payment was made.', onPrint: 'rpt_paymentsLog()', onCsv: 'rpt_paymentsLogCSV()' })}
+      ${card({ title: 'Expense Record', desc: 'All costs recorded this term — salaries, electricity, diesel, maintenance, supplies, internet, security and more.', onPrint: 'rpt_expenseRecord()', onCsv: 'rpt_expenseRecordCSV()' })}
+    `)}
+
+    ${section('Staff Reports', 'teacher', 'purple', `
+      ${card({ title: 'Staff Directory', desc: 'All teaching and non-teaching staff with their department, subjects, phone number and date of employment.', onPrint: 'rpt_staffDirectory()', onCsv: 'rpt_staffDirectoryCSV()' })}
+      ${card({ title: 'Payroll Summary', desc: 'Staff salaries from the latest payroll run — gross pay, tax (PAYE), pension deducted, and net take-home for each person.', onPrint: 'rpt_payrollSummary()', onCsv: 'rpt_payrollSummaryCSV()' })}
+    `)}
+
+    ${section('Academic Reports', 'classes', 'sky', `
+      ${card({ title: 'Academic Results Summary', desc: 'School-wide average scores per class and per subject. Quickly see which classes or subjects need more attention.', onPrint: 'rpt_academicSummary()' })}
+      ${card({ title: 'Class Broadsheet', desc: 'Full result table for a class — every student\'s score in every subject with totals and grades. Ready to print and present.', onPrint: 'rpt_broadsheetSelectModal()' })}
+    `)}
+  `;
+}
+
+/* ── Shared letterhead ─────────────────────────────────────── */
+function _rptHead(title, subtitle) {
+  const sc = DB.find('schools', currentSchoolId()) || {};
+  const term = DB.settings().currentTerm || '';
+  const date = new Date().toLocaleDateString('en-NG', { day:'numeric', month:'long', year:'numeric' });
+  return `
+    <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:28px">
+      <h1 style="margin:0 0 4px;font-size:22px;color:#047857;letter-spacing:.5px">${(sc.name||'School').toUpperCase()}</h1>
+      ${sc.address ? `<p style="margin:2px 0;color:#555;font-size:12px">${sc.address}</p>` : ''}
+      ${sc.phone ? `<p style="margin:2px 0;color:#555;font-size:12px">Tel: ${sc.phone}</p>` : ''}
+      <h2 style="margin:16px 0 4px;font-size:18px;font-weight:700">${title}</h2>
+      ${subtitle ? `<p style="margin:2px 0;color:#555;font-size:13px">${subtitle}</p>` : ''}
+      <p style="margin:6px 0 0;color:#999;font-size:11px">Generated: ${date} &nbsp;|&nbsp; ${term}</p>
+    </div>`;
+}
+
+function _rptSign() {
+  return `<div style="margin-top:48px;display:flex;justify-content:space-between;font-size:12px;color:#555">
+    <div>________________________________<br>Head Teacher / Principal<br><span style="font-size:10px;color:#999">Name &amp; Signature</span></div>
+    <div style="text-align:right">________________________________<br>School Stamp<br><span style="font-size:10px;color:#999">Official Stamp</span></div>
+  </div>`;
+}
+
+/* ── STUDENT REPORTS ───────────────────────────────────────── */
+function rpt_studentRegister() {
+  const sid = currentSchoolId();
+  const students = DB.query('students', s => s.schoolId === sid && s.status === 'active')
+    .sort((a,b) => a.classId.localeCompare(b.classId) || a.name.localeCompare(b.name));
+  const classes = DB.get('classes');
+  const parents = DB.get('parents');
+  const rows = students.map((s,i) => {
+    const cls = classes.find(c => c.id === s.classId);
+    const par = parents.find(p => p.id === s.parentId);
+    return `<tr>
+      <td>${i+1}</td><td><strong>${s.name}</strong></td><td>${cls ? cls.name : '—'}</td>
+      <td>${s.admissionNo}</td><td>${s.gender}</td><td>${fdate(s.dob,{long:true})}</td>
+      <td>${par ? par.name : '—'}</td><td>${par ? par.phone : '—'}</td>
+    </tr>`;
+  }).join('');
+  printElement(`
+    ${_rptHead('Full Student Register', `${students.length} active students`)}
+    <table><thead><tr><th>#</th><th>Full Name</th><th>Class</th><th>Admission No.</th><th>Sex</th><th>Date of Birth</th><th>Parent / Guardian</th><th>Phone</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="8">Total active students: <strong>${students.length}</strong></td></tr></tfoot></table>
+    ${_rptSign()}
+  `);
+}
+
+function rpt_studentRegisterCSV() {
+  const sid = currentSchoolId();
+  const students = DB.query('students', s => s.schoolId === sid && s.status === 'active');
+  const classes = DB.get('classes'); const parents = DB.get('parents');
+  downloadCSV('student-register.csv',
+    ['Name','Class','Admission No','Gender','Date of Birth','Parent Name','Parent Phone','Status'],
+    students.map(s => {
+      const cls = classes.find(c=>c.id===s.classId); const par = parents.find(p=>p.id===s.parentId);
+      return [s.name, cls?cls.name:'', s.admissionNo, s.gender, s.dob, par?par.name:'', par?par.phone:'', s.status];
+    })
+  );
+}
+
+function rpt_outstandingFees() {
+  const sid = currentSchoolId();
+  const invoices = DB.query('invoices', i => i.schoolId === sid && i.balance > 0)
+    .sort((a,b) => b.balance - a.balance);
+  const classes = DB.get('classes');
+  let total = 0;
+  const rows = invoices.map((inv,i) => {
+    const s = DB.find('students', inv.studentId);
+    const cls = s ? classes.find(c=>c.id===s.classId) : null;
+    total += inv.balance;
+    return `<tr>
+      <td>${i+1}</td><td><strong>${s ? s.name : '—'}</strong></td><td>${cls ? cls.name : '—'}</td>
+      <td style="text-align:right">${money(inv.total)}</td>
+      <td style="text-align:right;color:#16a34a">${money(inv.paid)}</td>
+      <td style="text-align:right;color:#dc2626;font-weight:700">${money(inv.balance)}</td>
+      <td>${fdate(inv.dueDate,{long:true})}</td>
+    </tr>`;
+  }).join('');
+  printElement(`
+    ${_rptHead('Outstanding Fees Report', `${invoices.length} students with unpaid balances`)}
+    <table><thead><tr><th>#</th><th>Student</th><th>Class</th><th style="text-align:right">Billed</th><th style="text-align:right">Paid</th><th style="text-align:right">Outstanding</th><th>Due Date</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="5" style="text-align:right">Total Outstanding:</td><td style="text-align:right;color:#dc2626"><strong>${money(total)}</strong></td><td></td></tr></tfoot></table>
+    ${_rptSign()}
+  `);
+}
+
+function rpt_outstandingFeesCSV() {
+  const sid = currentSchoolId();
+  const invoices = DB.query('invoices', i => i.schoolId === sid && i.balance > 0).sort((a,b)=>b.balance-a.balance);
+  const classes = DB.get('classes');
+  downloadCSV('outstanding-fees.csv',
+    ['Student','Class','Total Billed','Amount Paid','Amount Outstanding','Due Date'],
+    invoices.map(inv => {
+      const s = DB.find('students', inv.studentId);
+      const cls = s ? classes.find(c=>c.id===s.classId) : null;
+      return [s?s.name:'', cls?cls.name:'', inv.total, inv.paid, inv.balance, inv.dueDate];
+    })
+  );
+}
+
+function rpt_attendanceSummary() {
+  const sid = currentSchoolId();
+  const students = DB.query('students', s => s.schoolId === sid && s.status === 'active')
+    .sort((a,b) => a.classId.localeCompare(b.classId) || a.name.localeCompare(b.name));
+  const classes = DB.get('classes');
+  const rows = students.map((s,i) => {
+    const att = COMPUTE.studentAttendance(s.id);
+    const present = att.filter(a=>a.status==='present').length;
+    const absent  = att.filter(a=>a.status==='absent').length;
+    const late    = att.filter(a=>a.status==='late').length;
+    const total   = att.length;
+    const rate    = total > 0 ? Math.round((present+late)/total*100) : 0;
+    const cls = classes.find(c=>c.id===s.classId);
+    const rColor = rate >= 90 ? '#16a34a' : rate >= 75 ? '#d97706' : '#dc2626';
+    return `<tr>
+      <td>${i+1}</td><td><strong>${s.name}</strong></td><td>${cls?cls.name:'—'}</td>
+      <td style="text-align:right;color:#16a34a">${present}</td>
+      <td style="text-align:right;color:#dc2626">${absent}</td>
+      <td style="text-align:right;color:#d97706">${late}</td>
+      <td style="text-align:right">${total}</td>
+      <td style="text-align:right;font-weight:700;color:${rColor}">${rate}%</td>
+    </tr>`;
+  }).join('');
+  printElement(`
+    ${_rptHead('Attendance Summary', `${students.length} students · ${DB.settings().currentTerm}`)}
+    <table><thead><tr><th>#</th><th>Student</th><th>Class</th><th style="text-align:right">Present</th><th style="text-align:right">Absent</th><th style="text-align:right">Late</th><th style="text-align:right">Days Recorded</th><th style="text-align:right">Attendance %</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    ${_rptSign()}
+  `);
+}
+
+function rpt_attendanceSummaryCSV() {
+  const sid = currentSchoolId();
+  const students = DB.query('students', s => s.schoolId === sid && s.status === 'active');
+  const classes = DB.get('classes');
+  downloadCSV('attendance-summary.csv',
+    ['Student','Class','Present','Absent','Late','Total Days','Attendance %'],
+    students.map(s => {
+      const att = COMPUTE.studentAttendance(s.id);
+      const present = att.filter(a=>a.status==='present').length;
+      const absent  = att.filter(a=>a.status==='absent').length;
+      const late    = att.filter(a=>a.status==='late').length;
+      const total   = att.length;
+      const rate    = total > 0 ? Math.round((present+late)/total*100) : 0;
+      const cls = classes.find(c=>c.id===s.classId);
+      return [s.name, cls?cls.name:'', present, absent, late, total, rate+'%'];
+    })
+  );
+}
+
+function rpt_newAdmissions() {
+  const sid = currentSchoolId();
+  const cutoff = daysAgo(120);
+  const students = DB.query('students', s => s.schoolId === sid && s.admissionDate >= cutoff)
+    .filter(s => s.status !== 'alumni')
+    .sort((a,b) => b.admissionDate.localeCompare(a.admissionDate));
+  const classes = DB.get('classes'); const parents = DB.get('parents');
+  const rows = students.map((s,i) => {
+    const cls = classes.find(c=>c.id===s.classId);
+    const par = parents.find(p=>p.id===s.parentId);
+    return `<tr>
+      <td>${i+1}</td><td><strong>${s.name}</strong></td><td>${cls?cls.name:'—'}</td>
+      <td>${s.admissionNo}</td><td>${fdate(s.admissionDate,{long:true})}</td>
+      <td>${par?par.name:'—'}</td><td>${par?par.phone:'—'}</td>
+    </tr>`;
+  }).join('');
+  printElement(`
+    ${_rptHead('New Admissions', `${students.length} students admitted recently`)}
+    <table><thead><tr><th>#</th><th>Student</th><th>Class</th><th>Admission No.</th><th>Date Admitted</th><th>Parent</th><th>Phone</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="7">Total new admissions: <strong>${students.length}</strong></td></tr></tfoot></table>
+    ${_rptSign()}
+  `);
+}
+
+/* ── FINANCE REPORTS ───────────────────────────────────────── */
+function rpt_feeCollection() {
+  const sid = currentSchoolId();
+  const invoices = DB.query('invoices', i => i.schoolId === sid);
+  const classes = DB.get('classes');
+  const grouped = {};
+  invoices.forEach(inv => {
+    const s = DB.find('students', inv.studentId); if (!s) return;
+    const cName = (classes.find(c=>c.id===s.classId)||{}).name || '—';
+    if (!grouped[cName]) grouped[cName] = [];
+    grouped[cName].push({ ...inv, studentName: s.name });
+  });
+  let totalBilled=0, totalPaid=0, totalOwe=0;
+  const body = Object.keys(grouped).sort().map(cls => {
+    const list = grouped[cls].sort((a,b)=>b.balance-a.balance);
+    const clsBilled = list.reduce((s,i)=>s+i.total,0);
+    const clsPaid   = list.reduce((s,i)=>s+i.paid,0);
+    const clsOwe    = list.reduce((s,i)=>s+i.balance,0);
+    totalBilled+=clsBilled; totalPaid+=clsPaid; totalOwe+=clsOwe;
+    return `<tr style="background:#f0fdf4"><td colspan="5" style="font-weight:700;color:#166534">${cls} — ${list.length} student${list.length!==1?'s':''}</td><td style="text-align:right;font-weight:700">${money(clsBilled)}</td><td style="text-align:right;font-weight:700;color:#16a34a">${money(clsPaid)}</td><td style="text-align:right;font-weight:700;color:#dc2626">${money(clsOwe)}</td></tr>
+    ${list.map((inv,i) => `<tr><td>${i+1}</td><td style="padding-left:16px">${inv.studentName}</td><td>${cls}</td><td>${fdate(inv.dueDate,{long:true})}</td><td style="text-align:center">${inv.status==='paid'?'✓ Paid':inv.status==='partial'?'Partial':'Outstanding'}</td><td style="text-align:right">${money(inv.total)}</td><td style="text-align:right;color:#16a34a">${money(inv.paid)}</td><td style="text-align:right;color:${inv.balance>0?'#dc2626':'#999'}">${inv.balance>0?money(inv.balance):'—'}</td></tr>`).join('')}`;
+  }).join('');
+  printElement(`
+    ${_rptHead('Fee Collection Report', DB.settings().currentTerm)}
+    <table><thead><tr><th>#</th><th>Student</th><th>Class</th><th>Due Date</th><th>Status</th><th style="text-align:right">Billed</th><th style="text-align:right">Paid</th><th style="text-align:right">Outstanding</th></tr></thead>
+    <tbody>${body}</tbody>
+    <tfoot><tr><td colspan="5" style="font-weight:700">SCHOOL TOTAL</td><td style="text-align:right">${money(totalBilled)}</td><td style="text-align:right;color:#16a34a">${money(totalPaid)}</td><td style="text-align:right;color:#dc2626">${money(totalOwe)}</td></tr></tfoot></table>
+    ${_rptSign()}
+  `);
+}
+
+function rpt_feeCollectionCSV() {
+  const sid = currentSchoolId();
+  const invoices = DB.query('invoices', i => i.schoolId === sid);
+  const classes = DB.get('classes');
+  downloadCSV('fee-collection.csv',
+    ['Student','Class','Total Billed','Amount Paid','Outstanding','Status','Due Date'],
+    invoices.map(inv => {
+      const s = DB.find('students', inv.studentId);
+      const cls = s ? (classes.find(c=>c.id===s.classId)||{}).name : '';
+      return [s?s.name:'', cls, inv.total, inv.paid, inv.balance, inv.status, inv.dueDate];
+    })
+  );
+}
+
+function rpt_incomeExpenses() {
+  const sid = currentSchoolId();
+  const invoices = DB.query('invoices', i => i.schoolId === sid);
+  const expenses = DB.query('expenses', e => e.schoolId === sid);
+  const collected = invoices.reduce((s,i)=>s+i.paid,0);
+  const billed    = invoices.reduce((s,i)=>s+i.total,0);
+  const outstanding = invoices.reduce((s,i)=>s+i.balance,0);
+  const expByCat = {};
+  expenses.forEach(e => { expByCat[e.category] = (expByCat[e.category]||0)+e.amount; });
+  const totalExp = expenses.reduce((s,e)=>s+e.amount,0);
+  const net = collected - totalExp;
+  const expRows = Object.entries(expByCat).sort((a,b)=>b[1]-a[1])
+    .map(([cat,amt]) => `<tr><td style="padding-left:20px">${cat}</td><td style="text-align:right;color:#dc2626">${money(amt)}</td></tr>`).join('');
+  printElement(`
+    ${_rptHead('Income & Expenses Summary', DB.settings().currentTerm)}
+    <table>
+      <tr style="background:#f0fdf4"><td colspan="2" style="font-weight:700;font-size:15px;color:#166534">INCOME</td></tr>
+      <tr><td style="padding-left:20px">Total Fees Billed</td><td style="text-align:right">${money(billed)}</td></tr>
+      <tr><td style="padding-left:20px">Amount Collected</td><td style="text-align:right;color:#16a34a;font-weight:700">${money(collected)}</td></tr>
+      <tr><td style="padding-left:20px;color:#888">Still Outstanding</td><td style="text-align:right;color:#888">(${money(outstanding)} awaited)</td></tr>
+      <tr><td colspan="2">&nbsp;</td></tr>
+      <tr style="background:#fff5f5"><td colspan="2" style="font-weight:700;font-size:15px;color:#991b1b">EXPENSES</td></tr>
+      ${expRows}
+      <tr style="background:#f8fafc;font-weight:700"><td>Total Expenses</td><td style="text-align:right;color:#dc2626">${money(totalExp)}</td></tr>
+      <tr><td colspan="2">&nbsp;</td></tr>
+      <tr style="background:${net>=0?'#dcfce7':'#fee2e2'};font-size:16px;font-weight:700">
+        <td>${net>=0?'NET PROFIT':'NET LOSS'}</td>
+        <td style="text-align:right;color:${net>=0?'#15803d':'#dc2626'}">${money(Math.abs(net))}</td>
+      </tr>
+    </table>
+    <p style="font-size:11px;color:#999;margin-top:16px">Note: Income figure shows cash collected, not total billed. ${money(outstanding)} in outstanding fees not yet included.</p>
+    ${_rptSign()}
+  `);
+}
+
+function rpt_paymentsLog() {
+  const sid = currentSchoolId();
+  const txns = DB.query('transactions', t => t.schoolId === sid && t.status === 'successful')
+    .sort((a,b) => b.timestamp.localeCompare(a.timestamp));
+  const total = txns.reduce((s,t)=>s+t.amount,0);
+  const rows = txns.map((t,i) => {
+    const s = DB.find('students', t.studentId);
+    return `<tr>
+      <td>${i+1}</td><td>${fdate(t.timestamp,{long:true})}</td>
+      <td><strong>${s?s.name:'—'}</strong></td>
+      <td style="text-align:right;color:#16a34a;font-weight:700">${money(t.amount)}</td>
+      <td>${t.method}</td><td><code style="font-size:11px">${t.reference||'—'}</code></td>
+      <td>${t.gateway||'—'}</td>
+    </tr>`;
+  }).join('');
+  printElement(`
+    ${_rptHead('Payments Received', `${txns.length} transactions · ${DB.settings().currentTerm}`)}
+    <table><thead><tr><th>#</th><th>Date</th><th>Student</th><th style="text-align:right">Amount</th><th>Method</th><th>Reference</th><th>Gateway</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="3">Total received:</td><td style="text-align:right"><strong>${money(total)}</strong></td><td colspan="3">&nbsp;</td></tr></tfoot></table>
+    ${_rptSign()}
+  `);
+}
+
+function rpt_paymentsLogCSV() {
+  const sid = currentSchoolId();
+  const txns = DB.query('transactions', t => t.schoolId === sid && t.status === 'successful')
+    .sort((a,b) => b.timestamp.localeCompare(a.timestamp));
+  downloadCSV('payments-received.csv',
+    ['Date','Student','Amount','Method','Reference','Gateway'],
+    txns.map(t => {
+      const s = DB.find('students', t.studentId);
+      return [fdate(t.timestamp,{long:true}), s?s.name:'', t.amount, t.method, t.reference||'', t.gateway||''];
+    })
+  );
+}
+
+function rpt_expenseRecord() {
+  const sid = currentSchoolId();
+  const expenses = DB.query('expenses', e => e.schoolId === sid).sort((a,b)=>b.date.localeCompare(a.date));
+  const total = expenses.reduce((s,e)=>s+e.amount,0);
+  const rows = expenses.map((e,i) => `<tr>
+    <td>${i+1}</td><td>${fdate(e.date,{long:true})}</td>
+    <td><strong>${e.category}</strong></td>
+    <td>${e.description}</td>
+    <td style="text-align:right;color:#dc2626;font-weight:700">${money(e.amount)}</td>
+  </tr>`).join('');
+  printElement(`
+    ${_rptHead('Expense Record', `${expenses.length} entries · ${DB.settings().currentTerm}`)}
+    <table><thead><tr><th>#</th><th>Date</th><th>Category</th><th>Description</th><th style="text-align:right">Amount</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="4" style="text-align:right">Total Expenses:</td><td style="text-align:right"><strong>${money(total)}</strong></td></tr></tfoot></table>
+    ${_rptSign()}
+  `);
+}
+
+function rpt_expenseRecordCSV() {
+  const sid = currentSchoolId();
+  const expenses = DB.query('expenses', e => e.schoolId === sid).sort((a,b)=>b.date.localeCompare(a.date));
+  downloadCSV('expense-record.csv',
+    ['Date','Category','Description','Amount'],
+    expenses.map(e => [e.date, e.category, e.description, e.amount])
+  );
+}
+
+/* ── STAFF REPORTS ─────────────────────────────────────────── */
+function rpt_staffDirectory() {
+  const sid = currentSchoolId();
+  const staff = DB.query('teachers', t => t.schoolId === sid).sort((a,b)=>a.name.localeCompare(b.name));
+  const rows = staff.map((t,i) => `<tr>
+    <td>${i+1}</td><td><strong>${t.name}</strong></td>
+    <td>${t.staffType||'Academic'}</td>
+    <td>${(t.subjects||[]).join(', ') || (t.department||'—')}</td>
+    <td>${t.phone||'—'}</td>
+    <td>${t.email||'—'}</td>
+    <td>${t.hireDate ? fdate(t.hireDate,{long:true}) : '—'}</td>
+    <td style="text-align:right;font-weight:700">${t.salary ? money(t.salary) : '—'}</td>
+  </tr>`).join('');
+  printElement(`
+    ${_rptHead('Staff Directory', `${staff.length} staff members`)}
+    <table><thead><tr><th>#</th><th>Name</th><th>Type</th><th>Subjects / Dept.</th><th>Phone</th><th>Email</th><th>Date Hired</th><th style="text-align:right">Monthly Salary</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="7">Total staff: <strong>${staff.length}</strong></td><td style="text-align:right">${money(staff.reduce((s,t)=>s+(t.salary||0),0))}/month</td></tr></tfoot></table>
+    ${_rptSign()}
+  `);
+}
+
+function rpt_staffDirectoryCSV() {
+  const sid = currentSchoolId();
+  const staff = DB.query('teachers', t => t.schoolId === sid);
+  downloadCSV('staff-directory.csv',
+    ['Name','Type','Phone','Email','Date Hired','Monthly Salary'],
+    staff.map(t => [t.name, t.staffType||'Academic', t.phone||'', t.email||'', t.hireDate||'', t.salary||0])
+  );
+}
+
+function rpt_payrollSummary() {
+  const sid = currentSchoolId();
+  const runs = DB.query('payrollRuns', r => r.schoolId === sid && r.stage === 'paid')
+    .sort((a,b) => (b.paidAt||'').localeCompare(a.paidAt||''));
+  const run = runs[0];
+  if (!run) { toast('No paid payroll run found', 'warn'); return; }
+  const payslips = DB.query('payslips', p => p.schoolId === sid && p.period === run.period);
+  const rows = payslips.map((p,i) => {
+    const t = DB.find('teachers', p.staffId);
+    return `<tr>
+      <td>${i+1}</td><td><strong>${t?t.name:'—'}</strong></td>
+      <td style="text-align:right">${money(p.grossPay)}</td>
+      <td style="text-align:right;color:#dc2626">−${money(p.deductions.paye)}</td>
+      <td style="text-align:right;color:#dc2626">−${money(p.deductions.pension)}</td>
+      <td style="text-align:right;font-weight:700;color:#15803d">${money(p.netPay)}</td>
+      <td>${p.bankName||'—'} · ${p.bankAccount||'—'}</td>
+    </tr>`;
+  }).join('');
+  printElement(`
+    ${_rptHead('Payroll Summary', `Period: ${run.period} · ${run.staffCount} staff`)}
+    <table><thead><tr><th>#</th><th>Staff Member</th><th style="text-align:right">Gross Pay</th><th style="text-align:right">PAYE Tax</th><th style="text-align:right">Pension</th><th style="text-align:right">Net Pay</th><th>Bank Details</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot>
+      <tr><td colspan="2">TOTALS</td><td style="text-align:right">${money(run.grossTotal)}</td><td style="text-align:right;color:#dc2626">−${money(run.payeTotal)}</td><td style="text-align:right;color:#dc2626">−${money(run.pensionTotal)}</td><td style="text-align:right;color:#15803d">${money(run.netTotal)}</td><td></td></tr>
+    </tfoot></table>
+    <p style="font-size:11px;color:#666;margin-top:12px">PAYE withheld: ${money(run.payeTotal)} ${run.taxRemitted?'(Remitted ✓)':'(Pending remittance)'}  ·  Pension: ${money(run.pensionTotal)} ${run.pensionRemitted?'(Remitted ✓)':'(Pending)'}</p>
+    ${_rptSign()}
+  `);
+}
+
+function rpt_payrollSummaryCSV() {
+  const sid = currentSchoolId();
+  const runs = DB.query('payrollRuns', r => r.schoolId === sid && r.stage === 'paid').sort((a,b)=>(b.paidAt||'').localeCompare(a.paidAt||''));
+  const run = runs[0]; if (!run) { toast('No paid payroll run','warn'); return; }
+  const payslips = DB.query('payslips', p => p.schoolId === sid && p.period === run.period);
+  downloadCSV(`payroll-${run.period.replace(/\s/g,'-')}.csv`,
+    ['Staff Name','Gross Pay','PAYE Tax','Pension','Net Pay','Bank','Account'],
+    payslips.map(p => {
+      const t = DB.find('teachers', p.staffId);
+      return [t?t.name:'', p.grossPay, p.deductions.paye, p.deductions.pension, p.netPay, p.bankName||'', p.bankAccount||''];
+    })
+  );
+}
+
+/* ── ACADEMIC REPORTS ──────────────────────────────────────── */
+function rpt_academicSummary() {
+  const sid = currentSchoolId();
+  const results = DB.query('results', r => r.schoolId === sid && r.approved);
+  const classes  = DB.get('classes');
+  const subjects = DB.get('subjects');
+  const byClass = {};
+  results.forEach(r => {
+    if (!byClass[r.classId]) byClass[r.classId] = [];
+    byClass[r.classId].push(r);
+  });
+  const rows = Object.keys(byClass).sort().map(cId => {
+    const cls = classes.find(c=>c.id===cId);
+    const recs = byClass[cId];
+    const avg = recs.length ? Math.round(recs.reduce((s,r)=>s+r.total,0)/recs.length) : 0;
+    const pass = recs.filter(r=>r.grade!=='F').length;
+    const passRate = recs.length ? Math.round(pass/recs.length*100) : 0;
+    const color = avg>=70?'#15803d':avg>=50?'#d97706':'#dc2626';
+    return `<tr><td><strong>${cls?cls.name:cId}</strong></td>
+      <td style="text-align:right">${[...new Set(recs.map(r=>r.studentId))].length}</td>
+      <td style="text-align:right">${recs.length}</td>
+      <td style="text-align:right;font-weight:700;color:${color}">${avg}/100</td>
+      <td style="text-align:right">${passRate}%</td>
+    </tr>`;
+  }).join('');
+  const subRows = subjects.map(sub => {
+    const recs = results.filter(r=>r.subjectId===sub.id);
+    if (!recs.length) return '';
+    const avg = Math.round(recs.reduce((s,r)=>s+r.total,0)/recs.length);
+    const color = avg>=70?'#15803d':avg>=50?'#d97706':'#dc2626';
+    return `<tr><td><strong>${sub.name}</strong></td><td style="text-align:right">${recs.length}</td><td style="text-align:right;font-weight:700;color:${color}">${avg}/100</td></tr>`;
+  }).join('');
+  printElement(`
+    ${_rptHead('Academic Results Summary', DB.settings().currentTerm)}
+    <h3 style="margin-top:0;font-size:14px;color:#374151">Performance by Class</h3>
+    <table><thead><tr><th>Class</th><th style="text-align:right">Students</th><th style="text-align:right">Entries</th><th style="text-align:right">Average Score</th><th style="text-align:right">Pass Rate</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <h3 style="margin-top:24px;font-size:14px;color:#374151">Performance by Subject</h3>
+    <table><thead><tr><th>Subject</th><th style="text-align:right">Entries</th><th style="text-align:right">Average Score</th></tr></thead>
+    <tbody>${subRows}</tbody></table>
+    ${_rptSign()}
+  `);
+}
+
+function rpt_broadsheetSelectModal() {
+  const classes = DB.get('classes');
+  modal({
+    title: 'Choose a Class',
+    body: `<div class="space-y-3">
+      <p class="text-sm text-slate-600">Select the class you want to print a broadsheet for:</p>
+      <select id="rpt_bs_class" class="input">
+        ${classes.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
+      </select>
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="rpt_classBroadsheet(document.getElementById('rpt_bs_class').value); document.getElementById('modalBackdrop')?.click()">${icon('download','w-4 h-4')} Print Broadsheet</button>`
+  });
+}
+
+function rpt_classBroadsheet(classId) {
+  const sid = currentSchoolId();
+  const cls = DB.find('classes', classId);
+  const students = COMPUTE.studentsByClass(classId);
+  const subjects = DB.get('subjects');
+  const results  = DB.query('results', r => r.classId === classId && r.schoolId === sid);
+  const cols = subjects.filter(sub => results.some(r=>r.subjectId===sub.id));
+  const thead = `<tr><th>S/N</th><th>Student</th>${cols.map(s=>`<th style="text-align:right;font-size:11px">${s.name}</th>`).join('')}<th style="text-align:right">Total</th><th style="text-align:right">Avg</th><th>Grade</th></tr>`;
+  const tbody = students.map((stu,i) => {
+    const stuRes = results.filter(r=>r.studentId===stu.id);
+    let grandTotal=0, count=0;
+    const cells = cols.map(sub => {
+      const r = stuRes.find(x=>x.subjectId===sub.id);
+      if (r) { grandTotal+=r.total; count++; }
+      return `<td style="text-align:right">${r ? r.total : '—'}</td>`;
+    }).join('');
+    const avg = count > 0 ? Math.round(grandTotal/count) : 0;
+    const grade = avg>=75?'A':avg>=60?'B':avg>=50?'C':avg>=45?'D':avg>=40?'E':'F';
+    const gColor = grade==='A'?'#15803d':grade==='F'?'#dc2626':'#374151';
+    return `<tr><td>${i+1}</td><td><strong>${stu.name}</strong></td>${cells}<td style="text-align:right;font-weight:700">${grandTotal}</td><td style="text-align:right;font-weight:700;color:${gColor}">${avg}%</td><td style="font-weight:700;color:${gColor}">${grade}</td></tr>`;
+  }).join('');
+  printElement(`
+    ${_rptHead(`${cls?cls.name:''} — Broadsheet`, `${students.length} students · ${cols.length} subjects · ${DB.settings().currentTerm}`)}
+    <div style="overflow-x:auto"><table><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>
+    ${_rptSign()}
+  `);
 }

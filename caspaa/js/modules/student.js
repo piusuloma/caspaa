@@ -282,7 +282,7 @@ function stu_openNote(id) {
         ${icon('download','w-4 h-4 text-blue-600')} Download Attachment — ${m.file.name} (${m.file.size})
       </a>` : ''}
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
   APP.render();
 }
@@ -303,7 +303,7 @@ function stu_watchVideo(id) {
       ${ytId ? `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay"></iframe>`
              : `<div class="flex items-center justify-center h-full text-white text-sm p-6 text-center">Video unavailable. Your teacher may have posted an incorrect link.<br><a href="${m.url}" target="_blank" class="underline mt-2 block">Try opening directly</a></div>`}
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
   APP.render();
 }
@@ -319,7 +319,7 @@ function stu_launchSim(simId, simName) {
       </iframe>
     </div>
     <p class="text-xs text-slate-400 mt-2 text-center">Simulation provided by <a href="https://phet.colorado.edu" target="_blank" class="underline">PhET Interactive Simulations</a> (University of Colorado Boulder) — free and open-source.</p>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
 }
 
@@ -340,7 +340,7 @@ function stu_openMaterial(id) {
         ${m.url ? `<a class="btn btn-primary w-full" href="${m.url}" target="_blank">${icon('classes','w-4 h-4')} Open resource</a>` : `<div class="bg-slate-50 rounded-xl p-4 text-center text-sm text-slate-500">${icon('book','w-8 h-8 mx-auto mb-2 opacity-40')}This is a text resource shared by ${teacherName(m.teacherId)}.</div>`}
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
 }
 
@@ -411,7 +411,7 @@ function stu_submitAssignmentModal(assignmentId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="stu_submitAssignment('${assignmentId}')">${icon('check','w-4 h-4')} Submit</button>`
   });
 }
@@ -445,7 +445,7 @@ function stu_submitAssignment(assignmentId) {
   _stuSubFile = null;
   // Notify the teacher
   DB.insert('notifications', { id: uid('not'), userId: a.teacherId, title: 'Assignment Submitted', body: `${s.name} submitted "${a.title}".`, type: 'info', read: false, timestamp: now(), link: { view: 'tch_assignments' } });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Assignment submitted · your teacher has been notified', 'success');
 }
@@ -567,7 +567,7 @@ function stu_cbtAnswer(qid, val) {
 function stu_cancelCbt() {
   if (_cbtState && _cbtState.timer) clearInterval(_cbtState.timer);
   _cbtState = null;
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   toast('Exam cancelled — no answers saved', 'warn');
 }
 
@@ -599,7 +599,7 @@ function stu_submitCbt(auto) {
   // Notify teacher (theory review) and student
   DB.insert('notifications', { id: uid('not'), userId: e.teacherId, title: 'CBT Submitted', body: `${s.name} submitted "${e.title}". ${hasTheory ? 'Theory answers need review.' : 'Auto-graded.'}`, type: 'info', read: false, timestamp: now(), link: { view: 'tch_cbt' } });
   _cbtState = null;
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   // Result summary
   modal({
     title: 'Exam Submitted',
@@ -615,7 +615,7 @@ function stu_submitCbt(auto) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); APP.go('stu_cbt')">Done</button>`
+    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); APP.go('stu_cbt')">Done</button>`
   });
 }
 
@@ -651,7 +651,7 @@ function stu_viewCbtResult(subId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
 }
 

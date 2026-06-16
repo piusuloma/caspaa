@@ -4,7 +4,7 @@
    - Seed data simulates a real Lagos school
    ============================================================ */
 
-const DB_KEY = 'caspaa_db_v4';
+const DB_KEY = 'caspaa_db_v5';
 const SESSION_KEY = 'caspaa_session_v1';
 
 /* ---------- Utility ---------- */
@@ -1231,6 +1231,40 @@ function seedDatabase() {
     { id: uid('ir'), schoolId, requestedBy: 'tch_emeka', itemName: 'Science Lab Beakers (Set of 10)', quantity: 2, reason: 'Two sets broken during experiments last week', status: 'approved', reviewedBy: schoolId, reviewedAt: daysAgo(0), reviewNote: 'Approved — request raised with supplier.', createdAt: daysAgo(3) }
   ];
 
+  // ============ SCHOOL STORE — items sold to parents ============
+  // sellingPrice = what the parent pays | costPrice = what it costs the school to provide
+  const schoolItems = [
+    { id: 'item_001', schoolId, name: 'School Uniform — Full Set (shirt, trouser/skirt, tie)', category: 'Uniform',     sellingPrice: 20000, costPrice: 15000, unit: 'set',  stock: 120, active: true, createdAt: daysAgo(60) },
+    { id: 'item_002', schoolId, name: 'School Uniform — House Sports Kit',                     category: 'Uniform',     sellingPrice: 8000,  costPrice: 5500,  unit: 'set',  stock: 80,  active: true, createdAt: daysAgo(60) },
+    { id: 'item_003', schoolId, name: 'Textbook Pack — JSS1 (all subjects)',                  category: 'Books',       sellingPrice: 35000, costPrice: 28000, unit: 'pack', stock: 30,  active: true, createdAt: daysAgo(60) },
+    { id: 'item_004', schoolId, name: 'Textbook Pack — JSS2 (all subjects)',                  category: 'Books',       sellingPrice: 35000, costPrice: 28500, unit: 'pack', stock: 25,  active: true, createdAt: daysAgo(60) },
+    { id: 'item_005', schoolId, name: 'Exercise Book Bundle (12 books)',                       category: 'Stationery',  sellingPrice: 3000,  costPrice: 1800,  unit: 'bundle', stock: 200, active: true, createdAt: daysAgo(60) },
+    { id: 'item_006', schoolId, name: 'School Bag (branded)',                                  category: 'Accessories', sellingPrice: 12000, costPrice: 8500,  unit: 'piece', stock: 50,  active: true, createdAt: daysAgo(60) },
+    { id: 'item_007', schoolId, name: 'School Sandals / Shoes',                               category: 'Uniform',     sellingPrice: 9000,  costPrice: 6000,  unit: 'pair', stock: 40,  active: true, createdAt: daysAgo(60) },
+    { id: 'item_008', schoolId, name: 'Lunch Box (branded)',                                   category: 'Accessories', sellingPrice: 4500,  costPrice: 2800,  unit: 'piece', stock: 60,  active: true, createdAt: daysAgo(60) }
+  ];
+
+  // studentPurchases: items bought by/for a student this term
+  const studentPurchases = [
+    { id: uid('sp'), schoolId, studentId: 'stu_001', itemId: 'item_001', qty: 1, sellingPrice: 20000, costPrice: 15000, purchasedAt: daysAgo(45), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_001', itemId: 'item_003', qty: 1, sellingPrice: 35000, costPrice: 28000, purchasedAt: daysAgo(44), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_001', itemId: 'item_005', qty: 1, sellingPrice: 3000,  costPrice: 1800,  purchasedAt: daysAgo(44), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_002', itemId: 'item_001', qty: 1, sellingPrice: 20000, costPrice: 15000, purchasedAt: daysAgo(43), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_002', itemId: 'item_004', qty: 1, sellingPrice: 35000, costPrice: 28500, purchasedAt: daysAgo(42), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_002', itemId: 'item_006', qty: 1, sellingPrice: 12000, costPrice: 8500,  purchasedAt: daysAgo(42), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_003', itemId: 'item_001', qty: 1, sellingPrice: 20000, costPrice: 15000, purchasedAt: daysAgo(40), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_003', itemId: 'item_002', qty: 1, sellingPrice: 8000,  costPrice: 5500,  purchasedAt: daysAgo(40), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_004', itemId: 'item_001', qty: 1, sellingPrice: 20000, costPrice: 15000, purchasedAt: daysAgo(38), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_004', itemId: 'item_003', qty: 1, sellingPrice: 35000, costPrice: 28000, purchasedAt: daysAgo(38), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_005', itemId: 'item_001', qty: 1, sellingPrice: 20000, costPrice: 15000, purchasedAt: daysAgo(36), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_005', itemId: 'item_007', qty: 1, sellingPrice: 9000,  costPrice: 6000,  purchasedAt: daysAgo(35), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_006', itemId: 'item_001', qty: 1, sellingPrice: 20000, costPrice: 15000, purchasedAt: daysAgo(30), paidStatus: 'unpaid', notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_006', itemId: 'item_005', qty: 2, sellingPrice: 3000,  costPrice: 1800,  purchasedAt: daysAgo(30), paidStatus: 'unpaid', notes: 'Double set requested' },
+    { id: uid('sp'), schoolId, studentId: 'stu_009', itemId: 'item_001', qty: 1, sellingPrice: 20000, costPrice: 15000, purchasedAt: daysAgo(25), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_009', itemId: 'item_006', qty: 1, sellingPrice: 12000, costPrice: 8500,  purchasedAt: daysAgo(25), paidStatus: 'paid',   notes: '' },
+    { id: uid('sp'), schoolId, studentId: 'stu_009', itemId: 'item_008', qty: 1, sellingPrice: 4500,  costPrice: 2800,  purchasedAt: daysAgo(24), paidStatus: 'paid',   notes: '' }
+  ];
+
   return {
     schools, classes, subjects, teachers, parents, students,
     feeStructures, invoices, transactions, attendance, results,
@@ -1251,6 +1285,7 @@ function seedDatabase() {
     payslips, formativeTests, formativeSubmissions,
     busRoutes, busAssignments, authorizedPickups, busStatus: [],
     sickbayVisits, inventoryRequests,
+    schoolItems, studentPurchases,
     smsCampaigns: [],
     settings: {
       currentSchoolId: 'sch_brightlights',

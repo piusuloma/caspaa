@@ -197,7 +197,7 @@ function requestLeaveModal() {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="submitMyLeaveRequest()">${icon('send','w-4 h-4')} Submit Request</button>`
   });
 }
@@ -222,7 +222,7 @@ function submitMyLeaveRequest() {
   DB.insert('auditLog', { id: uid('aud'), schoolId: t.schoolId || 'sch_brightlights', actor: AUTH.current.id, action: 'requested_leave', target: `${type} leave ${fdate(from,{short:true})}–${fdate(to,{short:true})}`, timestamp: now() });
   // Notify proprietor (school admin)
   DB.insert('notifications', { id: uid('not'), userId: t.schoolId || 'sch_brightlights', title: 'Leave Request', body: `${AUTH.current.name} is requesting ${type.toLowerCase()} leave from ${fdate(from,{long:true})} to ${fdate(to,{long:true})}.`, type: 'info', read: false, timestamp: now(), link: { view: 'adm_workforce', params: { workforceTab: 'hr', hrTab: 'leave' } } });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Leave request submitted · awaiting approval', 'success');
 }
@@ -577,9 +577,9 @@ function saveAttendance(classId, date) {
       <p class="text-sm text-slate-600 text-center mt-2">What's next?</p>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Done for now</button>
-      ${nextClass ? `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click(); APP.go('tch_attendance', { classId: '${nextClass.id}' })">Mark next class</button>` : ''}
-      ${hasPendingResults ? `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); APP.go('tch_results')">Enter results →</button>` : `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); APP.go('tch_results')">Enter results →</button>`}
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Done for now</button>
+      ${nextClass ? `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); APP.go('tch_attendance', { classId: '${nextClass.id}' })">Mark next class</button>` : ''}
+      ${hasPendingResults ? `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); APP.go('tch_results')">Enter results →</button>` : `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); APP.go('tch_results')">Enter results →</button>`}
     `
   });
 }
@@ -899,7 +899,7 @@ function createMaterialModal() {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveMaterial()">${icon('check','w-4 h-4')} Publish to Students</button>`
   });
 }
@@ -922,7 +922,7 @@ function saveMaterial() {
     DB.insert('notifications', { id: uid('not'), userId: s.id, title: 'New Learning Material', body: `${title} (${DB.find('subjects', m.subjectId) ? DB.find('subjects', m.subjectId).name : ''})`, type: 'info', read: false, timestamp: now(), link: { view: 'stu_learning' } });
   });
   _materialFile = null;
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Material published to students', 'success');
 }
@@ -1012,7 +1012,7 @@ function openAssignment(assignmentId) {
     `,
     footer: `
       <button class="btn btn-danger" onclick="deleteAssignmentConfirm('${a.id}')">${icon('trash','w-4 h-4')} Delete</button>
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
       ${a.submissions.some(s => s.grade != null) ? `<button class="btn btn-secondary" onclick="tch_pushToResultsModal('${a.id}')">${icon('reports','w-4 h-4')} Push to Results</button>` : ''}
       <button class="btn btn-primary" onclick="editAssignmentModal('${a.id}')">${icon('edit','w-4 h-4')} Edit</button>
     `
@@ -1049,7 +1049,7 @@ function deleteAssignmentConfirm(assignmentId) {
   const a = DB.find('assignments', assignmentId);
   confirm(`Delete "${a.title}"? This cannot be undone. Any submissions will also be removed.`, () => {
     DB.remove('assignments', assignmentId);
-    document.getElementById('modalBackdrop').click();
+    document.getElementById('modalBackdrop')?.click();
     APP.render();
     toast('Assignment deleted', 'info');
   }, { yesLabel: 'Delete', danger: true });
@@ -1087,7 +1087,7 @@ function createAssignmentModal(editingId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveAssignment(${isEdit ? "'" + editingId + "'" : 'null'})">${isEdit ? icon('check','w-4 h-4') + ' Save Changes' : 'Post Assignment'}</button>`
   });
 }
@@ -1102,7 +1102,7 @@ function saveAssignment(editingId) {
 
   if (editingId) {
     DB.update('assignments', editingId, { title, classId, subjectId, description, dueDate, updatedAt: now() });
-    document.getElementById('modalBackdrop').click();
+    document.getElementById('modalBackdrop')?.click();
     APP.render();
     toast('Assignment updated', 'success');
     return;
@@ -1117,7 +1117,7 @@ function saveAssignment(editingId) {
   [...new Set(parents)].forEach(pid => {
     DB.insert('notifications', { id: uid('not'), userId: pid, title: 'New Assignment', body: `${title} — due ${fdate(dueDate, { short: true })}`, type: 'info', read: false, timestamp: now(), link: { view: 'par_dashboard' } });
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`Assignment posted. ${parents.length} parents notified.`, 'success');
 }
@@ -1296,7 +1296,7 @@ function tch_postNoteModal() {
         <div id="cn_filePreview" class="mt-2"></div>
       </div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="tch_saveNote()">Post Note</button>`
   });
 }
@@ -1334,7 +1334,7 @@ function tch_saveNote() {
     DB.insert('notifications', { id: uid('not'), userId: s.id, title: 'New Class Note', body: `${mat.title} — posted by ${AUTH.current.name}`, type: 'info', read: false, timestamp: now(), link: { view: 'stu_learning', params: { tab: 'notes' } } });
   });
   _noteFileBuffer = null;
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.go('tch_lessons', { tab: 'notes' });
   toast('Note posted · students notified', 'success');
 }
@@ -1369,7 +1369,7 @@ function tch_editNoteModal(noteId) {
           <input id="en_desc" class="input" value="${m.description || ''}"></div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="tch_updateNote('${noteId}')">${icon('check','w-4 h-4')} Save Changes</button>`
   });
 }
@@ -1386,7 +1386,7 @@ function tch_updateNote(noteId) {
     content: document.getElementById('en_content').value.trim(),
     updatedAt: now()
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.go('tch_lessons', { tab: 'notes' });
   toast('Note updated', 'success');
 }
@@ -1430,7 +1430,7 @@ function tch_pushToResultsModal(assignmentId) {
   const a = DB.find('assignments', assignmentId);
   const gradedSubs = a.submissions.filter(s => s.grade != null);
   if (!gradedSubs.length) { toast('Grade submissions first', 'warn'); return; }
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   setTimeout(() => modal({
     title: 'Push Grades to Academic Results',
     body: `
@@ -1469,7 +1469,7 @@ function tch_pushToResultsModal(assignmentId) {
         })()}
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="tch_confirmPushToResults('${assignmentId}')">${icon('check','w-4 h-4')} Push to Results</button>`
   }), 50);
 }
@@ -1497,7 +1497,7 @@ function tch_confirmPushToResults(assignmentId) {
     }
     synced++;
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   toast(`${synced} result${synced > 1 ? 's' : ''} synced to academic records`, 'success');
 }
 
@@ -1522,7 +1522,7 @@ function tch_postVideoModal() {
       </div>
       <div><label class="input-label">Description (optional)</label><input id="vid_desc" class="input" placeholder="What will students learn from this video?"></div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="tch_saveVideo()">Save Video</button>`
   });
 }
@@ -1557,7 +1557,7 @@ function tch_saveVideo() {
   COMPUTE.studentsByClass(classId).forEach(s => {
     DB.insert('notifications', { id: uid('not'), userId: s.id, title: 'New Video Lesson', body: `${mat.title} — posted by ${AUTH.current.name}`, type: 'info', read: false, timestamp: now(), link: { view: 'stu_learning', params: { tab: 'videos' } } });
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.go('tch_lessons', { tab: 'videos' });
   toast('Video saved · students notified', 'success');
 }
@@ -1573,7 +1573,7 @@ function tch_playVideo(id) {
       ${ytId ? `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay"></iframe>`
              : `<div class="flex items-center justify-center h-full text-white text-sm">Video unavailable</div>`}
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
 }
 
@@ -1639,7 +1639,7 @@ function createLessonModal() {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveLesson()">Save Plan</button>`
   });
 }
@@ -1703,7 +1703,7 @@ function saveLesson() {
   }
 
   _lessonFileBuffer = null;
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Lesson plan saved' + (schemeRef ? ' · scheme week marked covered' : '') + (lp.file ? ' · attachment uploaded' : ''), 'success');
 }
@@ -1962,7 +1962,7 @@ function renderCbtBuilder() {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="_cbtDraft=null; document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="_cbtDraft=null; document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveCbtExam()">${icon('check','w-4 h-4')} Publish Exam</button>`
   });
 }
@@ -2009,7 +2009,7 @@ function saveCbtExam() {
     DB.insert('notifications', { id: uid('not'), userId: s.id, title: 'New CBT Exam', body: `${exam.title} — ${exam.questions.length} questions, ${exam.durationMins} min`, type: 'info', read: false, timestamp: now(), link: { view: 'stu_cbt' } });
   });
   _cbtDraft = null;
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('CBT published to students', 'success');
 }
@@ -2053,7 +2053,7 @@ function reviewCbt(examId) {
         `).join('')}
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
 }
 
@@ -2235,7 +2235,7 @@ function tch_selfAssessmentModal(aprId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="tch_submitSelfAssessment('${aprId}')">${icon('check','w-4 h-4')} Submit Self-Assessment</button>`
   });
   setTimeout(tch_updateSelfTotal, 50);
@@ -2262,7 +2262,7 @@ function tch_submitSelfAssessment(aprId) {
   const apr = DB.find('appraisals', aprId);
   const cycle = DB.find('appraisalCycles', apr.cycleId);
   DB.insert('notifications', { id: uid('not'), userId: cycle?.createdBy || 'sch_brightlights', title: 'Self-Assessment Submitted', body: `${AUTH.current.name} has submitted their self-assessment for ${cycle?.title}. Please complete the manager review.`, type: 'info', read: false, timestamp: now(), link: { view: 'adm_workforce', params: { workforceTab: 'appraisal' } } });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Self-assessment submitted · your manager has been notified', 'success');
 }
@@ -2289,7 +2289,7 @@ function tch_viewSelfAssessment(aprId) {
         <div class="text-xs text-slate-400 text-center">Submitted ${fdate(apr.selfSubmittedAt, { time: true })}</div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
 }
 
@@ -2325,7 +2325,7 @@ function tch_acknowledgeModal(aprId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="tch_confirmAcknowledge('${aprId}')">${icon('check','w-4 h-4')} Acknowledge & Complete</button>`
   });
 }
@@ -2338,7 +2338,7 @@ function tch_confirmAcknowledge(aprId) {
   // Notify admin the cycle is done for this staff member
   DB.insert('notifications', { id: uid('not'), userId: cycle?.createdBy || 'sch_brightlights', title: 'Appraisal Acknowledged', body: `${AUTH.current.name} has acknowledged their appraisal (${apr.finalOverall}%). The cycle is complete for this staff member.`, type: 'success', read: false, timestamp: now() });
   DB.insert('auditLog', { id: uid('aud'), schoolId: AUTH.current.schoolId || 'sch_brightlights', actor: AUTH.current.id, action: 'appraisal_acknowledged', target: `${AUTH.current.name} · ${apr.finalOverall}%`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Appraisal acknowledged · process complete', 'success');
 }
@@ -2475,7 +2475,7 @@ function tch_editProfileModal() {
       </div>
       <div><label class="input-label">Address</label><textarea id="tp_address" class="input" rows="2">${t.address || ''}</textarea></div>
     </div>`,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="tch_saveProfile()">Save</button>`
   });
 }
@@ -2488,7 +2488,7 @@ function tch_saveProfile() {
     email: (document.getElementById('tp_email') || {}).value.trim(),
     address: (document.getElementById('tp_address') || {}).value.trim()
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Profile updated', 'success');
 }

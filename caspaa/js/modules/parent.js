@@ -296,7 +296,7 @@ function parentWelcomeFinish() {
   const parent = DB.find('parents', AUTH.current.id);
   DB.update('parents', parent.id, { firstLogin: false, onboardedAt: now() });
   APP.params.welcomeStep = null;
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   // If outstanding, route to fees page
   const children = parentChildren();
   const totalOutstanding = children.reduce((s, c) => { const i = COMPUTE.studentInvoice(c.id); return s + (i ? i.balance : 0); }, 0);
@@ -349,13 +349,20 @@ function renderChildCard(child) {
 }
 
 function viewChildDetail(studentId) {
+  APP.params.childTab = null;
+  _childTab(studentId, 'overview');
+}
+
+function _childTab(studentId, tab) {
+  APP.params.childTab = tab;
   const s = DB.find('students', studentId);
-  const cls = DB.find('classes', s.classId);
-  const inv = COMPUTE.studentInvoice(studentId);
-  const attRate = COMPUTE.attendanceRate(studentId);
-  const results = COMPUTE.studentResults(studentId).filter(r => r.approved);
+  if (!s) { toast('Student not found', 'danger'); return; }
+  const cls      = DB.find('classes', s.classId);
+  const inv      = COMPUTE.studentInvoice(studentId);
+  const attRate  = COMPUTE.attendanceRate(studentId);
+  const results  = COMPUTE.studentResults(studentId).filter(r => r.approved);
   const subjects = DB.get('subjects');
-  const recentAtt = COMPUTE.studentAttendance(studentId).slice(-10).reverse();
+  const recentAtt   = COMPUTE.studentAttendance(studentId).slice(-10).reverse();
   const assignments = DB.query('assignments', a => a.classId === s.classId);
   const cbtExams    = DB.query('cbtExams', e => e.classId === s.classId && e.status === 'published');
   const cbtSubs     = DB.query('cbtSubmissions', x => x.studentId === s.id);
@@ -364,6 +371,156 @@ function viewChildDetail(studentId) {
   const pendingWork = assignments.filter(a => !(a.submissions || []).some(x => x.studentId === s.id)).length
                     + cbtExams.filter(e => !cbtSubs.some(x => x.examId === e.id)).length
                     + ftTests.filter(t => !ftSubs.some(x => x.testId === t.id)).length;
+
+  const TAB_LIST = [
+    { key: 'overview',    label: 'Overview' },
+    { key: 'results',     label: 'Results' },
+    { key: 'attendance',  label: 'Attendance' },
+    { key: 'assessments', label: 'Assessments', badge: pendingWork || null }
+  ];
+
+  const renderContent = () => {
+    try {
+      if (tab === 'results') return `
+        <div class="space-y-2">
+          ${results.length ? results.map(r => {
+            const sub = subjects.find(x => x.id === r.subjectId);
+            return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+              <div>
+                <div class="font-semibold text-sm">${sub ? sub.name : '—'}</div>
+                <div class="text-xs text-slate-500">CA1: ${r.ca1} · CA2: ${r.ca2} · Exam: ${r.exam}</div>
+              </div>
+              <div class="text-right">
+                <div class="font-bold text-lg">${r.total}<span class="text-sm text-slate-400">/100</span></div>
+                <span class="badge ${r.grade==='A'?'badge-success':r.grade==='F'?'badge-danger':'badge-info'}">${r.grade}</span>
+              </div>
+            </div>`;
+          }).join('') : emptyState({ title: 'No results yet', body: 'Results will appear here once teachers submit them.', icon: 'results' })}
+          ${results.length ? `<div class="grid grid-cols-2 gap-2">
+            <button class="btn btn-secondary" onclick="printReportCard('${studentId}')">${icon('download','w-4 h-4')} Report Card</button>
+            <button class="btn btn-secondary" onclick="printTranscript('${studentId}')">${icon('download','w-4 h-4')} Full Transcript</button>
+          </div>` : ''}
+        </div>`;
+
+      if (tab === 'attendance') return `
+        <div class="mb-3 grid grid-cols-3 gap-2 text-center">
+          <div class="bg-emerald-50 p-3 rounded-xl"><div class="text-xs text-emerald-700">Present</div><div class="font-bold text-emerald-900">${recentAtt.filter(a=>a.status==='present').length}</div></div>
+          <div class="bg-amber-50 p-3 rounded-xl"><div class="text-xs text-amber-700">Late</div><div class="font-bold text-amber-900">${recentAtt.filter(a=>a.status==='late').length}</div></div>
+          <div class="bg-rose-50 p-3 rounded-xl"><div class="text-xs text-rose-700">Absent</div><div class="font-bold text-rose-900">${recentAtt.filter(a=>a.status==='absent').length}</div></div>
+        </div>
+        <div class="space-y-1">
+          ${recentAtt.length ? recentAtt.map(a => `<div class="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg text-sm">
+            <span>${fdate(a.date, { long: true })}</span>${statusBadge(a.status)}</div>`).join('')
+            : '<p class="text-sm text-slate-400 text-center py-3">No attendance records yet.</p>'}
+        </div>`;
+
+      if (tab === 'assessments') return `
+        <div class="space-y-4">
+          <div>
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Assignments (${assignments.length})</div>
+            ${assignments.length ? `<div class="space-y-2">${assignments.map(a => {
+              const subj = subjects.find(x => x.id === a.subjectId);
+              const subs = a.submissions || [];
+              const submitted = subs.some(x => x.studentId === s.id);
+              const sub0 = submitted ? subs.find(x => x.studentId === s.id) : null;
+              const graded = submitted && sub0 && sub0.grade != null;
+              return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm truncate">${a.title || '—'}</div>
+                  <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · Due ${fdate(a.dueDate, { short: true })}</div>
+                </div>
+                <div class="ml-3 flex-shrink-0">
+                  ${graded ? `<span class="badge badge-success">${sub0.grade}/100</span>`
+                   : submitted ? `<span class="badge badge-info">Submitted</span>`
+                   : `<span class="badge badge-warn">Pending</span>`}
+                </div>
+              </div>`;
+            }).join('')}</div>` : `<p class="text-sm text-slate-400 text-center py-2">No assignments right now.</p>`}
+          </div>
+          <div>
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">CBT Exams (${cbtExams.length})</div>
+            ${cbtExams.length ? `<div class="space-y-2">${cbtExams.map(e => {
+              const sub = cbtSubs.find(x => x.examId === e.id);
+              const subj = subjects.find(x => x.id === e.subjectId);
+              return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm truncate">${e.title || '—'}</div>
+                  <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · ${e.durationMins || '?'} min · Due ${fdate(e.dueDate, { short: true })}</div>
+                </div>
+                <div class="ml-3 flex-shrink-0 text-right">
+                  ${sub ? (sub.status === 'graded'
+                    ? `<div class="font-bold text-brand-700 text-sm">${sub.totalScore}/${sub.maxScore}</div><div class="text-xs text-slate-400">Graded</div>`
+                    : `<span class="badge badge-info">Submitted</span>`)
+                  : `<span class="badge badge-warn">Not taken</span>`}
+                </div>
+              </div>`;
+            }).join('')}</div>` : `<p class="text-sm text-slate-400 text-center py-2">No CBT exams assigned.</p>`}
+          </div>
+          <div>
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Quick Tests (${ftTests.length})</div>
+            ${ftTests.length ? `<div class="space-y-2">${ftTests.map(t => {
+              const sub = ftSubs.find(x => x.testId === t.id);
+              const subj = subjects.find(x => x.id === t.subjectId);
+              return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm truncate">${t.title || '—'}</div>
+                  <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · ${t.duration || '?'} min · Due ${fdate(t.dueDate, { short: true })}</div>
+                </div>
+                <div class="ml-3 flex-shrink-0 text-right">
+                  ${sub ? `<div class="font-bold text-emerald-700 text-sm">${sub.score}/${sub.total}</div><div class="text-xs text-slate-400">${sub.percentage}%</div>`
+                        : `<span class="badge badge-warn">Not done</span>`}
+                </div>
+              </div>`;
+            }).join('')}</div>` : `<p class="text-sm text-slate-400 text-center py-2">No quick tests assigned.</p>`}
+          </div>
+        </div>`;
+
+      // Overview (default)
+      const teacher = cls ? DB.find('teachers', cls.teacherId) : null;
+      return `
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="p-3 bg-slate-50 rounded-xl"><div class="text-xs text-slate-500">Admission No.</div><code class="text-sm">${s.admissionNo}</code></div>
+            <div class="p-3 bg-slate-50 rounded-xl"><div class="text-xs text-slate-500">Date of Birth</div><div>${fdate(s.dob, { long: true })}</div></div>
+            <div class="p-3 bg-slate-50 rounded-xl"><div class="text-xs text-slate-500">Class</div><div>${cls ? cls.name : '—'}</div></div>
+            <div class="p-3 bg-slate-50 rounded-xl"><div class="text-xs text-slate-500">Class Teacher</div><div>${teacher ? teacher.name : '—'}</div></div>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl flex items-center justify-between text-sm">
+            <div class="text-slate-500">Attendance rate this term</div>
+            <div class="font-bold ${attRate >= 80 ? 'text-emerald-700' : 'text-amber-700'}">${attRate}%</div>
+          </div>
+          ${inv ? `<div class="p-4 bg-amber-50 rounded-xl">
+            <div class="text-xs font-semibold text-amber-700 uppercase mb-1">Fees Status</div>
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-lg font-bold text-amber-900">${money(inv.balance)} <span class="text-sm font-normal">outstanding</span></div>
+                <div class="text-xs text-amber-700">Paid ${money(inv.paid)} of ${money(inv.total)}</div>
+              </div>
+              ${inv.balance > 0 ? `<button class="btn btn-primary" onclick="payNowFromChild('${studentId}')">Pay Now</button>` : `<span class="badge badge-success">Fully Paid</span>`}
+            </div>
+          </div>` : ''}
+        </div>`;
+    } catch (err) {
+      console.error('_childTab render error', err);
+      return `<div class="card p-4 text-red-700 text-sm"><strong>Could not load this tab.</strong><br>${err.message}</div>`;
+    }
+  };
+
+  // If modal already open for this student, just swap the content + active tab
+  const existingBody = document.getElementById('childTabBody');
+  if (existingBody) {
+    existingBody.innerHTML = renderContent();
+    document.querySelectorAll('#childDetailTabs .tab').forEach(el => {
+      el.classList.toggle('active', el.dataset.key === tab);
+    });
+    return;
+  }
+
+  // Build inline tab bar (avoids tabs() re-render issues inside modal)
+  const tabBar = `<div id="childDetailTabs" class="tabs">
+    ${TAB_LIST.map(t => `<div class="tab ${t.key === tab ? 'active' : ''}" data-key="${t.key}"
+      onclick="_childTab('${studentId}','${t.key}')">${t.label}${t.badge ? `<span class="ml-2 badge badge-info">${t.badge}</span>` : ''}</div>`).join('')}
+  </div>`;
 
   modal({
     title: `${s.name}'s Profile`,
@@ -374,151 +531,15 @@ function viewChildDetail(studentId) {
         <h2 class="text-xl font-bold text-slate-900 mt-3">${s.name}</h2>
         <p class="text-sm text-slate-500">${cls ? cls.name : ''} · ${calcAge(s.dob)} years</p>
       </div>
-
-      ${tabs([
-        { key: 'overview', label: 'Overview' },
-        { key: 'results', label: 'Results' },
-        { key: 'attendance', label: 'Attendance' },
-        { key: 'assessments', label: 'Assessments', badge: pendingWork || null }
-      ], APP.params.childTab || 'overview', (k) => { APP.params.childTab = k; viewChildDetail(studentId); })}
-
-      <div class="pt-4">
-        ${
-          (APP.params.childTab === 'results') ? `
-            <div class="space-y-2">
-              ${results.length ? results.map(r => {
-                const sub = subjects.find(x => x.id === r.subjectId);
-                return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                  <div>
-                    <div class="font-semibold text-sm">${sub ? sub.name : ''}</div>
-                    <div class="text-xs text-slate-500">CA1: ${r.ca1} · CA2: ${r.ca2} · Exam: ${r.exam}</div>
-                  </div>
-                  <div class="text-right">
-                    <div class="font-bold text-lg">${r.total}<span class="text-sm text-slate-400">/100</span></div>
-                    <span class="badge ${r.grade==='A'?'badge-success':r.grade==='F'?'badge-danger':'badge-info'}">${r.grade}</span>
-                  </div>
-                </div>`;
-              }).join('') : emptyState({ title: 'No results yet', body: 'Results will appear here once teachers submit them.', icon: 'results' })}
-              ${results.length ? `<div class="grid grid-cols-2 gap-2">
-                <button class="btn btn-secondary" onclick="printReportCard('${studentId}')">${icon('download','w-4 h-4')} Report Card</button>
-                <button class="btn btn-secondary" onclick="printTranscript('${studentId}')">${icon('download','w-4 h-4')} Full Transcript</button>
-              </div>` : ''}
-            </div>
-          ` : (APP.params.childTab === 'attendance') ? `
-            <div class="mb-3 grid grid-cols-3 gap-2 text-center">
-              <div class="bg-emerald-50 p-3 rounded-xl"><div class="text-xs text-emerald-700">Present</div><div class="font-bold text-emerald-900">${recentAtt.filter(a=>a.status==='present').length}</div></div>
-              <div class="bg-amber-50 p-3 rounded-xl"><div class="text-xs text-amber-700">Late</div><div class="font-bold text-amber-900">${recentAtt.filter(a=>a.status==='late').length}</div></div>
-              <div class="bg-rose-50 p-3 rounded-xl"><div class="text-xs text-rose-700">Absent</div><div class="font-bold text-rose-900">${recentAtt.filter(a=>a.status==='absent').length}</div></div>
-            </div>
-            <div class="space-y-1">
-              ${recentAtt.map(a => `<div class="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg text-sm">
-                <span>${fdate(a.date, { long: true })}</span>
-                ${statusBadge(a.status)}
-              </div>`).join('')}
-            </div>
-          ` : (APP.params.childTab === 'assessments') ? `
-            <div class="space-y-4">
-              <!-- Assignments -->
-              <div>
-                <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Assignments (${assignments.length})</div>
-                ${assignments.length ? `<div class="space-y-2">
-                  ${assignments.map(a => {
-                    const subj = subjects.find(x => x.id === a.subjectId);
-                    const subs = a.submissions || [];
-                    const submitted = subs.some(x => x.studentId === s.id);
-                    const sub0 = submitted ? subs.find(x => x.studentId === s.id) : null;
-                    const graded = submitted && sub0 && sub0.grade != null;
-                    const grade = graded ? sub0.grade : null;
-                    return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                      <div class="flex-1 min-w-0">
-                        <div class="font-semibold text-sm truncate">${a.title}</div>
-                        <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · Due ${fdate(a.dueDate, { short: true })}</div>
-                      </div>
-                      <div class="ml-3 flex-shrink-0">
-                        ${graded ? `<span class="badge badge-success">${grade}/100</span>`
-                         : submitted ? `<span class="badge badge-info">Submitted</span>`
-                         : `<span class="badge badge-warn">Pending</span>`}
-                      </div>
-                    </div>`;
-                  }).join('')}
-                </div>` : `<p class="text-sm text-slate-400 text-center py-2">No assignments right now.</p>`}
-              </div>
-
-              <!-- CBT Exams -->
-              <div>
-                <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">CBT Exams (${cbtExams.length})</div>
-                ${cbtExams.length ? `<div class="space-y-2">
-                  ${cbtExams.map(e => {
-                    const sub = cbtSubs.find(x => x.examId === e.id);
-                    const subj = subjects.find(x => x.id === e.subjectId);
-                    return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                      <div class="flex-1 min-w-0">
-                        <div class="font-semibold text-sm truncate">${e.title}</div>
-                        <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · ${e.durationMins} min · Due ${fdate(e.dueDate, { short: true })}</div>
-                      </div>
-                      <div class="ml-3 flex-shrink-0 text-right">
-                        ${sub
-                          ? (sub.status === 'graded'
-                              ? `<div class="font-bold text-brand-700 text-sm">${sub.totalScore}/${sub.maxScore}</div><div class="text-xs text-slate-400">Graded</div>`
-                              : `<span class="badge badge-info">Submitted</span>`)
-                          : `<span class="badge badge-warn">Not taken</span>`}
-                      </div>
-                    </div>`;
-                  }).join('')}
-                </div>` : `<p class="text-sm text-slate-400 text-center py-2">No CBT exams assigned.</p>`}
-              </div>
-
-              <!-- Quick Tests -->
-              <div>
-                <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Quick Tests (${ftTests.length})</div>
-                ${ftTests.length ? `<div class="space-y-2">
-                  ${ftTests.map(t => {
-                    const sub = ftSubs.find(x => x.testId === t.id);
-                    const subj = subjects.find(x => x.id === t.subjectId);
-                    return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                      <div class="flex-1 min-w-0">
-                        <div class="font-semibold text-sm truncate">${t.title}</div>
-                        <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · ${t.duration} min · Due ${fdate(t.dueDate, { short: true })}</div>
-                      </div>
-                      <div class="ml-3 flex-shrink-0 text-right">
-                        ${sub
-                          ? `<div class="font-bold text-emerald-700 text-sm">${sub.score}/${sub.total}</div><div class="text-xs text-slate-400">${sub.percentage}%</div>`
-                          : `<span class="badge badge-warn">Not done</span>`}
-                      </div>
-                    </div>`;
-                  }).join('')}
-                </div>` : `<p class="text-sm text-slate-400 text-center py-2">No quick tests assigned.</p>`}
-              </div>
-            </div>
-          ` : `
-            <div class="space-y-3">
-              <div class="grid grid-cols-2 gap-2 text-sm">
-                <div class="p-3 bg-slate-50 rounded-xl"><div class="text-xs text-slate-500">Admission No.</div><code class="text-sm">${s.admissionNo}</code></div>
-                <div class="p-3 bg-slate-50 rounded-xl"><div class="text-xs text-slate-500">Date of Birth</div><div>${fdate(s.dob, { long: true })}</div></div>
-                <div class="p-3 bg-slate-50 rounded-xl"><div class="text-xs text-slate-500">Class</div><div>${cls ? cls.name : '—'}</div></div>
-                <div class="p-3 bg-slate-50 rounded-xl"><div class="text-xs text-slate-500">Class Teacher</div><div>${(() => { const t = DB.find('teachers', cls.teacherId); return t ? t.name : '—'; })()}</div></div>
-              </div>
-              ${inv ? `<div class="p-4 bg-amber-50 rounded-xl">
-                <div class="text-xs font-semibold text-amber-700 uppercase mb-1">Fees Status</div>
-                <div class="flex items-center justify-between">
-                  <div>
-                    <div class="text-lg font-bold text-amber-900">${money(inv.balance)} <span class="text-sm font-normal">outstanding</span></div>
-                    <div class="text-xs text-amber-700">Paid ${money(inv.paid)} of ${money(inv.total)}</div>
-                  </div>
-                  ${inv.balance > 0 ? `<button class="btn btn-primary" onclick="payNowFromChild('${studentId}')">Pay Now</button>` : ''}
-                </div>
-              </div>` : ''}
-            </div>
-          `
-        }
-      </div>
+      ${tabBar}
+      <div id="childTabBody" class="pt-4">${renderContent()}</div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click(); APP.params.childTab = null">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); APP.params.childTab = null">Close</button>`
   });
 }
 
 function payNowFromChild(studentId) {
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.go('par_fees');
   setTimeout(() => payInvoiceModal(COMPUTE.studentInvoice(studentId).id), 200);
 }
@@ -902,7 +923,7 @@ function viewInvoice(invoiceId) {
       <button class="btn btn-secondary no-print" onclick="window.print()">${icon('download','w-4 h-4')} Print</button>
       ${isFinance ? `<button class="btn btn-secondary no-print" onclick="applyDiscountModal('${invoiceId}')">${icon('plus','w-4 h-4')} Discount</button>` : ''}
       ${(isFinance || AUTH.current.role === 'parent') && inv.balance > 0 && installmentsAllowed ? `<button class="btn btn-secondary no-print" onclick="installmentPlanModal('${invoiceId}')">${icon('calendar','w-4 h-4')} Installment Plan</button>` : ''}
-      ${inv.balance > 0 ? `<button class="btn btn-primary no-print" onclick="document.getElementById('modalBackdrop').click(); payInvoiceModal('${invoiceId}')">Pay Now</button>` : ''}
+      ${inv.balance > 0 ? `<button class="btn btn-primary no-print" onclick="document.getElementById('modalBackdrop')?.click(); payInvoiceModal('${invoiceId}')">Pay Now</button>` : ''}
     `
   });
 }
@@ -943,7 +964,7 @@ function installmentPlanModal(invoiceId) {
         ${hasExisting ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">A plan already exists. Saving will replace it.</div>` : ''}
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveInstallmentPlan('${invoiceId}')">${icon('check','w-4 h-4')} Save Plan</button>`
   }), 50);
   setTimeout(() => renderInstallmentPreview(invoiceId), 100);
@@ -988,7 +1009,7 @@ function saveInstallmentPlan(invoiceId) {
   const s = DB.find('students', inv.studentId);
   DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Installment Plan Created', body: `Your ${count}-installment plan for ${s.name}'s fees is set. First payment of ${money(schedule[0].amount)} is due ${fdate(schedule[0].due, { long: true })}.`, type: 'info', read: false, timestamp: now() });
   toast(`${count}-installment plan saved · parent notified`);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
 }
 
@@ -1034,7 +1055,7 @@ function applyDiscountModal(invoiceId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveDiscount('${invoiceId}')">Apply</button>`
   });
   // Update label as type changes
@@ -1084,7 +1105,7 @@ function saveDiscount(invoiceId) {
   const s = DB.find('students', inv.studentId);
   DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Discount Applied', body: `${label} of ${money(amount)} applied to ${s.name}'s fees.`, type: 'success', read: false, timestamp: now() });
   DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'applied_discount', target: `${money(amount)} (${label}) for ${s.name}`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${label} of ${money(amount)} applied`, 'success');
 }
@@ -1146,7 +1167,7 @@ function payInvoiceModal(invoiceId) {
       <p class="text-xs text-slate-400 text-center mt-3">Secured payment · Your card details are never stored.</p>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
       <button class="btn btn-primary" id="proceedPay" onclick="processPayment('${invoiceId}')">${icon('check','w-4 h-4')} Proceed to Pay</button>
     `
   });
@@ -1164,7 +1185,7 @@ function processPayment(invoiceId) {
   // Simulate Paystack iframe / USSD instruction
   if (method === 'ussd') {
     setTimeout(() => {
-      document.getElementById('modalBackdrop').click();
+      document.getElementById('modalBackdrop')?.click();
       modal({
         title: 'Dial This USSD Code',
         body: `
@@ -1221,8 +1242,8 @@ function failPayment(invoiceId, amount, method) {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
-      <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); payInvoiceModal('${invoiceId}')">${icon('check','w-4 h-4')} Try again</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
+      <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); payInvoiceModal('${invoiceId}')">${icon('check','w-4 h-4')} Try again</button>
     `
   });
   toast('Payment failed — please try again', 'danger');
@@ -1254,7 +1275,7 @@ function completePayment(invoiceId, amount, method) {
   DB.insert('notifications', { id: uid('not'), userId: AUTH.current.id, title: 'Payment Received', body: `Your payment of ${money(amount)} was successful.`, type: 'success', read: false, timestamp: now(), link: { view: 'par_fees' } });
   DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'payment', target: `${money(amount)} for ${DB.find('students', inv.studentId).name}`, timestamp: now() });
 
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   const hasMore = _payQueue.length > 0;
   const nextChild = hasMore ? DB.find('students', DB.find('invoices', _payQueue[0]).studentId) : null;
   modal({
@@ -1278,9 +1299,9 @@ function completePayment(invoiceId, amount, method) {
     footer: `
       <button class="btn btn-secondary" onclick="downloadReceipt('${invoiceId}')">${icon('download','w-4 h-4')} Receipt</button>
       ${hasMore
-        ? `<button class="btn btn-secondary" onclick="_payQueue=[]; document.getElementById('modalBackdrop').click(); APP.render()">Stop here</button>
-           <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); payAllContinue()">Pay for ${nextChild.name.split(' ')[0]} →</button>`
-        : `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); APP.render()">Done</button>`
+        ? `<button class="btn btn-secondary" onclick="_payQueue=[]; document.getElementById('modalBackdrop')?.click(); APP.render()">Stop here</button>
+           <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); payAllContinue()">Pay for ${nextChild.name.split(' ')[0]} →</button>`
+        : `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); APP.render()">Done</button>`
       }
     `
   });
@@ -1353,14 +1374,14 @@ function payAllModal() {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
       <button class="btn btn-primary" onclick="payAllExecute(${JSON.stringify(invoices.map(i=>i.id)).replace(/"/g,'&quot;')})">${icon('check','w-4 h-4')} Start — ${money(total)}</button>
     `
   });
 }
 
 function payAllExecute(invoiceIds) {
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   _payQueue = invoiceIds.slice(1);
   setTimeout(() => payInvoiceModal(invoiceIds[0]), 200);
 }
@@ -1563,7 +1584,7 @@ function applyLoanModal() {
         </label>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="submitLoanApplication()">${icon('check','w-4 h-4')} Submit Application</button>`
   });
   setTimeout(updateLoanCalc, 50);
@@ -1603,7 +1624,7 @@ function submitLoanApplication() {
   if (amount < 50000) { toast('Minimum loan amount is ₦50,000', 'danger'); return; }
   if (childrenSel.length === 0) { toast('Select at least one child', 'danger'); return; }
 
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
 
   // Simulate processing with the Risk Engine
   modal({
@@ -1645,7 +1666,7 @@ function finalizeLoanDecision(amount, term, childrenSel) {
   const total = amount + interest;
   const monthly = Math.round(total / term);
 
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
 
   if (!approved) {
     modal({
@@ -1655,7 +1676,7 @@ function finalizeLoanDecision(amount, term, childrenSel) {
         <h2 class="text-lg font-bold">We can't offer you this loan right now</h2>
         <p class="text-sm text-slate-500 mt-2">Your current credit score is ${score}. We recommend building up your payment history with smaller amounts first.</p>
       </div>`,
-      footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click()">OK</button>`
+      footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">OK</button>`
     });
     return;
   }
@@ -1691,7 +1712,7 @@ function finalizeLoanDecision(amount, term, childrenSel) {
       </div>
       <p class="text-xs text-slate-400 mt-3 text-center">The school will receive ${money(amount)} directly. Your fees are now covered.</p>
     `,
-    footer: `<button class="btn btn-primary w-full" onclick="document.getElementById('modalBackdrop').click(); APP.render()">View My Loan</button>`
+    footer: `<button class="btn btn-primary w-full" onclick="document.getElementById('modalBackdrop')?.click(); APP.render()">View My Loan</button>`
   });
   toast('Loan approved and disbursed!', 'success');
 }
@@ -2013,7 +2034,7 @@ function consentSignModal(formId, studentId) {
         <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="consent_agree" checked /> I agree and authorise this activity</label>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="submitConsentSign('${formId}','${studentId}')">${icon('check','w-4 h-4')} Sign & Submit</button>`
   });
 }
@@ -2024,7 +2045,7 @@ function submitConsentSign(formId, studentId) {
   if (!sig) { toast('Please type your name to sign', 'danger'); return; }
   if (!agree) { toast('Tick the box to authorise, or use Decline', 'warn'); return; }
   _recordConsent(formId, studentId, true, sig);
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Consent recorded · timestamp saved', 'success');
 }

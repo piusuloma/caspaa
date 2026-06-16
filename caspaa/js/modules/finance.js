@@ -206,7 +206,7 @@ function sendBulkReminders() {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
       <button class="btn btn-primary" onclick="confirmBulkReminders()">${icon('send','w-4 h-4')} Send ${invoices.length} Reminders</button>
     `
   });
@@ -224,7 +224,7 @@ function confirmBulkReminders() {
     DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Fee Payment Reminder', body: msg, type: 'warn', read: false, timestamp: now(), link: { view: 'par_fees' } });
     sent++;
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   DB.insert('auditLog', { id: uid('aud'), schoolId: AUTH.current.schoolId || 'sch_brightlights', actor: AUTH.current.id, action: 'bulk_reminders_sent', target: `${sent} parents notified`, timestamp: now() });
   toast(`${sent} reminder${sent !== 1 ? 's' : ''} sent to parents`, 'success');
   APP.render();
@@ -273,12 +273,12 @@ function invoiceReminderSettingsModal() {
         <div class="card p-4">
           <h4 class="font-bold text-slate-900 mb-2">Manual Reminder Trigger</h4>
           <p class="text-sm text-slate-600 mb-2">You can send manual reminders any time from the Invoices page using the <strong>"Send reminder"</strong> button per student, or <strong>"Remind All"</strong> to notify all parents with outstanding balances.</p>
-          <button class="btn btn-secondary text-sm" onclick="document.getElementById('modalBackdrop').click(); setTimeout(sendBulkReminders, 300)">${icon('send','w-4 h-4')} Open Bulk Reminder Trigger</button>
+          <button class="btn btn-secondary text-sm" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(sendBulkReminders, 300)">${icon('send','w-4 h-4')} Open Bulk Reminder Trigger</button>
         </div>
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
       <button class="btn btn-primary" onclick="saveInvoiceReminderSettings()">${icon('check','w-4 h-4')} Save Settings</button>
     `
   });
@@ -291,7 +291,7 @@ function saveInvoiceReminderSettings() {
   const frequency = document.getElementById('rem_freq').value;
   const includeStudentId = document.getElementById('rem_sid') ? document.getElementById('rem_sid').checked : true;
   DB.settings({ invoiceReminders: { autoEnabled, daysBeforeDue, daysAfterDue, frequency, includeStudentId } });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   toast('Reminder settings saved', 'success');
 }
 
@@ -352,7 +352,7 @@ function bulkGenerateInvoicesModal() {
         </div>`}
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              ${noInvoiceYet.length > 0 ? `<button class="btn btn-primary" onclick="confirmBulkGenerateInvoices()">${icon('check','w-4 h-4')} Generate ${noInvoiceYet.length} Invoices</button>` : ''}`
   });
 }
@@ -384,7 +384,7 @@ function confirmBulkGenerateInvoices() {
     created++;
   });
   DB.insert('auditLog', { id: uid('aud'), schoolId, actor: AUTH.current.id, action: 'bulk_invoiced', target: `${created} students · ${currentTerm}`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${created} invoices generated${skipped > 0 ? ` · ${skipped} skipped (no fee structure)` : ''}`, 'success');
 }
@@ -576,13 +576,13 @@ function viewActivityEnrolments(actId) {
               <div class="font-semibold text-sm">${s.name}</div>
               <div class="text-xs text-slate-500">${cls ? cls.name : '—'} · Enrolled ${fdate(sa.enrolledAt, { short: true })}</div>
             </div>
-            <button class="btn btn-ghost !p-1.5 text-slate-400 hover:text-slate-700" title="View student" onclick="document.getElementById('modalBackdrop').click(); viewStudent('${s.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
+            <button class="btn btn-ghost !p-1.5 text-slate-400 hover:text-slate-700" title="View student" onclick="document.getElementById('modalBackdrop')?.click(); viewStudent('${s.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
           </div>`;
         }).join('')}
         ${students.length === 0 ? `<p class="text-sm text-slate-400 text-center py-4">No students enrolled yet.</p>` : ''}
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
   });
 }
 
@@ -616,7 +616,7 @@ function editActivityModal(actId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveActivity(${actId ? `'${actId}'` : 'null'})">${icon('check','w-4 h-4')} ${existing ? 'Save Changes' : 'Add Activity'}</button>`
   });
 }
@@ -629,7 +629,7 @@ function saveActivity(actId) {
   const data = { schoolId: 'sch_brightlights', name, icon: document.getElementById('act_icon').value.trim() || '🏃', description: document.getElementById('act_desc').value.trim(), price };
   if (actId) DB.update('activities', actId, data);
   else DB.insert('activities', { id: uid('act'), ...data });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(actId ? 'Activity updated' : 'Activity added', 'success');
 }
@@ -780,7 +780,7 @@ function feeStructureModal(editingId) {
         </div>` : ''}
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveFeeStructure(${isEdit ? "'" + editingId + "'" : 'null'})">${icon('check','w-4 h-4')} ${isEdit ? 'Save Changes' : 'Create Structure'}</button>`
   });
 }
@@ -821,7 +821,7 @@ function saveFeeStructure(editingId) {
     DB.insert('feeStructures', { id: uid('fee'), ...data });
     toast('Fee structure created', 'success');
   }
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
 }
 
@@ -1019,7 +1019,7 @@ function manualPaymentModal() {
         <div><label class="input-label">Notes (optional)</label><textarea id="mp_notes" rows="2" class="input" placeholder="e.g. Cash collected at the gate by Mr. Adebayo"></textarea></div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveManualPayment()">${icon('check','w-4 h-4')} Record Payment</button>`
   });
 }
@@ -1075,7 +1075,7 @@ function saveManualPayment() {
   DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'manual_payment', target: `${money(amount)} · ${method} for ${student.name}`, timestamp: now() });
   DB.insert('notifications', { id: uid('not'), userId: student.parentId, title: 'Payment Received', body: `${money(amount)} cash payment recorded for ${student.name}'s fees. Receipt available.`, type: 'success', read: false, timestamp: now(), link: { view: 'par_fees' } });
 
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${money(amount)} ${method} recorded for ${student.name}`, 'success');
 }
@@ -1239,7 +1239,7 @@ function recordCashPaymentModal() {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
       <button class="btn btn-primary" onclick="saveCashPayment()">${icon('check','w-4 h-4')} Record Payment</button>
     `
   });
@@ -1274,7 +1274,7 @@ function saveCashPayment() {
   if (inv) {
     DB.update('invoices', inv.id, { paid: inv.paid + amount, balance: Math.max(0, inv.balance - amount), status: (inv.balance - amount <= 0) ? 'paid' : 'partial' });
   }
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   toast(`Cash payment of ${money(amount)} recorded for ${student.name}`, 'success');
   APP.render();
 }
@@ -1329,7 +1329,7 @@ function addExpenseModal() {
         <div><label class="input-label">Description</label><textarea id="ex_desc" class="input" rows="2"></textarea></div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveExpense()">Record Expense</button>`
   });
 }
@@ -1345,7 +1345,7 @@ function saveExpense() {
     description: document.getElementById('ex_desc').value.trim(),
     recordedBy: AUTH.current.id
   });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Expense recorded', 'success');
 }
@@ -1549,7 +1549,7 @@ function reviewLoanApplication(loanId) {
       </div>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
       <button class="btn btn-danger" onclick="rejectLoanModal('${loanId}')">${icon('x','w-4 h-4')} Reject</button>
       <button class="btn btn-primary" onclick="approveLoan('${loanId}')">${icon('check','w-4 h-4')} Approve</button>
     `
@@ -1597,7 +1597,7 @@ function rejectLoanModal(loanId) {
       <textarea id="rej_note" rows="3" class="input" placeholder="e.g. We'd be glad to revisit after the next term's payments."></textarea>
     `,
     footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
       <button class="btn btn-danger" onclick="rejectLoan('${loanId}')">${icon('x','w-4 h-4')} Confirm Rejection</button>
     `
   });
@@ -1913,7 +1913,7 @@ function postPayrollModal(runId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); APP.render()">Done</button>`
+    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); APP.render()">Done</button>`
   });
 }
 
@@ -1960,7 +1960,7 @@ function viewPayrollRun(runId) {
         ${run.stage === 'paid' ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">${icon('check','w-4 h-4 inline')} Payslips have been issued to all staff via in-app + email.</div>` : ''}
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
              ${run.stage === 'paid' ? `<button class="btn btn-primary" onclick="downloadPayrollSummary('${runId}')">${icon('download','w-4 h-4')} Summary PDF</button>` : ''}`
   });
 }
@@ -2026,7 +2026,7 @@ function manageAdjustmentsModal(runId) {
         </div>
       </div>
     `,
-    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click()">Done</button>`
+    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">Done</button>`
   });
 }
 
@@ -2106,7 +2106,7 @@ function runPayrollModal() {
         </label>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="executePayrollRun()">${icon('check','w-4 h-4')} Process Payroll</button>`
   });
 }
@@ -2127,7 +2127,7 @@ function executePayrollRun() {
     DB.insert('notifications', { id: uid('not'), userId: t.id, title: 'Salary Paid', body: `Your salary of ${money(t.salary)} has been paid to ${t.bank.name} · ${t.bank.account}.`, type: 'success', read: false, timestamp: now() });
   });
   DB.insert('auditLog', { id: uid('aud'), schoolId: 'sch_brightlights', actor: AUTH.current.id, action: 'ran_payroll', target: `${money(total)} to ${teachers.length} staff`, timestamp: now() });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`Payroll processed · ${money(total)} disbursed to ${teachers.length} staff`, 'success');
 }
@@ -2612,7 +2612,7 @@ function addBudgetModal() {
         <div><label class="input-label">Planned amount (₦)</label><input id="bud_amount" type="number" class="input" placeholder="500000" /></div>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveBudget()">Save Budget</button>`
   });
 }
@@ -2624,7 +2624,7 @@ function saveBudget() {
   const existing = DB.query('budgets', b => b.schoolId === 'sch_brightlights' && b.category === category && b.period === DB.settings().currentTerm)[0];
   if (existing) DB.update('budgets', existing.id, { planned });
   else DB.insert('budgets', { id: uid('bud'), schoolId: 'sch_brightlights', category, period: DB.settings().currentTerm, planned });
-  document.getElementById('modalBackdrop').click();
+  document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Budget saved', 'success');
 }
@@ -2649,4 +2649,385 @@ function exportPL() {
     </table>
   `;
   printElement(html);
+}
+
+/* ============================================================
+   SCHOOL STORE  —  view_adm_store() / view_fin_store()
+   Schools define items (uniform, books, etc.) with selling
+   price vs cost price, then record which students bought what.
+   ============================================================ */
+
+function view_adm_store() { return _storeView(); }
+function view_fin_store()  { return _storeView(); }
+
+function _storeView() {
+  const sid = currentSchoolId();
+  const tab = APP.params.storeTab || 'items';
+  const items = DB.query('schoolItems', i => i.schoolId === sid && i.active);
+  const purchases = DB.query('studentPurchases', p => p.schoolId === sid);
+
+  const tabBar = `<div class="tabs mb-4">
+    <div class="tab ${tab==='items'?'active':''}" onclick="APP.params.storeTab='items';APP.render()">Item Catalogue</div>
+    <div class="tab ${tab==='sales'?'active':''}" onclick="APP.params.storeTab='sales';APP.render()">Sales & Purchases</div>
+    <div class="tab ${tab==='margin'?'active':''}" onclick="APP.params.storeTab='margin';APP.render()">Margin Analysis</div>
+  </div>`;
+
+  if (tab === 'items') {
+    const rows = items.map(it => {
+      const margin = it.sellingPrice - it.costPrice;
+      const marginPct = it.sellingPrice > 0 ? Math.round(margin / it.sellingPrice * 100) : 0;
+      const sold = purchases.filter(p => p.itemId === it.id).reduce((s,p) => s + (p.qty||1), 0);
+      return `<tr>
+        <td><div class="font-semibold text-slate-900 text-sm">${it.name}</div><div class="text-xs text-slate-400">${it.category} · per ${it.unit||'unit'}</div></td>
+        <td class="text-right font-semibold">${money(it.sellingPrice)}</td>
+        <td class="text-right text-slate-500">${money(it.costPrice)}</td>
+        <td class="text-right font-bold ${margin>0?'text-emerald-700':'text-red-700'}">${money(margin)}</td>
+        <td class="text-right">
+          <span class="badge ${marginPct>=30?'badge-success':marginPct>=15?'badge-info':'badge-warn'}">${marginPct}%</span>
+        </td>
+        <td class="text-right text-slate-500">${sold}</td>
+        <td class="text-right">${it.stock}</td>
+        <td>
+          <button class="btn btn-ghost !p-1.5" title="Edit" onclick="editStoreItem('${it.id}')">${icon('settings','w-3.5 h-3.5')}</button>
+          <button class="btn btn-ghost !p-1.5 text-rose-600" title="Remove" onclick="removeStoreItem('${it.id}')">${icon('x','w-3.5 h-3.5')}</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    return `
+      ${pageHeader({ title: 'School Store', subtitle: 'Define items sold to parents — compare your selling price against cost to know your margin', actions:
+        `<button class="btn btn-primary" onclick="addStoreItemModal()">${icon('plus','w-4 h-4')} Add Item</button>` })}
+      ${tabBar}
+      <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-900 mb-4 flex items-start gap-3">
+        ${icon('reports','w-5 h-5 flex-shrink-0 mt-0.5')}
+        <span>The <strong>Selling Price</strong> is what the parent pays. The <strong>Cost Price</strong> is what the school actually spends to buy or make the item. The difference is your <strong>margin</strong> — your real profit on each sale.</span>
+      </div>
+      ${items.length ? `<div class="card overflow-hidden">
+        <table class="w-full text-sm">
+          <thead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
+            <th class="text-left p-3 font-semibold">Item</th>
+            <th class="text-right p-3 font-semibold">Selling Price</th>
+            <th class="text-right p-3 font-semibold">Cost Price</th>
+            <th class="text-right p-3 font-semibold">Margin (₦)</th>
+            <th class="text-right p-3 font-semibold">Margin %</th>
+            <th class="text-right p-3 font-semibold">Sold</th>
+            <th class="text-right p-3 font-semibold">Stock</th>
+            <th class="p-3"></th>
+          </tr></thead>
+          <tbody class="divide-y divide-slate-100">${rows}</tbody>
+        </table>
+      </div>` : emptyState({ title: 'No items yet', body: 'Click "Add Item" to add your first product — uniform, books, bags, anything you sell to parents.', icon: 'package' })}
+    `;
+  }
+
+  if (tab === 'sales') {
+    const students = DB.get('students');
+    const classes  = DB.get('classes');
+    const allItems = DB.get('schoolItems');
+    const allPurchases = [...purchases].sort((a,b) => b.purchasedAt.localeCompare(a.purchasedAt));
+    const rows = allPurchases.map((p,i) => {
+      const stu = students.find(s=>s.id===p.studentId);
+      const cls = stu ? classes.find(c=>c.id===stu.classId) : null;
+      const itm = allItems.find(it=>it.id===p.itemId);
+      const rev = (p.sellingPrice||0) * (p.qty||1);
+      const cst = (p.costPrice||0) * (p.qty||1);
+      return `<tr>
+        <td>${fdate(p.purchasedAt,{long:true})}</td>
+        <td><div class="font-semibold text-sm">${stu?stu.name:'—'}</div><div class="text-xs text-slate-400">${cls?cls.name:'—'}</div></td>
+        <td>${itm?itm.name:'—'}</td>
+        <td class="text-center">${p.qty||1}</td>
+        <td class="text-right font-semibold">${money(rev)}</td>
+        <td class="text-right text-slate-500">${money(cst)}</td>
+        <td class="text-right font-bold ${rev-cst>0?'text-emerald-700':'text-red-700'}">${money(rev-cst)}</td>
+        <td>${statusBadge(p.paidStatus)}</td>
+        <td><button class="btn btn-ghost !p-1 text-rose-600" onclick="removeStudentPurchase('${p.id}')">${icon('x','w-3.5 h-3.5')}</button></td>
+      </tr>`;
+    }).join('');
+    const totRev = allPurchases.reduce((s,p)=>s+(p.sellingPrice||0)*(p.qty||1),0);
+    const totCst = allPurchases.reduce((s,p)=>s+(p.costPrice||0)*(p.qty||1),0);
+    return `
+      ${pageHeader({ title: 'School Store', subtitle: 'All student purchases this term', actions:
+        `<button class="btn btn-primary" onclick="recordPurchaseModal()">${icon('plus','w-4 h-4')} Record Purchase</button>` })}
+      ${tabBar}
+      ${allPurchases.length ? `<div class="card overflow-hidden">
+        <table class="w-full text-sm">
+          <thead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
+            <th class="text-left p-3">Date</th><th class="text-left p-3">Student</th><th class="text-left p-3">Item</th>
+            <th class="text-center p-3">Qty</th><th class="text-right p-3">Revenue</th><th class="text-right p-3">Cost</th>
+            <th class="text-right p-3">Profit</th><th class="text-left p-3">Status</th><th class="p-3"></th>
+          </tr></thead>
+          <tbody class="divide-y divide-slate-100">${rows}</tbody>
+          <tfoot class="bg-slate-50 font-bold"><tr>
+            <td colspan="4" class="p-3 text-sm">Totals</td>
+            <td class="p-3 text-right">${money(totRev)}</td>
+            <td class="p-3 text-right text-slate-500">${money(totCst)}</td>
+            <td class="p-3 text-right text-emerald-700">${money(totRev-totCst)}</td>
+            <td colspan="2"></td>
+          </tr></tfoot>
+        </table>
+      </div>` : emptyState({ title: 'No purchases recorded', body: 'Click "Record Purchase" to log items bought by students.', icon: 'package' })}
+    `;
+  }
+
+  // Margin Analysis tab
+  if (tab === 'margin') {
+    const allItems = DB.get('schoolItems');
+    const students = DB.get('students');
+    const classes  = DB.get('classes');
+
+    // Per-item summary
+    const itemSummary = allItems.filter(it=>it.schoolId===sid).map(it => {
+      const itPurchases = purchases.filter(p=>p.itemId===it.id);
+      const unitsSold = itPurchases.reduce((s,p)=>s+(p.qty||1),0);
+      const revenue   = itPurchases.reduce((s,p)=>s+(p.sellingPrice||0)*(p.qty||1),0);
+      const cost      = itPurchases.reduce((s,p)=>s+(p.costPrice||0)*(p.qty||1),0);
+      const margin    = revenue - cost;
+      const marginPct = revenue > 0 ? Math.round(margin/revenue*100) : 0;
+      return { it, unitsSold, revenue, cost, margin, marginPct };
+    }).filter(x => x.unitsSold > 0 || true).sort((a,b)=>b.margin-a.margin);
+
+    const itemRows = itemSummary.map(x => `<tr>
+      <td><div class="font-semibold text-sm">${x.it.name}</div><div class="text-xs text-slate-400">${x.it.category}</div></td>
+      <td class="text-right">${x.unitsSold}</td>
+      <td class="text-right">${money(x.it.sellingPrice)}</td>
+      <td class="text-right text-slate-500">${money(x.it.costPrice)}</td>
+      <td class="text-right font-bold ${x.margin>0?'text-emerald-700':'text-red-700'}">${money(x.margin)}</td>
+      <td class="text-right"><span class="badge ${x.marginPct>=30?'badge-success':x.marginPct>=15?'badge-info':'badge-warn'}">${x.marginPct}%</span></td>
+      <td class="text-right font-semibold">${money(x.revenue)}</td>
+      <td class="text-right text-slate-500">${money(x.cost)}</td>
+      <td class="text-right font-bold text-emerald-700">${money(x.margin)}</td>
+    </tr>`).join('');
+
+    // Per-student summary
+    const stuMap = {};
+    purchases.forEach(p => {
+      if (!stuMap[p.studentId]) stuMap[p.studentId] = { revenue:0, cost:0, items:0 };
+      stuMap[p.studentId].revenue += (p.sellingPrice||0)*(p.qty||1);
+      stuMap[p.studentId].cost    += (p.costPrice||0)*(p.qty||1);
+      stuMap[p.studentId].items   += (p.qty||1);
+    });
+    const stuRows = Object.entries(stuMap).sort((a,b)=>b[1].revenue-a[1].revenue).map(([stuId, d]) => {
+      const stu = students.find(s=>s.id===stuId);
+      const cls = stu ? classes.find(c=>c.id===stu.classId) : null;
+      return `<tr>
+        <td><div class="font-semibold text-sm">${stu?stu.name:'—'}</div><div class="text-xs text-slate-400">${cls?cls.name:'—'}</div></td>
+        <td class="text-right">${d.items}</td>
+        <td class="text-right font-semibold">${money(d.revenue)}</td>
+        <td class="text-right text-slate-500">${money(d.cost)}</td>
+        <td class="text-right font-bold text-emerald-700">${money(d.revenue-d.cost)}</td>
+        <td class="text-right"><span class="badge ${d.revenue-d.cost>0?'badge-success':'badge-danger'}">${d.revenue>0?Math.round((d.revenue-d.cost)/d.revenue*100):0}%</span></td>
+      </tr>`;
+    }).join('');
+
+    const totRev = purchases.reduce((s,p)=>s+(p.sellingPrice||0)*(p.qty||1),0);
+    const totCst = purchases.reduce((s,p)=>s+(p.costPrice||0)*(p.qty||1),0);
+    const totMgn = totRev - totCst;
+    const totPct = totRev > 0 ? Math.round(totMgn/totRev*100) : 0;
+
+    return `
+      ${pageHeader({ title: 'School Store', subtitle: 'Margin analysis — know exactly what you make on every item and every student' })}
+      ${tabBar}
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        ${statCard({ label: 'Total Revenue', value: money(totRev), icon: 'fees', color: 'brand' })}
+        ${statCard({ label: 'Total Cost',    value: money(totCst), icon: 'trending_down', color: 'amber' })}
+        ${statCard({ label: 'Total Profit',  value: money(totMgn), icon: 'check', color: 'emerald' })}
+        ${statCard({ label: 'Overall Margin', value: totPct + '%', icon: 'reports', color: totPct>=25?'emerald':totPct>=15?'amber':'rose' })}
+      </div>
+
+      <h3 class="font-bold text-slate-900 mb-2">Profit by Item</h3>
+      <div class="card overflow-hidden mb-5">
+        <table class="w-full text-sm">
+          <thead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
+            <th class="text-left p-3">Item</th><th class="text-right p-3">Units Sold</th>
+            <th class="text-right p-3">Sell Price</th><th class="text-right p-3">Cost Price</th>
+            <th class="text-right p-3">Margin / Unit</th><th class="text-right p-3">Margin %</th>
+            <th class="text-right p-3">Total Revenue</th><th class="text-right p-3">Total Cost</th>
+            <th class="text-right p-3">Total Profit</th>
+          </tr></thead>
+          <tbody class="divide-y divide-slate-100">${itemRows}</tbody>
+        </table>
+      </div>
+
+      <h3 class="font-bold text-slate-900 mb-2">Profit by Student</h3>
+      <div class="card overflow-hidden">
+        <table class="w-full text-sm">
+          <thead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
+            <th class="text-left p-3">Student</th><th class="text-right p-3">Items</th>
+            <th class="text-right p-3">Revenue</th><th class="text-right p-3">Cost</th>
+            <th class="text-right p-3">Profit</th><th class="text-right p-3">Margin %</th>
+          </tr></thead>
+          <tbody class="divide-y divide-slate-100">${stuRows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+}
+
+/* ── Store item CRUD ─────────────────────────────────────── */
+function addStoreItemModal(editId) {
+  const edit = editId ? DB.find('schoolItems', editId) : null;
+  modal({
+    title: edit ? 'Edit Item' : 'Add Item to Store',
+    body: `
+      <div class="space-y-3">
+        <div><label class="input-label">Item Name</label>
+          <input id="si_name" class="input" placeholder="e.g. School Uniform — Full Set" value="${edit ? edit.name : ''}"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Category</label>
+            <select id="si_cat" class="input">
+              ${['Uniform','Books','Stationery','Accessories','Other'].map(c=>`<option value="${c}" ${edit&&edit.category===c?'selected':''}>${c}</option>`).join('')}
+            </select></div>
+          <div><label class="input-label">Unit</label>
+            <input id="si_unit" class="input" placeholder="e.g. set, pair, book" value="${edit ? edit.unit||'' : ''}"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="input-label">Selling Price <span class="text-slate-400 font-normal">(what parent pays)</span></label>
+            <input id="si_sell" type="number" class="input" placeholder="20000" value="${edit ? edit.sellingPrice : ''}">
+          </div>
+          <div>
+            <label class="input-label">Cost Price <span class="text-slate-400 font-normal">(what it costs you)</span></label>
+            <input id="si_cost" type="number" class="input" placeholder="15000" value="${edit ? edit.costPrice : ''}">
+          </div>
+        </div>
+        <div id="si_marginPreview" class="bg-slate-50 rounded-xl p-3 text-sm text-slate-600 hidden"></div>
+        <div><label class="input-label">Current Stock</label>
+          <input id="si_stock" type="number" class="input" placeholder="0" value="${edit ? edit.stock : '0'}"></div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveStoreItem('${editId||''}')">${icon('check','w-4 h-4')} Save Item</button>`
+  });
+  // Live margin preview
+  setTimeout(() => {
+    const sell = document.getElementById('si_sell');
+    const cost = document.getElementById('si_cost');
+    const preview = document.getElementById('si_marginPreview');
+    const update = () => {
+      const s = parseFloat(sell.value)||0, c = parseFloat(cost.value)||0;
+      if (s > 0 && c > 0) {
+        const m = s - c;
+        const pct = Math.round(m/s*100);
+        preview.innerHTML = `Your profit per unit: <strong class="${m>0?'text-emerald-700':'text-red-700'}">${money(m)}</strong> (${pct}% margin)`;
+        preview.classList.remove('hidden');
+      } else {
+        preview.classList.add('hidden');
+      }
+    };
+    sell.oninput = cost.oninput = update;
+    update();
+  }, 0);
+}
+
+function editStoreItem(itemId) { addStoreItemModal(itemId); }
+
+function saveStoreItem(editId) {
+  const name  = document.getElementById('si_name').value.trim();
+  const cat   = document.getElementById('si_cat').value;
+  const unit  = document.getElementById('si_unit').value.trim() || 'unit';
+  const sell  = parseFloat(document.getElementById('si_sell').value) || 0;
+  const cost  = parseFloat(document.getElementById('si_cost').value) || 0;
+  const stock = parseInt(document.getElementById('si_stock').value) || 0;
+  if (!name || sell <= 0) { toast('Item name and selling price are required', 'danger'); return; }
+  const sid = currentSchoolId();
+  if (editId) {
+    DB.update('schoolItems', editId, { name, category: cat, unit, sellingPrice: sell, costPrice: cost, stock });
+    toast('Item updated', 'success');
+  } else {
+    DB.insert('schoolItems', { id: uid('item'), schoolId: sid, name, category: cat, unit, sellingPrice: sell, costPrice: cost, stock, active: true, createdAt: now() });
+    toast('Item added', 'success');
+  }
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+}
+
+function removeStoreItem(itemId) {
+  confirm('Remove this item from the store?', () => {
+    DB.update('schoolItems', itemId, { active: false });
+    APP.render();
+    toast('Item removed', 'success');
+  }, { yesLabel: 'Remove', danger: true });
+}
+
+function recordPurchaseModal() {
+  const sid = currentSchoolId();
+  const students = DB.query('students', s => s.schoolId === sid && s.status === 'active')
+    .sort((a,b) => a.name.localeCompare(b.name));
+  const items = DB.query('schoolItems', i => i.schoolId === sid && i.active);
+  modal({
+    title: 'Record Student Purchase',
+    body: `
+      <div class="space-y-3">
+        <div><label class="input-label">Student</label>
+          <select id="sp_stu" class="input">
+            <option value="">— Select student —</option>
+            ${students.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}
+          </select></div>
+        <div><label class="input-label">Item</label>
+          <select id="sp_item" class="input" onchange="updatePurchasePreview()">
+            <option value="">— Select item —</option>
+            ${items.map(it=>`<option value="${it.id}" data-sell="${it.sellingPrice}" data-cost="${it.costPrice}">${it.name} — ${money(it.sellingPrice)}</option>`).join('')}
+          </select></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Quantity</label>
+            <input id="sp_qty" type="number" min="1" value="1" class="input" oninput="updatePurchasePreview()"></div>
+          <div><label class="input-label">Payment Status</label>
+            <select id="sp_paid" class="input">
+              <option value="paid">Paid</option>
+              <option value="unpaid">Unpaid (to be collected)</option>
+            </select></div>
+        </div>
+        <div id="sp_preview" class="bg-emerald-50 rounded-xl p-3 text-sm hidden"></div>
+        <div><label class="input-label">Notes (optional)</label>
+          <input id="sp_notes" class="input" placeholder="e.g. Size L, special order"></div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="confirmRecordPurchase()">${icon('check','w-4 h-4')} Record</button>`
+  });
+}
+
+function updatePurchasePreview() {
+  const sel = document.getElementById('sp_item');
+  const qty = parseInt(document.getElementById('sp_qty')?.value) || 1;
+  const preview = document.getElementById('sp_preview');
+  if (!sel || !preview) return;
+  const opt = sel.options[sel.selectedIndex];
+  const sell = parseFloat(opt.dataset.sell) || 0;
+  const cost = parseFloat(opt.dataset.cost) || 0;
+  if (sell > 0) {
+    const rev = sell * qty;
+    const cst = cost * qty;
+    preview.innerHTML = `Revenue: <strong>${money(rev)}</strong> · Cost: <strong>${money(cst)}</strong> · <strong class="text-emerald-700">Profit: ${money(rev-cst)}</strong>`;
+    preview.classList.remove('hidden');
+  } else {
+    preview.classList.add('hidden');
+  }
+}
+
+function confirmRecordPurchase() {
+  const stuId  = document.getElementById('sp_stu').value;
+  const itemId = document.getElementById('sp_item').value;
+  const qty    = parseInt(document.getElementById('sp_qty').value) || 1;
+  const paid   = document.getElementById('sp_paid').value;
+  const notes  = document.getElementById('sp_notes').value.trim();
+  if (!stuId || !itemId) { toast('Please select a student and an item', 'danger'); return; }
+  const item = DB.find('schoolItems', itemId);
+  if (!item) { toast('Item not found', 'danger'); return; }
+  DB.insert('studentPurchases', {
+    id: uid('sp'), schoolId: currentSchoolId(), studentId: stuId, itemId,
+    qty, sellingPrice: item.sellingPrice, costPrice: item.costPrice,
+    purchasedAt: today(), paidStatus: paid, notes
+  });
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast('Purchase recorded', 'success');
+}
+
+function removeStudentPurchase(purchaseId) {
+  confirm('Remove this purchase record?', () => {
+    DB.remove('studentPurchases', purchaseId);
+    APP.render();
+    toast('Purchase removed', 'success');
+  }, { yesLabel: 'Remove', danger: true });
 }
