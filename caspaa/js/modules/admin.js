@@ -55,7 +55,8 @@ function view_adm_workforce() {
     { key: 'staff',       label: 'Staff Directory',   view: 'view_adm_staff' },
     { key: 'attendance',  label: 'Staff Attendance',  view: 'view_adm_staff_att' },
     { key: 'leave',       label: 'Leave Requests',    view: 'view_adm_leave_requests', badge: () => DB.query('leaveRequests', l => l.schoolId === currentSchoolId() && l.status === 'pending').length || null },
-    { key: 'appraisal',   label: 'Appraisal',         view: 'view_adm_appraisal', badge: () => { const sid=currentSchoolId(); return DB.query('appraisals', a => a.schoolId===sid && ['manager_pending','principal_pending','outcome_pending'].includes(a.status)).length + DB.query('salaryAdvances', a => a.schoolId===sid && a.status==='pending').length || null; } }
+    { key: 'apr_cycles',  label: 'Appraisal Cycles',  view: 'view_adm_appraisal_cycles', badge: () => { const sid=currentSchoolId(); return DB.query('appraisals', a => a.schoolId===sid && ['manager_pending','principal_pending','outcome_pending'].includes(a.status)).length || null; } },
+    { key: 'apr_advances',label: 'Salary Advances',   view: 'view_adm_salary_advances',  badge: () => { const sid=currentSchoolId(); return DB.query('salaryAdvances', a => a.schoolId===sid && a.status==='pending').length || null; } }
   ], 'staff', 'workforceTab');
 }
 
@@ -222,35 +223,35 @@ function _aprScoreBar(score) {
 }
 
 /* ---- Main view ---- */
-function view_adm_appraisal() {
+function view_adm_appraisal_cycles() {
   const sid = currentSchoolId();
   const cycleId = APP.params.aprCycle || null;
-  const appraisalTab = APP.params.aprTab || 'cycles';
   const cycles = DB.query('appraisalCycles', c => c.schoolId === sid).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
-  const advances = DB.query('salaryAdvances', a => a.schoolId === sid).sort((a,b) => b.requestedAt.localeCompare(a.requestedAt));
-  const pendingAdv = advances.filter(a => a.status === 'pending');
-  // Count what needs admin action
   const needsManager = DB.query('appraisals', a => a.schoolId === sid && a.status === 'manager_pending').length;
   const needsPrincipal = DB.query('appraisals', a => a.schoolId === sid && a.status === 'principal_pending').length;
   const needsOutcome = DB.query('appraisals', a => a.schoolId === sid && a.status === 'outcome_pending').length;
-  const actionNeeded = needsManager + needsPrincipal + needsOutcome + pendingAdv.length;
+  const actionNeeded = needsManager + needsPrincipal + needsOutcome;
 
   return `
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+    <div class="grid grid-cols-3 gap-3 mb-4">
       ${statCard({ label: 'Active Cycles', value: cycles.filter(c=>c.status!=='closed').length, icon: 'calendar', color: 'brand' })}
       ${statCard({ label: 'Need Your Action', value: actionNeeded, icon: 'bell', color: actionNeeded ? 'rose' : 'brand', trend: actionNeeded ? { direction: 'down', label: `${needsManager} manager · ${needsPrincipal} principal` } : { direction: 'up', label: 'all up to date' } })}
       ${statCard({ label: 'Completed', value: DB.query('appraisals', a => a.schoolId === sid && a.status === 'completed').length, icon: 'check', color: 'brand' })}
+    </div>
+    ${_renderCycles(cycles, cycleId)}
+  `;
+}
+
+function view_adm_salary_advances() {
+  const sid = currentSchoolId();
+  const advances = DB.query('salaryAdvances', a => a.schoolId === sid).sort((a,b) => b.requestedAt.localeCompare(a.requestedAt));
+  const pendingAdv = advances.filter(a => a.status === 'pending');
+  return `
+    <div class="grid grid-cols-2 gap-3 mb-4">
       ${statCard({ label: 'Pending Advances', value: pendingAdv.length, icon: 'fees', color: pendingAdv.length ? 'gold' : 'brand' })}
+      ${statCard({ label: 'Total Requests', value: advances.length, icon: 'reports', color: 'brand' })}
     </div>
-
-    ${tabs([
-      { key: 'cycles',   label: 'Appraisal Cycles', badge: cycles.filter(c=>c.status!=='closed').length || null },
-      { key: 'advances', label: 'Salary Advances',  badge: pendingAdv.length || null }
-    ], appraisalTab, k => { APP.params.aprTab = k; APP.params.aprCycle = null; APP.render(); })}
-
-    <div class="pt-4">
-      ${appraisalTab === 'advances' ? _renderSalaryAdvances(advances) : _renderCycles(cycles, cycleId)}
-    </div>
+    ${_renderSalaryAdvances(advances)}
   `;
 }
 
@@ -300,7 +301,6 @@ function _renderCycleDetail(cycleId) {
   const steps = ['Self Assessment', 'Manager Review', 'Principal Approval', 'Outcome', 'Acknowledged'];
 
   return `
-    <button class="btn btn-ghost text-sm mb-4" onclick="APP.params.aprCycle=null; APP.render()">${icon('arrow_left','w-4 h-4')} All Cycles</button>
     <div class="card p-5 mb-4">
       <div class="flex items-start justify-between gap-3">
         <div>

@@ -82,6 +82,7 @@ const APP = {
       parent: [
         { key: 'par_dashboard',  label: 'Dashboard',       icon: 'dashboard' },
         { key: 'par_children',   label: 'My Children',     icon: 'students' },
+        { key: 'par_results',    label: 'Results',         icon: 'results' },
         { key: 'par_fees',       label: 'Fees & Payment',  icon: 'fees' },
         { key: 'par_timetable',  label: 'Timetable',       icon: 'calendar' },
         { key: 'par_loans',      label: 'Loans',           icon: 'loan' },

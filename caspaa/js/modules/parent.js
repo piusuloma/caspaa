@@ -357,6 +357,13 @@ function viewChildDetail(studentId) {
   const subjects = DB.get('subjects');
   const recentAtt = COMPUTE.studentAttendance(studentId).slice(-10).reverse();
   const assignments = DB.query('assignments', a => a.classId === s.classId);
+  const cbtExams    = DB.query('cbtExams', e => e.classId === s.classId && e.status === 'published');
+  const cbtSubs     = DB.query('cbtSubmissions', x => x.studentId === s.id);
+  const ftTests     = DB.query('formativeTests', t => t.classId === s.classId && t.status === 'active');
+  const ftSubs      = DB.query('formativeSubmissions', x => x.studentId === s.id);
+  const pendingWork = assignments.filter(a => !a.submissions.some(x => x.studentId === s.id)).length
+                    + cbtExams.filter(e => !cbtSubs.some(x => x.examId === e.id)).length
+                    + ftTests.filter(t => !ftSubs.some(x => x.testId === t.id)).length;
 
   modal({
     title: `${s.name}'s Profile`,
@@ -372,7 +379,7 @@ function viewChildDetail(studentId) {
         { key: 'overview', label: 'Overview' },
         { key: 'results', label: 'Results' },
         { key: 'attendance', label: 'Attendance' },
-        { key: 'assignments', label: 'Homework', badge: assignments.length || null }
+        { key: 'assessments', label: 'Assessments', badge: pendingWork || null }
       ], APP.params.childTab || 'overview', (k) => { APP.params.childTab = k; viewChildDetail(studentId); })}
 
       <div class="pt-4">
@@ -409,20 +416,77 @@ function viewChildDetail(studentId) {
                 ${statusBadge(a.status)}
               </div>`).join('')}
             </div>
-          ` : (APP.params.childTab === 'assignments') ? `
-            <div class="space-y-2">
-              ${assignments.length ? assignments.map(a => {
-                const sub = subjects.find(s2 => s2.id === a.subjectId);
-                const submitted = a.submissions.some(sub => sub.studentId === studentId);
-                return `<div class="p-3 bg-slate-50 rounded-xl">
-                  <div class="flex items-center justify-between mb-1">
-                    <span class="font-semibold text-sm">${a.title}</span>
-                    ${submitted ? '<span class="badge badge-success">Submitted</span>' : '<span class="badge badge-warn">Pending</span>'}
-                  </div>
-                  <div class="text-xs text-slate-600 mb-1">${sub ? sub.name : ''} · Due ${fdate(a.dueDate, { short: true })}</div>
-                  <div class="text-sm text-slate-700">${a.description}</div>
-                </div>`;
-              }).join('') : emptyState({ title: 'No homework right now', icon: 'book' })}
+          ` : (APP.params.childTab === 'assessments') ? `
+            <div class="space-y-4">
+              <!-- Assignments -->
+              <div>
+                <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Assignments (${assignments.length})</div>
+                ${assignments.length ? `<div class="space-y-2">
+                  ${assignments.map(a => {
+                    const subj = subjects.find(x => x.id === a.subjectId);
+                    const submitted = a.submissions.some(x => x.studentId === s.id);
+                    const graded = submitted && a.submissions.find(x => x.studentId === s.id).grade != null;
+                    const grade = graded ? a.submissions.find(x => x.studentId === s.id).grade : null;
+                    return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                      <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-sm truncate">${a.title}</div>
+                        <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · Due ${fdate(a.dueDate, { short: true })}</div>
+                      </div>
+                      <div class="ml-3 flex-shrink-0">
+                        ${graded ? `<span class="badge badge-success">${grade}/100</span>`
+                         : submitted ? `<span class="badge badge-info">Submitted</span>`
+                         : `<span class="badge badge-warn">Pending</span>`}
+                      </div>
+                    </div>`;
+                  }).join('')}
+                </div>` : `<p class="text-sm text-slate-400 text-center py-2">No assignments right now.</p>`}
+              </div>
+
+              <!-- CBT Exams -->
+              <div>
+                <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">CBT Exams (${cbtExams.length})</div>
+                ${cbtExams.length ? `<div class="space-y-2">
+                  ${cbtExams.map(e => {
+                    const sub = cbtSubs.find(x => x.examId === e.id);
+                    const subj = subjects.find(x => x.id === e.subjectId);
+                    return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                      <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-sm truncate">${e.title}</div>
+                        <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · ${e.durationMins} min · Due ${fdate(e.dueDate, { short: true })}</div>
+                      </div>
+                      <div class="ml-3 flex-shrink-0 text-right">
+                        ${sub
+                          ? (sub.status === 'graded'
+                              ? `<div class="font-bold text-brand-700 text-sm">${sub.totalScore}/${sub.maxScore}</div><div class="text-xs text-slate-400">Graded</div>`
+                              : `<span class="badge badge-info">Submitted</span>`)
+                          : `<span class="badge badge-warn">Not taken</span>`}
+                      </div>
+                    </div>`;
+                  }).join('')}
+                </div>` : `<p class="text-sm text-slate-400 text-center py-2">No CBT exams assigned.</p>`}
+              </div>
+
+              <!-- Quick Tests -->
+              <div>
+                <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Quick Tests (${ftTests.length})</div>
+                ${ftTests.length ? `<div class="space-y-2">
+                  ${ftTests.map(t => {
+                    const sub = ftSubs.find(x => x.testId === t.id);
+                    const subj = subjects.find(x => x.id === t.subjectId);
+                    return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                      <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-sm truncate">${t.title}</div>
+                        <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · ${t.duration} min · Due ${fdate(t.dueDate, { short: true })}</div>
+                      </div>
+                      <div class="ml-3 flex-shrink-0 text-right">
+                        ${sub
+                          ? `<div class="font-bold text-emerald-700 text-sm">${sub.score}/${sub.total}</div><div class="text-xs text-slate-400">${sub.percentage}%</div>`
+                          : `<span class="badge badge-warn">Not done</span>`}
+                      </div>
+                    </div>`;
+                  }).join('')}
+                </div>` : `<p class="text-sm text-slate-400 text-center py-2">No quick tests assigned.</p>`}
+              </div>
             </div>
           ` : `
             <div class="space-y-3">
@@ -1638,6 +1702,138 @@ function payLoanInstallment(loanId) {
   DB.update('loans', loanId, { repayments: updatedRepayments });
   toast(`Installment of ${money(next.amount)} paid`);
   APP.render();
+}
+
+/* ---------- Results & Assessments (parent view) ---------- */
+function view_par_results() {
+  const children = COMPUTE.parentChildren(AUTH.current.id).filter(c => c.status === 'active');
+  if (!children.length) return emptyState({ title: 'No children enrolled', body: 'Your children\'s academic results will appear here once they are enrolled and teachers have submitted scores.', icon: 'results' });
+
+  const activeChild = APP.params.parResChild || children[0].id;
+  const child = DB.find('students', activeChild) || children[0];
+  const cls = DB.find('classes', child.classId);
+  const subjects = DB.get('subjects');
+  const results = COMPUTE.studentResults(child.id).filter(r => r.approved);
+  const assignments = DB.query('assignments', a => a.classId === child.classId);
+  const cbtExams = DB.query('cbtExams', e => e.classId === child.classId && e.status === 'published');
+  const cbtSubs = DB.query('cbtSubmissions', x => x.studentId === child.id);
+  const ftTests = DB.query('formativeTests', t => t.classId === child.classId && t.status === 'active');
+  const ftSubs = DB.query('formativeSubmissions', x => x.studentId === child.id);
+  const avg = results.length ? Math.round(results.reduce((s, r) => s + r.total, 0) / results.length) : null;
+
+  return `
+    ${pageHeader({ title: 'Results & Assessments', subtitle: 'Academic results and work for your children' })}
+
+    ${children.length > 1 ? `<div class="flex gap-2 mb-5 flex-wrap">
+      ${children.map(c => `<button onclick="APP.params.parResChild='${c.id}';APP.render()"
+        class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeChild ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">
+        ${c.name.split(' ')[0]}
+      </button>`).join('')}
+    </div>` : ''}
+
+    <!-- Summary row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+      ${statCard({ label: 'Academic Avg', value: avg !== null ? avg + '%' : '—', icon: 'results', color: avg >= 70 ? 'brand' : avg >= 50 ? 'gold' : 'rose' })}
+      ${statCard({ label: 'Assignments', value: `${assignments.filter(a => a.submissions.some(x => x.studentId === child.id)).length}/${assignments.length}`, icon: 'book', color: 'blue', trend: { label: 'submitted' } })}
+      ${statCard({ label: 'CBT Exams', value: `${cbtSubs.length}/${cbtExams.length}`, icon: 'classes', color: 'brand', trend: { label: 'completed' } })}
+      ${statCard({ label: 'Quick Tests', value: `${ftSubs.length}/${ftTests.length}`, icon: 'check', color: 'gold', trend: { label: 'done' } })}
+    </div>
+
+    <!-- Academic Results -->
+    <div class="card p-5 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-bold text-slate-900">Academic Results — ${DB.settings().currentTerm}</h3>
+        ${results.length ? `<div class="flex gap-2">
+          <button class="btn btn-secondary !text-xs !py-1.5" onclick="printReportCard('${child.id}')">${icon('download','w-3.5 h-3.5')} Report Card</button>
+        </div>` : ''}
+      </div>
+      ${results.length ? `<div class="space-y-2">
+        ${results.map(r => {
+          const sub = subjects.find(x => x.id === r.subjectId);
+          const color = r.grade === 'A' ? 'text-emerald-700' : r.grade === 'F' ? 'text-rose-700' : 'text-slate-700';
+          return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+            <div>
+              <div class="font-semibold text-sm">${sub ? sub.name : '—'}</div>
+              <div class="text-xs text-slate-500 mt-0.5">CA1: ${r.ca1} · CA2: ${r.ca2} · Exam: ${r.exam}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-lg font-bold ${color}">${r.total}<span class="text-sm text-slate-400">/100</span></div>
+              <span class="badge ${r.grade==='A'?'badge-success':r.grade==='F'?'badge-danger':'badge-info'}">${r.grade}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>` : emptyState({ title: 'No results published yet', body: 'Results will appear here once teachers have submitted and approved them for this term.', icon: 'results' })}
+    </div>
+
+    <!-- Assignments -->
+    <div class="card p-5 mb-4">
+      <h3 class="font-bold text-slate-900 mb-3">Assignments</h3>
+      ${assignments.length ? `<div class="space-y-2">
+        ${assignments.map(a => {
+          const subj = subjects.find(x => x.id === a.subjectId);
+          const sub = a.submissions.find(x => x.studentId === child.id);
+          const graded = sub && sub.grade != null;
+          return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate">${a.title}</div>
+              <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · Due ${fdate(a.dueDate, { short: true })}</div>
+            </div>
+            <div class="ml-3 flex-shrink-0">
+              ${graded ? `<span class="badge badge-success">${sub.grade}/100</span>`
+               : sub ? `<span class="badge badge-info">Submitted</span>`
+               : `<span class="badge badge-warn">Pending</span>`}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>` : `<p class="text-sm text-slate-400 text-center py-3">No assignments right now.</p>`}
+    </div>
+
+    <!-- CBT Exams -->
+    <div class="card p-5 mb-4">
+      <h3 class="font-bold text-slate-900 mb-3">CBT Exams</h3>
+      ${cbtExams.length ? `<div class="space-y-2">
+        ${cbtExams.map(e => {
+          const sub = cbtSubs.find(x => x.examId === e.id);
+          const subj = subjects.find(x => x.id === e.subjectId);
+          return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate">${e.title}</div>
+              <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · ${e.durationMins} min · Due ${fdate(e.dueDate, { short: true })}</div>
+            </div>
+            <div class="ml-3 flex-shrink-0 text-right">
+              ${sub
+                ? (sub.status === 'graded'
+                    ? `<div class="font-bold text-brand-700">${sub.totalScore}/${sub.maxScore}</div><div class="text-xs text-slate-400">Graded</div>`
+                    : `<span class="badge badge-info">Submitted</span>`)
+                : `<span class="badge badge-warn">Not taken</span>`}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>` : `<p class="text-sm text-slate-400 text-center py-3">No CBT exams published for this term.</p>`}
+    </div>
+
+    <!-- Quick Tests -->
+    <div class="card p-5">
+      <h3 class="font-bold text-slate-900 mb-3">Quick Tests</h3>
+      ${ftTests.length ? `<div class="space-y-2">
+        ${ftTests.map(t => {
+          const sub = ftSubs.find(x => x.testId === t.id);
+          const subj = subjects.find(x => x.id === t.subjectId);
+          return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate">${t.title}</div>
+              <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · ${t.duration} min · Due ${fdate(t.dueDate, { short: true })}</div>
+            </div>
+            <div class="ml-3 flex-shrink-0 text-right">
+              ${sub
+                ? `<div class="font-bold text-emerald-700">${sub.score}/${sub.total}</div><div class="text-xs text-slate-400">${sub.percentage}%</div>`
+                : `<span class="badge badge-warn">Not done</span>`}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>` : `<p class="text-sm text-slate-400 text-center py-3">No quick tests assigned yet.</p>`}
+    </div>
+  `;
 }
 
 /* ---------- Messages & Announcements (delegated) ---------- */
