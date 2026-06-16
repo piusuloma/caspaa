@@ -1323,7 +1323,7 @@ function addExpenseModal() {
       <div class="space-y-3">
         <div><label class="input-label">Date</label><input id="ex_date" type="date" class="input" value="${today()}" /></div>
         <div><label class="input-label">Category</label>
-          <select id="ex_cat" class="input"><option>Salaries</option><option>Utilities</option><option>Maintenance</option><option>Supplies</option><option>Internet</option><option>Transport</option><option>Other</option></select>
+          <select id="ex_cat" class="input"><option>Salaries</option><option>Electricity</option><option>Diesel</option><option>Maintenance</option><option>Supplies</option><option>Internet</option><option>Transport</option><option>Security</option><option>Cleaning</option><option>Bank Charges</option><option>Other</option></select>
         </div>
         <div><label class="input-label">Amount (NGN)</label><input id="ex_amt" type="number" class="input" /></div>
         <div><label class="input-label">Description</label><textarea id="ex_desc" class="input" rows="2"></textarea></div>
@@ -2145,7 +2145,7 @@ function exportPayrollCSV() {
 
 /* ---------- Financial Reports ---------- */
 function view_fin_reports() {
-  const tab = APP.params.accTab || 'pl';
+  const tab = APP.params.accTab || 'unit';
   return `
     ${pageHeader({
       title: 'Accounting & Reports',
@@ -2153,6 +2153,7 @@ function view_fin_reports() {
       actions: `<button class="btn btn-primary" onclick="exportPL()">${icon('download','w-4 h-4')} Export P&L (PDF)</button>`
     })}
     ${tabs([
+      { key: 'unit', label: 'Unit Economics' },
       { key: 'pl', label: 'Profit & Loss' },
       { key: 'trial', label: 'Trial Balance' },
       { key: 'cashflow', label: 'Cash Flow' },
@@ -2160,6 +2161,7 @@ function view_fin_reports() {
       { key: 'budget', label: 'Budgets' }
     ], tab, k => { APP.params.accTab = k; APP.render(); })}
     <div class="pt-4">${
+      tab === 'unit' ? renderUnitEconomics() :
       tab === 'trial' ? renderTrialBalance() :
       tab === 'cashflow' ? renderCashFlow() :
       tab === 'balance' ? renderBalanceSheet() :
@@ -2178,6 +2180,276 @@ function _accFigures() {
   const outstanding = invoices.reduce((s, i) => s + i.balance, 0);
   const totalExp = expenses.reduce((s, e) => s + e.amount, 0);
   return { invoices, txns, expenses, collected, billed, outstanding, totalExp, profit: collected - totalExp };
+}
+
+function renderUnitEconomics() {
+  const sid = AUTH.current.schoolId || 'sch_brightlights';
+  const invoices = DB.query('invoices', i => i.schoolId === sid);
+  const expenses = DB.query('expenses', e => e.schoolId === sid);
+  const payrollRuns = DB.query('payrollRuns', r => r.schoolId === sid && r.stage === 'paid');
+  const students = DB.query('students', s => s.schoolId === sid && s.status === 'active');
+  const classes = DB.get('classes');
+  const term = DB.settings().currentTerm;
+
+  const billed      = invoices.reduce((s, i) => s + i.total, 0);
+  const collected   = invoices.reduce((s, i) => s + i.paid, 0);
+  const outstanding = invoices.reduce((s, i) => s + i.balance, 0);
+  const expTotal    = expenses.reduce((s, e) => s + e.amount, 0);
+  const n           = students.length || 1;
+
+  // ─── Revenue by fee component ───────────────────────────────────────────
+  const compMap = {};
+  invoices.forEach(inv => {
+    const ratio = inv.total > 0 ? inv.paid / inv.total : 0;
+    (inv.lineItems || []).forEach(li => {
+      if (!compMap[li.name]) compMap[li.name] = { billed: 0, collected: 0 };
+      compMap[li.name].billed    += li.amount;
+      compMap[li.name].collected += Math.round(li.amount * ratio);
+    });
+  });
+  const components = Object.entries(compMap).sort((a, b) => b[1].billed - a[1].billed);
+
+  // ─── Revenue by class ───────────────────────────────────────────────────
+  const clsMap = {};
+  invoices.forEach(inv => {
+    const stu = DB.find('students', inv.studentId);
+    if (!stu) return;
+    const k = stu.classId;
+    if (!clsMap[k]) clsMap[k] = { billed: 0, paid: 0, count: 0 };
+    clsMap[k].billed += inv.total;
+    clsMap[k].paid   += inv.paid;
+    clsMap[k].count++;
+  });
+  const clsByRev = Object.entries(clsMap).sort((a, b) => b[1].billed - a[1].billed);
+
+  // ─── AR Aging ───────────────────────────────────────────────────────────
+  const todayMs = Date.now();
+  const overdue = (inv) => Math.floor((todayMs - new Date(inv.dueDate).getTime()) / 86400000);
+  const owed = invoices.filter(i => i.balance > 0);
+  const ageBuckets = [
+    { label: 'Not Yet Due',  color: 'slate',  list: owed.filter(i => overdue(i) <= 0) },
+    { label: '1–30 Days',    color: 'amber',  list: owed.filter(i => overdue(i) >  0 && overdue(i) <= 30) },
+    { label: '31–60 Days',   color: 'orange', list: owed.filter(i => overdue(i) > 30 && overdue(i) <= 60) },
+    { label: '61–90 Days',   color: 'red',    list: owed.filter(i => overdue(i) > 60 && overdue(i) <= 90) },
+    { label: '90+ Days',     color: 'rose',   list: owed.filter(i => overdue(i) > 90) },
+  ];
+
+  // ─── Expense by category ────────────────────────────────────────────────
+  const expByCat = {};
+  expenses.forEach(e => { expByCat[e.category] = (expByCat[e.category] || 0) + e.amount; });
+  const expCats = Object.entries(expByCat).sort((a, b) => b[1] - a[1]);
+
+  // ─── Latest paid payroll ─────────────────────────────────────────────────
+  const lastPayroll = payrollRuns.sort((a, b) => (b.paidAt || '').localeCompare(a.paidAt || ''))[0];
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+  const bar = (pct, color) => `<div class="flex-1 bg-slate-100 rounded-full h-1.5 min-w-14"><div class="h-1.5 rounded-full bg-${color}-500" style="width:${Math.min(pct,100)}%"></div></div>`;
+
+  return `
+    <!-- ① Headline KPIs -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+      ${statCard({ label: 'Revenue / Student', value: money(Math.round(billed / n)),   icon: 'students',      color: 'brand', tooltip: 'Total fees billed ÷ active students' })}
+      ${statCard({ label: 'Cost / Student',    value: money(Math.round(expTotal / n)), icon: 'trending_down', color: 'rose',  tooltip: 'Total recorded expenses ÷ active students' })}
+      ${statCard({ label: 'Net / Student',     value: money(Math.round((collected - expTotal) / n)), icon: 'trending_up', color: collected > expTotal ? 'brand' : 'rose', tooltip: 'Cash collected minus expenses, per student' })}
+      ${statCard({ label: 'Collection Rate',  value: billed > 0 ? Math.round(collected / billed * 100) + '%' : '—', icon: 'check', color: 'gold', tooltip: money(outstanding) + ' still outstanding' })}
+    </div>
+
+    <!-- ② Revenue by Fee Component -->
+    <div class="card p-5 mb-4">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="font-bold text-slate-900">Revenue by Fee Component</h3>
+          <p class="text-sm text-slate-500">Tuition, uniform, books, PTA and activities — what each line earns</p>
+        </div>
+        <div class="text-right text-sm text-slate-500">Billed: <strong class="text-slate-900 font-mono">${money(billed)}</strong></div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[560px]">
+          <thead><tr class="border-b text-xs text-slate-500 uppercase">
+            <th class="text-left py-2">Component</th>
+            <th class="text-right py-2">Billed</th>
+            <th class="text-right py-2">Collected</th>
+            <th class="text-right py-2">Outstanding</th>
+            <th class="text-right py-2 pr-2">% Share</th>
+            <th class="py-2 min-w-[100px]">Collection rate</th>
+          </tr></thead>
+          <tbody>
+            ${components.map(([name, d]) => {
+              const share  = billed > 0   ? Math.round(d.billed    / billed    * 100) : 0;
+              const cRate  = d.billed > 0 ? Math.round(d.collected / d.billed  * 100) : 0;
+              const owed   = d.billed - d.collected;
+              const rColor = cRate >= 80 ? 'emerald' : cRate >= 50 ? 'amber' : 'rose';
+              return `<tr class="border-b hover:bg-slate-50">
+                <td class="py-2.5 font-medium">${name}</td>
+                <td class="py-2.5 text-right font-mono">${money(d.billed)}</td>
+                <td class="py-2.5 text-right font-mono text-emerald-700">${money(d.collected)}</td>
+                <td class="py-2.5 text-right font-mono ${owed > 0 ? 'text-rose-700 font-semibold' : 'text-slate-300'}">${owed > 0 ? money(owed) : '—'}</td>
+                <td class="py-2.5 text-right text-slate-500 pr-2">${share}%</td>
+                <td class="py-2.5">
+                  <div class="flex items-center gap-1.5">${bar(cRate, rColor)}<span class="text-xs w-8 text-right font-mono">${cRate}%</span></div>
+                </td>
+              </tr>`;
+            }).join('')}
+            <tr class="bg-slate-50 font-bold text-sm">
+              <td class="py-2.5">TOTAL</td>
+              <td class="py-2.5 text-right font-mono">${money(billed)}</td>
+              <td class="py-2.5 text-right font-mono text-emerald-700">${money(collected)}</td>
+              <td class="py-2.5 text-right font-mono text-rose-700">${money(outstanding)}</td>
+              <td class="py-2.5 text-right pr-2">100%</td>
+              <td class="py-2.5">
+                <div class="flex items-center gap-1.5">${bar(billed > 0 ? Math.round(collected/billed*100) : 0, 'brand')}<span class="text-xs w-8 text-right font-mono">${billed > 0 ? Math.round(collected/billed*100) : 0}%</span></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ③ Revenue by Class -->
+    <div class="card p-5 mb-4">
+      <h3 class="font-bold text-slate-900 mb-1">Revenue by Class</h3>
+      <p class="text-sm text-slate-500 mb-4">Which classes generate the most income — and average fee per seat</p>
+      <table class="w-full text-sm">
+        <thead><tr class="border-b text-xs text-slate-500 uppercase">
+          <th class="text-left py-2">Class</th><th class="text-right py-2">Students</th><th class="text-right py-2">Billed</th><th class="text-right py-2">Collected</th><th class="text-right py-2">Outstanding</th><th class="text-right py-2">Avg/Seat</th>
+        </tr></thead>
+        <tbody>
+          ${clsByRev.map(([cId, d]) => {
+            const cls  = classes.find(c => c.id === cId);
+            const owed = d.billed - d.paid;
+            const avg  = d.count > 0 ? Math.round(d.billed / d.count) : 0;
+            return `<tr class="border-b hover:bg-slate-50">
+              <td class="py-2.5 font-medium">${cls ? cls.name : cId}</td>
+              <td class="py-2.5 text-right text-slate-500">${d.count}</td>
+              <td class="py-2.5 text-right font-mono">${money(d.billed)}</td>
+              <td class="py-2.5 text-right font-mono text-emerald-700">${money(d.paid)}</td>
+              <td class="py-2.5 text-right font-mono ${owed > 0 ? 'text-rose-700 font-semibold' : 'text-slate-300'}">${owed > 0 ? money(owed) : '—'}</td>
+              <td class="py-2.5 text-right font-mono font-semibold text-brand-700">${money(avg)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ④ AR Aging -->
+    <div class="card p-5 mb-4">
+      <h3 class="font-bold text-slate-900 mb-1">Accounts Receivable Aging</h3>
+      <p class="text-sm text-slate-500 mb-4">How long outstanding balances have been unpaid — contact families in the red buckets first</p>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-5">
+        ${ageBuckets.map(b => {
+          const total = b.list.reduce((s, i) => s + i.balance, 0);
+          const tones = { slate: 'bg-slate-50 text-slate-700 border-slate-200', amber: 'bg-amber-50 text-amber-900 border-amber-200', orange: 'bg-orange-50 text-orange-900 border-orange-200', red: 'bg-red-50 text-red-900 border-red-200', rose: 'bg-rose-100 text-rose-900 border-rose-300' };
+          return `<div class="${tones[b.color]} border rounded-xl p-3 text-center">
+            <div class="text-xs font-bold uppercase mb-1">${b.label}</div>
+            <div class="text-base font-bold font-mono">${money(total)}</div>
+            <div class="text-xs opacity-70 mt-0.5">${b.list.length} invoice${b.list.length !== 1 ? 's' : ''}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${ageBuckets.filter(b => b.color !== 'slate' && b.list.length > 0).reverse().map(b => {
+        const tones = { amber: 'text-amber-700 bg-amber-50', orange: 'text-orange-700 bg-orange-50', red: 'text-red-700 bg-red-50', rose: 'text-rose-800 bg-rose-50' };
+        return `<div class="mb-3">
+          <div class="text-xs font-bold ${b.color === 'amber' ? 'text-amber-700' : b.color === 'orange' ? 'text-orange-700' : b.color === 'red' ? 'text-red-700' : 'text-rose-700'} uppercase mb-1.5">${b.label} Overdue · ${money(b.list.reduce((s, i) => s + i.balance, 0))}</div>
+          <div class="space-y-1">
+            ${b.list.sort((a, c) => c.balance - a.balance).map(inv => {
+              const stu = DB.find('students', inv.studentId);
+              const cls = stu ? classes.find(c => c.id === stu.classId) : null;
+              return `<div class="flex items-center justify-between text-sm px-3 py-1.5 rounded-lg ${tones[b.color] || ''}">
+                <div><span class="font-medium">${stu ? stu.name : '—'}</span><span class="text-xs opacity-60 ml-2">${cls ? cls.name : ''}</span></div>
+                <span class="font-mono font-bold">${money(inv.balance)}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- ⑤ Expense Breakdown + Payroll Detail -->
+    <div class="grid lg:grid-cols-2 gap-4 mb-4">
+      <div class="card p-5">
+        <h3 class="font-bold text-slate-900 mb-1">Full Expense Breakdown</h3>
+        <p class="text-sm text-slate-500 mb-4">Every cost category — salaries, electricity, diesel, maintenance and more</p>
+        <table class="w-full text-sm">
+          <thead><tr class="border-b text-xs text-slate-500 uppercase">
+            <th class="text-left py-2">Category</th><th class="text-right py-2">Amount</th><th class="text-right py-2">% of Costs</th>
+          </tr></thead>
+          <tbody>
+            ${expCats.map(([cat, amt]) => {
+              const pct = expTotal > 0 ? Math.round(amt / expTotal * 100) : 0;
+              return `<tr class="border-b hover:bg-slate-50">
+                <td class="py-2.5 font-medium">${cat}</td>
+                <td class="py-2.5 text-right font-mono">${money(amt)}</td>
+                <td class="py-2.5 pl-3">
+                  <div class="flex items-center gap-1.5 justify-end">${bar(pct, 'rose')}<span class="text-xs w-8 text-right font-mono">${pct}%</span></div>
+                </td>
+              </tr>`;
+            }).join('')}
+            <tr class="bg-rose-50 font-bold">
+              <td class="py-2.5">Total</td>
+              <td class="py-2.5 text-right font-mono text-rose-700">${money(expTotal)}</td>
+              <td class="py-2.5 text-right text-xs text-slate-500">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card p-5">
+        <h3 class="font-bold text-slate-900 mb-1">Payroll Detail</h3>
+        <p class="text-sm text-slate-500 mb-4">Latest paid payroll run — gross, deductions and cost-per-student</p>
+        ${lastPayroll ? `
+          <table class="w-full text-sm">
+            <tbody>
+              <tr class="border-b"><td class="py-2 text-slate-500">Period</td><td class="text-right font-semibold">${lastPayroll.period}</td></tr>
+              <tr class="border-b"><td class="py-2 text-slate-500">Staff count</td><td class="text-right font-semibold">${lastPayroll.staffCount}</td></tr>
+              <tr class="border-b"><td class="py-2 text-slate-500">Gross Pay</td><td class="text-right font-mono font-bold">${money(lastPayroll.grossTotal)}</td></tr>
+              <tr class="border-b"><td class="py-2 pl-5 text-slate-400 text-xs">− PAYE withheld</td><td class="text-right font-mono text-xs text-slate-400">−${money(lastPayroll.payeTotal)}</td></tr>
+              <tr class="border-b"><td class="py-2 pl-5 text-slate-400 text-xs">− Employee pension</td><td class="text-right font-mono text-xs text-slate-400">−${money(lastPayroll.pensionTotal)}</td></tr>
+              <tr class="border-b bg-slate-50 font-bold"><td class="py-2.5">Net Pay (take-home)</td><td class="text-right font-mono">${money(lastPayroll.netTotal)}</td></tr>
+              <tr class="border-b"><td class="py-2 text-slate-500">Employer pension (8%)</td><td class="text-right font-mono text-slate-600">${money(Math.round(lastPayroll.grossTotal * 0.08))}</td></tr>
+              <tr class="bg-amber-50 font-bold"><td class="py-2.5">Total payroll cost</td><td class="text-right font-mono text-amber-900">${money(Math.round(lastPayroll.grossTotal * 1.08))}</td></tr>
+              <tr><td class="py-2 text-slate-500 text-xs">Per student</td><td class="text-right font-mono text-xs font-semibold text-rose-700">${money(Math.round(lastPayroll.grossTotal / n))}/student</td></tr>
+            </tbody>
+          </table>
+          <div class="mt-3 flex gap-3 text-xs text-slate-500">
+            <span>${lastPayroll.taxRemitted ? icon('check','w-3 h-3 inline text-emerald-500') : icon('bell','w-3 h-3 inline text-amber-500')} PAYE ${lastPayroll.taxRemitted ? 'remitted' : 'pending'}</span>
+            <span>${lastPayroll.pensionRemitted ? icon('check','w-3 h-3 inline text-emerald-500') : icon('bell','w-3 h-3 inline text-amber-500')} Pension ${lastPayroll.pensionRemitted ? 'remitted' : 'pending'}</span>
+          </div>
+        ` : emptyState({ title: 'No paid payroll run yet', body: 'Run and approve a payroll first.', icon: 'reports' })}
+      </div>
+    </div>
+
+    <!-- ⑥ Per-Student Revenue Table -->
+    <div class="card p-5">
+      <h3 class="font-bold text-slate-900 mb-1">Per-Student Revenue · ${term}</h3>
+      <p class="text-sm text-slate-500 mb-4">Every student's billed amount, what's been paid, and what's still owed</p>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[580px]">
+          <thead><tr class="border-b text-xs text-slate-500 uppercase">
+            <th class="text-left py-2">Student</th>
+            <th class="text-left py-2">Class</th>
+            <th class="text-right py-2">Billed</th>
+            <th class="text-right py-2">Paid</th>
+            <th class="text-right py-2">Outstanding</th>
+            <th class="text-right py-2">Status</th>
+          </tr></thead>
+          <tbody>
+            ${invoices.slice().sort((a, b) => b.balance - a.balance).map(inv => {
+              const stu = DB.find('students', inv.studentId);
+              const cls = stu ? classes.find(c => c.id === stu.classId) : null;
+              return `<tr class="border-b hover:bg-slate-50">
+                <td class="py-2 font-medium">${stu ? stu.name : '—'}</td>
+                <td class="py-2 text-slate-500 text-xs">${cls ? cls.name : '—'}</td>
+                <td class="py-2 text-right font-mono">${money(inv.total)}</td>
+                <td class="py-2 text-right font-mono text-emerald-700">${money(inv.paid)}</td>
+                <td class="py-2 text-right font-mono font-semibold ${inv.balance > 0 ? 'text-rose-700' : 'text-slate-300'}">${inv.balance > 0 ? money(inv.balance) : '—'}</td>
+                <td class="py-2 text-right">${statusBadge(inv.status)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }
 
 function renderProfitLoss() {

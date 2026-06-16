@@ -371,11 +371,24 @@ function seedDatabase() {
 
   // Expense ledger
   const expenses = [
-    { id: uid('exp'), schoolId, category: 'Salaries', amount: 1100000, description: 'November teacher salaries', date: daysAgo(15), recordedBy: 'sch_brightlights' },
-    { id: uid('exp'), schoolId, category: 'Utilities', amount: 85000, description: 'Diesel for generator', date: daysAgo(10), recordedBy: 'sch_brightlights' },
-    { id: uid('exp'), schoolId, category: 'Maintenance', amount: 120000, description: 'Classroom paint and repairs', date: daysAgo(20), recordedBy: 'sch_brightlights' },
-    { id: uid('exp'), schoolId, category: 'Supplies', amount: 65000, description: 'Stationery and consumables', date: daysAgo(7), recordedBy: 'sch_brightlights' },
-    { id: uid('exp'), schoolId, category: 'Internet', amount: 35000, description: 'Monthly internet subscription', date: daysAgo(5), recordedBy: 'sch_brightlights' }
+    { id: uid('exp'), schoolId, category: 'Salaries',     amount: 3900000, description: 'October staff salaries — 14 staff (academic + non-academic)',   date: daysAgo(46), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Salaries',     amount: 3900000, description: 'November staff salaries — 14 staff (academic + non-academic)',  date: daysAgo(15), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Electricity',  amount: 55000,   description: 'EKEDC prepaid token — October',                                 date: daysAgo(44), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Electricity',  amount: 55000,   description: 'EKEDC prepaid token — November',                                date: daysAgo(12), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Diesel',       amount: 85000,   description: 'Generator diesel — 200L (daysAgo Oct)',                         date: daysAgo(42), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Diesel',       amount: 90000,   description: 'Generator diesel — 200L (Nov, price up ₦5/L)',                  date: daysAgo(10), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Maintenance',  amount: 120000,  description: 'Classroom 4 & 5 repaint + broken desks fixed (15 units)',       date: daysAgo(20), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Maintenance',  amount: 45000,   description: 'Roof gutter repairs — Block B',                                 date: daysAgo(35), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Supplies',     amount: 65000,   description: 'Exercise books, biro, chalk, marker — restocking',              date: daysAgo(7),  recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Supplies',     amount: 48000,   description: 'Photocopier paper, ink cartridges (2 boxes)',                   date: daysAgo(28), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Internet',     amount: 35000,   description: 'Spectranet 50Mbps — October',                                   date: daysAgo(45), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Internet',     amount: 35000,   description: 'Spectranet 50Mbps — November',                                  date: daysAgo(13), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Security',     amount: 80000,   description: 'Security company retainer — 2 guards × ₦40,000 (October)',     date: daysAgo(44), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Security',     amount: 80000,   description: 'Security company retainer — 2 guards × ₦40,000 (November)',    date: daysAgo(14), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Cleaning',     amount: 30000,   description: 'Cleaning supplies — disinfectant, brooms, mops (monthly)',      date: daysAgo(16), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Transport',    amount: 42000,   description: 'School bus fuel + servicing — October–November',                date: daysAgo(22), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Bank Charges', amount: 12500,   description: 'Gateway settlement fees + transfer charges (October)',           date: daysAgo(30), recordedBy: 'sch_brightlights' },
+    { id: uid('exp'), schoolId, category: 'Bank Charges', amount: 9800,    description: 'Gateway settlement fees + transfer charges (November)',          date: daysAgo(6),  recordedBy: 'sch_brightlights' }
   ];
 
   // Audit log
