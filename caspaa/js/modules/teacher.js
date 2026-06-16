@@ -2,6 +2,31 @@
    TEACHER MODULE
    ============================================================ */
 
+/* Returns the assessment type columns for the current term from exam structure settings.
+   Maps: first N-1 types → ca1/ca2/ca3/ca4, last type → exam (always the final exam). */
+function getTermAssessmentTypes() {
+  const s = DB.settings();
+  const term = (s.currentTerm || '').toLowerCase();
+  const es = s.examStructure;
+  const fallback = [{ label: 'CA 1', weight: 20 }, { label: 'CA 2', weight: 20 }, { label: 'Exam', weight: 60 }];
+  if (!es || !es.terms || !es.terms.length) return fallback;
+  const match = es.terms.find(t => {
+    const tn = t.name.toLowerCase();
+    if (term.includes('1st') || term.includes('first'))  return tn.includes('first')  || tn.includes('1st');
+    if (term.includes('2nd') || term.includes('second')) return tn.includes('second') || tn.includes('2nd');
+    if (term.includes('3rd') || term.includes('third'))  return tn.includes('third')  || tn.includes('3rd');
+    return false;
+  });
+  const types = (match || es.terms[0]).types;
+  return types && types.length ? types : fallback;
+}
+
+/* Maps position index → storage field name (last type always = 'exam'). */
+function termTypeKey(types, idx) {
+  if (idx === types.length - 1) return 'exam';
+  return ['ca1', 'ca2', 'ca3', 'ca4'][idx] || `ca${idx + 1}`;
+}
+
 /* ---------- Self clock-in / clock-out ---------- */
 function todaysClockRecord(staffId) {
   return DB.query('staffAttendance', a => a.staffId === staffId && a.date === today())[0];
@@ -572,10 +597,13 @@ function view_tch_results() {
   const students = COMPUTE.studentsByClass(classId);
   const results = DB.query('results', r => r.classId === classId && r.subjectId === subjectId);
 
+  const types = getTermAssessmentTypes();
+  const typeSubtitle = types.map(t => `${t.label} /${t.weight}`).join(' · ');
+
   return `
     ${pageHeader({
       title: 'Enter Results',
-      subtitle: `Enter CA1 (max 20), CA2 (max 20) and Exam (max 60) scores`
+      subtitle: typeSubtitle
     })}
     <div class="card p-4 mb-4 grid sm:grid-cols-2 gap-3">
       <div><label class="input-label">Class</label>
@@ -593,7 +621,8 @@ function view_tch_results() {
     <div class="card overflow-hidden">
       <table class="tbl">
         <thead><tr>
-          <th>Student</th><th class="text-center">CA1 /20</th><th class="text-center">CA2 /20</th><th class="text-center">Exam /60</th>
+          <th>Student</th>
+          ${types.map(t => `<th class="text-center">${t.label} <span class="text-slate-400 font-normal">/${t.weight}</span></th>`).join('')}
           <th class="text-center">Total</th><th class="text-center">Grade</th><th>Comment</th>
         </tr></thead>
         <tbody>
@@ -601,9 +630,11 @@ function view_tch_results() {
             const r = results.find(x => x.studentId === s.id);
             return `<tr>
               <td><div class="flex items-center gap-2">${avatar(s.name, 'sm')}<span>${s.name}</span></div></td>
-              <td><input type="number" max="20" min="0" class="input !w-16 text-center" id="res_ca1_${s.id}" value="${r ? r.ca1 : ''}" oninput="recalcResult('${s.id}')" /></td>
-              <td><input type="number" max="20" min="0" class="input !w-16 text-center" id="res_ca2_${s.id}" value="${r ? r.ca2 : ''}" oninput="recalcResult('${s.id}')" /></td>
-              <td><input type="number" max="60" min="0" class="input !w-16 text-center" id="res_exam_${s.id}" value="${r ? r.exam : ''}" oninput="recalcResult('${s.id}')" /></td>
+              ${types.map((t, i) => {
+                const key = termTypeKey(types, i);
+                const val = r ? (r[key] || '') : '';
+                return `<td><input type="number" max="${t.weight}" min="0" class="input !w-16 text-center" id="res_f${i}_${s.id}" value="${val}" oninput="recalcResult('${s.id}')" /></td>`;
+              }).join('')}
               <td class="text-center font-bold text-lg" id="res_total_${s.id}">${r ? r.total : '—'}</td>
               <td class="text-center" id="res_grade_${s.id}">${r ? `<span class="badge ${r.grade==='A'?'badge-success':r.grade==='F'?'badge-danger':'badge-info'}">${r.grade}</span>` : '—'}</td>
               <td>
@@ -625,13 +656,16 @@ function view_tch_results() {
 }
 
 function recalcResult(studentId) {
-  const ca1 = parseInt(document.getElementById(`res_ca1_${studentId}`).value) || 0;
-  const ca2 = parseInt(document.getElementById(`res_ca2_${studentId}`).value) || 0;
-  const exam = parseInt(document.getElementById(`res_exam_${studentId}`).value) || 0;
-  if (ca1 > 20) document.getElementById(`res_ca1_${studentId}`).value = 20;
-  if (ca2 > 20) document.getElementById(`res_ca2_${studentId}`).value = 20;
-  if (exam > 60) document.getElementById(`res_exam_${studentId}`).value = 60;
-  const total = ca1 + ca2 + exam;
+  const types = getTermAssessmentTypes();
+  let total = 0;
+  types.forEach((t, i) => {
+    const el = document.getElementById(`res_f${i}_${studentId}`);
+    if (!el) return;
+    let v = parseInt(el.value) || 0;
+    if (v > t.weight) { el.value = t.weight; v = t.weight; }
+    if (v < 0)        { el.value = 0; v = 0; }
+    total += v;
+  });
   document.getElementById(`res_total_${studentId}`).textContent = total;
   const { grade } = COMPUTE.gradeFromScore(total);
   const cls = grade==='A'?'badge-success':grade==='F'?'badge-danger':'badge-info';
@@ -639,25 +673,34 @@ function recalcResult(studentId) {
 }
 
 function saveResults(classId, subjectId) {
+  const types = getTermAssessmentTypes();
   const students = COMPUTE.studentsByClass(classId);
   const sub = DB.find('subjects', subjectId);
   let count = 0;
   students.forEach(s => {
-    const ca1 = parseInt(document.getElementById(`res_ca1_${s.id}`).value) || 0;
-    const ca2 = parseInt(document.getElementById(`res_ca2_${s.id}`).value) || 0;
-    const exam = parseInt(document.getElementById(`res_exam_${s.id}`).value) || 0;
+    const scores = {};
+    let total = 0;
+    let allZero = true;
+    types.forEach((t, i) => {
+      const key = termTypeKey(types, i);
+      const v = parseInt((document.getElementById(`res_f${i}_${s.id}`) || {}).value) || 0;
+      scores[key] = v;
+      total += v;
+      if (v !== 0) allZero = false;
+    });
+    if (allZero) return;
     const comment = document.getElementById(`res_cmt_${s.id}`).value.trim();
-    if (ca1 === 0 && ca2 === 0 && exam === 0) return;
-    const total = ca1 + ca2 + exam;
     const { grade } = COMPUTE.gradeFromScore(total);
     const existing = DB.query('results', r => r.studentId === s.id && r.subjectId === subjectId && r.classId === classId)[0];
-    if (existing) DB.update('results', existing.id, { ca1, ca2, exam, total, grade, comment, approved: false });
-    else DB.insert('results', { id: uid('res'), schoolId: AUTH.current.schoolId || 'sch_brightlights', studentId: s.id, classId, subjectId, term: DB.settings().currentTerm, ca1, ca2, exam, total, grade, comment, approved: false });
+    const record = Object.assign({ total, grade, comment, approved: false }, scores);
+    if (existing) DB.update('results', existing.id, record);
+    else DB.insert('results', Object.assign({ id: uid('res'), schoolId: AUTH.current.schoolId || 'sch_brightlights', studentId: s.id, classId, subjectId, term: DB.settings().currentTerm }, record));
     if (s.parentId) {
+      const scoreStr = types.map((t, i) => `${t.label}: ${scores[termTypeKey(types, i)]}`).join(' · ');
       DB.insert('notifications', {
         id: uid('not'), userId: s.parentId,
         title: `Score update — ${s.name.split(' ')[0]}`,
-        body: `${s.name.split(' ')[0]}'s ${sub ? sub.name : 'subject'} scores have been recorded: CA1 ${ca1} · CA2 ${ca2} · Exam ${exam} | Total ${total}/100 · Grade: ${grade}`,
+        body: `${s.name.split(' ')[0]}'s ${sub ? sub.name : 'subject'} scores: ${scoreStr} | Total ${total}/100 · Grade: ${grade}`,
         type: 'result', read: false, timestamp: now(),
         link: { view: 'par_results' }
       });
@@ -1395,28 +1438,35 @@ function tch_pushToResultsModal(assignmentId) {
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
           Sync ${gradedSubs.length} graded submission${gradedSubs.length > 1 ? 's' : ''} into academic records as CA scores (scaled to 20 marks). Existing scores for the chosen slot will be overwritten.
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">CA Slot</label>
-            <select id="pr_slot" class="input">
-              <option value="ca1">CA 1 (max 20 marks)</option>
-              <option value="ca2">CA 2 (max 20 marks)</option>
-            </select>
+        ${(() => {
+          const types = getTermAssessmentTypes();
+          const caSlots = types.slice(0, -1);
+          return `<div class="grid grid-cols-2 gap-3">
+            <div><label class="input-label">Assessment Slot</label>
+              <select id="pr_slot" class="input" onchange="document.getElementById('pr_scaled_info').textContent=this.options[this.selectedIndex].dataset.max">
+                ${caSlots.map((t, i) => {
+                  const key = termTypeKey(types, i);
+                  return `<option value="${key}" data-max="${t.weight}">${t.label} (max ${t.weight} marks)</option>`;
+                }).join('')}
+              </select>
+            </div>
+            <div><label class="input-label">Term</label>
+              <input id="pr_term" class="input" value="${DB.settings().currentTerm || ''}"></div>
           </div>
-          <div><label class="input-label">Term</label>
-            <input id="pr_term" class="input" value="${DB.settings().currentTerm || ''}"></div>
-        </div>
-        <div class="card overflow-hidden">
-          <table class="tbl text-sm">
-            <thead><tr><th>Student</th><th>Score</th><th>→ CA (scaled)</th></tr></thead>
-            <tbody>
-              ${gradedSubs.map(sub => {
-                const st = DB.find('students', sub.studentId);
-                const caScore = Math.round(sub.grade * 20 / 100);
-                return `<tr><td>${st ? st.name : '—'}</td><td class="font-mono">${sub.grade}/100</td><td class="font-semibold text-brand-700">${caScore}/20</td></tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
+          <div class="card overflow-hidden">
+            <table class="tbl text-sm">
+              <thead><tr><th>Student</th><th>Score</th><th>→ Scaled (<span id="pr_scaled_info">${caSlots[0] ? caSlots[0].weight : 20}</span> marks)</th></tr></thead>
+              <tbody>
+                ${gradedSubs.map(sub => {
+                  const st = DB.find('students', sub.studentId);
+                  const max = caSlots[0] ? caSlots[0].weight : 20;
+                  const caScore = Math.round(sub.grade * max / 100);
+                  return `<tr><td>${st ? st.name : '—'}</td><td class="font-mono">${sub.grade}/100</td><td class="font-semibold text-brand-700">${caScore}/${max}</td></tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>`;
+        })()}
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -1426,27 +1476,24 @@ function tch_pushToResultsModal(assignmentId) {
 
 function tch_confirmPushToResults(assignmentId) {
   const a = DB.find('assignments', assignmentId);
-  const slot = document.getElementById('pr_slot').value;
+  const slotEl = document.getElementById('pr_slot');
+  const slot = slotEl.value;
+  const slotMax = parseInt(slotEl.options[slotEl.selectedIndex].dataset.max) || 20;
   const term = document.getElementById('pr_term').value.trim();
   const gradedSubs = a.submissions.filter(s => s.grade != null);
   let synced = 0;
   gradedSubs.forEach(sub => {
-    const caScore = Math.round(sub.grade * 20 / 100);
+    const caScore = Math.round(sub.grade * slotMax / 100);
     const existing = DB.query('results', r => r.studentId === sub.studentId && r.subjectId === a.subjectId && r.classId === a.classId && r.term === term)[0];
     if (existing) {
-      const ca1 = slot === 'ca1' ? caScore : (existing.ca1 || 0);
-      const ca2 = slot === 'ca2' ? caScore : (existing.ca2 || 0);
-      const exam = existing.exam || 0;
-      const total = ca1 + ca2 + exam;
-      const grade = total >= 70 ? 'A' : total >= 60 ? 'B' : total >= 50 ? 'C' : total >= 45 ? 'D' : 'F';
-      const patch = { [slot]: caScore, total, grade };
-      DB.update('results', existing.id, patch);
+      const patch = { [slot]: caScore };
+      const keys = ['ca1','ca2','ca3','ca4','exam'];
+      const total = keys.reduce((s, k) => s + (k === slot ? caScore : (existing[k] || 0)), 0);
+      const { grade } = COMPUTE.gradeFromScore(total);
+      DB.update('results', existing.id, Object.assign(patch, { total, grade }));
     } else {
-      const ca1 = slot === 'ca1' ? caScore : 0;
-      const ca2 = slot === 'ca2' ? caScore : 0;
-      const total = ca1 + ca2;
-      const grade = total >= 70 ? 'A' : total >= 60 ? 'B' : total >= 50 ? 'C' : total >= 45 ? 'D' : 'F';
-      DB.insert('results', { id: uid('res'), schoolId: AUTH.current.schoolId || 'sch_brightlights', studentId: sub.studentId, classId: a.classId, subjectId: a.subjectId, term, ca1, ca2, exam: 0, total, grade, comment: '', approved: false });
+      const rec = { id: uid('res'), schoolId: AUTH.current.schoolId || 'sch_brightlights', studentId: sub.studentId, classId: a.classId, subjectId: a.subjectId, term, [slot]: caScore, exam: 0, total: caScore, grade: COMPUTE.gradeFromScore(caScore).grade, comment: '', approved: false };
+      DB.insert('results', rec);
     }
     synced++;
   });

@@ -5149,26 +5149,138 @@ function exportSchoolAttendanceCSV(dateFrom, dateTo) {
 
 /* ---------- Results overview ---------- */
 function view_adm_results() {
+  const resView = APP.params.resView || 'overview';
   const classes = DB.get('classes');
   const classId = APP.params.classId || (classes.length ? classes[0].id : '');
+  const allClassResults = DB.query('results', r => r.classId === classId);
+  const pending = allClassResults.filter(r => !r.approved);
+
+  return `
+    ${pageHeader({
+      title: 'Results',
+      subtitle: 'School overview, broadsheet, approvals, and reports',
+      actions: resView === 'broadsheet' ? `
+        <button class="btn btn-secondary" onclick="exportBroadsheet('${classId}')">${icon('download','w-4 h-4')} Export PDF</button>
+        ${pending.length ? `<button class="btn btn-primary" onclick="approveAllResults('${classId}')">${icon('check','w-4 h-4')} Approve ${pending.length}</button>` : ''}
+      ` : ''
+    })}
+    ${tabs([
+      { key: 'overview',   label: 'School Overview' },
+      { key: 'broadsheet', label: 'Class Broadsheet' }
+    ], resView, k => { APP.params.resView = k; APP.render(); })}
+    <div class="pt-4">
+      ${resView === 'broadsheet' ? _renderResultsBroadsheet(classes, classId) : _renderSchoolResultsOverview()}
+    </div>
+  `;
+}
+
+function _renderSchoolResultsOverview() {
+  const sid = currentSchoolId();
+  const term = DB.settings().currentTerm;
+  const classes = DB.get('classes');
+  const subjects = DB.get('subjects');
+  const allRes = DB.query('results', r => r.schoolId === sid && r.approved);
+  const termRes = allRes.filter(r => r.term === term);
+
+  const totalStudents = new Set(termRes.map(r => r.studentId)).size;
+  const schoolAvg = termRes.length ? Math.round(termRes.reduce((s, r) => s + (r.total || 0), 0) / termRes.length) : 0;
+  const passMin = (DB.settings().gradeScale || []).slice().reverse().find(g => g.remark && g.remark.toLowerCase() !== 'fail') || { min: 40 };
+  const passRate = termRes.length ? Math.round(termRes.filter(r => (r.total || 0) >= passMin.min).length / termRes.length * 100) : 0;
+  const classesReported = new Set(termRes.map(r => r.classId)).size;
+
+  // Per-class data
+  const classRows = classes.map(cls => {
+    const clsRes = termRes.filter(r => r.classId === cls.id);
+    if (!clsRes.length) return null;
+    const studs = new Set(clsRes.map(r => r.studentId)).size;
+    const avg = Math.round(clsRes.reduce((s, r) => s + (r.total || 0), 0) / clsRes.length);
+    const pass = Math.round(clsRes.filter(r => (r.total || 0) >= passMin.min).length / clsRes.length * 100);
+    const subAvgs = subjects.map(sub => {
+      const subs = clsRes.filter(r => r.subjectId === sub.id);
+      return subs.length ? { name: sub.name, avg: Math.round(subs.reduce((s,r) => s+(r.total||0), 0) / subs.length) } : null;
+    }).filter(Boolean).sort((a,b) => b.avg - a.avg);
+    return { cls, studs, avg, pass, best: subAvgs[0] || null, weak: subAvgs[subAvgs.length-1] || null };
+  }).filter(Boolean).sort((a,b) => b.avg - a.avg);
+
+  // Per-subject data (school-wide)
+  const subjectRows = subjects.map(sub => {
+    const subs = termRes.filter(r => r.subjectId === sub.id);
+    if (!subs.length) return null;
+    const avg = Math.round(subs.reduce((s,r) => s+(r.total||0), 0) / subs.length);
+    const pass = Math.round(subs.filter(r => (r.total||0) >= passMin.min).length / subs.length * 100);
+    return { sub, avg, pass, count: subs.length };
+  }).filter(Boolean).sort((a,b) => b.avg - a.avg);
+
+  const _pBadge = rate => `<span class="badge ${rate>=80?'badge-success':rate>=60?'badge-warn':'badge-danger'}">${rate}%</span>`;
+  const _avgColor = avg => avg>=70?'text-emerald-700':avg>=50?'text-amber-700':'text-rose-700';
+
+  return `
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      ${statCard({ label: 'Students with Results', value: totalStudents, icon: 'students', color: 'brand' })}
+      ${statCard({ label: 'School Average', value: schoolAvg + '%', icon: 'results', color: schoolAvg >= 60 ? 'brand' : 'gold', trend: { direction: schoolAvg>=60?'up':'down', label: term } })}
+      ${statCard({ label: 'Pass Rate', value: passRate + '%', icon: 'check', color: passRate >= 70 ? 'brand' : 'rose' })}
+      ${statCard({ label: 'Classes Reported', value: classesReported + '/' + classes.length, icon: 'class', color: 'brand' })}
+    </div>
+
+    ${classRows.length === 0 ? emptyState({ icon: 'results', title: 'No approved results yet', body: `Results for ${term} are pending teacher submission and admin approval.`, action: `<button class="btn btn-primary" onclick="APP.params.resView='broadsheet'; APP.render()">${icon('results','w-4 h-4')} Go to Broadsheet</button>` }) : `
+    <div class="card overflow-hidden mb-4">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900">Class Performance — ${term}</h3>
+        <span class="text-xs text-slate-400">${classRows.length} class${classRows.length!==1?'es':''} with data</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="tbl">
+          <thead><tr><th>Rank</th><th>Class</th><th class="text-center">Students</th><th class="text-center">Average</th><th class="text-center">Pass Rate</th><th>Best Subject</th><th>Needs Attention</th><th></th></tr></thead>
+          <tbody>
+            ${classRows.map((d, i) => `<tr>
+              <td class="text-center font-bold text-slate-400 w-10">${i+1}</td>
+              <td class="font-semibold">${d.cls.name}</td>
+              <td class="text-center">${d.studs}</td>
+              <td class="text-center"><span class="font-bold text-lg ${_avgColor(d.avg)}">${d.avg}%</span></td>
+              <td class="text-center">${_pBadge(d.pass)}</td>
+              <td>${d.best ? `<span class="font-medium text-emerald-700">${d.best.name}</span> <span class="text-xs text-slate-400">(${d.best.avg}%)</span>` : '<span class="text-slate-400">—</span>'}</td>
+              <td>${d.weak && d.weak.avg < 50 ? `<span class="font-medium text-rose-600">${d.weak.name}</span> <span class="text-xs text-slate-400">(${d.weak.avg}%)</span>` : '<span class="text-slate-400">—</span>'}</td>
+              <td><button class="btn btn-ghost !py-1 text-xs" onclick="APP.params.resView='broadsheet'; APP.params.classId='${d.cls.id}'; APP.render()">${icon('arrow_left','w-3.5 h-3.5 rotate-180')} View</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="p-4 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900">Subject Performance — School-Wide</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="tbl">
+          <thead><tr><th>Subject</th><th class="text-center">Entries</th><th class="text-center">Average</th><th class="text-center">Pass Rate</th><th>Performance</th></tr></thead>
+          <tbody>
+            ${subjectRows.length === 0 ? `<tr><td colspan="5" class="text-center text-slate-400 py-8">No results yet</td></tr>` :
+              subjectRows.map(d => `<tr>
+                <td class="font-semibold">${d.sub.name}</td>
+                <td class="text-center text-slate-500">${d.count}</td>
+                <td class="text-center"><span class="font-bold ${_avgColor(d.avg)}">${d.avg}%</span></td>
+                <td class="text-center">${_pBadge(d.pass)}</td>
+                <td><div class="flex items-center gap-2"><div class="progress flex-1 max-w-28"><div class="progress-bar ${d.avg>=70?'bg-emerald-500':d.avg>=50?'bg-amber-500':'bg-rose-500'}" style="width:${d.avg}%"></div></div><span class="text-xs text-slate-400">${d.avg}%</span></div></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    `}
+  `;
+}
+
+function _renderResultsBroadsheet(classes, classId) {
   const subjects = DB.get('subjects');
   const students = COMPUTE.studentsByClass(classId);
   const resType = APP.params.resType || 'all';
   const allResults = DB.query('results', r => r.classId === classId);
   const results = resType === 'all' ? allResults : allResults.filter(r => (r.examType || 'examination').toLowerCase() === resType);
-  const pending = allResults.filter(r => !r.approved);
   const typeCounts = { extracurricular: 0, midterm: 0, examination: 0 };
   allResults.forEach(r => { const t = (r.examType || 'examination').toLowerCase(); if (typeCounts[t] !== undefined) typeCounts[t]++; });
 
   return `
-    ${pageHeader({
-      title: 'Results',
-      subtitle: 'Broadsheet view, approvals, and reports',
-      actions: `
-        <button class="btn btn-secondary" onclick="exportBroadsheet('${classId}')">${icon('download','w-4 h-4')} Export PDF</button>
-        ${pending.length ? `<button class="btn btn-primary" onclick="approveAllResults('${classId}')">${icon('check','w-4 h-4')} Approve ${pending.length}</button>` : ''}
-      `
-    })}
     <div class="card p-4 mb-4 grid sm:grid-cols-2 gap-3">
       <div>
         <label class="input-label">Class</label>
