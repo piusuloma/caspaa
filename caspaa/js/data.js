@@ -4,7 +4,7 @@
    - Seed data simulates a real Lagos school
    ============================================================ */
 
-const DB_KEY = 'caspaa_db_v3';
+const DB_KEY = 'caspaa_db_v4';
 const SESSION_KEY = 'caspaa_session_v1';
 
 /* ---------- Utility ---------- */

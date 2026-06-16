@@ -361,7 +361,7 @@ function viewChildDetail(studentId) {
   const cbtSubs     = DB.query('cbtSubmissions', x => x.studentId === s.id);
   const ftTests     = DB.query('formativeTests', t => t.classId === s.classId && t.status === 'active');
   const ftSubs      = DB.query('formativeSubmissions', x => x.studentId === s.id);
-  const pendingWork = assignments.filter(a => !a.submissions.some(x => x.studentId === s.id)).length
+  const pendingWork = assignments.filter(a => !(a.submissions || []).some(x => x.studentId === s.id)).length
                     + cbtExams.filter(e => !cbtSubs.some(x => x.examId === e.id)).length
                     + ftTests.filter(t => !ftSubs.some(x => x.testId === t.id)).length;
 
@@ -424,9 +424,11 @@ function viewChildDetail(studentId) {
                 ${assignments.length ? `<div class="space-y-2">
                   ${assignments.map(a => {
                     const subj = subjects.find(x => x.id === a.subjectId);
-                    const submitted = a.submissions.some(x => x.studentId === s.id);
-                    const graded = submitted && a.submissions.find(x => x.studentId === s.id).grade != null;
-                    const grade = graded ? a.submissions.find(x => x.studentId === s.id).grade : null;
+                    const subs = a.submissions || [];
+                    const submitted = subs.some(x => x.studentId === s.id);
+                    const sub0 = submitted ? subs.find(x => x.studentId === s.id) : null;
+                    const graded = submitted && sub0 && sub0.grade != null;
+                    const grade = graded ? sub0.grade : null;
                     return `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                       <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm truncate">${a.title}</div>
@@ -1734,7 +1736,7 @@ function view_par_results() {
     <!-- Summary row -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
       ${statCard({ label: 'Academic Avg', value: avg !== null ? avg + '%' : '—', icon: 'results', color: avg >= 70 ? 'brand' : avg >= 50 ? 'gold' : 'rose' })}
-      ${statCard({ label: 'Assignments', value: `${assignments.filter(a => a.submissions.some(x => x.studentId === child.id)).length}/${assignments.length}`, icon: 'book', color: 'blue', trend: { label: 'submitted' } })}
+      ${statCard({ label: 'Assignments', value: `${assignments.filter(a => (a.submissions || []).some(x => x.studentId === child.id)).length}/${assignments.length}`, icon: 'book', color: 'blue', trend: { label: 'submitted' } })}
       ${statCard({ label: 'CBT Exams', value: `${cbtSubs.length}/${cbtExams.length}`, icon: 'classes', color: 'brand', trend: { label: 'completed' } })}
       ${statCard({ label: 'Quick Tests', value: `${ftSubs.length}/${ftTests.length}`, icon: 'check', color: 'gold', trend: { label: 'done' } })}
     </div>

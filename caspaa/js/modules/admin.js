@@ -3135,15 +3135,28 @@ function studentLifecycleModal(studentId) {
             </div>
           </button>
 
+          ${s.status === 'suspended' ? `
+          <div class="bg-amber-50 border-2 border-amber-200 rounded-xl p-3 text-sm text-amber-900 mb-1">
+            ${icon('bell','w-4 h-4 inline mr-1')} Currently suspended${s.suspensionReason ? ` — <strong>${s.suspensionReason}</strong>` : ''}${s.suspensionResumeDate ? `. Expected return: ${fdate(s.suspensionResumeDate, { long: true })}` : ''}.
+          </div>
+          <button class="w-full p-3 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 rounded-xl text-left transition" onclick="reinstateStudentModal('${studentId}')">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-200 text-emerald-700 flex items-center justify-center">${icon('check','w-5 h-5')}</div>
+              <div class="flex-1">
+                <div class="font-bold text-emerald-900">Reinstate</div>
+                <div class="text-xs text-emerald-700">Lift suspension and restore active status</div>
+              </div>
+            </div>
+          </button>` : `
           <button class="w-full p-3 bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-xl text-left transition" onclick="suspendStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-amber-200 text-amber-700 flex items-center justify-center">${icon('bell','w-5 h-5')}</div>
               <div class="flex-1">
                 <div class="font-bold text-amber-900">Suspend</div>
-                <div class="text-xs text-amber-700">Temporarily restrict access (reversible)</div>
+                <div class="text-xs text-amber-700">Temporarily remove from school (reversible)</div>
               </div>
             </div>
-          </button>
+          </button>`}
 
           <button class="w-full p-3 bg-rose-50 hover:bg-rose-100 border-2 border-rose-200 rounded-xl text-left transition" onclick="withdrawStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
@@ -3259,32 +3272,71 @@ function executeBulkPromote(fromId, toId) {
 
 function promoteStudentModal(studentId) {
   const s = DB.find('students', studentId);
-  const classes = DB.get('classes');
-  const currentCls = classes.find(c => c.id === s.classId);
+  const levelOrder = { 'Nursery': 1, 'Primary': 2, 'Secondary': 3 };
+  const classes = DB.get('classes').sort((a, b) => {
+    const la = levelOrder[a.level] || 9, lb = levelOrder[b.level] || 9;
+    if (la !== lb) return la - lb;
+    return (parseInt(a.name.match(/\d+/)?.[0]) || 0) - (parseInt(b.name.match(/\d+/)?.[0]) || 0);
+  });
+  const currentIdx = classes.findIndex(c => c.id === s.classId);
+  const currentCls = classes[currentIdx];
+  const nextCls = currentIdx >= 0 && currentIdx < classes.length - 1 ? classes[currentIdx + 1] : null;
   document.getElementById('modalBackdrop').click();
   setTimeout(() => modal({
     title: 'Promote ' + s.name,
     body: `
-      <p class="text-sm text-slate-600 mb-3">Moving from <strong>${currentCls ? currentCls.name : '—'}</strong> to:</p>
-      <select id="promote_class" class="input">
-        ${classes.filter(c => c.id !== s.classId).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-      </select>
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900 mt-3">
-        Their academic history stays intact. Fee structure for the new class will apply from the next term.
+      <div class="space-y-3">
+        <div class="bg-slate-50 rounded-xl p-3 text-sm text-slate-700">
+          Currently in <strong>${currentCls ? currentCls.name : '—'}</strong>. Promotion takes effect at the start of the new session.
+        </div>
+        <div>
+          <label class="input-label">Promote to</label>
+          <select id="promote_class" class="input">
+            ${nextCls ? `<option value="${nextCls.id}">${nextCls.name} (recommended — next class)</option>` : ''}
+            ${classes.filter(c => c.id !== s.classId && (!nextCls || c.id !== nextCls.id)).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+            <option value="__repeat__">Repeat ${currentCls ? currentCls.name : 'same class'} — defer promotion</option>
+            <option value="__graduate__">Graduate to Alumni 🎓</option>
+          </select>
+        </div>
+        <div>
+          <label class="input-label">Reason / Note (optional)</label>
+          <input id="promote_reason" class="input" placeholder="e.g. End of 2024/25 session · satisfactory performance" />
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          Academic history is preserved. Fee structure for the new class applies from the next invoice cycle. Parent will be notified.
+        </div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
-             <button class="btn btn-primary" onclick="confirmPromotion('${studentId}')">Promote</button>`
+             <button class="btn btn-primary" onclick="confirmPromotion('${studentId}')">${icon('trending_up','w-4 h-4')} Confirm</button>`
   }), 50);
 }
 
 function confirmPromotion(studentId) {
   const newClassId = document.getElementById('promote_class').value;
+  const reason = (document.getElementById('promote_reason') || {}).value || '';
   const s = DB.find('students', studentId);
+  const currentClsName = (DB.find('classes', s.classId) || {}).name || '—';
+
+  if (newClassId === '__repeat__') {
+    DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'deferred_promotion', target: `${s.name} repeats ${currentClsName}${reason ? ' — ' + reason : ''}`, timestamp: now() });
+    document.getElementById('modalBackdrop').click();
+    APP.render();
+    toast(`${s.name} will repeat ${currentClsName}`, 'info');
+    return;
+  }
+
+  if (newClassId === '__graduate__') {
+    document.getElementById('modalBackdrop').click();
+    setTimeout(() => graduateStudentModal(studentId), 50);
+    return;
+  }
+
   const newCls = DB.find('classes', newClassId);
+  if (!newCls) return;
   DB.update('students', studentId, { classId: newClassId });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'promoted_student', target: `${s.name} → ${newCls.name}`, timestamp: now() });
-  DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Class Promotion', body: `${s.name} has been promoted to ${newCls.name}. Congratulations!`, type: 'success', read: false, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'promoted_student', target: `${s.name} → ${newCls.name}${reason ? ' (' + reason + ')' : ''}`, timestamp: now() });
+  if (s.parentId) DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Class Promotion', body: `${s.name} has been promoted to ${newCls.name}. Congratulations! This takes effect from the new session.`, type: 'success', read: false, timestamp: now() });
   document.getElementById('modalBackdrop').click();
   APP.render();
   toast(`${s.name} promoted to ${newCls.name}`, 'success');
@@ -3533,46 +3585,64 @@ function suspendStudentModal(studentId) {
     body: `
       <div class="space-y-3">
         <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
-          The student will be marked as Suspended. They remain in the system with history intact. Parents will be notified.
+          Suspension temporarily removes the student from school. Their records and history are fully preserved. The parent is notified immediately. You can reinstate at any time.
         </div>
         <div>
           <label class="input-label">Reason for Suspension</label>
           <select id="susp_reason" class="input">
-            <option>Disciplinary misconduct</option>
+            <option>Fighting / Physical Violence</option>
+            <option>Gross Insubordination</option>
+            <option>Bullying or Harassment</option>
+            <option>Damage to School Property</option>
+            <option>Academic Dishonesty / Exam Malpractice</option>
+            <option>Possession of Prohibited Item</option>
             <option>Non-payment of fees</option>
-            <option>Persistent absences</option>
-            <option>Parent request</option>
-            <option>Pending investigation</option>
+            <option>Persistent Unexplained Absences</option>
+            <option>Pending Disciplinary Investigation</option>
             <option>Other</option>
           </select>
         </div>
-        <div>
-          <label class="input-label">Duration (days)</label>
-          <input id="susp_days" type="number" class="input" min="1" max="90" value="3" placeholder="e.g. 3" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="input-label">Duration (school days)</label>
+            <input id="susp_days" type="number" class="input" min="1" max="90" value="3" />
+          </div>
+          <div>
+            <label class="input-label">Expected Return Date</label>
+            <input id="susp_resume" type="date" class="input" value="${daysAhead(3).split('T')[0]}" />
+          </div>
         </div>
         <div>
-          <label class="input-label">Notes / Details (optional)</label>
-          <textarea id="susp_notes" rows="2" class="input" placeholder="Additional context..."></textarea>
+          <label class="input-label">Details / Notes (optional)</label>
+          <textarea id="susp_notes" rows="2" class="input" placeholder="e.g. Incident occurred during lunch break on 14th June. Both parents informed verbally."></textarea>
         </div>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="susp_notify" checked class="w-4 h-4 accent-brand-600" />
+          <span class="text-sm">Send in-app notification to parent immediately</span>
+        </label>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
-             <button class="btn btn-warning" onclick="confirmSuspension('${studentId}')">${icon('bell','w-4 h-4')} Confirm Suspension</button>`
+             <button class="btn btn-danger" onclick="confirmSuspension('${studentId}')">${icon('bell','w-4 h-4')} Suspend Student</button>`
   }), 50);
 }
 
 function confirmSuspension(studentId) {
   const reason = document.getElementById('susp_reason').value;
   const days = parseInt(document.getElementById('susp_days').value) || 3;
+  const resumeDate = document.getElementById('susp_resume').value || daysAhead(days).split('T')[0];
   const notes = document.getElementById('susp_notes').value.trim();
+  const notify = document.getElementById('susp_notify').checked;
   const s = DB.find('students', studentId);
-  const resumeDate = new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
   DB.update('students', studentId, { status: 'suspended', suspensionReason: reason, suspensionDays: days, suspensionNotes: notes, suspendedAt: now(), suspensionResumeDate: resumeDate });
+  DB.insert('discipline', { id: uid('dis'), schoolId: s.schoolId, studentId, type: 'suspension', points: -10, note: reason + (notes ? ' — ' + notes : ''), recordedBy: AUTH.current.id || currentSchoolId(), date: today() });
   DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'suspended_student', target: `${s.name} (${days}d — ${reason})`, timestamp: now() });
-  DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Student Suspension Notice', body: `${s.name} has been suspended for ${days} day(s). Reason: ${reason}. Expected return: ${resumeDate}.${notes ? ' ' + notes : ''}`, type: 'warning', read: false, timestamp: now() });
+  if (notify && s.parentId) {
+    DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: `Suspension Notice — ${s.name}`, body: `Your child ${s.name} has been suspended. Reason: ${reason}. Expected return: ${fdate(resumeDate, { long: true })}. Please contact the school to discuss.${notes ? ' Details: ' + notes : ''}`, type: 'danger', read: false, timestamp: now() });
+  }
   document.getElementById('modalBackdrop').click();
   APP.render();
-  toast(`${s.name} suspended for ${days} day(s) — parent notified`, 'warn');
+  toast(`${s.name} suspended${notify ? ' · parent notified' : ''}`, 'warn');
 }
 
 function changeStudentStatus(studentId, status, label) {
@@ -3582,6 +3652,46 @@ function changeStudentStatus(studentId, status, label) {
   document.getElementById('modalBackdrop').click();
   APP.render();
   toast(label || `${s.name} status: ${status}`, status === 'suspended' ? 'warn' : undefined);
+}
+
+function reinstateStudentModal(studentId) {
+  const s = DB.find('students', studentId);
+  if (!s) return;
+  document.getElementById('modalBackdrop').click();
+  setTimeout(() => modal({
+    title: 'Reinstate ' + s.name,
+    body: `
+      <div class="space-y-3">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+          ${s.name} is currently suspended${s.suspensionReason ? ` for <strong>${s.suspensionReason}</strong>` : ''}. Reinstating restores their active status and allows them to resume school activities.
+        </div>
+        <div>
+          <label class="input-label">Reinstatement Note (optional)</label>
+          <textarea id="ri_notes" rows="2" class="input" placeholder="e.g. Student and parents appeared before the disciplinary committee. Matter resolved."></textarea>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="ri_notify" checked class="w-4 h-4 accent-brand-600" />
+          <span class="text-sm">Notify parent of reinstatement</span>
+        </label>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="confirmReinstatement('${studentId}')">${icon('check','w-4 h-4')} Reinstate Student</button>`
+  }), 50);
+}
+
+function confirmReinstatement(studentId) {
+  const s = DB.find('students', studentId);
+  const notes = (document.getElementById('ri_notes') || {}).value || '';
+  const notify = (document.getElementById('ri_notify') || {}).checked !== false;
+  DB.update('students', studentId, { status: 'active', suspensionReason: null, suspensionDays: null, suspensionNotes: null, suspendedAt: null, suspensionResumeDate: null });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'reinstated_student', target: s.name + (notes ? ' — ' + notes : ''), timestamp: now() });
+  if (notify && s.parentId) {
+    DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: `${s.name} — Reinstated`, body: `${s.name} has been reinstated and may resume school activities immediately.${notes ? ' ' + notes : ''}`, type: 'success', read: false, timestamp: now() });
+  }
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast(`${s.name} reinstated · active`, 'success');
 }
 
 /* ---------- Alumni Page ---------- */
