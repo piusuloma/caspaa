@@ -649,13 +649,17 @@ function stu_startTest(testId) {
 
   function renderQuestion(q, idx) {
     if (q.type === 'mcq') {
-      const opts = q.options || {};
+      const rawOpts = q.options || {};
+      // Support both object {A:..., B:..., C:..., D:...} and legacy array [a, b, c, d] formats
+      const optsObj = Array.isArray(rawOpts)
+        ? { A: rawOpts[0] || '', B: rawOpts[1] || '', C: rawOpts[2] || '', D: rawOpts[3] || '' }
+        : rawOpts;
       return `
         <div class="ft-q-block border border-slate-200 rounded-xl p-4 space-y-3 bg-white" data-qid="${q.id}" data-type="mcq">
           <div class="font-semibold text-slate-900">${idx + 1}. ${q.text}</div>
           <div class="grid grid-cols-2 gap-2">
             ${['A', 'B', 'C', 'D'].map(letter => {
-              const optText = opts[letter] || '';
+              const optText = optsObj[letter] || '';
               if (!optText) return '';
               return `
                 <label class="ft-option-pill flex items-center gap-2 border border-slate-200 rounded-xl p-2.5 cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition-colors has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50">
@@ -833,7 +837,10 @@ function stu_viewMyResult(testId) {
   function reviewQuestion(q, idx) {
     const studentAns = answers[q.id];
     if (q.type === 'mcq') {
-      const opts = q.options || {};
+      const rawOpts = q.options || {};
+      const opts = Array.isArray(rawOpts)
+        ? { A: rawOpts[0] || '', B: rawOpts[1] || '', C: rawOpts[2] || '', D: rawOpts[3] || '' }
+        : rawOpts;
       const isCorrect = (studentAns || '').toLowerCase().trim() === (q.answer || '').toLowerCase().trim();
       const studentOptText = studentAns ? (opts[studentAns] || studentAns) : '(no answer)';
       const correctOptText = opts[q.answer] || q.answer;

@@ -4,7 +4,7 @@
    - Seed data simulates a real Lagos school
    ============================================================ */
 
-const DB_KEY = 'caspaa_db_v2';
+const DB_KEY = 'caspaa_db_v3';
 const SESSION_KEY = 'caspaa_session_v1';
 
 /* ---------- Utility ---------- */
@@ -1165,26 +1165,26 @@ function seedDatabase() {
     { id: 'ftest_001', schoolId, classId: 'cls_jss1', subjectId: 'sub_math', teacherId: 'tch_adamu',
       title: 'Algebra Quick Check — Week 6', duration: 15, status: 'active',
       questions: [
-        { id: 'q1', text: 'Solve: x + 5 = 12. What is x?', type: 'mcq', options: ['5', '7', '17', '3'], answer: '7' },
-        { id: 'q2', text: 'Which of these is a quadratic equation?', type: 'mcq', options: ['2x + 3 = 0', 'x² + 3x − 4 = 0', 'x/2 = 7', '3x − 9 = 0'], answer: 'x² + 3x − 4 = 0' },
-        { id: 'q3', text: 'Factorize: x² − 9', type: 'mcq', options: ['(x+3)(x−3)', '(x−3)(x−3)', '(x+3)(x+3)', '(x−9)(x+1)'], answer: '(x+3)(x−3)' },
-        { id: 'q4', text: 'What is the value of x² when x = 5?', type: 'mcq', options: ['10', '25', '52', '15'], answer: '25' },
-        { id: 'q5', text: 'In your own words, explain what a quadratic equation is.', type: 'short', options: [], answer: '' }
+        { id: 'q1', text: 'Solve: x + 5 = 12. What is x?', type: 'mcq', options: { A: '5', B: '7', C: '17', D: '3' }, answer: 'B' },
+        { id: 'q2', text: 'Which of these is a quadratic equation?', type: 'mcq', options: { A: '2x + 3 = 0', B: 'x² + 3x − 4 = 0', C: 'x/2 = 7', D: '3x − 9 = 0' }, answer: 'B' },
+        { id: 'q3', text: 'Factorize: x² − 9', type: 'mcq', options: { A: '(x+3)(x−3)', B: '(x−3)(x−3)', C: '(x+3)(x+3)', D: '(x−9)(x+1)' }, answer: 'A' },
+        { id: 'q4', text: 'What is the value of x² when x = 5?', type: 'mcq', options: { A: '10', B: '25', C: '52', D: '15' }, answer: 'B' },
+        { id: 'q5', text: 'In your own words, explain what a quadratic equation is.', type: 'short', options: {}, answer: '' }
       ],
       dueDate: daysAhead(7), createdAt: daysAgo(2) },
     { id: 'ftest_002', schoolId, classId: 'cls_jss1', subjectId: 'sub_sci', teacherId: 'tch_emeka',
       title: 'States of Matter — Quick Quiz', duration: 10, status: 'active',
       questions: [
-        { id: 'q1', text: 'Which state of matter has a definite shape and volume?', type: 'mcq', options: ['Liquid', 'Gas', 'Solid', 'Plasma'], answer: 'Solid' },
-        { id: 'q2', text: 'At what temperature (°C) does water boil at sea level?', type: 'mcq', options: ['90', '95', '100', '110'], answer: '100' },
-        { id: 'q3', text: 'What process changes liquid water into steam?', type: 'mcq', options: ['Condensation', 'Evaporation', 'Melting', 'Freezing'], answer: 'Evaporation' },
-        { id: 'q4', text: 'Give one example of a gas and describe one of its properties.', type: 'short', options: [], answer: '' }
+        { id: 'q1', text: 'Which state of matter has a definite shape and volume?', type: 'mcq', options: { A: 'Liquid', B: 'Gas', C: 'Solid', D: 'Plasma' }, answer: 'C' },
+        { id: 'q2', text: 'At what temperature (°C) does water boil at sea level?', type: 'mcq', options: { A: '90', B: '95', C: '100', D: '110' }, answer: 'C' },
+        { id: 'q3', text: 'What process changes liquid water into steam?', type: 'mcq', options: { A: 'Condensation', B: 'Evaporation', C: 'Melting', D: 'Freezing' }, answer: 'B' },
+        { id: 'q4', text: 'Give one example of a gas and describe one of its properties.', type: 'short', options: {}, answer: '' }
       ],
       dueDate: daysAhead(5), createdAt: daysAgo(1) }
   ];
   const formativeSubmissions = [
     { id: uid('fsub'), testId: 'ftest_001', studentId: 'stu_002', schoolId,
-      answers: { q1: '7', q2: 'x² + 3x − 4 = 0', q3: '(x+3)(x−3)', q4: '25', q5: 'An equation with the highest power of 2.' },
+      answers: { q1: 'B', q2: 'B', q3: 'A', q4: 'B', q5: 'An equation with the highest power of 2.' },
       score: 4, total: 5, percentage: 80, submittedAt: daysAgo(1) }
   ];
 
