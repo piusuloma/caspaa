@@ -1697,8 +1697,6 @@ function view_adm_dashboard() {
         })()}
       </div>
 
-      ${renderAIInsights(schoolId)}
-
       <!-- Gender split — supplies planning, moved up for quick visibility -->
       <div class="grid lg:grid-cols-3 gap-4">
         <div class="card p-5 flex flex-col justify-center">
