@@ -98,7 +98,7 @@ function view_fin_dashboard() {
         <div class="card p-5">
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-bold text-slate-900">Outstanding Balances</h3>
-            <button class="btn btn-secondary text-xs" onclick="sendBulkReminders()">${icon('send','w-3.5 h-3.5')} Remind All</button>
+            ${invoices.filter(i => i.balance > 0).length > 0 ? `<button class="btn btn-secondary text-xs" onclick="sendBulkReminders()">${icon('send','w-3.5 h-3.5')} Remind All</button>` : ''}
           </div>
           <div class="space-y-2">
             ${invoices.filter(i => i.balance > 0).sort((a,b) => b.balance - a.balance).slice(0, 5).map(i => {
@@ -115,7 +115,7 @@ function view_fin_dashboard() {
                   <button class="text-xs text-brand-700 font-semibold" onclick="sendManualReminder('${i.id}')">Send reminder</button>
                 </div>
               </div>`;
-            }).join('')}
+            }).join('') || '<div class="py-6 text-center text-slate-400 text-sm font-medium">All fees collected — no outstanding balances</div>'}
           </div>
         </div>
       </div>
@@ -134,22 +134,18 @@ function view_fin_dashboard() {
                 <th class="text-right">Total Billed</th>
                 <th class="text-right">Paid</th>
                 <th class="text-right">Balance</th>
-                <th class="text-right">Expenses*</th>
-                <th class="text-right">Net Income</th>
                 <th class="text-center">Status</th>
               </tr>
             </thead>
             <tbody>
               ${(() => {
                 const allStudents = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && s.status === 'active');
-                const perCapitaExp = allStudents.length > 0 ? expense / allStudents.length : 0;
                 return allStudents.slice(0, 20).map(s => {
                   const inv = COMPUTE.studentInvoice(s.id);
                   const cls = DB.find('classes', s.classId);
                   const paid = inv ? inv.paid : 0;
                   const balance = inv ? inv.balance : 0;
                   const total = inv ? inv.total : 0;
-                  const netIncome = paid - perCapitaExp;
                   return `<tr>
                     <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<span class="font-medium text-sm">${s.name}</span></div></td>
                     <td class="font-mono text-xs text-slate-500">${s.studentId || s.id.slice(-6).toUpperCase()}</td>
@@ -157,8 +153,6 @@ function view_fin_dashboard() {
                     <td class="text-right font-mono text-sm">${money(total)}</td>
                     <td class="text-right font-mono text-sm text-emerald-700">${money(paid)}</td>
                     <td class="text-right font-mono text-sm ${balance>0?'text-rose-600 font-semibold':'text-slate-400'}">${money(balance)}</td>
-                    <td class="text-right font-mono text-xs text-slate-500">${money(Math.round(perCapitaExp))}</td>
-                    <td class="text-right font-mono text-sm ${netIncome>=0?'text-emerald-700 font-bold':'text-rose-600 font-bold'}">${money(Math.round(netIncome))}</td>
                     <td class="text-center">${inv ? statusBadge(inv.status) : '<span class="text-xs text-slate-400">No invoice</span>'}</td>
                   </tr>`;
                 }).join('');
@@ -166,7 +160,6 @@ function view_fin_dashboard() {
             </tbody>
           </table>
         </div>
-        <div class="px-5 py-2 text-xs text-slate-400 border-t border-slate-100">* Expenses per child = total operating costs ÷ number of active students (estimated)</div>
       </div>
     </div>
   `;
@@ -2688,7 +2681,7 @@ function _storeView() {
         <td class="text-right text-slate-500">${sold}</td>
         <td class="text-right">${it.stock}</td>
         <td>
-          <button class="btn btn-ghost !p-1.5" title="Edit" onclick="editStoreItem('${it.id}')">${icon('settings','w-3.5 h-3.5')}</button>
+          <button class="btn btn-ghost !p-1.5" title="Edit" onclick="editStoreItem('${it.id}')">${icon('edit','w-3.5 h-3.5')}</button>
           <button class="btn btn-ghost !p-1.5 text-rose-600" title="Remove" onclick="removeStoreItem('${it.id}')">${icon('x','w-3.5 h-3.5')}</button>
         </td>
       </tr>`;
@@ -2698,10 +2691,6 @@ function _storeView() {
       ${pageHeader({ title: 'School Store', subtitle: 'Define items sold to parents — compare your selling price against cost to know your margin', actions:
         `<button class="btn btn-primary" onclick="addStoreItemModal()">${icon('plus','w-4 h-4')} Add Item</button>` })}
       ${tabBar}
-      <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-900 mb-4 flex items-start gap-3">
-        ${icon('reports','w-5 h-5 flex-shrink-0 mt-0.5')}
-        <span>The <strong>Selling Price</strong> is what the parent pays. The <strong>Cost Price</strong> is what the school actually spends to buy or make the item. The difference is your <strong>margin</strong> — your real profit on each sale.</span>
-      </div>
       ${items.length ? `<div class="card overflow-hidden">
         <table class="w-full text-sm">
           <thead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
@@ -2732,7 +2721,7 @@ function _storeView() {
       const rev = (p.sellingPrice||0) * (p.qty||1);
       const cst = (p.costPrice||0) * (p.qty||1);
       return `<tr>
-        <td>${fdate(p.purchasedAt,{long:true})}</td>
+        <td class="text-sm text-slate-500 whitespace-nowrap">${fdate(p.purchasedAt,{short:true})}</td>
         <td><div class="font-semibold text-sm">${stu?stu.name:'—'}</div><div class="text-xs text-slate-400">${cls?cls.name:'—'}</div></td>
         <td>${itm?itm.name:'—'}</td>
         <td class="text-center">${p.qty||1}</td>
@@ -2786,17 +2775,17 @@ function _storeView() {
       return { it, unitsSold, revenue, cost, margin, marginPct };
     }).filter(x => x.unitsSold > 0 || true).sort((a,b)=>b.margin-a.margin);
 
-    const itemRows = itemSummary.map(x => `<tr>
-      <td><div class="font-semibold text-sm">${x.it.name}</div><div class="text-xs text-slate-400">${x.it.category}</div></td>
-      <td class="text-right">${x.unitsSold}</td>
-      <td class="text-right">${money(x.it.sellingPrice)}</td>
-      <td class="text-right text-slate-500">${money(x.it.costPrice)}</td>
-      <td class="text-right font-bold ${x.margin>0?'text-emerald-700':'text-red-700'}">${money(x.margin)}</td>
-      <td class="text-right"><span class="badge ${x.marginPct>=30?'badge-success':x.marginPct>=15?'badge-info':'badge-warn'}">${x.marginPct}%</span></td>
-      <td class="text-right font-semibold">${money(x.revenue)}</td>
-      <td class="text-right text-slate-500">${money(x.cost)}</td>
-      <td class="text-right font-bold text-emerald-700">${money(x.margin)}</td>
-    </tr>`).join('');
+    const itemRows = itemSummary.map(x => {
+      const unitMargin = x.it.sellingPrice - x.it.costPrice;
+      return `<tr>
+        <td><div class="font-semibold text-sm">${x.it.name}</div><div class="text-xs text-slate-400">${x.it.category}</div></td>
+        <td class="text-right">${x.unitsSold}</td>
+        <td class="text-right font-bold ${unitMargin>0?'text-emerald-700':'text-red-700'}">${money(unitMargin)}</td>
+        <td class="text-right"><span class="badge ${x.marginPct>=30?'badge-success':x.marginPct>=15?'badge-info':'badge-warn'}">${x.marginPct}%</span></td>
+        <td class="text-right font-semibold">${money(x.revenue)}</td>
+        <td class="text-right font-bold text-emerald-700">${money(x.margin)}</td>
+      </tr>`;
+    }).join('');
 
     // Per-student summary
     const stuMap = {};
@@ -2834,21 +2823,19 @@ function _storeView() {
         ${statCard({ label: 'Overall Margin', value: totPct + '%', icon: 'reports', color: totPct>=25?'emerald':totPct>=15?'amber':'rose' })}
       </div>
 
-      <h3 class="font-bold text-slate-900 mb-2">Profit by Item</h3>
+      <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Profit by Item</div>
       <div class="card overflow-hidden mb-5">
         <table class="w-full text-sm">
           <thead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
             <th class="text-left p-3">Item</th><th class="text-right p-3">Units Sold</th>
-            <th class="text-right p-3">Sell Price</th><th class="text-right p-3">Cost Price</th>
             <th class="text-right p-3">Margin / Unit</th><th class="text-right p-3">Margin %</th>
-            <th class="text-right p-3">Total Revenue</th><th class="text-right p-3">Total Cost</th>
-            <th class="text-right p-3">Total Profit</th>
+            <th class="text-right p-3">Total Revenue</th><th class="text-right p-3">Total Profit</th>
           </tr></thead>
           <tbody class="divide-y divide-slate-100">${itemRows}</tbody>
         </table>
       </div>
 
-      <h3 class="font-bold text-slate-900 mb-2">Profit by Student</h3>
+      <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 mt-5">Profit by Student</div>
       <div class="card overflow-hidden">
         <table class="w-full text-sm">
           <thead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
