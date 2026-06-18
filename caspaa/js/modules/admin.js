@@ -1894,7 +1894,7 @@ function view_adm_dashboard() {
           <div class="card p-5 lg:col-span-2">
             <div class="flex items-center justify-between mb-3">
               <h3 class="font-bold text-slate-900">Revenue Analytics</h3>
-              <button class="btn btn-ghost text-sm" onclick="revenueAnalyticsParamsModal()">${icon('settings','w-3.5 h-3.5')} Parameters</button>
+              <button class="btn btn-ghost text-sm" onclick="revenueAnalyticsParamsModal()">${icon('edit','w-3.5 h-3.5')} Edit Targets</button>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               <div class="bg-emerald-50 rounded-xl p-3 text-center">
@@ -1982,37 +1982,90 @@ function view_adm_dashboard() {
 function revenueAnalyticsParamsModal() {
   const cfg = DB.settings().revenueAnalytics || {};
   modal({
-    title: 'Revenue Analytics Parameters',
+    title: 'Financial Benchmarks',
     body: `
+      <p class="text-sm text-slate-500 mb-4">Set the targets your school aims to hit. Metrics on your dashboard turn amber when they fall short of a benchmark.</p>
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
-          Set benchmark targets for your school's financial analytics. These appear on the Revenue Analytics panel on your dashboard.
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="input-label">Target Profit Margin (%)</label>
-            <input id="ra_margin" type="number" min="0" max="100" class="input" value="${cfg.targetMargin || 20}" placeholder="e.g. 20" />
-            <p class="text-xs text-slate-400 mt-1">Typical: 15–25%</p>
+
+        <div class="rounded-xl border border-slate-200 p-4">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <p class="font-semibold text-slate-800 text-sm">Profit Margin Target</p>
+              <p class="text-xs text-slate-500 mt-0.5">% of income that should remain after all expenses</p>
+            </div>
+            <div class="flex items-center gap-1 bg-slate-100 rounded-lg px-2.5 py-1">
+              <input id="ra_margin" type="number" min="0" max="60"
+                class="w-10 text-center font-bold text-slate-900 bg-transparent border-none outline-none text-sm"
+                value="${cfg.targetMargin || 20}"
+                oninput="document.getElementById('ra_margin_r').value=this.value" />
+              <span class="text-slate-500 text-sm">%</span>
+            </div>
           </div>
-          <div>
-            <label class="input-label">Max Teacher Cost Ratio (%)</label>
-            <input id="ra_teacher" type="number" min="0" max="100" class="input" value="${cfg.targetTeacherRatio || 40}" placeholder="e.g. 40" />
-            <p class="text-xs text-slate-400 mt-1">Teaching staff cost as % of income. Typical: 35–50%</p>
+          <input id="ra_margin_r" type="range" min="0" max="60" value="${cfg.targetMargin || 20}"
+            class="w-full accent-emerald-600 cursor-pointer"
+            oninput="document.getElementById('ra_margin').value=this.value" />
+          <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+            <span>0%</span><span class="text-emerald-600 font-medium">Typical: 15–25%</span><span>60%</span>
           </div>
         </div>
-        <div>
-          <label class="input-label">Revenue Target (annual, NGN)</label>
-          <input id="ra_target" type="number" class="input" value="${cfg.annualTarget || ''}" placeholder="e.g. 60000000" />
-          <p class="text-xs text-slate-400 mt-1">Optional. Used in the annual revenue bar chart as a reference line.</p>
+
+        <div class="rounded-xl border border-slate-200 p-4">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <p class="font-semibold text-slate-800 text-sm">Max Teacher Cost Ratio</p>
+              <p class="text-xs text-slate-500 mt-0.5">Teaching staff payroll as % of total income</p>
+            </div>
+            <div class="flex items-center gap-1 bg-slate-100 rounded-lg px-2.5 py-1">
+              <input id="ra_teacher" type="number" min="0" max="80"
+                class="w-10 text-center font-bold text-slate-900 bg-transparent border-none outline-none text-sm"
+                value="${cfg.targetTeacherRatio || 40}"
+                oninput="document.getElementById('ra_teacher_r').value=this.value" />
+              <span class="text-slate-500 text-sm">%</span>
+            </div>
+          </div>
+          <input id="ra_teacher_r" type="range" min="0" max="80" value="${cfg.targetTeacherRatio || 40}"
+            class="w-full accent-blue-600 cursor-pointer"
+            oninput="document.getElementById('ra_teacher').value=this.value" />
+          <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+            <span>0%</span><span class="text-blue-600 font-medium">Typical: 35–50%</span><span>80%</span>
+          </div>
         </div>
-        <div>
-          <label class="input-label">Alert me when collection rate drops below (%)</label>
-          <input id="ra_alert_col" type="number" min="0" max="100" class="input" value="${cfg.alertCollectionBelow || 70}" placeholder="e.g. 70" />
+
+        <div class="rounded-xl border border-slate-200 p-4">
+          <p class="font-semibold text-slate-800 text-sm mb-1">Annual Revenue Target <span class="text-slate-400 font-normal">(optional)</span></p>
+          <p class="text-xs text-slate-500 mb-2">Shown as a reference line on revenue charts</p>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">₦</span>
+            <input id="ra_target" type="number" class="input pl-7" value="${cfg.annualTarget || ''}" placeholder="e.g. 60000000" />
+          </div>
         </div>
+
+        <div class="rounded-xl border border-slate-200 p-4">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <p class="font-semibold text-slate-800 text-sm">Fee Collection Alert</p>
+              <p class="text-xs text-slate-500 mt-0.5">Warn me when the collection rate drops below this</p>
+            </div>
+            <div class="flex items-center gap-1 bg-slate-100 rounded-lg px-2.5 py-1">
+              <input id="ra_alert_col" type="number" min="0" max="100"
+                class="w-10 text-center font-bold text-slate-900 bg-transparent border-none outline-none text-sm"
+                value="${cfg.alertCollectionBelow || 70}"
+                oninput="document.getElementById('ra_alert_r').value=this.value" />
+              <span class="text-slate-500 text-sm">%</span>
+            </div>
+          </div>
+          <input id="ra_alert_r" type="range" min="0" max="100" value="${cfg.alertCollectionBelow || 70}"
+            class="w-full accent-amber-500 cursor-pointer"
+            oninput="document.getElementById('ra_alert_col').value=this.value" />
+          <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+            <span>0%</span><span class="text-amber-600 font-medium">Recommended: 70–80%</span><span>100%</span>
+          </div>
+        </div>
+
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
-             <button class="btn btn-primary" onclick="saveRevenueAnalyticsParams()">${icon('check','w-4 h-4')} Save Parameters</button>`
+             <button class="btn btn-primary" onclick="saveRevenueAnalyticsParams()">${icon('check','w-4 h-4')} Save Targets</button>`
   });
 }
 
@@ -2024,7 +2077,7 @@ function saveRevenueAnalyticsParams() {
   DB.settings({ revenueAnalytics: { targetMargin, targetTeacherRatio, annualTarget, alertCollectionBelow } });
   document.getElementById('modalBackdrop')?.click();
   APP.render();
-  toast('Revenue analytics parameters saved', 'success');
+  toast('Targets updated', 'success');
 }
 
 /* ---------- Students ---------- */
