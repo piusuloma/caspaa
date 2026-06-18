@@ -3,6 +3,8 @@
 
 # Internal docs (PRDs, meeting notes, etc.)
 *.pdf
+*.docx
+*.zip
 
 # OS / editor
 .DS_Store
