@@ -696,12 +696,17 @@ window.addEventListener('popstate', (e) => {
 });
 
 /* ---------- Boot ---------- */
-window.addEventListener('DOMContentLoaded', () => {
-  // Seed history with current view so back works on first navigation
+function _bootApp() {
   if (AUTH.isLoggedIn()) {
     const v = APP.defaultView(AUTH.current.role);
     try { history.replaceState({ view: v, params: {}, ts: Date.now() }, '', '#' + v); } catch (e) {}
     APP.view = v;
   }
   APP.render();
-});
+}
+// Support both normal page load and dynamic script injection (Next.js loads scripts after DOMContentLoaded)
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', _bootApp);
+} else {
+  _bootApp();
+}
