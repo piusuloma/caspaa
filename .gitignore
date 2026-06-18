@@ -12,6 +12,10 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Next.js build output
+.next/
+out/
+
 # Dependencies
 node_modules/
 
@@ -19,3 +23,5 @@ node_modules/
 .env
 .env.local
 .env.*.local
+
+.vercel
