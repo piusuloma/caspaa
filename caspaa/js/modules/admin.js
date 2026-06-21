@@ -1086,6 +1086,7 @@ function newSchemeModal(prefilledClassId) {
   const classes = DB.get('classes');
   const subjects = DB.get('subjects');
   const terms = DB.query('academicTerms', t => t.schoolId === currentSchoolId());
+  const currentTerm = DB.settings().currentTerm || '';
   window._newSchemeCsvData = null;
   modal({
     title: 'New Scheme of Work',
@@ -1101,39 +1102,62 @@ function newSchemeModal(prefilledClassId) {
           </div>
         </div>
         <div><label class="input-label">Term</label>
-          <select id="nsch_term" class="input">${terms.map(t => `<option ${t.current ? 'selected' : ''}>${t.name} 2025/26</option>`).join('')}</select>
-        </div>
-        <div>
-          <label class="input-label">How to start</label>
-          <select id="nsch_method" class="input" onchange="nschMethodChange(this.value)">
-            <option value="template">NERDC / UBEC template — 12 weeks, pre-filled (recommended)</option>
-            <option value="blank">Start blank — fill in the weeks yourself</option>
-            <option value="csv">Upload CSV — import from your own file</option>
+          <select id="nsch_term" class="input">
+            ${terms.length
+              ? terms.map(t => `<option value="${t.name}" ${t.current ? 'selected' : ''}>${t.name}</option>`).join('')
+              : `<option value="${currentTerm}">${currentTerm}</option>`}
           </select>
         </div>
-        <div id="nsch_template_info" class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
-          ${icon('info','w-4 h-4 inline mr-1')} Generates a standard 12-week plan. NERDC structure is used for JSS/SS classes; UBEC for Primary/Nursery. You can edit, add or remove weeks after creation.
+        <div>
+          <label class="input-label">How do you want to create this scheme?</label>
+          <select id="nsch_method" class="input" onchange="nschMethodChange(this.value)">
+            <option value="template">Use NERDC/UBEC template — auto-fills 12 weeks for you (recommended)</option>
+            <option value="blank">Start blank — I'll type in the topics week by week</option>
+            <option value="csv">Upload my own CSV file — I have my plan in a spreadsheet</option>
+          </select>
         </div>
+
+        <!-- Template info (shown by default) -->
+        <div id="nsch_template_info" class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900 space-y-1">
+          <div class="font-semibold">${icon('check','w-4 h-4 inline mr-1 text-blue-600')} What happens when you click Create:</div>
+          <ul class="list-disc pl-5 text-xs space-y-0.5">
+            <li>12 weeks of topics are generated automatically based on the subject</li>
+            <li>UBEC structure is used for Nursery/Primary; NERDC for JSS/SS</li>
+            <li>You can open the scheme afterwards and edit every week's topic, objectives, and resources</li>
+            <li>Teachers tick off each week as they cover it during the term</li>
+          </ul>
+        </div>
+
+        <!-- Blank weeks row (hidden) -->
         <div id="nsch_blank_row" class="hidden">
           <label class="input-label">Number of weeks</label>
           <input id="nsch_weeks" type="number" class="input" value="12" min="4" max="16" />
+          <p class="text-xs text-slate-400 mt-1">Empty week slots will be created. Open the scheme to fill in each week's topic.</p>
         </div>
+
+        <!-- CSV upload row (hidden) -->
         <div id="nsch_csv_row" class="hidden space-y-2">
-          <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
-            ${icon('info','w-3.5 h-3.5 inline mr-1')} One row per week. Required columns: <strong>Week, Topic</strong>. Optional: Objectives, Activities, Resources.
-            &nbsp;<a href="#" class="underline font-semibold" onclick="downloadSchemeCSVTemplate(); return false;">${icon('download','w-3 h-3 inline')} Download template</a>
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 space-y-1">
+            <div class="font-semibold">How to prepare your CSV:</div>
+            <ol class="list-decimal pl-4 space-y-0.5">
+              <li>Download the template below, or open Excel/Google Sheets</li>
+              <li>Add one row per week with columns: <strong>Week, Topic, Objectives, Activities, Resources</strong></li>
+              <li>Save as CSV, then upload it here</li>
+            </ol>
+            <a href="#" class="inline-flex items-center gap-1 mt-1 text-amber-800 underline font-semibold" onclick="downloadSchemeCSVTemplate(); return false;">${icon('download','w-3 h-3')} Download blank CSV template</a>
           </div>
           <div class="border-2 border-dashed border-slate-300 hover:border-brand-400 rounded-xl p-6 text-center cursor-pointer transition" onclick="document.getElementById('nsch_csv_file').click()">
             ${icon('upload','w-7 h-7 mx-auto text-slate-400 mb-1')}
-            <p class="text-sm font-semibold text-slate-700">Click to upload CSV</p>
-            <p class="text-xs text-slate-400">Week · Topic · Objectives · Activities · Resources</p>
-            <input type="file" id="nsch_csv_file" accept=".csv" class="hidden" onchange="nschPreviewCSV(this)">
+            <p class="text-sm font-semibold text-slate-700">Click to select your CSV file</p>
+            <p class="text-xs text-slate-400 mt-0.5">Week · Topic · Objectives · Activities · Resources</p>
+            <input type="file" id="nsch_csv_file" accept=".csv,.xlsx" class="hidden" onchange="nschPreviewCSV(this)">
           </div>
           <div id="nsch_csv_preview"></div>
         </div>
+
         <div id="nsch_alignment_row" class="hidden">
           <label class="input-label">Curriculum alignment <span class="text-slate-400 font-normal text-xs">— for labelling only</span></label>
-          <select id="nsch_source" class="input"><option>NERDC</option><option>UBEC</option><option>WAEC</option><option>NECO</option><option>Custom</option></select>
+          <select id="nsch_source" class="input"><option>Custom</option><option>NERDC</option><option>UBEC</option><option>WAEC</option><option>NECO</option></select>
         </div>
       </div>
     `,
@@ -8513,15 +8537,25 @@ function tcw_promote() {
 }
 
 /* ---------- Exam Structure Settings ---------- */
+const _DEFAULT_EXAM_STRUCTURE = {
+  terms: [
+    { name: 'First Term',  types: [{ label: 'CA 1', weight: 10, category: 'cbt' }, { label: 'CA 2', weight: 10, category: 'midterm' }, { label: 'Midterm Test', weight: 20, category: 'midterm' }, { label: 'Exam', weight: 60, category: 'examination' }] },
+    { name: 'Second Term', types: [{ label: 'CA 1', weight: 10, category: 'cbt' }, { label: 'CA 2', weight: 10, category: 'midterm' }, { label: 'Midterm Test', weight: 20, category: 'midterm' }, { label: 'Exam', weight: 60, category: 'examination' }] },
+    { name: 'Third Term',  types: [{ label: 'CA 1', weight: 15, category: 'cbt' }, { label: 'Mock', weight: 25, category: 'mock' }, { label: 'Exam', weight: 60, category: 'examination' }] }
+  ]
+};
+
+function _getExamStructure() {
+  const es = DB.settings().examStructure;
+  if (es) return es;
+  // First time: persist the default so mutating functions always find it
+  const def = JSON.parse(JSON.stringify(_DEFAULT_EXAM_STRUCTURE));
+  DB.settings({ examStructure: def });
+  return def;
+}
+
 function renderExamStructureSettings() {
-  const s = DB.settings();
-  const examStructure = s.examStructure || {
-    terms: [
-      { name: 'First Term', types: [{ label: 'CA 1', weight: 10 }, { label: 'CA 2', weight: 10 }, { label: 'Midterm', weight: 20 }, { label: 'Exam', weight: 60 }] },
-      { name: 'Second Term', types: [{ label: 'CA 1', weight: 10 }, { label: 'CA 2', weight: 10 }, { label: 'Midterm', weight: 20 }, { label: 'Exam', weight: 60 }] },
-      { name: 'Third Term', types: [{ label: 'CA 1', weight: 15 }, { label: 'Mock', weight: 25 }, { label: 'Exam', weight: 60 }] }
-    ]
-  };
+  const examStructure = _getExamStructure();
   return `
     <div class="space-y-4">
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
@@ -8563,18 +8597,15 @@ function renderExamStructureSettings() {
 }
 
 function updateExamType(termIdx, typeIdx, field, value) {
-  const s = DB.settings();
-  const es = s.examStructure || { terms: [] };
+  const es = _getExamStructure();
   if (es.terms[termIdx] && es.terms[termIdx].types[typeIdx]) {
     es.terms[termIdx].types[typeIdx][field] = value;
     DB.settings({ examStructure: es });
-    APP.render();
   }
 }
 
 function addExamTypeToTerm(termIdx) {
-  const s = DB.settings();
-  const es = s.examStructure || { terms: [] };
+  const es = _getExamStructure();
   if (es.terms[termIdx]) {
     es.terms[termIdx].types.push({ label: 'New Type', weight: 0, category: 'examination' });
     DB.settings({ examStructure: es });
@@ -8583,8 +8614,7 @@ function addExamTypeToTerm(termIdx) {
 }
 
 function removeExamType(termIdx, typeIdx) {
-  const s = DB.settings();
-  const es = s.examStructure || { terms: [] };
+  const es = _getExamStructure();
   if (es.terms[termIdx]) {
     es.terms[termIdx].types.splice(typeIdx, 1);
     DB.settings({ examStructure: es });
