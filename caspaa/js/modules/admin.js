@@ -9089,19 +9089,31 @@ function view_adm_admissions() {
       <table class="tbl">
         <thead><tr><th>Applicant</th><th>Parent</th><th>Class</th><th>Applied</th><th>Documents</th><th>Status</th><th></th></tr></thead>
         <tbody>
-          ${filtered.map(a => {
-            const cls = DB.find('classes', a.requestedClass);
-            const docsCount = Object.values(a.documents || {}).filter(Boolean).length;
-            return `<tr class="cursor-pointer" onclick="viewApplication('${a.id}')">
-              <td><div class="flex items-center gap-2">${avatar(a.applicantName, 'sm')}<div><div class="font-medium text-sm">${a.applicantName}</div><div class="text-xs text-slate-500">${a.gender === 'M' ? 'Male' : 'Female'} · ${calcAge(a.dob)} yrs</div></div></div></td>
-              <td class="text-sm">${a.parentName}<div class="text-xs text-slate-500">${a.parentPhone}</div></td>
-              <td>${cls ? cls.name : '—'}</td>
-              <td class="text-xs text-slate-500">${fdate(a.appliedAt, { relative: true })}</td>
-              <td><span class="badge ${docsCount >= 3 ? 'badge-success' : docsCount >= 1 ? 'badge-warn' : 'badge-danger'}">${docsCount}/4</span></td>
-              <td>${statusBadge(a.status)}</td>
-              <td><button class="btn btn-ghost !p-1.5" onclick="event.stopPropagation(); viewApplication('${a.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button></td>
-            </tr>`;
-          }).join('')}
+          ${filtered.length === 0
+            ? `<tr><td colspan="7" class="py-14 text-center">
+                ${apps.length === 0
+                  ? `<div class="space-y-2">
+                      <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">${icon('user','w-7 h-7')}</div>
+                      <div class="font-semibold text-slate-700 text-base">No applications yet</div>
+                      <div class="text-sm text-slate-500 max-w-sm mx-auto">Share your public admission link with prospective parents, or use <strong>New Application</strong> to enter a walk-in enquiry manually.</div>
+                    </div>`
+                  : `<div class="text-slate-500"><div class="font-semibold">No ${filter.replace('_', ' ')} applications</div><div class="text-xs mt-1">Switch the filter above to see other stages.</div></div>`
+                }
+              </td></tr>`
+            : filtered.map(a => {
+                const cls = DB.find('classes', a.requestedClass);
+                const docsCount = Object.values(a.documents || {}).filter(Boolean).length;
+                return `<tr class="cursor-pointer" onclick="viewApplication('${a.id}')">
+                  <td><div class="flex items-center gap-2">${avatar(a.applicantName, 'sm')}<div><div class="font-medium text-sm">${a.applicantName}</div><div class="text-xs text-slate-500">${a.gender === 'M' ? 'Male' : 'Female'} · ${calcAge(a.dob)} yrs</div></div></div></td>
+                  <td class="text-sm">${a.parentName}<div class="text-xs text-slate-500">${a.parentPhone}</div></td>
+                  <td>${cls ? cls.name : '—'}</td>
+                  <td class="text-xs text-slate-500">${fdate(a.appliedAt, { relative: true })}</td>
+                  <td><span class="badge ${docsCount >= 3 ? 'badge-success' : docsCount >= 1 ? 'badge-warn' : 'badge-danger'}">${docsCount}/4</span></td>
+                  <td>${statusBadge(a.status)}</td>
+                  <td><button class="btn btn-ghost !p-1.5" onclick="event.stopPropagation(); viewApplication('${a.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button></td>
+                </tr>`;
+              }).join('')
+          }
         </tbody>
       </table>
     </div>
