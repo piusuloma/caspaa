@@ -175,13 +175,7 @@ function requestLeaveModal() {
         <div>
           <label class="input-label">Leave Type</label>
           <select id="lvreq_type" class="input">
-            <option>Casual</option>
-            <option>Sick</option>
-            <option>Annual</option>
-            <option>Maternity</option>
-            <option>Bereavement</option>
-            <option>Study</option>
-            <option>Compassionate</option>
+            ${(DB.settings().leaveTypes || ['Annual','Casual','Sick','Maternity','Paternity','Bereavement','Study','Compassionate']).map(t => `<option>${t}</option>`).join('')}
           </select>
         </div>
         <div class="grid grid-cols-2 gap-3">

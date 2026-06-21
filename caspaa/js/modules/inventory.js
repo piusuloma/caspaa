@@ -253,7 +253,7 @@ function addInventoryModal() {
       <div class="grid grid-cols-2 gap-3">
         <div><label class="input-label">Category</label>
           <select id="inv_cat" class="input">
-            <option>Books</option><option>Stationery</option><option>Equipment</option><option>Uniforms</option><option>Furniture</option><option>Sports</option><option>Other</option>
+            ${(DB.settings().inventoryCategories || ['Books','Stationery','Equipment','Uniforms','Furniture','Sports','Other']).map(c => `<option>${c}</option>`).join('')}
           </select></div>
         <div><label class="input-label">Initial Quantity</label><input id="inv_qty" class="input" type="number" min="0" placeholder="0" /></div>
       </div>

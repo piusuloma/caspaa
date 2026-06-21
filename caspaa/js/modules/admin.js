@@ -1893,8 +1893,11 @@ function view_adm_dashboard() {
         return `<div class="grid lg:grid-cols-3 gap-4">
           <div class="card p-5 lg:col-span-2">
             <div class="flex items-center justify-between mb-3">
-              <h3 class="font-bold text-slate-900">Revenue Analytics</h3>
-              <button class="btn btn-ghost text-sm" onclick="revenueAnalyticsParamsModal()">${icon('edit','w-3.5 h-3.5')} Edit Targets</button>
+              <div>
+                <h3 class="font-bold text-slate-900">Revenue Analytics</h3>
+                <p class="text-xs text-slate-400 mt-0.5">How much the school earns vs. spends · tiles turn amber when below your benchmarks</p>
+              </div>
+              <button class="btn btn-ghost text-sm" onclick="revenueAnalyticsParamsModal()">${icon('settings','w-3.5 h-3.5')} Benchmarks</button>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               <div class="bg-emerald-50 rounded-xl p-3 text-center">
@@ -3864,16 +3867,7 @@ function suspendStudentModal(studentId) {
         <div>
           <label class="input-label">Reason for Suspension</label>
           <select id="susp_reason" class="input">
-            <option>Fighting / Physical Violence</option>
-            <option>Gross Insubordination</option>
-            <option>Bullying or Harassment</option>
-            <option>Damage to School Property</option>
-            <option>Academic Dishonesty / Exam Malpractice</option>
-            <option>Possession of Prohibited Item</option>
-            <option>Non-payment of fees</option>
-            <option>Persistent Unexplained Absences</option>
-            <option>Pending Disciplinary Investigation</option>
-            <option>Other</option>
+            ${(DB.settings().disciplineReasons || ['Fighting / Physical Violence','Gross Insubordination','Bullying or Harassment','Damage to School Property','Academic Dishonesty / Exam Malpractice','Possession of Prohibited Item','Non-payment of fees','Persistent Unexplained Absences','Pending Disciplinary Investigation','Other']).map(r => `<option>${r}</option>`).join('')}
           </select>
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -7741,6 +7735,7 @@ function view_adm_settings() {
       { key: 'academic',     label: 'Academic' },
       { key: 'appraisal',    label: 'Appraisal' },
       { key: 'budget',       label: 'Budget Categories' },
+      { key: 'lists',        label: 'Lists & Options' },
       { key: 'calendar',     label: 'Calendar' },
       { key: 'roles',        label: 'Roles & Permissions' },
       { key: 'notifications',label: 'Notifications' },
@@ -7752,6 +7747,7 @@ function view_adm_settings() {
       ${tab === 'academic' ? renderAcademicStructure() :
         tab === 'appraisal' ? renderAppraisalSettings() :
         tab === 'budget' ? renderBudgetCategoriesSettings() :
+        tab === 'lists'  ? renderCustomListsSettings() :
         tab === 'calendar' ? renderAcademicCalendar() :
         tab === 'roles' ? renderRolesSettings() :
         tab === 'notifications' ? renderNotificationSettings() :
@@ -8553,6 +8549,83 @@ function saveBudgetCategories() {
 function resetBudgetCategories() {
   DB.settings({ budgetCategories: ['Salaries','Utilities','Maintenance','Supplies','Internet','Transport','Events','Other'] });
   toast('Categories reset to default', 'info'); APP.render();
+}
+
+/* ============================================================
+   CUSTOM LISTS & OPTIONS SETTINGS
+   ============================================================ */
+
+const _CLIST_DEFS = {
+  expenseCategories: { title: 'Expense Categories', desc: 'Shown when recording a school expense (Finance → Expenses).', defaults: ['Salaries','Electricity','Diesel','Maintenance','Supplies','Internet','Transport','Security','Cleaning','Bank Charges','Other'] },
+  leaveTypes:        { title: 'Staff Leave Types',   desc: 'Options a teacher can choose when submitting a leave request.', defaults: ['Annual','Casual','Sick','Maternity','Paternity','Bereavement','Study','Compassionate'] },
+  inventoryCategories: { title: 'Inventory Categories', desc: 'Categories for items in the school store.', defaults: ['Books','Stationery','Equipment','Uniforms','Furniture','Sports','Other'] },
+  diaryCategories:   { title: 'Diary Note Categories', desc: 'Labels on teacher-to-parent communication diary entries.', defaults: ['Homework','Behaviour','Academic','Health','General'] },
+  disciplineReasons: { title: 'Suspension Reasons',  desc: 'Selectable reasons when suspending a student.', defaults: ['Fighting / Physical Violence','Gross Insubordination','Bullying or Harassment','Damage to School Property','Academic Dishonesty / Exam Malpractice','Possession of Prohibited Item','Persistent Unexplained Absences','Pending Disciplinary Investigation','Other'] }
+};
+
+function renderCustomListsSettings() {
+  const s = DB.settings();
+  return `
+    <div class="space-y-4">
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        ${icon('info','w-4 h-4 inline mr-1')} Every dropdown below is used across the system. Add, rename, or remove items to match your school's terminology. Changes take effect immediately on new entries.
+      </div>
+      <div class="grid lg:grid-cols-2 gap-4">
+        ${Object.entries(_CLIST_DEFS).map(([key, cfg]) => {
+          const items = s[key] || cfg.defaults;
+          return `
+            <div class="card p-5">
+              <div class="flex items-center justify-between mb-1">
+                <h4 class="font-bold text-slate-900">${cfg.title}</h4>
+                <button class="btn btn-secondary !py-1 !px-2.5 text-xs" onclick="customListAdd('${key}')">${icon('plus','w-3 h-3')} Add</button>
+              </div>
+              <p class="text-xs text-slate-500 mb-3">${cfg.desc}</p>
+              <div class="space-y-1.5" id="clist_${key}">
+                ${items.map((item, i) => `
+                  <div class="flex items-center gap-2">
+                    <input type="text" class="input flex-1 !py-1.5 text-sm" value="${item.replace(/"/g,'&quot;')}" id="cli_${key}_${i}" />
+                    <button class="text-rose-400 hover:text-rose-600 p-1 flex-shrink-0" onclick="customListRemove('${key}', ${i})">${icon('x','w-4 h-4')}</button>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="mt-3 flex gap-2">
+                <button class="btn btn-primary text-sm" onclick="customListSave('${key}')">${icon('check','w-4 h-4')} Save</button>
+                <button class="btn btn-ghost text-xs text-slate-400" onclick="customListReset('${key}')">Reset to defaults</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function customListSave(key) {
+  const inputs = document.querySelectorAll(`#clist_${key} input`);
+  const items = Array.from(inputs).map(el => el.value.trim()).filter(Boolean);
+  if (!items.length) { toast('List cannot be empty', 'danger'); return; }
+  DB.settings({ [key]: items });
+  toast(`${(_CLIST_DEFS[key] || {}).title || 'List'} saved`, 'success');
+}
+
+function customListAdd(key) {
+  const cfg = _CLIST_DEFS[key]; if (!cfg) return;
+  const items = [...(DB.settings()[key] || cfg.defaults), 'New item'];
+  DB.settings({ [key]: items }); APP.render();
+}
+
+function customListRemove(key, idx) {
+  const cfg = _CLIST_DEFS[key]; if (!cfg) return;
+  const items = [...(DB.settings()[key] || cfg.defaults)];
+  if (items.length <= 1) { toast('Keep at least one item', 'warn'); return; }
+  items.splice(idx, 1);
+  DB.settings({ [key]: items }); APP.render();
+}
+
+function customListReset(key) {
+  const cfg = _CLIST_DEFS[key]; if (!cfg) return;
+  DB.settings({ [key]: cfg.defaults });
+  toast(`Reset to defaults`, 'info'); APP.render();
 }
 
 function renderAcademicStructure() {

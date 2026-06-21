@@ -1357,7 +1357,7 @@ function addExpenseModal() {
       <div class="space-y-3">
         <div><label class="input-label">Date</label><input id="ex_date" type="date" class="input" value="${today()}" /></div>
         <div><label class="input-label">Category</label>
-          <select id="ex_cat" class="input"><option>Salaries</option><option>Electricity</option><option>Diesel</option><option>Maintenance</option><option>Supplies</option><option>Internet</option><option>Transport</option><option>Security</option><option>Cleaning</option><option>Bank Charges</option><option>Other</option></select>
+          <select id="ex_cat" class="input">${(DB.settings().expenseCategories || ['Salaries','Electricity','Diesel','Maintenance','Supplies','Internet','Transport','Security','Cleaning','Bank Charges','Other']).map(c => `<option>${c}</option>`).join('')}</select>
         </div>
         <div><label class="input-label">Amount (NGN)</label><input id="ex_amt" type="number" class="input" /></div>
         <div><label class="input-label">Description</label><textarea id="ex_desc" class="input" rows="2"></textarea></div>
