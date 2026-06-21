@@ -952,6 +952,7 @@ function viewInvoice(invoiceId) {
             <div class="font-semibold">${DB.find('parents', s.parentId).name}</div>
             <div class="text-xs">For: ${s.name}</div>
             <div class="text-xs">${cls ? cls.name : ''}</div>
+            <div class="text-xs text-slate-400">Adm. No: ${s.admissionNo || '—'}</div>
           </div>
           <div class="text-right">
             <div class="text-xs text-slate-500">INVOICE NO.</div>
@@ -1394,6 +1395,7 @@ function downloadReceipt(invoiceId) {
       <table style="width:100%;font-size:14px">
         <tr><td><strong>Received From:</strong></td><td align="right">${parent.name}</td></tr>
         <tr><td><strong>For Student:</strong></td><td align="right">${s.name} (${cls.name})</td></tr>
+        <tr><td><strong>Admission No:</strong></td><td align="right">${s.admissionNo || '—'}</td></tr>
         <tr><td><strong>Term:</strong></td><td align="right">${inv.term}</td></tr>
         <tr><td><strong>Issued:</strong></td><td align="right">${fdate(now(), { long: true })}</td></tr>
       </table>
