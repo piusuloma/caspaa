@@ -8616,8 +8616,8 @@ const _DEFAULT_EXAM_STRUCTURE = {
 
 function _getExamStructure() {
   const es = DB.settings().examStructure;
-  if (es) return es;
-  // First time: persist the default so mutating functions always find it
+  // Guard against corrupt/empty saves from before this helper existed
+  if (es && Array.isArray(es.terms) && es.terms.length > 0) return es;
   const def = JSON.parse(JSON.stringify(_DEFAULT_EXAM_STRUCTURE));
   DB.settings({ examStructure: def });
   return def;
