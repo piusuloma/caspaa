@@ -2589,6 +2589,31 @@ function viewStudent(id, activeTab) {
     const enrolled = DB.query('studentActivities', sa => sa.studentId === s.id);
     const enrolledIds = enrolled.map(sa => sa.activityId);
     const actTotal = enrolled.reduce((sum, sa) => { const a = DB.find('activities', sa.activityId); return sum + (a ? a.price : 0); }, 0);
+    const isAlumni = s.status === 'alumni';
+    const activitiesHtml = !allActs.length ? '' : (() => {
+      const hdr = isAlumni
+        ? '<div class="font-bold text-slate-900 text-sm">Extracurricular Activities</div><div class="text-xs text-slate-500">Past participation</div>'
+        : '<div class="font-bold text-slate-900 text-sm">Extracurricular Activities</div><div class="text-xs text-slate-500">Toggle — fees update invoice instantly</div>';
+      const invoiceDiv = !isAlumni && actTotal
+        ? '<div class="text-right"><div class="text-xs text-slate-400">On invoice</div><div class="font-extrabold text-brand-700">' + money(actTotal) + '/term</div></div>'
+        : '';
+      const list = isAlumni
+        ? (allActs.filter(a => enrolledIds.includes(a.id)).map(a =>
+            '<div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50">'
+            + '<span class="text-xl flex-shrink-0">' + a.icon + '</span>'
+            + '<div class="flex-1 min-w-0"><div class="font-semibold text-sm">' + a.name + '</div></div>'
+            + '<span class="badge badge-success text-xs">Participated</span></div>'
+          ).join('') || '<div class="text-sm text-slate-400 py-2">No activities on record.</div>')
+        : allActs.map(a => {
+            const isEnrolled = enrolledIds.includes(a.id);
+            return '<div class="flex items-center gap-3 p-2.5 rounded-xl border-2 ' + (isEnrolled ? 'border-brand-300 bg-brand-50' : 'border-slate-100 hover:border-slate-300') + '">'
+              + '<span class="text-xl flex-shrink-0">' + a.icon + '</span>'
+              + '<div class="flex-1 min-w-0"><div class="font-semibold text-sm">' + a.name + '</div><div class="text-xs text-slate-500">' + money(a.price) + '/term</div></div>'
+              + '<button class="btn ' + (isEnrolled ? 'btn-danger' : 'btn-secondary') + ' !py-1 !px-3 text-xs" onclick="toggleStudentActivity(\'' + s.id + '\',\'' + a.id + '\',' + isEnrolled + ')">'
+              + (isEnrolled ? 'Remove' : 'Enroll') + '</button></div>';
+          }).join('');
+      return '<div class="border-t border-slate-100 pt-4"><div class="flex items-center justify-between mb-2"><div>' + hdr + '</div>' + invoiceDiv + '</div><div class="space-y-2">' + list + '</div></div>';
+    })();
     const docs = s.documents || {};
     const presentDocs = _docTypes.filter(d => docs[d.key]);
     return `
@@ -2633,24 +2658,7 @@ function viewStudent(id, activeTab) {
         </div>
       </div>` : ''}
 
-      ${allActs.length ? `<div class="border-t border-slate-100 pt-4">
-        <div class="flex items-center justify-between mb-2">
-          <div><div class="font-bold text-slate-900 text-sm">Extracurricular Activities</div>
-          <div class="text-xs text-slate-500">Toggle — fees update invoice instantly</div></div>
-          ${actTotal ? `<div class="text-right"><div class="text-xs text-slate-400">On invoice</div><div class="font-extrabold text-brand-700">${money(actTotal)}/term</div></div>` : ''}
-        </div>
-        <div class="space-y-2">
-          ${allActs.map(a => { const isEnrolled = enrolledIds.includes(a.id);
-            return `<div class="flex items-center gap-3 p-2.5 rounded-xl border-2 ${isEnrolled ? 'border-brand-300 bg-brand-50' : 'border-slate-100 hover:border-slate-300'}">
-              <span class="text-xl flex-shrink-0">${a.icon}</span>
-              <div class="flex-1 min-w-0"><div class="font-semibold text-sm">${a.name}</div><div class="text-xs text-slate-500">${money(a.price)}/term</div></div>
-              <button class="btn ${isEnrolled ? 'btn-danger' : 'btn-secondary'} !py-1 !px-3 text-xs" onclick="toggleStudentActivity('${s.id}','${a.id}',${isEnrolled})">
-                ${isEnrolled ? 'Remove' : 'Enroll'}
-              </button>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>` : ''}
+      ${activitiesHtml}
     `;
   };
 
@@ -4296,7 +4304,7 @@ function view_adm_alumni() {
             + postInfoHtml
             + '</div>'
             + '<div class="flex flex-wrap gap-2 mt-3">'
-            + '<button class="btn btn-secondary text-xs flex-1" onclick="viewStudent(\'' + a.id + '\')">View record</button>'
+            + '<button class="btn btn-secondary text-xs flex-1" onclick="viewAlumniRecord(\'' + a.id + '\')">View record</button>'
             + '<button class="btn btn-secondary text-xs flex-1" onclick="adm_updateAlumniModal(\'' + a.id + '\')">' + icon('edit','w-3 h-3 inline-block') + ' Update Info</button>'
             + '</div>'
             + '<div class="flex flex-wrap gap-2 mt-2">'
@@ -4309,6 +4317,197 @@ function view_adm_alumni() {
       `}
     `}
   `;
+}
+
+/* ---------- Alumni Record ---------- */
+function viewAlumniRecord(alumniId, activeTab) {
+  const a = DB.find('students', alumniId);
+  if (!a) return;
+  const tab = activeTab || 'transcript';
+  const schoolId = currentSchoolId();
+  const school   = DB.find('schools', schoolId);
+  const subjects = DB.get('subjects');
+  const results  = COMPUTE.studentResults(alumniId);
+  const attRecs  = COMPUTE.studentAttendance(alumniId);
+
+  // ── Transcript ──────────────────────────────────────────────────────────────
+  let transcriptHtml;
+  if (!results.length) {
+    transcriptHtml = '<div class="text-center text-slate-400 py-8 text-sm">No result records on file.</div>';
+  } else {
+    const _es = DB.settings().examStructure || {};
+    const terms = [...new Set(results.map(r => r.term))].sort((x, y) => x.localeCompare(y));
+    transcriptHtml = terms.map(term => {
+      const termResults = results.filter(r => r.term === term)
+        .sort((x, y) => {
+          const sA = (subjects.find(s => s.id === x.subjectId) || {}).name || '';
+          const sB = (subjects.find(s => s.id === y.subjectId) || {}).name || '';
+          return sA.localeCompare(sB);
+        });
+      const avg = Math.round(termResults.reduce((s, r) => s + (r.total || 0), 0) / (termResults.length || 1));
+      const _esTypes = _es.terms ? ((_es.terms.find(t => t.name === term) || {}).types || []) : [];
+      const ca1L = _esTypes[0] ? _esTypes[0].label : 'CA 1';
+      const ca2L = _esTypes[1] ? _esTypes[1].label : 'CA 2';
+      const exL  = _esTypes.length > 2 ? _esTypes[_esTypes.length - 1].label : 'Exam';
+      const rows = termResults.map(r => {
+        const sub    = subjects.find(s => s.id === r.subjectId);
+        const gBadge = r.grade === 'A' ? 'badge-success' : r.grade === 'F' ? 'badge-danger' : (r.grade === 'D' || r.grade === 'E') ? 'badge-warn' : 'badge-info';
+        return '<tr>'
+          + '<td class="font-medium">' + (sub ? sub.name : '—') + '</td>'
+          + '<td class="text-center">' + (r.ca1 ?? '—') + '</td>'
+          + '<td class="text-center">' + (r.ca2 ?? '—') + '</td>'
+          + '<td class="text-center">' + (r.exam ?? '—') + '</td>'
+          + '<td class="text-center font-bold">' + (r.total ?? '—') + '</td>'
+          + '<td class="text-center"><span class="badge ' + gBadge + '">' + (r.grade || '—') + '</span></td>'
+          + '</tr>';
+      }).join('');
+      return '<div class="mb-4">'
+        + '<div class="flex items-center justify-between mb-2">'
+        + '<div class="font-bold text-slate-900">' + term + '</div>'
+        + '<div class="text-sm text-slate-500">Avg: <strong class="' + (avg >= 60 ? 'text-brand-700' : 'text-rose-600') + '">' + avg + '%</strong></div>'
+        + '</div><div class="card overflow-hidden">'
+        + '<table class="tbl text-sm"><thead><tr><th>Subject</th><th class="text-center">' + ca1L + '</th><th class="text-center">' + ca2L + '</th><th class="text-center">' + exL + '</th><th class="text-center">Total</th><th class="text-center">Grade</th></tr></thead>'
+        + '<tbody>' + rows + '</tbody></table></div></div>';
+    }).join('');
+  }
+
+  // ── Attendance ──────────────────────────────────────────────────────────────
+  let attendanceHtml;
+  const present = attRecs.filter(r => r.status === 'present').length;
+  const late    = attRecs.filter(r => r.status === 'late').length;
+  const absent  = attRecs.filter(r => r.status === 'absent').length;
+  const attPct  = attRecs.length ? Math.round(((present + late) / attRecs.length) * 100) : 0;
+  if (!attRecs.length) {
+    attendanceHtml = '<div class="text-center text-slate-400 py-8 text-sm">No attendance records on file.</div>';
+  } else {
+    attendanceHtml = '<div class="grid grid-cols-4 gap-3">'
+      + '<div class="text-center p-3 bg-brand-50 rounded-xl"><div class="text-2xl font-bold text-brand-900">' + present + '</div><div class="text-xs text-brand-700 font-semibold uppercase">Present</div></div>'
+      + '<div class="text-center p-3 bg-amber-50 rounded-xl"><div class="text-2xl font-bold text-amber-900">' + late + '</div><div class="text-xs text-amber-700 font-semibold uppercase">Late</div></div>'
+      + '<div class="text-center p-3 bg-rose-50 rounded-xl"><div class="text-2xl font-bold text-rose-900">' + absent + '</div><div class="text-xs text-rose-700 font-semibold uppercase">Absent</div></div>'
+      + '<div class="text-center p-3 bg-emerald-50 rounded-xl"><div class="text-2xl font-bold text-emerald-900">' + attPct + '%</div><div class="text-xs text-emerald-700 font-semibold uppercase">Rate</div></div>'
+      + '</div>';
+  }
+
+  // ── Activities ──────────────────────────────────────────────────────────────
+  const enrollments   = DB.query('studentActivities', sa => sa.studentId === alumniId && sa.schoolId === schoolId);
+  const allActivities = DB.query('activities', act => act.schoolId === schoolId);
+  let activitiesHtml;
+  if (!enrollments.length) {
+    activitiesHtml = '<div class="text-center text-slate-400 py-8 text-sm">No extracurricular activities on record.</div>';
+  } else {
+    activitiesHtml = '<div class="space-y-2">' + enrollments.map(sa => {
+      const act = allActivities.find(x => x.id === sa.activityId);
+      return act
+        ? '<div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50">'
+          + '<span class="text-xl">' + act.icon + '</span>'
+          + '<div class="flex-1 min-w-0"><div class="font-semibold text-sm">' + act.name + '</div>'
+          + '<div class="text-xs text-slate-400">' + (sa.term || '') + '</div></div>'
+          + '<span class="badge badge-success">Participated</span></div>'
+        : '';
+    }).join('') + '</div>';
+  }
+
+  // ── Tab pills ───────────────────────────────────────────────────────────────
+  const tabs = [['transcript','📊 Transcript'],['attendance','📅 Attendance'],['activities','🏅 Activities']];
+  const tabNav = '<div class="flex gap-1 mb-4 bg-slate-100 rounded-xl p-1">'
+    + tabs.map(([key, label]) =>
+        '<button class="flex-1 text-xs font-semibold py-1.5 px-2 rounded-lg transition-all '
+        + (tab === key ? 'bg-white shadow text-brand-700' : 'text-slate-500 hover:text-slate-700')
+        + '" onclick="viewAlumniRecord(\'' + alumniId + '\',\'' + key + '\')">' + label + '</button>'
+      ).join('')
+    + '</div>';
+
+  const content = tab === 'transcript' ? transcriptHtml : tab === 'attendance' ? attendanceHtml : activitiesHtml;
+
+  modal({
+    title: 'Alumni Record — ' + a.name,
+    size: 'lg',
+    body: `
+      <div class="flex items-center gap-4 mb-5 p-4 bg-slate-50 rounded-xl">
+        ${avatar(a, 'xl')}
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-xl text-slate-900">${a.name}</div>
+          <div class="text-sm text-slate-500">Class of ${a.graduationYear || '—'} · ${a.finalClass || '—'}</div>
+          <div class="text-xs text-slate-400 mt-0.5">Adm No: ${a.admissionNo}</div>
+          ${a.awards ? '<div class="mt-1 inline-block bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded-full font-medium">' + a.awards + '</div>' : ''}
+        </div>
+        <button class="btn btn-secondary text-xs flex-shrink-0" onclick="adm_printTranscript('${a.id}')">🖨️ Print Transcript</button>
+      </div>
+      ${tabNav}
+      <div class="overflow-y-auto" style="max-height:52vh">${content}</div>
+    `,
+    footer: '<button class="btn btn-secondary" onclick="document.getElementById(\'modalBackdrop\')?.click()">Close</button>'
+  });
+}
+
+function adm_printTranscript(alumniId) {
+  const a = DB.find('students', alumniId);
+  if (!a) return;
+  const schoolId = currentSchoolId();
+  const school   = DB.find('schools', schoolId);
+  const subjects = DB.get('subjects');
+  const results  = COMPUTE.studentResults(alumniId);
+  const _es      = DB.settings().examStructure || {};
+  const terms    = [...new Set(results.map(r => r.term))].sort((x, y) => x.localeCompare(y));
+
+  const termRows = terms.map(term => {
+    const termResults = results.filter(r => r.term === term)
+      .sort((x, y) => {
+        const sA = (subjects.find(s => s.id === x.subjectId) || {}).name || '';
+        const sB = (subjects.find(s => s.id === y.subjectId) || {}).name || '';
+        return sA.localeCompare(sB);
+      });
+    const avg = Math.round(termResults.reduce((s, r) => s + (r.total || 0), 0) / (termResults.length || 1));
+    const _esTypes = _es.terms ? ((_es.terms.find(t => t.name === term) || {}).types || []) : [];
+    const ca1L = _esTypes[0] ? _esTypes[0].label : 'CA 1';
+    const ca2L = _esTypes[1] ? _esTypes[1].label : 'CA 2';
+    const exL  = _esTypes.length > 2 ? _esTypes[_esTypes.length - 1].label : 'Exam';
+    const rows = termResults.map(r => {
+      const sub = subjects.find(s => s.id === r.subjectId);
+      const gc  = r.grade === 'A' ? '#059669' : r.grade === 'F' ? '#dc2626' : '#1d4ed8';
+      return '<tr>'
+        + '<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6">' + (sub ? sub.name : '—') + '</td>'
+        + '<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:center">' + (r.ca1 ?? '—') + '</td>'
+        + '<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:center">' + (r.ca2 ?? '—') + '</td>'
+        + '<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:center">' + (r.exam ?? '—') + '</td>'
+        + '<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:center;font-weight:700">' + (r.total ?? '—') + '</td>'
+        + '<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:center;color:' + gc + ';font-weight:700">' + (r.grade || '—') + '</td>'
+        + '</tr>';
+    }).join('');
+    return '<div style="margin-bottom:20px">'
+      + '<div style="background:#f3f4f6;padding:6px 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #4f46e5;margin-bottom:4px">'
+      + term + ' &nbsp;—&nbsp; Class Average: ' + avg + '%</div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
+      + '<thead><tr style="background:#f9fafb">'
+      + '<th style="text-align:left;padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Subject</th>'
+      + '<th style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">' + ca1L + '</th>'
+      + '<th style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">' + ca2L + '</th>'
+      + '<th style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">' + exL + '</th>'
+      + '<th style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">Total</th>'
+      + '<th style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">Grade</th>'
+      + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }).join('');
+
+  const html = '<!DOCTYPE html><html><head><title>Transcript — ' + a.name + '</title>'
+    + '<style>body{font-family:Georgia,serif;margin:40px;color:#1a1a1a}h1{text-align:center;font-size:22px;margin-bottom:4px}.sub{text-align:center;color:#555;font-size:13px;margin-bottom:4px}.doc-title{text-align:center;font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:20px;color:#3730a3}.info{border:1px solid #ddd;border-radius:6px;padding:14px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px}.lbl{color:#777;font-size:11px;text-transform:uppercase;letter-spacing:.05em}.footer{margin-top:40px;border-top:1px solid #ddd;padding-top:14px;font-size:11px;color:#999;text-align:center}@media print{body{margin:20px}}</style>'
+    + '</head><body>'
+    + '<h1>' + (school ? school.name : 'School') + '</h1>'
+    + (school && school.address ? '<div class="sub">' + school.address + '</div>' : '')
+    + '<div class="doc-title">Official Academic Transcript</div>'
+    + '<div class="info">'
+    + '<div><div class="lbl">Full Name</div><strong>' + a.name + '</strong></div>'
+    + '<div><div class="lbl">Admission No</div><strong>' + a.admissionNo + '</strong></div>'
+    + '<div><div class="lbl">Graduation Year</div><strong>' + (a.graduationYear || '—') + '</strong></div>'
+    + '<div><div class="lbl">Final Class</div><strong>' + (a.finalClass || '—') + '</strong></div>'
+    + (a.examType ? '<div><div class="lbl">Examination</div><strong>' + a.examType + (a.examIndex ? ' · ' + a.examIndex : '') + '</strong></div>' : '')
+    + (a.awards ? '<div><div class="lbl">Awards &amp; Honours</div><strong>' + a.awards + '</strong></div>' : '')
+    + '</div>'
+    + (termRows || '<p style="text-align:center;color:#aaa;font-size:13px">No result records on file.</p>')
+    + '<div class="footer">Issued by ' + (school ? school.name : 'the school') + '</div>'
+    + '</body></html>';
+
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); w.print(); }
 }
 
 /* ---------- Enrollment Analytics ---------- */
