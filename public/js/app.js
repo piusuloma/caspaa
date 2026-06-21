@@ -91,13 +91,10 @@ const APP = {
         { key: 'par_timetable',  label: 'Timetable',       icon: 'calendar' },
         { key: 'par_loans',      label: 'Loans',           icon: 'loan' },
         { key: 'par_consent',    label: 'Consent',         icon: 'check' },
-        { key: 'par_messages',   label: 'Messages',        icon: 'chat' },
-        { key: 'par_announce',   label: 'Announcements',   icon: 'bell' },
-        { key: 'cal_main',       label: 'Calendar',        icon: 'calendar' },
+        { key: 'par_comms',      label: 'Communications',  icon: 'chat' },
         { key: 'par_houses',     label: 'House Points',    icon: 'check' },
         { key: 'par_transport',  label: 'Transport',       icon: 'package' },
         { key: 'par_health',     label: 'Health',          icon: 'reports' },
-        { key: 'par_diary',      label: 'Diary',           icon: 'book-open' },
         { key: 'par_feedback',   label: 'Surveys',         icon: 'check' }
       ],
       student: [

@@ -909,7 +909,8 @@ function view_adm_academic() {
 function view_adm_exam_structure() {
   return `
     ${pageHeader({ title: 'Assessment Setup', subtitle: 'Define CA count, weights, mock exams, and pre-tests per term. Teachers see these columns when entering results.' })}
-    ${renderExamStructureSettings()}
+    ${renderAssessmentCategoriesSettings()}
+    <div class="mt-4">${renderExamStructureSettings()}</div>
   `;
 }
 
@@ -1906,13 +1907,14 @@ function exportSchemePDF(schemeId) {
 
 function view_adm_finance_hub() {
   return buildHub('Finance', 'Fees, invoices, expenses, payroll, reports', [
-    { key: 'fees',     label: 'Fee Structure', view: 'view_fin_fees' },
-    { key: 'invoices', label: 'Invoices',      view: 'view_fin_invoices' },
-    { key: 'payments', label: 'Payments',      view: 'view_fin_payments' },
-    { key: 'expenses', label: 'Expenses',      view: 'view_fin_expenses' },
-    { key: 'payroll',  label: 'Payroll',       view: 'view_fin_payroll' },
-    { key: 'reports',  label: 'Reports',       view: 'view_fin_reports' }
-  ], 'fees', 'financeTab');
+    { key: 'overview',  label: 'Overview',      view: 'view_fin_cost_center' },
+    { key: 'fees',      label: 'Fee Structure', view: 'view_fin_fees' },
+    { key: 'invoices',  label: 'Invoices',      view: 'view_fin_invoices' },
+    { key: 'payments',  label: 'Payments',      view: 'view_fin_payments' },
+    { key: 'expenses',  label: 'Expenses',      view: 'view_fin_expenses' },
+    { key: 'payroll',   label: 'Payroll',       view: 'view_fin_payroll' },
+    { key: 'reports',   label: 'Reports',       view: 'view_fin_reports' }
+  ], 'overview', 'financeTab');
 }
 
 function view_adm_operations() {
@@ -2091,42 +2093,8 @@ function view_adm_dashboard() {
   const allResults = DB.query('results', r => r.schoolId === schoolId);
   const avgScore = allResults.length ? Math.round(allResults.reduce((s, r) => s + r.total, 0) / allResults.length) : 0;
 
-  const revenueView = APP.params.revenueView || 'termly';
-
   // Schedule chart render after DOM
   window.afterRender = () => {
-    const ctx = document.getElementById('revenueChart');
-    if (ctx) {
-      let labels, data;
-      if (revenueView === 'monthly') {
-        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        data = [0, 0, 4200000, 4600000, 3800000, 0, 0, 4100000, 4400000, 3900000, 4800000, collected || 4500000];
-      } else if (revenueView === 'annually') {
-        labels = ['2021/22', '2022/23', '2023/24', '2024/25'];
-        data = [28000000, 32000000, 38000000, (collected || 12200000) * 3];
-      } else {
-        // termly (default)
-        labels = ['1st Term 24/25', '2nd Term 24/25', '3rd Term 24/25', DB.settings().currentTerm];
-        data = [10800000, 12400000, 11600000, collected || 12200000];
-      }
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Collected (₦)',
-            data,
-            backgroundColor: '#047857', borderRadius: 6, maxBarThickness: 60
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          animation: { duration: 0 },
-          plugins: { legend: { display: false } },
-          scales: { y: { ticks: { callback: v => '₦' + (v/1000000).toFixed(1) + 'M' } } }
-        }
-      });
-    }
     const gctx = document.getElementById('genderChart');
     if (gctx) {
       new Chart(gctx, {
@@ -2278,21 +2246,33 @@ function view_adm_dashboard() {
         </div>
       </div>
 
-      <!-- Revenue chart + Notifications -->
+      <!-- Finance snapshot + Notifications -->
       <div class="grid lg:grid-cols-3 gap-4">
         <div class="card p-5 lg:col-span-2">
-          <div class="flex items-center justify-between mb-3 gap-2 min-w-0">
-            <h3 class="font-bold text-slate-900 truncate">Revenue · <span class="text-brand-700 font-extrabold">${revenueView === 'monthly' ? 'Monthly' : revenueView === 'annually' ? 'Annual' : 'Per Term'}</span></h3>
-            <div class="flex items-center gap-2 flex-shrink-0">
-              <div class="flex rounded-lg border border-slate-200 overflow-hidden text-xs">
-                <button class="px-2.5 py-1.5 ${revenueView==='monthly'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='monthly'; APP.render()">Monthly</button>
-                <button class="px-2.5 py-1.5 border-l border-r border-slate-200 ${revenueView==='termly'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='termly'; APP.render()">Termly</button>
-                <button class="px-2.5 py-1.5 ${revenueView==='annually'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='annually'; APP.render()">Annually</button>
-              </div>
-              <button class="btn btn-ghost text-sm hidden sm:inline-flex" onclick="APP.go('adm_finance_hub', { financeTab: 'reports' })">Report →</button>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-bold text-slate-900">Financial Snapshot</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Current term · full analytics in Finance</p>
+            </div>
+            <button class="btn btn-primary text-sm" onclick="APP.go('adm_finance_hub', { financeTab: 'overview' })">${icon('fees','w-3.5 h-3.5')} Finance Hub</button>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-emerald-50 rounded-xl p-4 text-center">
+              <div class="text-lg font-extrabold text-emerald-700">${money(collected)}</div>
+              <div class="text-xs text-emerald-600 mt-0.5">Collected</div>
+            </div>
+            <div class="bg-rose-50 rounded-xl p-4 text-center">
+              <div class="text-lg font-extrabold text-rose-700">${money(outstanding)}</div>
+              <div class="text-xs text-rose-600 mt-0.5">Outstanding</div>
             </div>
           </div>
-          <div style="height: 220px;"><canvas id="revenueChart"></canvas></div>
+          <div class="h-2 rounded-full overflow-hidden bg-rose-100 mb-1">
+            <div class="h-full rounded-full bg-emerald-500 transition-all" style="width:${collectionRate}%"></div>
+          </div>
+          <div class="flex justify-between text-xs text-slate-500">
+            <span>${collectionRate}% collected</span>
+            <button class="text-brand-700 font-semibold underline" onclick="APP.go('adm_finance_hub',{financeTab:'invoices'})">View invoices →</button>
+          </div>
         </div>
 
         <!-- Notifications + quick actions -->
@@ -2344,85 +2324,6 @@ function view_adm_dashboard() {
         </div>
       </div>
 
-      <!-- Revenue analytics panel -->
-      ${(() => {
-        const expenses = DB.query('expenses', e => e.schoolId === schoolId);
-        const totalExp = expenses.reduce((s, e) => s + e.amount, 0);
-        const staffExpenses = expenses.filter(e => ['Salaries', 'Staff', 'Payroll'].some(k => (e.category || '').includes(k)));
-        const staffCost = staffExpenses.reduce((s, e) => s + e.amount, 0) || teachers.reduce((s, t) => s + (t.salary || 0), 0);
-        const nonStaffExp = totalExp - staffCost;
-        const profitMargin = collected > 0 ? Math.round(((collected - totalExp) / collected) * 100) : 0;
-        // Teacher cost ratio = teaching staff cost / total income
-        const academicStaff = teachers.filter(t => t.staffType === 'Academic');
-        const academicSalaryCost = academicStaff.reduce((s, t) => s + (t.salary || 0), 0);
-        const teacherCostRatio = collected > 0 ? Math.round((academicSalaryCost / collected) * 100) : 0;
-        const revenueAnalytics = DB.settings().revenueAnalytics || {};
-        const targetMargin = revenueAnalytics.targetMargin || 20;
-        const targetTeacherRatio = revenueAnalytics.targetTeacherRatio || 40;
-
-        return `<div class="grid lg:grid-cols-3 gap-4">
-          <div class="card p-5 lg:col-span-2">
-            <div class="flex items-center justify-between mb-3">
-              <div>
-                <h3 class="font-bold text-slate-900">Revenue Analytics</h3>
-                <p class="text-xs text-slate-400 mt-0.5">How much the school earns vs. spends · tiles turn amber when below your benchmarks</p>
-              </div>
-              <button class="btn btn-ghost text-sm" onclick="revenueAnalyticsParamsModal()">${icon('settings','w-3.5 h-3.5')} Benchmarks</button>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-              <div class="bg-emerald-50 rounded-xl p-3 text-center">
-                <div class="text-xl font-extrabold text-emerald-700">${money(collected)}</div>
-                <div class="text-xs text-emerald-600">Total Income</div>
-              </div>
-              <div class="bg-rose-50 rounded-xl p-3 text-center">
-                <div class="text-xl font-extrabold text-rose-700">${money(totalExp)}</div>
-                <div class="text-xs text-rose-600">Total Expenses</div>
-              </div>
-              <div class="bg-${profitMargin >= targetMargin ? 'emerald' : 'amber'}-50 rounded-xl p-3 text-center">
-                <div class="text-xl font-extrabold text-${profitMargin >= targetMargin ? 'emerald' : 'amber'}-700">${profitMargin}%</div>
-                <div class="text-xs text-${profitMargin >= targetMargin ? 'emerald' : 'amber'}-600">Profit Margin</div>
-                <div class="text-[10px] text-slate-400 mt-0.5">Target: ${targetMargin}%</div>
-              </div>
-              <div class="bg-${teacherCostRatio <= targetTeacherRatio ? 'blue' : 'amber'}-50 rounded-xl p-3 text-center">
-                <div class="text-xl font-extrabold text-${teacherCostRatio <= targetTeacherRatio ? 'blue' : 'amber'}-700">${teacherCostRatio}%</div>
-                <div class="text-xs text-${teacherCostRatio <= targetTeacherRatio ? 'blue' : 'amber'}-600">Teacher Cost Ratio</div>
-                <div class="text-[10px] text-slate-400 mt-0.5">Target: ≤${targetTeacherRatio}%</div>
-              </div>
-            </div>
-            <div class="space-y-2">
-              <div>
-                <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">Teaching Staff Cost</span><span class="font-semibold">${money(academicSalaryCost)} (${teacherCostRatio}% of income)</span></div>
-                <div class="progress"><div class="progress-bar ${teacherCostRatio > targetTeacherRatio ? 'bg-amber-500' : ''}" style="width:${Math.min(100,teacherCostRatio)}%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">Non-Staff Expenses</span><span class="font-semibold">${money(nonStaffExp)} (${collected > 0 ? Math.round(nonStaffExp/collected*100) : 0}% of income)</span></div>
-                <div class="progress"><div class="progress-bar bg-rose-400" style="width:${collected > 0 ? Math.min(100, Math.round(nonStaffExp/collected*100)) : 0}%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">Profit Margin</span><span class="font-semibold ${profitMargin >= targetMargin ? 'text-emerald-700' : 'text-amber-700'}">${profitMargin}% ${profitMargin >= targetMargin ? '✓' : `(target ${targetMargin}%)`}</span></div>
-                <div class="progress"><div class="progress-bar ${profitMargin < targetMargin ? 'bg-amber-500' : ''}" style="width:${Math.max(0,Math.min(100,profitMargin))}%"></div></div>
-              </div>
-            </div>
-          </div>
-          <div class="card p-5">
-            <h3 class="font-bold text-slate-900 mb-3">Staff Cost Breakdown</h3>
-            ${(() => {
-              const byType = {};
-              teachers.forEach(t => { const k = t.staffType || 'Other'; byType[k] = (byType[k] || 0) + (t.salary || 0); });
-              const total = Object.values(byType).reduce((s, v) => s + v, 0);
-              const colors = ['bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-purple-500'];
-              return Object.entries(byType).map(([type, amt], i) => `<div class="mb-2">
-                <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">${type}</span><span class="font-semibold">${money(amt)} (${total > 0 ? Math.round(amt/total*100) : 0}%)</span></div>
-                <div class="progress"><div class="${colors[i % colors.length]} h-full rounded-full" style="width:${total > 0 ? Math.round(amt/total*100) : 0}%"></div></div>
-              </div>`).join('');
-            })()}
-            <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between text-sm font-bold">
-              <span>Total Staff Cost</span>
-              <span class="font-mono text-rose-700">${money(teachers.reduce((s, t) => s + (t.salary || 0), 0))}</span>
-            </div>
-          </div>
-        </div>`;
-      })()}
 
       <!-- Recent payments (compact, below the fold) -->
       <div class="card p-5">
@@ -7141,8 +7042,9 @@ function view_adm_fees() { return view_fin_fees(); }
 function view_adm_reports() {
   const rTab = APP.params.rTab || 'enrollment';
   const schoolId = currentSchoolId();
+  const _criticalCount = computeInsights(schoolId).filter(x => x.level === 'critical').length || null;
   const tabs_list = [
-    { key: 'insights',    label: 'Insights', badge: () => { const i = computeInsights(schoolId); return i.filter(x => x.level === 'critical').length || null; } },
+    { key: 'insights',    label: 'Insights', badge: _criticalCount },
     { key: 'enrollment',  label: 'Enrollment' },
     { key: 'leavers',     label: 'Leavers' },
     { key: 'attendance',  label: 'Attendance' },
@@ -9252,6 +9154,60 @@ function tcw_promote() {
   setTimeout(() => bulkPromoteModal(), 100);
 }
 
+/* ---------- Assessment Categories ---------- */
+const _DEFAULT_ASSESSMENT_CATEGORIES = [
+  { key: 'examination',     label: 'Examination' },
+  { key: 'midterm',         label: 'Mid-term Test' },
+  { key: 'cbt',             label: 'CBT (Computer-Based Test)' },
+  { key: 'mock',            label: 'Mock Exam' },
+  { key: 'extracurricular', label: 'Extracurricular' }
+];
+
+function _getAssessmentCategories() {
+  const cats = DB.settings().assessmentCategories;
+  if (Array.isArray(cats) && cats.length > 0) return cats;
+  DB.settings({ assessmentCategories: JSON.parse(JSON.stringify(_DEFAULT_ASSESSMENT_CATEGORIES)) });
+  return JSON.parse(JSON.stringify(_DEFAULT_ASSESSMENT_CATEGORIES));
+}
+
+function renderAssessmentCategoriesSettings() {
+  const cats = _getAssessmentCategories();
+  const rows = cats.map((c, i) => '<tr>'
+    + '<td><input type="text" class="input input-sm" value="' + c.key + '" onchange="adm_updateAssessmentCategory(' + i + ',\'key\',this.value)" placeholder="key (no spaces)" /></td>'
+    + '<td><input type="text" class="input input-sm" value="' + c.label + '" onchange="adm_updateAssessmentCategory(' + i + ',\'label\',this.value)" placeholder="Display label" /></td>'
+    + '<td><button class="btn btn-ghost !p-1.5 text-rose-600" onclick="adm_removeAssessmentCategory(' + i + ')">' + icon('trash','w-4 h-4') + '</button></td>'
+    + '</tr>').join('');
+  return '<div class="card p-5">'
+    + '<div class="flex items-center justify-between mb-3"><h4 class="font-bold text-slate-900">Assessment Categories</h4>'
+    + '<button class="btn btn-secondary text-xs" onclick="adm_addAssessmentCategory()">' + icon('plus','w-3.5 h-3.5') + ' Add Category</button></div>'
+    + '<p class="text-xs text-slate-500 mb-3">These appear as the "Category" dropdown when building your exam structure below. Use short keys (no spaces) and clear labels.</p>'
+    + '<table class="tbl"><thead><tr><th>Key (internal)</th><th>Label (shown to staff)</th><th></th></tr></thead>'
+    + '<tbody>' + rows + '</tbody></table></div>';
+}
+
+function adm_addAssessmentCategory() {
+  const cats = _getAssessmentCategories();
+  cats.push({ key: 'new_category', label: 'New Category' });
+  DB.settings({ assessmentCategories: cats });
+  APP.render();
+}
+
+function adm_removeAssessmentCategory(i) {
+  const cats = _getAssessmentCategories();
+  cats.splice(i, 1);
+  DB.settings({ assessmentCategories: cats });
+  APP.render();
+}
+
+function adm_updateAssessmentCategory(i, field, value) {
+  const cats = _getAssessmentCategories();
+  if (cats[i]) {
+    if (field === 'key') value = value.trim().replace(/\s+/g, '_').toLowerCase();
+    cats[i][field] = value;
+    DB.settings({ assessmentCategories: cats });
+  }
+}
+
 /* ---------- Exam Structure Settings ---------- */
 const _DEFAULT_EXAM_STRUCTURE = {
   terms: [
@@ -9272,10 +9228,11 @@ function _getExamStructure() {
 
 function renderExamStructureSettings() {
   const examStructure = _getExamStructure();
+  const assessmentCats = _getAssessmentCategories();
   return `
     <div class="space-y-4">
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
-        ${icon('info','w-4 h-4 inline mr-1')} Define the assessment types (CBT, midterm, mock, final exam) and their weighting for each term. Teachers will see these categories when entering results.
+        ${icon('info','w-4 h-4 inline mr-1')} Define the assessment types and their weighting for each term. Categories are managed in the section above.
       </div>
       ${examStructure.terms.map((term, ti) => `
         <div class="card p-5">
@@ -9290,11 +9247,7 @@ function renderExamStructureSettings() {
                 <td><input type="text" class="input input-sm" value="${t.label}" onchange="updateExamType(${ti},${xi},'label',this.value)" /></td>
                 <td>
                   <select class="input input-sm" onchange="updateExamType(${ti},${xi},'category',this.value)">
-                    <option ${(t.category||'examination')==='examination'?'selected':''}>examination</option>
-                    <option ${(t.category||'')==='midterm'?'selected':''}>midterm</option>
-                    <option ${(t.category||'')==='extracurricular'?'selected':''}>extracurricular</option>
-                    <option ${(t.category||'')==='cbt'?'selected':''}>cbt</option>
-                    <option ${(t.category||'')==='mock'?'selected':''}>mock</option>
+                    ${assessmentCats.map(c => '<option value="' + c.key + '" ' + ((t.category||'examination')===c.key?'selected':'') + '>' + c.label + '</option>').join('')}
                   </select>
                 </td>
                 <td><input type="number" class="input input-sm w-20" value="${t.weight}" min="0" max="100" onchange="updateExamType(${ti},${xi},'weight',parseInt(this.value))" /></td>

@@ -27,6 +27,8 @@ function view_stu_dashboard() {
   const day = new Date().toLocaleDateString('en-US', { weekday: 'long' });
   const todays = DB.query('timetable', t => t.classId === s.classId && t.day === day).sort((a, b) => a.period - b.period);
   const commendations = DB.query('discipline', d => d.studentId === s.id && d.type === 'commendation').sort((a, b) => b.date.localeCompare(a.date));
+  const _ttCfg = DB.settings().timetableConfig || {};
+  const _periodTimes = _ttCfg.periodTimes || {1:'08:00-08:40',2:'08:40-09:20',3:'09:20-10:00',4:'10:00-10:40',5:'11:00-11:40',6:'11:40-12:20',7:'13:00-13:40',8:'13:40-14:20'};
 
   return `
     <div class="space-y-5">
@@ -82,12 +84,13 @@ function view_stu_dashboard() {
           ${todays.length === 0 ? `<p class="text-sm text-slate-500">No classes scheduled today. Enjoy your day!</p>` : `
             <div class="space-y-2">
               ${todays.map(t => `<div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl">
-                <div class="w-10 h-10 rounded-lg bg-brand-100 text-brand-700 flex flex-col items-center justify-center flex-shrink-0">
-                  <span class="text-[10px] font-semibold">P${t.period}</span>
+                <div class="w-12 h-12 rounded-lg bg-brand-100 text-brand-700 flex flex-col items-center justify-center flex-shrink-0">
+                  <span class="text-[10px] font-bold">P${t.period}</span>
+                  <span class="text-[9px] leading-tight text-center">${(_periodTimes[t.period] || '').split('-')[0]}</span>
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="font-semibold text-sm">${subjName(t.subjectId)}</div>
-                  <div class="text-xs text-slate-500">${t.time || ''} · ${teacherName(t.teacherId)}</div>
+                  <div class="text-xs text-slate-500">${_periodTimes[t.period] || ''} · ${teacherName(t.teacherId)}</div>
                 </div>
               </div>`).join('')}
             </div>
@@ -660,9 +663,7 @@ function stu_viewCbtResult(subId) {
    ============================================================ */
 function view_stu_results() {
   const s = me();
-  const allResults = COMPUTE.studentResults(s.id);
-  const results = allResults.filter(r => r.approved);
-  const pendingCount = allResults.length - results.length;
+  const results = COMPUTE.studentResults(s.id).filter(r => r.approved);
   const total = results.reduce((sum, r) => sum + r.total, 0);
   const avg = results.length ? Math.round(total / results.length) : 0;
   const cbtSubs = DB.query('cbtSubmissions', x => x.studentId === s.id);
@@ -687,7 +688,6 @@ function view_stu_results() {
       ${statCard({ label: 'CBT Taken', value: cbtSubs.length, icon: 'classes', color: 'blue' })}
     </div>
 
-    ${pendingCount > 0 ? `<div class="alert alert-warn mb-4">${pendingCount} result(s) are still being reviewed by your teacher and will appear here once approved.</div>` : ''}
 
     <div class="card overflow-hidden mb-4">
       <div class="px-4 py-3 border-b border-slate-100"><h3 class="font-bold text-slate-900">Subject Results</h3></div>
@@ -801,17 +801,35 @@ function view_stu_timetable() {
   const entries = DB.query('timetable', t => t.classId === s.classId);
   const cell = (day, period) => entries.find(e => e.day === day && e.period === period);
   const hasAny = entries.length > 0;
+  const ttConfig = DB.settings().timetableConfig || {};
+  const periodTimes = ttConfig.periodTimes || {1:'08:00-08:40',2:'08:40-09:20',3:'09:20-10:00',4:'10:00-10:40',5:'11:00-11:40',6:'11:40-12:20',7:'13:00-13:40',8:'13:40-14:20'};
+  const break1After = ttConfig.break1After || 4;
+  const break2After = ttConfig.break2After || 6;
+  const break1Label = ttConfig.break1Label || 'Short Break';
+  const break2Label = ttConfig.break2Label || 'Lunch Break';
+
   return `
-    ${pageHeader({ title: 'My Timetable', subtitle: cls ? `${cls.name} · weekly schedule` : 'Weekly schedule' })}
+    ${pageHeader({ title: 'My Timetable', subtitle: cls ? cls.name + ' · weekly schedule' : 'Weekly schedule' })}
     ${!hasAny ? emptyState({ title: 'No timetable yet', body: 'Your class timetable will appear here once published.', icon: 'calendar' }) : `
       <div class="card overflow-hidden">
         <div class="overflow-x-auto"><table class="tbl">
-          <thead><tr><th>Period</th>${days.map(d => `<th class="text-center">${d.slice(0, 3)}</th>`).join('')}</tr></thead>
+          <thead><tr><th>Period</th>${days.map(d => '<th class="text-center">' + d.slice(0, 3) + '</th>').join('')}</tr></thead>
           <tbody>
-            ${periods.filter(p => days.some(d => cell(d, p))).map(p => `<tr>
-              <td class="font-semibold text-slate-500">P${p}</td>
-              ${days.map(d => { const c = cell(d, p); return `<td class="text-center text-sm">${c ? `<div class="font-semibold text-slate-900">${subjName(c.subjectId)}</div><div class="text-xs text-slate-400">${teacherName(c.teacherId).split(' ').slice(-1)}</div>` : '<span class="text-slate-300">—</span>'}</td>`; }).join('')}
-            </tr>`).join('')}
+            ${periods.map(p => {
+              const rows = [];
+              if (p === break1After + 1) rows.push('<tr class="bg-amber-50"><td colspan="6" class="text-center text-xs text-amber-800 font-semibold py-1.5">' + break1Label + '</td></tr>');
+              else if (p === break2After + 1) rows.push('<tr class="bg-sky-50"><td colspan="6" class="text-center text-xs text-sky-800 font-semibold py-1.5">' + break2Label + '</td></tr>');
+              rows.push('<tr>'
+                + '<td><strong class="text-slate-900">P' + p + '</strong><br><span class="text-xs text-slate-500">' + (periodTimes[p] || '') + '</span></td>'
+                + days.map(d => {
+                    const c = cell(d, p);
+                    return '<td class="text-center text-sm">' + (c
+                      ? '<div class="font-semibold text-slate-900">' + subjName(c.subjectId) + '</div><div class="text-xs text-slate-400">' + teacherName(c.teacherId).split(' ').slice(-1) + '</div>'
+                      : '<span class="text-slate-300">—</span>') + '</td>';
+                  }).join('')
+                + '</tr>');
+              return rows.join('');
+            }).join('')}
           </tbody>
         </table></div>
       </div>

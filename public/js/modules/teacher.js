@@ -251,6 +251,8 @@ function view_tch_dashboard() {
   const day = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
   const todaySchedule = DB.query('timetable', tt => tt.teacherId === t.id && tt.day === day).sort((a,b) => a.period - b.period);
   const subjects = DB.get('subjects');
+  const _ttCfg = DB.settings().timetableConfig || {};
+  const _periodTimes = _ttCfg.periodTimes || {1:'08:00-08:40',2:'08:40-09:20',3:'09:20-10:00',4:'10:00-10:40',5:'11:00-11:40',6:'11:40-12:20',7:'13:00-13:40',8:'13:40-14:20'};
 
   return `
     <div class="space-y-5">
@@ -336,12 +338,13 @@ function view_tch_dashboard() {
                 const sub = subjects.find(x => x.id === s.subjectId);
                 const cls = DB.find('classes', s.classId);
                 return `<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                  <div class="w-12 h-12 rounded-xl bg-brand-100 text-brand-700 flex flex-col items-center justify-center">
+                  <div class="w-14 h-14 rounded-xl bg-brand-100 text-brand-700 flex flex-col items-center justify-center flex-shrink-0">
                     <div class="text-xs font-bold">P${s.period}</div>
+                    <div class="text-[9px] leading-tight text-center">${(_periodTimes[s.period] || '').split('-')[0]}</div>
                   </div>
                   <div class="flex-1">
                     <div class="font-semibold text-slate-900">${sub ? sub.name : '—'}</div>
-                    <div class="text-xs text-slate-500">${cls ? cls.name : ''} · ${s.time}</div>
+                    <div class="text-xs text-slate-500">${cls ? cls.name : ''} · ${_periodTimes[s.period] || ''}</div>
                   </div>
                   <button class="btn btn-secondary !py-1.5 !px-2 text-xs" onclick="APP.go('tch_attendance', { classId: '${s.classId}' })">Mark Attendance</button>
                 </div>`;
@@ -1729,24 +1732,34 @@ function renderTeacherWeekView() {
   const subjects = DB.get('subjects');
   const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
   const periods = [1,2,3,4,5,6,7,8];
+  const ttConfig = DB.settings().timetableConfig || {};
+  const periodTimes = ttConfig.periodTimes || {1:'08:00-08:40',2:'08:40-09:20',3:'09:20-10:00',4:'10:00-10:40',5:'11:00-11:40',6:'11:40-12:20',7:'13:00-13:40',8:'13:40-14:20'};
+  const break1After = ttConfig.break1After || 4;
+  const break2After = ttConfig.break2After || 6;
+  const break1Label = ttConfig.break1Label || 'Short Break';
+  const break2Label = ttConfig.break2Label || 'Lunch Break';
   return `
     <div class="card overflow-hidden">
       <div class="overflow-x-auto">
         <table class="tbl">
-          <thead><tr><th>Period</th>${days.map(d => `<th>${d}</th>`).join('')}</tr></thead>
+          <thead><tr><th>Period</th>${days.map(d => '<th>' + d + '</th>').join('')}</tr></thead>
           <tbody>
             ${periods.map(p => {
               const entries = days.map(d => tt.find(x => x.day === d && x.period === p));
-              if (entries.every(e => !e)) return '';
-              return `<tr>
-                <td><strong>P${p}</strong><br><span class="text-xs text-slate-500">${entries.find(Boolean) ? entries.find(Boolean).time : ''}</span></td>
-                ${entries.map(e => {
-                  if (!e) return '<td class="text-slate-300">—</td>';
-                  const sub = subjects.find(s => s.id === e.subjectId);
-                  const cls = DB.find('classes', e.classId);
-                  return `<td><div class="font-semibold">${sub ? sub.name : ''}</div><div class="text-xs text-slate-500">${cls ? cls.name : ''}</div></td>`;
-                }).join('')}
-              </tr>`;
+              const rows = [];
+              if (p === break1After + 1) rows.push('<tr class="bg-amber-50"><td colspan="6" class="text-center text-xs text-amber-800 font-semibold py-1.5">' + break1Label + '</td></tr>');
+              else if (p === break2After + 1) rows.push('<tr class="bg-sky-50"><td colspan="6" class="text-center text-xs text-sky-800 font-semibold py-1.5">' + break2Label + '</td></tr>');
+              if (entries.every(e => !e)) return rows.join('');
+              rows.push('<tr>'
+                + '<td><strong>P' + p + '</strong><br><span class="text-xs text-slate-500">' + (periodTimes[p] || '') + '</span></td>'
+                + entries.map(e => {
+                    if (!e) return '<td class="text-slate-300">—</td>';
+                    const sub = subjects.find(s => s.id === e.subjectId);
+                    const cls = DB.find('classes', e.classId);
+                    return '<td><div class="font-semibold">' + (sub ? sub.name : '') + '</div><div class="text-xs text-slate-500">' + (cls ? cls.name : '') + '</div></td>';
+                  }).join('')
+                + '</tr>');
+              return rows.join('');
             }).join('')}
           </tbody>
         </table>
@@ -1760,6 +1773,8 @@ function renderTeacherDayView() {
   const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
   const todays = DB.query('timetable', x => x.teacherId === t.id && x.day === dayName).sort((a, b) => a.period - b.period);
   const subjects = DB.get('subjects');
+  const _ttCfgD = DB.settings().timetableConfig || {};
+  const _periodTimesD = _ttCfgD.periodTimes || {1:'08:00-08:40',2:'08:40-09:20',3:'09:20-10:00',4:'10:00-10:40',5:'11:00-11:40',6:'11:40-12:20',7:'13:00-13:40',8:'13:40-14:20'};
   if (todays.length === 0) {
     return emptyState({ title: 'No classes today', body: dayName + ' is free for you. Use the time for grading or lesson prep.', icon: 'calendar' });
   }
@@ -1774,11 +1789,11 @@ function renderTeacherDayView() {
           return `<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
             <div class="w-14 h-14 rounded-xl bg-brand-100 text-brand-700 flex flex-col items-center justify-center flex-shrink-0">
               <div class="text-xs font-bold">P${e.period}</div>
-              <div class="text-xs">${e.time.split('-')[0]}</div>
+              <div class="text-[9px] leading-tight text-center">${(_periodTimesD[e.period] || '').split('-')[0]}</div>
             </div>
             <div class="flex-1 min-w-0">
               <div class="font-bold text-slate-900">${sub ? sub.name : '—'}</div>
-              <div class="text-sm text-slate-500">${cls ? cls.name : ''} · ${studentCount} students · ${e.time}</div>
+              <div class="text-sm text-slate-500">${cls ? cls.name : ''} · ${studentCount} students · ${_periodTimesD[e.period] || ''}</div>
             </div>
             <button class="btn btn-secondary !py-1.5 text-xs" onclick="APP.go('tch_attendance', { classId: '${e.classId}' })">${icon('attendance','w-3.5 h-3.5')} Attendance</button>
           </div>`;

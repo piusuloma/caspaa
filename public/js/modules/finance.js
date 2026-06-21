@@ -2177,6 +2177,151 @@ function exportPayrollCSV() {
   toast('Payroll exported', 'success');
 }
 
+/* ---------- Cost Center (Finance Overview) ---------- */
+function view_fin_cost_center() {
+  const schoolId = currentSchoolId ? currentSchoolId() : (AUTH.current.schoolId || 'sch_brightlights');
+  const invoices = DB.query('invoices', i => i.schoolId === schoolId);
+  const expenses = DB.query('expenses', e => e.schoolId === schoolId);
+  const teachers = DB.query('teachers', t => t.schoolId === schoolId && t.status !== 'terminated');
+  const collected = invoices.reduce((s, i) => s + i.paid, 0);
+  const outstanding = invoices.reduce((s, i) => s + i.balance, 0);
+  const totalExp = expenses.reduce((s, e) => s + e.amount, 0);
+  const netCash = collected - totalExp;
+  const profitMargin = collected > 0 ? Math.round(((collected - totalExp) / collected) * 100) : 0;
+  const collectionRate = (collected + outstanding) > 0 ? Math.round((collected / (collected + outstanding)) * 100) : 0;
+
+  const revenueAnalytics = DB.settings().revenueAnalytics || {};
+  const targetMargin = revenueAnalytics.targetMargin || 20;
+  const targetTeacherRatio = revenueAnalytics.targetTeacherRatio || 40;
+
+  const academicStaff = teachers.filter(t => t.staffType === 'Academic');
+  const academicSalaryCost = academicStaff.reduce((s, t) => s + (t.salary || 0), 0);
+  const teacherCostRatio = collected > 0 ? Math.round((academicSalaryCost / collected) * 100) : 0;
+  const staffExpenses = expenses.filter(e => ['Salaries','Staff','Payroll'].some(k => (e.category||'').includes(k)));
+  const staffCost = staffExpenses.reduce((s, e) => s + e.amount, 0) || teachers.reduce((s, t) => s + (t.salary||0), 0);
+  const nonStaffExp = totalExp - staffCost;
+
+  const expByCat = {};
+  expenses.forEach(e => { const k = e.category || 'Other'; expByCat[k] = (expByCat[k]||0) + e.amount; });
+  const byType = {};
+  teachers.forEach(t => { const k = t.staffType || 'Other'; byType[k] = (byType[k]||0) + (t.salary||0); });
+  const totalStaffCost = Object.values(byType).reduce((s,v) => s+v, 0);
+  const colors = ['bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-purple-500'];
+
+  const revenueView = APP.params.revenueView || 'termly';
+
+  window.afterRender = () => {
+    const ctx = document.getElementById('costCenterChart');
+    if (!ctx) return;
+    let labels, data;
+    if (revenueView === 'monthly') {
+      labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      data = [0,0,4200000,4600000,3800000,0,0,4100000,4400000,3900000,4800000,collected||4500000];
+    } else if (revenueView === 'annually') {
+      labels = ['2021/22','2022/23','2023/24','2024/25'];
+      data = [28000000,32000000,38000000,(collected||12200000)*3];
+    } else {
+      labels = ['1st Term 24/25','2nd Term 24/25','3rd Term 24/25', DB.settings().currentTerm || 'Current'];
+      data = [10800000,12400000,11600000,collected||12200000];
+    }
+    new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'Collected (₦)', data, backgroundColor: '#047857', borderRadius: 6, maxBarThickness: 60 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: { duration: 0 },
+        plugins: { legend: { display: false } },
+        scales: { y: { ticks: { callback: v => '₦' + (v/1000000).toFixed(1) + 'M' } } }
+      }
+    });
+  };
+
+  const expCatRows = Object.entries(expByCat).sort((a,b) => b[1]-a[1]).map(([cat,amt]) => {
+    const pct = totalExp > 0 ? Math.round(amt/totalExp*100) : 0;
+    return '<tr><td class="text-sm text-slate-700">' + cat + '</td>'
+      + '<td class="text-sm font-semibold text-right font-mono">' + money(amt) + '</td>'
+      + '<td class="text-xs text-slate-400 text-right">' + pct + '%</td>'
+      + '<td class="w-24"><div class="progress h-1.5"><div class="progress-bar h-full" style="width:' + pct + '%"></div></div></td></tr>';
+  }).join('');
+
+  const staffTypeRows = Object.entries(byType).map(([type,amt],i) => {
+    const pct = totalStaffCost > 0 ? Math.round(amt/totalStaffCost*100) : 0;
+    return '<div class="mb-2">'
+      + '<div class="flex justify-between text-xs mb-1"><span class="text-slate-600">' + type + '</span><span class="font-semibold font-mono">' + money(amt) + ' (' + pct + '%)</span></div>'
+      + '<div class="progress"><div class="' + colors[i%colors.length] + ' h-full rounded-full" style="width:' + pct + '%"></div></div></div>';
+  }).join('');
+
+  return `
+    ${pageHeader({ title: 'Cost Center', subtitle: 'All financial analytics in one place — revenue, expenses, margins and payroll' })}
+
+    <div class="flex justify-end mb-3">
+      <button class="btn btn-ghost text-sm" onclick="revenueAnalyticsParamsModal()">${icon('settings','w-3.5 h-3.5')} Set Benchmarks</button>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      ${statCard({ label: 'Total Income', value: money(collected), icon: 'trending_up', color: 'brand' })}
+      ${statCard({ label: 'Total Expenses', value: money(totalExp), icon: 'trending_down', color: 'rose' })}
+      ${statCard({ label: 'Net Cash', value: money(netCash), icon: 'fees', color: netCash >= 0 ? 'brand' : 'rose', trend: { direction: netCash >= 0 ? 'up' : 'down', label: netCash >= 0 ? 'Surplus' : 'Deficit' } })}
+      ${statCard({ label: 'Profit Margin', value: profitMargin + '%', icon: 'check', color: profitMargin >= targetMargin ? 'brand' : 'gold', trend: { direction: profitMargin >= targetMargin ? 'up' : 'down', label: 'Target: ' + targetMargin + '%' } })}
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-4 mb-5">
+      <div class="card p-5 lg:col-span-2">
+        <div class="flex items-center justify-between mb-3 gap-2">
+          <h3 class="font-bold text-slate-900">Revenue · <span class="text-brand-700">${revenueView === 'monthly' ? 'Monthly' : revenueView === 'annually' ? 'Annual' : 'Per Term'}</span></h3>
+          <div class="flex rounded-lg border border-slate-200 overflow-hidden text-xs">
+            <button class="px-2.5 py-1.5 ${revenueView==='monthly'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='monthly';APP.render()">Monthly</button>
+            <button class="px-2.5 py-1.5 border-l border-r border-slate-200 ${revenueView==='termly'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='termly';APP.render()">Termly</button>
+            <button class="px-2.5 py-1.5 ${revenueView==='annually'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='annually';APP.render()">Annually</button>
+          </div>
+        </div>
+        <div style="height:200px"><canvas id="costCenterChart"></canvas></div>
+      </div>
+      <div class="card p-5">
+        <h3 class="font-bold text-slate-900 mb-3">Cost Ratios</h3>
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">Teacher Cost Ratio</span><span class="font-semibold ${teacherCostRatio > targetTeacherRatio ? 'text-amber-700' : 'text-emerald-700'}">${teacherCostRatio}% ${teacherCostRatio <= targetTeacherRatio ? '✓' : '(target ≤' + targetTeacherRatio + '%)'}</span></div>
+            <div class="progress"><div class="progress-bar ${teacherCostRatio > targetTeacherRatio ? 'bg-amber-500' : ''}" style="width:${Math.min(100,teacherCostRatio)}%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">Non-Staff Expenses</span><span class="font-semibold">${collected > 0 ? Math.round(nonStaffExp/collected*100) : 0}% of income</span></div>
+            <div class="progress"><div class="progress-bar bg-rose-400" style="width:${collected>0?Math.min(100,Math.round(nonStaffExp/collected*100)):0}%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">Profit Margin</span><span class="font-semibold ${profitMargin >= targetMargin ? 'text-emerald-700' : 'text-amber-700'}">${profitMargin}% ${profitMargin >= targetMargin ? '✓' : '(target ' + targetMargin + '%)'}</span></div>
+            <div class="progress"><div class="progress-bar ${profitMargin < targetMargin ? 'bg-amber-500':''}" style="width:${Math.max(0,Math.min(100,profitMargin))}%"></div></div>
+          </div>
+          <div class="pt-2 border-t border-slate-100">
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">Fee Collection Rate</span><span class="font-semibold ${collectionRate>=80?'text-emerald-700':'text-amber-700'}">${collectionRate}%</span></div>
+            <div class="progress"><div class="progress-bar ${collectionRate<80?'bg-amber-500':''}" style="width:${collectionRate}%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-4">
+      <div class="card p-5">
+        <h3 class="font-bold text-slate-900 mb-3">Expense Breakdown by Category</h3>
+        ${!Object.keys(expByCat).length ? '<p class="text-sm text-slate-400">No expenses recorded yet.</p>' : `
+          <table class="tbl">
+            <thead><tr><th>Category</th><th class="text-right">Amount</th><th class="text-right">%</th><th></th></tr></thead>
+            <tbody>${expCatRows}</tbody>
+            <tfoot><tr class="font-bold"><td>Total</td><td class="text-right font-mono">${money(totalExp)}</td><td></td><td></td></tr></tfoot>
+          </table>
+        `}
+      </div>
+      <div class="card p-5">
+        <h3 class="font-bold text-slate-900 mb-3">Staff Cost by Type</h3>
+        ${!Object.keys(byType).length ? '<p class="text-sm text-slate-400">No staff salary data.</p>' : staffTypeRows + `
+          <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between text-sm font-bold">
+            <span>Total Staff Cost</span><span class="font-mono text-rose-700">${money(totalStaffCost)}</span>
+          </div>
+        `}
+      </div>
+    </div>
+  `;
+}
+
 /* ---------- Financial Reports ---------- */
 function view_fin_reports(embedded) {
   const tab = APP.params.accTab || 'unit';

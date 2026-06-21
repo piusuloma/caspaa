@@ -255,7 +255,11 @@ function startChat(otherId) {
   }
   document.getElementById('modalBackdrop').click();
   const role = AUTH.current.role;
-  APP.go(role === 'parent' ? 'par_messages' : role === 'teacher' ? 'tch_messages' : 'adm_messages', { convoId: convo.id });
+  if (role === 'parent') {
+    APP.go('par_comms', { commsTab: 'messages', convoId: convo.id });
+  } else {
+    APP.go(role === 'teacher' ? 'tch_messages' : 'adm_messages', { convoId: convo.id });
+  }
 }
 
 /* ---------- Announcements ---------- */

@@ -227,7 +227,7 @@ function tabs(tabList, activeKey, onChange) {
   }, 0);
   return `
     <div id="${id}" class="tabs">
-      ${tabList.map(t => `<div class="tab ${t.key === activeKey ? 'active' : ''}" data-key="${t.key}">${t.label}${t.badge ? `<span class="ml-2 badge badge-info">${t.badge}</span>` : ''}</div>`).join('')}
+      ${tabList.map(t => { const bv = typeof t.badge === 'function' ? t.badge() : t.badge; return `<div class="tab ${t.key === activeKey ? 'active' : ''}" data-key="${t.key}">${t.label}${bv ? `<span class="ml-2 badge badge-danger">${bv}</span>` : ''}</div>`; }).join('')}
     </div>
   `;
 }

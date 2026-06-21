@@ -1287,9 +1287,6 @@ function seedDatabase() {
     sickbayVisits, inventoryRequests,
     schoolItems, studentPurchases,
     smsCampaigns: [],
-    studentSuspensions: [],
-    staffDiscipline: [],
-    staffTerminations: [],
     settings: {
       currentSchoolId: 'sch_brightlights',
       currentTerm: '1st Term 2025/26',
@@ -1431,7 +1428,7 @@ const COMPUTE = {
   studentRewards(studentId) {
     const disc = DB.query('discipline', d => d.studentId === studentId);
     const commendPts = disc.filter(d => d.type === 'commendation').reduce((s, d) => s + Math.abs(d.points || 0), 0);
-    const results = this.studentResults(studentId);
+    const results = this.studentResults(studentId).filter(r => r.approved);
     const avg = results.length ? Math.round(results.reduce((s, r) => s + r.total, 0) / results.length) : 0;
     const attRate = this.attendanceRate(studentId);
     // Points: commendations + academic + attendance bonus

@@ -1198,11 +1198,6 @@ function payInvoiceModal(invoiceId) {
       <div class="bg-slate-50 rounded-xl p-3 mb-4">
         <label class="input-label">Pay Amount</label>
         <input id="pay_amount" type="number" class="input text-xl font-bold" value="${inv.balance}" max="${inv.balance}" min="1" />
-        <div class="flex gap-2 mt-2">
-          <button class="chip" onclick="document.getElementById('pay_amount').value = ${Math.round(inv.balance / 3)}">⅓</button>
-          <button class="chip" onclick="document.getElementById('pay_amount').value = ${Math.round(inv.balance / 2)}">½</button>
-          <button class="chip" onclick="document.getElementById('pay_amount').value = ${inv.balance}">Full</button>
-        </div>
       </div>
 
       <div>
@@ -1931,7 +1926,26 @@ function view_par_results() {
   `;
 }
 
-/* ---------- Messages & Announcements (delegated) ---------- */
+/* ---------- Communications Hub (Messages, Announcements, Diary, Calendar) ---------- */
+function view_par_comms() {
+  const tab = APP.params.commsTab || 'messages';
+  const tabList = [
+    { key: 'messages',      label: 'Messages' },
+    { key: 'announcements', label: 'Announcements' },
+    { key: 'diary',         label: 'Diary' },
+    { key: 'calendar',      label: 'Calendar' }
+  ];
+  const content = tab === 'messages'      ? view_messages_shared('parent')
+    : tab === 'announcements' ? view_announce_shared('parent')
+    : tab === 'diary'         ? view_par_diary()
+    : view_cal_main();
+  return `
+    ${tabs(tabList, tab, k => { APP.params.commsTab = k; APP.render(); })}
+    ${content}
+  `;
+}
+
+/* ---------- Messages & Announcements (delegated — kept for direct links) ---------- */
 function view_par_messages() { return view_messages_shared('parent'); }
 function view_par_announce() { return view_announce_shared('parent'); }
 
