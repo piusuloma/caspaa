@@ -8875,7 +8875,8 @@ function view_adm_admissions() {
     ${pageHeader({
       title: 'Online Admissions',
       subtitle: 'Receive applications, review, and convert to students',
-      actions: `<button class="btn btn-secondary" onclick="copyAdmissionLink()">${icon('paperclip','w-4 h-4')} Copy public link</button>`
+      actions: `<button class="btn btn-secondary" onclick="copyAdmissionLink()">${icon('paperclip','w-4 h-4')} Copy public link</button>
+               <button class="btn btn-primary" onclick="newApplicationModal()">${icon('plus','w-4 h-4')} New Application</button>`
     })}
 
     <div class="card bg-gradient-to-br from-brand-700 to-brand-800 text-white p-4 mb-4">
@@ -8935,6 +8936,108 @@ function copyAdmissionLink() {
   toast('Admission link copied — share with prospective parents');
 }
 
+function newApplicationModal() {
+  const classes = DB.get('classes').filter(c => !c.schoolId || c.schoolId === currentSchoolId());
+  modal({
+    title: 'New Admission Application',
+    size: 'lg',
+    body: `
+      <div class="space-y-4">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          ${icon('info','w-4 h-4 inline')} Use this for walk-in enquiries or phone calls. For online self-service, share your <strong>public admission link</strong>.
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="col-span-2">
+            <label class="input-label">Applicant Full Name *</label>
+            <input id="na_name" class="input" placeholder="e.g. Chisom Okafor" />
+          </div>
+          <div>
+            <label class="input-label">Date of Birth *</label>
+            <input id="na_dob" type="date" class="input" />
+          </div>
+          <div>
+            <label class="input-label">Gender *</label>
+            <select id="na_gender" class="input">
+              <option value="">— Select —</option>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+            </select>
+          </div>
+          <div>
+            <label class="input-label">Class Applying For *</label>
+            <select id="na_class" class="input">
+              <option value="">— Select class —</option>
+              ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="input-label">Current / Previous School</label>
+            <input id="na_school" class="input" placeholder="School name" />
+          </div>
+        </div>
+        <div class="border-t border-slate-100 pt-3">
+          <div class="text-xs uppercase text-slate-500 font-semibold mb-2">Parent / Guardian Details</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="input-label">Parent Name *</label>
+              <input id="na_pname" class="input" placeholder="Full name" />
+            </div>
+            <div>
+              <label class="input-label">Phone *</label>
+              <input id="na_pphone" class="input" placeholder="+234…" />
+            </div>
+            <div>
+              <label class="input-label">Email</label>
+              <input id="na_pemail" type="email" class="input" placeholder="parent@email.com" />
+            </div>
+            <div>
+              <label class="input-label">Home Address</label>
+              <input id="na_address" class="input" placeholder="Residential address" />
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="input-label">Reason / Notes</label>
+          <textarea id="na_reason" rows="2" class="input" placeholder="e.g. Transfer from another school, referral by parent…"></textarea>
+        </div>
+      </div>
+    `,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNewApplication()">${icon('check','w-4 h-4')} Submit Application</button>
+    `
+  });
+}
+
+function saveNewApplication() {
+  const name    = ((document.getElementById('na_name')   || {}).value || '').trim();
+  const dob     = (document.getElementById('na_dob')    || {}).value || '';
+  const gender  = (document.getElementById('na_gender') || {}).value || '';
+  const classId = (document.getElementById('na_class')  || {}).value || '';
+  const pName   = ((document.getElementById('na_pname') || {}).value || '').trim();
+  const pPhone  = ((document.getElementById('na_pphone')|| {}).value || '').trim();
+  if (!name)   { toast('Applicant name is required', 'danger'); return; }
+  if (!dob)    { toast('Date of birth is required', 'danger'); return; }
+  if (!gender) { toast('Please select gender', 'danger'); return; }
+  if (!classId){ toast('Please select a class', 'danger'); return; }
+  if (!pName)  { toast('Parent name is required', 'danger'); return; }
+  if (!pPhone) { toast('Parent phone is required', 'danger'); return; }
+  DB.insert('admissionApplications', {
+    id: uid('app'), schoolId: currentSchoolId(),
+    applicantName: name, dob, gender, requestedClass: classId,
+    currentSchool: ((document.getElementById('na_school')  || {}).value || '').trim(),
+    parentName: pName, parentPhone: pPhone,
+    parentEmail: ((document.getElementById('na_pemail')  || {}).value || '').trim(),
+    address:    ((document.getElementById('na_address') || {}).value || '').trim(),
+    reason:     ((document.getElementById('na_reason')  || {}).value || '').trim(),
+    status: 'pending', appliedAt: now(), documents: {}, source: 'admin'
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'created_application', target: name, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast(`Application for ${name} created`, 'success');
+}
+
 function viewApplication(appId) {
   const a = DB.find('admissionApplications', appId);
   if (!a) return;
@@ -8975,6 +9078,11 @@ function viewApplication(appId) {
           <div class="text-xs uppercase text-blue-600 font-semibold mb-1">Review Notes</div>
           <div class="text-sm text-blue-900">${a.reviewNotes}</div>
           ${a.reviewedAt ? `<div class="text-xs text-blue-500 mt-1">Noted ${fdate(a.reviewedAt, { relative: true })}</div>` : ''}
+        </div>` : ''}
+        ${a.status === 'rejected' && a.rejectionReason ? `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3">
+          <div class="text-xs uppercase text-rose-600 font-semibold mb-1">Rejection Reason</div>
+          <div class="text-sm text-rose-900">${a.rejectionReason}</div>
+          ${a.decidedAt ? `<div class="text-xs text-rose-400 mt-1">Decided ${fdate(a.decidedAt, { relative: true })}</div>` : ''}
         </div>` : ''}
 
         ${(a.visitDate || a.visitConfirmed) ? `<div class="rounded-xl p-3 border ${a.visitConfirmed ? 'bg-emerald-50 border-emerald-200' : 'bg-brand-50 border-brand-200'}">
@@ -9026,8 +9134,8 @@ function viewApplication(appId) {
       ${a.status === 'reviewing' ? `<button class="btn btn-gold" onclick="scheduleVisitModal('${a.id}')">${icon('calendar','w-4 h-4')} Schedule Visit</button>` : ''}
       ${a.status === 'visit_scheduled' ? `<button class="btn btn-gold" onclick="scheduleVisitModal('${a.id}')">${icon('calendar','w-4 h-4')} Reschedule</button>` : ''}
       ${a.status === 'visit_scheduled' ? `<button class="btn btn-secondary" onclick="markVisitCompleteModal('${a.id}')">${icon('check','w-4 h-4')} Mark Visit Done</button>` : ''}
-      ${a.status !== 'rejected' && a.status !== 'accepted' ? `<button class="btn btn-danger" onclick="setAppStatus('${a.id}', 'rejected')">Reject</button>` : ''}
-      ${a.status !== 'accepted' ? `<button class="btn btn-primary" onclick="acceptApplication('${a.id}')">${icon('check','w-4 h-4')} Accept &amp; Enrol</button>` : ''}
+      ${a.status !== 'rejected' && a.status !== 'accepted' ? `<button class="btn btn-danger" onclick="rejectApplicationModal('${a.id}')">Reject</button>` : ''}
+      ${(a.status === 'visit_confirmed' || a.status === 'reviewing' || a.status === 'visit_scheduled') ? `<button class="btn btn-primary" onclick="acceptApplication('${a.id}')">${icon('check','w-4 h-4')} Accept &amp; Enrol</button>` : ''}
     `
   });
 }
@@ -9131,6 +9239,49 @@ function setAppStatus(appId, status) {
   toast(`Application ${status}`);
   APP.render();
   document.getElementById('modalBackdrop')?.click();
+}
+
+function rejectApplicationModal(appId) {
+  const a = DB.find('admissionApplications', appId);
+  document.getElementById('modalBackdrop')?.click();
+  setTimeout(() => modal({
+    title: 'Reject Application — ' + a.applicantName,
+    body: `
+      <div class="space-y-3">
+        <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-900">
+          ${icon('x_circle','w-4 h-4 inline')} This will mark the application as <strong>rejected</strong>.
+          If the parent has a portal account, they will receive a notification.
+        </div>
+        <div>
+          <label class="input-label">Reason (optional — visible to parent)</label>
+          <textarea id="rej_reason" rows="3" class="input" placeholder="e.g. No vacancy in the requested class for this term. The family is welcome to reapply next session."></textarea>
+        </div>
+      </div>
+    `,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmRejectApplication('${appId}')">${icon('x','w-4 h-4')} Confirm Rejection</button>
+    `
+  }), 50);
+}
+
+function confirmRejectApplication(appId) {
+  const reason = ((document.getElementById('rej_reason') || {}).value || '').trim();
+  DB.update('admissionApplications', appId, { status: 'rejected', rejectionReason: reason, decidedAt: now(), decidedBy: AUTH.current.id });
+  const a = DB.find('admissionApplications', appId);
+  const parent = DB.query('parents', p => p.phone === a.parentPhone)[0];
+  if (parent) {
+    DB.insert('notifications', {
+      id: uid('not'), userId: parent.id,
+      title: `Admission Update — ${a.applicantName}`,
+      body: `Thank you for your interest in our school. After careful review, we are unable to offer a place to ${a.applicantName} at this time.${reason ? ' ' + reason : ''} Please contact the admissions office if you have any questions.`,
+      type: 'danger', read: false, timestamp: now()
+    });
+  }
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'rejected_application', target: a.applicantName + (reason ? ' — ' + reason.slice(0, 60) : ''), timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast(`Application rejected`);
 }
 
 function scheduleVisitModal(appId) {
@@ -9298,7 +9449,8 @@ function acceptApplication(appId) {
   if (fs) {
     const stuActs2 = DB.query('studentActivities', sa => sa.studentId === newStudent.id && sa.term === fs.term);
     const actLines2 = stuActs2.map(sa => { const a = DB.find('activities', sa.activityId); return a ? { name: a.icon + ' ' + a.name, amount: a.price } : null; }).filter(Boolean);
-    const total = fs.tuition + fs.books + fs.uniform + fs.pta + actLines2.reduce((s, l) => s + l.amount, 0);
+    const extraLines = (fs.extraItems || []).filter(i => i.name && i.amount > 0).map(i => ({ name: i.name, amount: i.amount }));
+    const total = fs.tuition + fs.books + fs.uniform + fs.pta + extraLines.reduce((s, l) => s + l.amount, 0) + actLines2.reduce((s, l) => s + l.amount, 0);
     newInvoice = {
       id: uid('inv'),
       schoolId: currentSchoolId(),
@@ -9309,6 +9461,7 @@ function acceptApplication(appId) {
         { name: 'Books & Materials', amount: fs.books },
         { name: 'Uniform', amount: fs.uniform },
         { name: 'PTA Levy', amount: fs.pta },
+        ...extraLines,
         ...actLines2
       ],
       total, paid: 0, balance: total,
@@ -9326,7 +9479,7 @@ function acceptApplication(appId) {
   DB.insert('notifications', {
     id: uid('not'), userId: parent.id,
     title: '🎉 Welcome to Bright Lights Academy',
-    body: `${a.applicantName} has been accepted. Admission number: ${admNo}. ${fs ? 'Your first invoice for ' + money(fs.tuition + fs.books + fs.uniform + fs.pta) + ' is ready.' : ''}`,
+    body: `${a.applicantName} has been accepted. Admission number: ${admNo}. ${newInvoice ? 'Your first invoice for ' + money(newInvoice.total) + ' is ready.' : ''}`,
     type: 'success', read: false, timestamp: now(),
     link: { view: 'par_fees' }
   });
@@ -9345,7 +9498,7 @@ function acceptApplication(appId) {
       <div class="space-y-2 text-sm bg-slate-50 rounded-xl p-3">
         <div class="flex items-center gap-2"><span class="text-emerald-600">${icon('check','w-4 h-4')}</span><span>Student profile created</span></div>
         <div class="flex items-center gap-2"><span class="text-emerald-600">${icon('check','w-4 h-4')}</span><span>${isNewParent ? 'Parent account created' : 'Linked to existing parent ' + parent.name}</span></div>
-        ${fs ? `<div class="flex items-center gap-2"><span class="text-emerald-600">${icon('check','w-4 h-4')}</span><span>Invoice for ${money(fs.tuition + fs.books + fs.uniform + fs.pta)} auto-generated</span></div>` : `<div class="flex items-center gap-2"><span class="text-amber-600">${icon('bell','w-4 h-4')}</span><span>No fee structure for ${(DB.find('classes', a.requestedClass) || {}).name} yet — set one up</span></div>`}
+        ${newInvoice ? `<div class="flex items-center gap-2"><span class="text-emerald-600">${icon('check','w-4 h-4')}</span><span>Invoice for ${money(newInvoice.total)} auto-generated</span></div>` : `<div class="flex items-center gap-2"><span class="text-amber-600">${icon('bell','w-4 h-4')}</span><span>No fee structure for ${(DB.find('classes', a.requestedClass) || {}).name} yet — set one up</span></div>`}
         <div class="flex items-center gap-2"><span class="text-emerald-600">${icon('check','w-4 h-4')}</span><span>Welcome notification sent to parent</span></div>
       </div>
       <p class="text-xs text-slate-500 text-center mt-3">What would you like to do next?</p>

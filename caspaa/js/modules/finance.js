@@ -366,10 +366,17 @@ function confirmBulkGenerateInvoices() {
   returning.forEach(s => {
     const fs = feeStructures.find(f => f.classId === s.classId && f.term === currentTerm);
     if (!fs) { skipped++; return; }
-    const total = fs.tuition + fs.books + fs.uniform + fs.pta;
+    const extraLines = (fs.extraItems || []).filter(i => i.name && i.amount > 0).map(i => ({ name: i.name, amount: i.amount }));
+    const total = fs.tuition + fs.books + fs.uniform + fs.pta + extraLines.reduce((s, l) => s + l.amount, 0);
     DB.insert('invoices', {
       id: uid('inv'), schoolId, studentId: s.id, term: currentTerm,
-      lineItems: [{ name: 'Tuition Fee', amount: fs.tuition }, { name: 'Books & Materials', amount: fs.books }, { name: 'Uniform', amount: fs.uniform }, { name: 'PTA Levy', amount: fs.pta }],
+      lineItems: [
+        { name: 'Tuition Fee', amount: fs.tuition },
+        { name: 'Books & Materials', amount: fs.books },
+        { name: 'Uniform', amount: fs.uniform },
+        { name: 'PTA Levy', amount: fs.pta },
+        ...extraLines
+      ],
       total, paid: 0, balance: total, status: 'outstanding', dueDate: fs.dueDate, createdAt: now()
     });
     // Notify parent
@@ -722,6 +729,22 @@ function feeStructureModal(editingId) {
             <input id="fs_pta" type="number" class="input" value="${existing ? existing.pta : 5000}" oninput="updateFeeTotal()" />
           </div>
         </div>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-semibold text-slate-800">Additional Fees</span>
+            <button type="button" class="btn btn-secondary !py-1 !px-2.5 text-xs" onclick="addFeeExtraItem()">${icon('plus','w-3 h-3')} Add Row</button>
+          </div>
+          <div id="fs_extra_items" class="space-y-2">
+            ${(existing && existing.extraItems || []).map((item, i) => `
+              <div class="flex items-center gap-2 fs-extra-row" data-idx="${i}">
+                <input class="input flex-1" placeholder="e.g. Lab Fee, ICT Levy…" id="fs_ei_name_${i}" value="${item.name || ''}">
+                <input type="number" class="input w-32" placeholder="0" id="fs_ei_amt_${i}" value="${item.amount || 0}" oninput="updateFeeTotal()">
+                <button type="button" class="text-rose-500 hover:text-rose-700 flex-shrink-0 p-1" onclick="this.closest('.fs-extra-row').remove(); updateFeeTotal()" title="Remove">${icon('x','w-4 h-4')}</button>
+              </div>
+            `).join('')}
+          </div>
+          ${!(existing && existing.extraItems && existing.extraItems.length) ? '<p id="fs_extra_hint" class="text-xs text-slate-400 mt-1">No additional fees — add rows for items like Lab Fee, ICT Levy, etc.</p>' : ''}
+        </div>
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
           ${icon('info','w-4 h-4 inline mr-1')} Extracurricular fees (swimming, ballet, music, etc.) are <strong>per student</strong> — set them under the <strong>Activities tab</strong> and assign to each student from their profile.
         </div>
@@ -785,9 +808,23 @@ function toggleInstallmentOptions() {
 }
 
 function updateFeeTotal() {
-  const total = ['fs_tuition','fs_books','fs_uniform','fs_pta'].reduce((s, id) => { const el = document.getElementById(id); return s + (el ? (parseInt(el.value) || 0) : 0); }, 0);
+  const base = ['fs_tuition','fs_books','fs_uniform','fs_pta'].reduce((s, id) => { const el = document.getElementById(id); return s + (el ? (parseInt(el.value) || 0) : 0); }, 0);
+  const extra = Array.from(document.querySelectorAll('[id^="fs_ei_amt_"]')).reduce((s, el) => s + (parseInt(el.value) || 0), 0);
   const el = document.getElementById('fs_total');
-  if (el) el.textContent = money(total);
+  if (el) el.textContent = money(base + extra);
+}
+
+function addFeeExtraItem() {
+  const container = document.getElementById('fs_extra_items');
+  if (!container) return;
+  const hint = document.getElementById('fs_extra_hint');
+  if (hint) hint.remove();
+  const i = Date.now();
+  const row = document.createElement('div');
+  row.className = 'flex items-center gap-2 fs-extra-row';
+  row.setAttribute('data-idx', i);
+  row.innerHTML = `<input class="input flex-1" placeholder="e.g. Lab Fee, ICT Levy…" id="fs_ei_name_${i}"><input type="number" class="input w-32" placeholder="0" id="fs_ei_amt_${i}" value="0" oninput="updateFeeTotal()"><button type="button" class="text-rose-500 hover:text-rose-700 flex-shrink-0 p-1" onclick="this.closest('.fs-extra-row').remove(); updateFeeTotal()" title="Remove">${icon('x','w-4 h-4')}</button>`;
+  container.appendChild(row);
 }
 
 function saveFeeStructure(editingId) {
@@ -800,6 +837,10 @@ function saveFeeStructure(editingId) {
     books: parseInt(document.getElementById('fs_books').value) || 0,
     uniform: parseInt(document.getElementById('fs_uniform').value) || 0,
     pta: parseInt(document.getElementById('fs_pta').value) || 0,
+    extraItems: Array.from(document.querySelectorAll('.fs-extra-row')).map(row => {
+      const idx = row.getAttribute('data-idx');
+      return { name: ((document.getElementById('fs_ei_name_' + idx) || {}).value || '').trim(), amount: parseInt((document.getElementById('fs_ei_amt_' + idx) || {}).value) || 0 };
+    }).filter(i => i.name),
     dueDate: document.getElementById('fs_due').value,
     discountDeadline: (document.getElementById('fs_discountDeadline') || {}).value || null,
     installmentEnabled,
