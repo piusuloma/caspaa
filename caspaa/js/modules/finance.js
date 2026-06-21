@@ -2137,30 +2137,35 @@ function exportPayrollCSV() {
 }
 
 /* ---------- Financial Reports ---------- */
-function view_fin_reports() {
+function view_fin_reports(embedded) {
   const tab = APP.params.accTab || 'unit';
+  const accTabs = [
+    { key: 'unit',     label: 'Unit Economics' },
+    { key: 'pl',       label: 'Profit & Loss' },
+    { key: 'trial',    label: 'Trial Balance' },
+    { key: 'cashflow', label: 'Cash Flow' },
+    { key: 'balance',  label: 'Balance Sheet' },
+    { key: 'budget',   label: 'Budgets' }
+  ];
+  const content = tab === 'unit'     ? renderUnitEconomics() :
+                  tab === 'trial'    ? renderTrialBalance() :
+                  tab === 'cashflow' ? renderCashFlow() :
+                  tab === 'balance'  ? renderBalanceSheet() :
+                  tab === 'budget'   ? renderBudgets() :
+                  renderProfitLoss();
+  if (embedded) {
+    return `
+      ${tabs(accTabs, tab, k => { APP.params.accTab = k; APP.render(); })}
+      <div class="pt-4">${content}</div>`;
+  }
   return `
     ${pageHeader({
       title: 'Accounting & Reports',
       subtitle: 'P&L, trial balance, cash flow, balance sheet and budgets',
       actions: `<button class="btn btn-primary" onclick="exportPL()">${icon('download','w-4 h-4')} Export P&L (PDF)</button>`
     })}
-    ${tabs([
-      { key: 'unit', label: 'Unit Economics' },
-      { key: 'pl', label: 'Profit & Loss' },
-      { key: 'trial', label: 'Trial Balance' },
-      { key: 'cashflow', label: 'Cash Flow' },
-      { key: 'balance', label: 'Balance Sheet' },
-      { key: 'budget', label: 'Budgets' }
-    ], tab, k => { APP.params.accTab = k; APP.render(); })}
-    <div class="pt-4">${
-      tab === 'unit' ? renderUnitEconomics() :
-      tab === 'trial' ? renderTrialBalance() :
-      tab === 'cashflow' ? renderCashFlow() :
-      tab === 'balance' ? renderBalanceSheet() :
-      tab === 'budget' ? renderBudgets() :
-      renderProfitLoss()
-    }</div>
+    ${tabs(accTabs, tab, k => { APP.params.accTab = k; APP.render(); })}
+    <div class="pt-4">${content}</div>
   `;
 }
 

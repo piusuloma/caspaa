@@ -6374,17 +6374,20 @@ function view_adm_reports() {
   return `
     ${pageHeader({
       title: 'School Reports',
-      subtitle: 'Consolidated view — enrollment, leavers, attendance, financial, and admissions data',
-      actions: `${rTab === 'financial' ? `<button class="btn btn-secondary" onclick="exportPeachtreeJournal()">${icon('download','w-4 h-4')} Peachtree Export</button> ` : ''}${rTab !== 'print' ? `<button class="btn btn-secondary" onclick="exportConsolidatedReport('${rTab}')">${icon('download','w-4 h-4')} Export</button>` : ''}`
+      subtitle: 'Enrollment, leavers, attendance, financial, and admissions data',
+      actions: `${rTab === 'financial' ? `
+        <button class="btn btn-secondary" onclick="exportPL()">${icon('download','w-4 h-4')} Export P&L</button>
+        <button class="btn btn-secondary" onclick="exportPeachtreeJournal()">${icon('download','w-4 h-4')} Peachtree</button>` : ''}
+        ${rTab !== 'print' && rTab !== 'financial' ? `<button class="btn btn-secondary" onclick="exportConsolidatedReport('${rTab}')">${icon('download','w-4 h-4')} Export</button>` : ''}`
     })}
     ${tabs(tabs_list, rTab, k => { APP.params.rTab = k; APP.render(); })}
     <div class="pt-4">${
-      rTab === 'insights'    ? renderAIInsights(schoolId) :
-      rTab === 'leavers'     ? renderLeaversReport(schoolId) :
-      rTab === 'attendance'  ? renderAttendanceReport(schoolId) :
-      rTab === 'financial'   ? view_fin_reports() :
+      rTab === 'insights'     ? renderAIInsights(schoolId) :
+      rTab === 'leavers'      ? renderLeaversReport(schoolId) :
+      rTab === 'attendance'   ? renderAttendanceReport(schoolId) :
+      rTab === 'financial'    ? view_fin_reports(true) :
       rTab === 'applications' ? renderApplicationsReport(schoolId) :
-      rTab === 'print'       ? _renderPrintCenter() :
+      rTab === 'print'        ? _renderPrintCenter() :
       renderEnrollmentReport(schoolId)
     }</div>
   `;
