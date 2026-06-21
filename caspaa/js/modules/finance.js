@@ -2303,30 +2303,21 @@ function renderUnitEconomics() {
         <div class="text-right text-sm text-slate-500">Billed: <strong class="text-slate-900 font-mono">${money(billed)}</strong></div>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm min-w-[560px]">
+        <table class="w-full text-sm min-w-[400px]">
           <thead><tr class="border-b text-xs text-slate-500 uppercase">
             <th class="text-left py-2">Component</th>
             <th class="text-right py-2">Billed</th>
             <th class="text-right py-2">Collected</th>
             <th class="text-right py-2">Outstanding</th>
-            <th class="text-right py-2 pr-2">% Share</th>
-            <th class="py-2 min-w-[100px]">Collection rate</th>
           </tr></thead>
           <tbody>
             ${components.map(([name, d]) => {
-              const share  = billed > 0   ? Math.round(d.billed    / billed    * 100) : 0;
-              const cRate  = d.billed > 0 ? Math.round(d.collected / d.billed  * 100) : 0;
-              const owed   = d.billed - d.collected;
-              const rColor = cRate >= 80 ? 'emerald' : cRate >= 50 ? 'amber' : 'rose';
+              const owed = d.billed - d.collected;
               return `<tr class="border-b hover:bg-slate-50">
                 <td class="py-2.5 font-medium">${name}</td>
                 <td class="py-2.5 text-right font-mono">${money(d.billed)}</td>
                 <td class="py-2.5 text-right font-mono text-emerald-700">${money(d.collected)}</td>
                 <td class="py-2.5 text-right font-mono ${owed > 0 ? 'text-rose-700 font-semibold' : 'text-slate-300'}">${owed > 0 ? money(owed) : '—'}</td>
-                <td class="py-2.5 text-right text-slate-500 pr-2">${share}%</td>
-                <td class="py-2.5">
-                  <div class="flex items-center gap-1.5">${bar(cRate, rColor)}<span class="text-xs w-8 text-right font-mono">${cRate}%</span></div>
-                </td>
               </tr>`;
             }).join('')}
             <tr class="bg-slate-50 font-bold text-sm">
@@ -2334,10 +2325,6 @@ function renderUnitEconomics() {
               <td class="py-2.5 text-right font-mono">${money(billed)}</td>
               <td class="py-2.5 text-right font-mono text-emerald-700">${money(collected)}</td>
               <td class="py-2.5 text-right font-mono text-rose-700">${money(outstanding)}</td>
-              <td class="py-2.5 text-right pr-2">100%</td>
-              <td class="py-2.5">
-                <div class="flex items-center gap-1.5">${bar(billed > 0 ? Math.round(collected/billed*100) : 0, 'brand')}<span class="text-xs w-8 text-right font-mono">${billed > 0 ? Math.round(collected/billed*100) : 0}%</span></div>
-              </td>
             </tr>
           </tbody>
         </table>
@@ -2347,23 +2334,21 @@ function renderUnitEconomics() {
     <!-- ③ Revenue by Class -->
     <div class="card p-5 mb-4">
       <h3 class="font-bold text-slate-900 mb-1">Revenue by Class</h3>
-      <p class="text-sm text-slate-500 mb-4">Which classes generate the most income — and average fee per seat</p>
+      <p class="text-sm text-slate-500 mb-4">Which classes generate the most income</p>
       <table class="w-full text-sm">
         <thead><tr class="border-b text-xs text-slate-500 uppercase">
-          <th class="text-left py-2">Class</th><th class="text-right py-2">Students</th><th class="text-right py-2">Billed</th><th class="text-right py-2">Collected</th><th class="text-right py-2">Outstanding</th><th class="text-right py-2">Avg/Seat</th>
+          <th class="text-left py-2">Class</th><th class="text-right py-2">Students</th><th class="text-right py-2">Billed</th><th class="text-right py-2">Collected</th><th class="text-right py-2">Outstanding</th>
         </tr></thead>
         <tbody>
           ${clsByRev.map(([cId, d]) => {
             const cls  = classes.find(c => c.id === cId);
             const owed = d.billed - d.paid;
-            const avg  = d.count > 0 ? Math.round(d.billed / d.count) : 0;
             return `<tr class="border-b hover:bg-slate-50">
               <td class="py-2.5 font-medium">${cls ? cls.name : cId}</td>
               <td class="py-2.5 text-right text-slate-500">${d.count}</td>
               <td class="py-2.5 text-right font-mono">${money(d.billed)}</td>
               <td class="py-2.5 text-right font-mono text-emerald-700">${money(d.paid)}</td>
               <td class="py-2.5 text-right font-mono ${owed > 0 ? 'text-rose-700 font-semibold' : 'text-slate-300'}">${owed > 0 ? money(owed) : '—'}</td>
-              <td class="py-2.5 text-right font-mono font-semibold text-brand-700">${money(avg)}</td>
             </tr>`;
           }).join('')}
         </tbody>

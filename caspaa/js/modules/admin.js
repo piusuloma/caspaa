@@ -6139,10 +6139,13 @@ function view_adm_results() {
 
 function _renderSchoolResultsOverview() {
   const sid = currentSchoolId();
-  const term = DB.settings().currentTerm;
   const classes = DB.get('classes');
   const subjects = DB.get('subjects');
   const allRes = DB.query('results', r => r.schoolId === sid && r.approved);
+  // Collect unique terms from results data, fallback to current setting
+  const availableTerms = [...new Set(allRes.map(r => r.term).filter(Boolean))].sort().reverse();
+  const currentTerm = DB.settings().currentTerm;
+  const term = APP.params.resTerm || (availableTerms.includes(currentTerm) ? currentTerm : (availableTerms[0] || currentTerm));
   const termRes = allRes.filter(r => r.term === term);
 
   const totalStudents = new Set(termRes.map(r => r.studentId)).size;
@@ -6178,6 +6181,11 @@ function _renderSchoolResultsOverview() {
   const _avgColor = avg => avg>=70?'text-emerald-700':avg>=50?'text-amber-700':'text-rose-700';
 
   return `
+    ${availableTerms.length > 1 ? `
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
+      <span class="text-xs text-slate-500 font-semibold uppercase mr-1">Term:</span>
+      ${availableTerms.map(t => `<button class="chip ${t===term?'active':''}" onclick="APP.params.resTerm='${t}'; APP.render()">${t}</button>`).join('')}
+    </div>` : ''}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
       ${statCard({ label: 'Students with Results', value: totalStudents, icon: 'students', color: 'brand' })}
       ${statCard({ label: 'School Average', value: schoolAvg + '%', icon: 'results', color: schoolAvg >= 60 ? 'brand' : 'gold', trend: { direction: schoolAvg>=60?'up':'down', label: term } })}
@@ -6699,40 +6707,76 @@ function renderEnrollmentReport(schoolId) {
 function renderLeaversReport(schoolId) {
   const leavers = DB.query('students', s => s.schoolId === schoolId && ['withdrawn','transferred','suspended','alumni'].includes(s.status));
   const withdrawn = leavers.filter(s => s.status === 'withdrawn');
-  const transferred = leavers.filter(s => s.status === 'transferred');
+  const transferredOut = leavers.filter(s => s.status === 'transferred');
   const alumni = leavers.filter(s => s.status === 'alumni');
-  const suspended = leavers.filter(s => s.status === 'suspended');
+  const transfersIn = DB.query('students', s => s.schoolId === schoolId && s.admissionType === 'transfer' && s.status === 'active');
+
+  const leavTab = APP.params.leavTab || 'leavers';
 
   return `
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-      ${statCard({ label: 'Total Leavers', value: leavers.length, icon: 'logout', color: 'rose' })}
+      ${statCard({ label: 'Leavers Total', value: leavers.length, icon: 'logout', color: 'rose' })}
       ${statCard({ label: 'Withdrawn', value: withdrawn.length, icon: 'x', color: 'rose' })}
-      ${statCard({ label: 'Transferred Out', value: transferred.length, icon: 'arrow_left', color: 'blue' })}
-      ${statCard({ label: 'Alumni', value: alumni.length, icon: 'check', color: 'brand' })}
+      ${statCard({ label: 'Transferred Out', value: transferredOut.length, icon: 'arrow_left', color: 'blue' })}
+      ${statCard({ label: 'Transfers In', value: transfersIn.length, icon: 'arrow_left', color: 'brand' })}
     </div>
-    <div class="card overflow-hidden">
-      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-        <h3 class="font-bold text-slate-900">Leavers Register</h3>
-        <button class="btn btn-secondary text-sm" onclick="exportLeaversCSV()">${icon('download','w-4 h-4')} CSV</button>
+
+    <div class="flex gap-2 mb-4">
+      <button class="chip ${leavTab==='leavers'?'active':''}" onclick="APP.params.leavTab='leavers'; APP.render()">Leavers Register</button>
+      <button class="chip ${leavTab==='transfers_in'?'active':''}" onclick="APP.params.leavTab='transfers_in'; APP.render()">Transfer-In Log ${transfersIn.length ? `<span class="ml-1 badge badge-success">${transfersIn.length}</span>` : ''}</button>
+    </div>
+
+    ${leavTab === 'transfers_in' ? `
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100">
+          <h3 class="font-bold text-slate-900">Transfer Students (Currently Enrolled)</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Students who joined this school from another institution</p>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Student</th><th>Class</th><th>Previous School</th><th>Last Class</th><th>Transfer Date</th><th>Reason</th></tr></thead>
+          <tbody>
+            ${transfersIn.length === 0
+              ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No transfer students recorded yet</td></tr>`
+              : transfersIn.map(s => {
+                  const cls = DB.find('classes', s.classId);
+                  return `<tr>
+                    <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-500">${s.admissionNo || ''}</div></div></div></td>
+                    <td class="text-sm">${cls ? cls.name : '—'}</td>
+                    <td class="text-sm">${s.transferFromSchool || '—'}</td>
+                    <td class="text-sm text-slate-500">${s.transferFromClass || '—'}</td>
+                    <td class="text-xs text-slate-500">${s.transferInDate ? fdate(s.transferInDate, { short: true }) : '—'}</td>
+                    <td class="text-sm text-slate-500">${s.transferInReason || '—'}</td>
+                  </tr>`;
+                }).join('')
+            }
+          </tbody>
+        </table>
       </div>
-      <table class="tbl">
-        <thead><tr><th>Student</th><th>Class</th><th>Status</th><th>Reason</th><th>Date</th><th>Destination</th></tr></thead>
-        <tbody>
-          ${leavers.length === 0 ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No leavers recorded yet</td></tr>` : leavers.map(s => {
-            const cls = DB.find('classes', s.classId);
-            const date = s.withdrawnAt || s.transferredAt || s.graduatedAt || s.suspendedAt || s.updatedAt || '';
-            return `<tr>
-              <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-500">${s.admissionNo || ''}</div></div></div></td>
-              <td class="text-sm">${cls ? cls.name : '—'}</td>
-              <td>${statusBadge(s.status)}</td>
-              <td class="text-sm text-slate-500">${s.withdrawReason || s.transferReason || s.suspensionReason || '—'}</td>
-              <td class="text-xs text-slate-500">${date ? fdate(date, { short: true }) : '—'}</td>
-              <td class="text-sm">${s.transferDest || (s.status === 'alumni' ? s.finalClass || 'Graduated' : '—')}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
+    ` : `
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="font-bold text-slate-900">Leavers Register</h3>
+          <button class="btn btn-secondary text-sm" onclick="exportLeaversCSV()">${icon('download','w-4 h-4')} CSV</button>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Student</th><th>Class</th><th>Status</th><th>Reason</th><th>Date</th><th>Destination</th></tr></thead>
+          <tbody>
+            ${leavers.length === 0 ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No leavers recorded yet</td></tr>` : leavers.map(s => {
+              const cls = DB.find('classes', s.classId);
+              const date = s.withdrawnAt || s.transferredAt || s.graduatedAt || s.suspendedAt || s.updatedAt || '';
+              return `<tr>
+                <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-500">${s.admissionNo || ''}</div></div></div></td>
+                <td class="text-sm">${cls ? cls.name : '—'}</td>
+                <td>${statusBadge(s.status)}</td>
+                <td class="text-sm text-slate-500">${s.withdrawReason || s.transferReason || s.suspensionReason || '—'}</td>
+                <td class="text-xs text-slate-500">${date ? fdate(date, { short: true }) : '—'}</td>
+                <td class="text-sm">${s.transferDest || (s.status === 'alumni' ? s.finalClass || 'Graduated' : '—')}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `}
   `;
 }
 
@@ -6971,40 +7015,79 @@ function view_adm_discipline() {
     `;
   }
 
-  // Aggregate list view with student search
+  // Aggregate list view with tabs: Records | Suspensions
+  const discTab = APP.params.discTab || 'records';
   const searchQ = (APP.params.discSearch || '').toLowerCase();
+  const suspensions = DB.query('studentSuspensions', s => s.schoolId === currentSchoolId()).sort((a, b) => b.suspendedAt.localeCompare(a.suspendedAt));
   const filteredStudents = searchQ ? students.filter(s => s.name.toLowerCase().includes(searchQ)) : students;
   const studentsWithRecords = filteredStudents.map(s => ({ ...s, _recs: records.filter(r => r.studentId === s.id), _points: records.filter(r => r.studentId === s.id).reduce((sum, r) => sum + (r.points || 0), 0) })).filter(s => s._recs.length > 0 || searchQ);
 
   return `
     ${pageHeader({
       title: 'Discipline & Behaviour',
-      subtitle: 'Commendations, misconduct, and reward points · Synced with admission records',
+      subtitle: 'Commendations, misconduct, suspension history',
       actions: `<button class="btn btn-primary" onclick="addDisciplineModal()">${icon('plus','w-4 h-4')} New Record</button>`
     })}
-    <div class="card p-4 mb-4 flex gap-3">
-      <input type="text" class="input flex-1" placeholder="Search students…" value="${APP.params.discSearch || ''}" oninput="APP.params.discSearch=this.value; APP.render()" />
+
+    <div class="flex gap-2 mb-4">
+      <button class="chip ${discTab==='records'?'active':''}" onclick="APP.params.discTab='records'; APP.render()">Behaviour Records</button>
+      <button class="chip ${discTab==='suspensions'?'active':''}" onclick="APP.params.discTab='suspensions'; APP.render()">Suspension Log ${suspensions.length ? `<span class="ml-1 badge badge-danger">${suspensions.length}</span>` : ''}</button>
     </div>
-    ${studentsWithRecords.length === 0
-      ? emptyState({ title: 'No discipline records yet', body: searchQ ? 'No matching students found.' : 'Record commendations or misconduct to track student behavior.', icon: 'check',
-          action: `<button class="btn btn-primary" onclick="addDisciplineModal()">${icon('plus','w-4 h-4')} New Record</button>` })
-      : `<div class="card overflow-hidden">
-          <table class="tbl">
-            <thead><tr><th>Student</th><th class="text-center">Records</th><th class="text-center">Net Points</th><th>Latest</th><th></th></tr></thead>
-            <tbody>
-              ${studentsWithRecords.map(s => {
-                const latest = s._recs.sort((a,b)=>b.date.localeCompare(a.date))[0];
-                return `<tr class="cursor-pointer hover:bg-slate-50" onclick="APP.params.discView='student'; APP.params.discStudent='${s.id}'; APP.render()">
-                  <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<span class="font-medium">${s.name}</span></div></td>
-                  <td class="text-center">${s._recs.length}</td>
-                  <td class="text-center font-mono font-bold ${s._points>=0?'text-emerald-700':'text-rose-600'}">${s._points>0?'+':''}${s._points}</td>
-                  <td class="text-sm">${latest ? `<span class="badge ${latest.type==='commendation'?'badge-success':'badge-danger'} mr-1">${latest.type}</span>${fdate(latest.date,{short:true})}` : '—'}</td>
-                  <td>${icon('arrow_left','w-4 h-4 rotate-180 text-slate-400')}</td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>`}
+
+    ${discTab === 'suspensions' ? `
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="font-bold text-slate-900">All Suspension Records</h3>
+          <span class="text-xs text-slate-500">${suspensions.length} total</span>
+        </div>
+        ${suspensions.length === 0
+          ? emptyState({ title: 'No suspension records', body: 'Suspensions appear here when you suspend a student from their profile.', icon: 'check' })
+          : `<table class="tbl">
+              <thead><tr><th>Student</th><th>Class</th><th>Reason</th><th class="text-center">Days</th><th>Suspended</th><th>Resume Date</th><th class="text-center">Status</th></tr></thead>
+              <tbody>
+                ${suspensions.map(sus => {
+                  const stu = DB.find('students', sus.studentId);
+                  const cls = stu ? DB.find('classes', stu.classId) : null;
+                  const isActive = !sus.reinstatedAt;
+                  return `<tr>
+                    <td><div class="flex items-center gap-2">${avatar(stu ? stu.name : '?', 'sm')}<span class="font-medium">${stu ? stu.name : '—'}</span></div></td>
+                    <td class="text-sm">${cls ? cls.name : '—'}</td>
+                    <td class="text-sm">${sus.reason || '—'}</td>
+                    <td class="text-center">${sus.days || '—'}</td>
+                    <td class="text-xs text-slate-500">${sus.suspendedAt ? fdate(sus.suspendedAt, { short: true }) : '—'}</td>
+                    <td class="text-xs text-slate-500">${sus.resumeDate ? fdate(sus.resumeDate, { short: true }) : '—'}</td>
+                    <td class="text-center"><span class="badge ${isActive ? 'badge-danger' : 'badge-neutral'}">${isActive ? 'Active' : 'Reinstated'}</span></td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>`
+        }
+      </div>
+    ` : `
+      <div class="card p-4 mb-4 flex gap-3">
+        <input type="text" class="input flex-1" placeholder="Search students…" value="${APP.params.discSearch || ''}" oninput="APP.params.discSearch=this.value; APP.render()" />
+      </div>
+      ${studentsWithRecords.length === 0
+        ? emptyState({ title: 'No discipline records yet', body: searchQ ? 'No matching students found.' : 'Record commendations or misconduct to track student behavior.', icon: 'check',
+            action: `<button class="btn btn-primary" onclick="addDisciplineModal()">${icon('plus','w-4 h-4')} New Record</button>` })
+        : `<div class="card overflow-hidden">
+            <table class="tbl">
+              <thead><tr><th>Student</th><th class="text-center">Records</th><th class="text-center">Net Points</th><th>Latest</th><th></th></tr></thead>
+              <tbody>
+                ${studentsWithRecords.map(s => {
+                  const latest = s._recs.sort((a,b)=>b.date.localeCompare(a.date))[0];
+                  return `<tr class="cursor-pointer hover:bg-slate-50" onclick="APP.params.discView='student'; APP.params.discStudent='${s.id}'; APP.render()">
+                    <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<span class="font-medium">${s.name}</span></div></td>
+                    <td class="text-center">${s._recs.length}</td>
+                    <td class="text-center font-mono font-bold ${s._points>=0?'text-emerald-700':'text-rose-600'}">${s._points>0?'+':''}${s._points}</td>
+                    <td class="text-sm">${latest ? `<span class="badge ${latest.type==='commendation'?'badge-success':'badge-danger'} mr-1">${latest.type}</span>${fdate(latest.date,{short:true})}` : '—'}</td>
+                    <td>${icon('arrow_left','w-4 h-4 rotate-180 text-slate-400')}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>`}
+    `}
   `;
 }
 

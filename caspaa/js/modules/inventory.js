@@ -48,7 +48,9 @@ function view_adm_inventory() {
     ${pageHeader({
       title: 'Inventory & Store',
       subtitle: 'Track school supplies, equipment, and resources.',
-      actions: `<button class="btn btn-primary" onclick="addInventoryModal()">${icon('plus','w-4 h-4')} Add Item</button>`
+      actions: `
+        <button class="btn btn-secondary" onclick="exportPurchaseOrders()">${icon('download','w-4 h-4')} Export Purchase Orders</button>
+        <button class="btn btn-primary" onclick="addInventoryModal()">${icon('plus','w-4 h-4')} Add Item</button>`
     })}
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -285,6 +287,40 @@ function inv_saveNewItem() {
   document.getElementById('modalBackdrop').click();
   APP.render();
   toast('Item added to inventory', 'success');
+}
+
+// ─── Purchase Order Export ────────────────────────────────────────────────────
+
+function exportPurchaseOrders() {
+  const items = DB.query('inventory', i => i.schoolId === currentSchoolId());
+  const rows = [['Date', 'Item', 'Category', 'Supplier', 'Qty Received', 'Unit Cost (₦)', 'Total Value (₦)', 'Notes']];
+  items.forEach(item => {
+    (item.history || []).filter(h => h.type === 'Stock-In').forEach(h => {
+      const rawReason = (h.reason || '').replace(/^Restock from /i, '');
+      const dashIdx = rawReason.indexOf(' — ');
+      const supplier = (dashIdx >= 0 ? rawReason.slice(0, dashIdx) : rawReason) || item.supplier || '';
+      const notes = dashIdx >= 0 ? rawReason.slice(dashIdx + 3) : '';
+      const qty = h.delta || 0;
+      const cost = item.unitCost || 0;
+      rows.push([
+        h.timestamp ? h.timestamp.slice(0, 10) : '',
+        item.name || '',
+        item.category || '',
+        supplier,
+        qty,
+        cost,
+        qty * cost,
+        notes
+      ]);
+    });
+  });
+  if (rows.length <= 1) { toast('No purchase records found. Use Restock on any item to start recording.', 'info'); return; }
+  const header = rows[0];
+  const data = rows.slice(1).sort((a, b) => b[0].localeCompare(a[0]));
+  const csv = [header, ...data].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: 'purchase_orders.csv' });
+  a.click();
+  toast(data.length + ' purchase record' + (data.length !== 1 ? 's' : '') + ' exported');
 }
 
 // ─── History Modal ────────────────────────────────────────────────────────────
