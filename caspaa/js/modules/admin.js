@@ -4666,15 +4666,15 @@ function view_adm_staff() {
       <td>${t.classes && t.classes.length ? `<span class="badge badge-neutral">${t.classes.length} class${t.classes.length !== 1 ? 'es' : ''}</span>` : '<span class="text-slate-400 text-sm">—</span>'}</td>
       <td>${fdate(t.hireDate, { short: true })}</td>
       <td><span class="font-mono">${money(t.salary)}</span></td>
-      <td class="text-right">
+      <td class="text-right" onclick="event.stopPropagation()">
         <div class="flex items-center justify-end gap-1">
           ${t.status !== 'terminated' ? (
             t.status === 'suspended'
-              ? `<button class="btn btn-ghost !p-1.5 text-emerald-600" title="Reinstate" onclick="event.stopPropagation(); reinstateStaffModal('${t.id}')">${icon('check_circle','w-4 h-4')}</button>`
-              : `<button class="btn btn-ghost !p-1.5 text-amber-600" title="Suspend" onclick="event.stopPropagation(); suspendStaffModal('${t.id}')">${icon('pause_circle','w-4 h-4')}</button>`
-          ) : ''}
-          ${t.status !== 'terminated' ? `<button class="btn btn-ghost !p-1.5 text-rose-500" title="Terminate" onclick="event.stopPropagation(); terminateStaffModal('${t.id}')">${icon('x_circle','w-4 h-4')}</button>` : ''}
-          <button class="btn btn-ghost !p-1.5" title="View profile" onclick="event.stopPropagation(); viewStaff('${t.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
+              ? `<button class="btn btn-secondary text-xs !py-1" onclick="reinstateStaffModal('${t.id}')">${icon('check_circle','w-3.5 h-3.5')} Reinstate</button>`
+              : `<button class="btn btn-secondary text-xs !py-1" onclick="suspendStaffModal('${t.id}')">${icon('pause_circle','w-3.5 h-3.5')} Suspend</button>`
+          ) : '<span class="text-xs text-slate-400">Offboarded</span>'}
+          ${t.status !== 'terminated' ? `<button class="btn btn-secondary text-xs !py-1 text-rose-600 border-rose-200 hover:bg-rose-50" onclick="terminateStaffModal('${t.id}')">${icon('logout','w-3.5 h-3.5')} Offboard</button>` : ''}
+          <button class="btn btn-ghost !p-1.5" onclick="viewStaff('${t.id}')">${icon('arrow_left','w-4 h-4 rotate-180 text-slate-400')}</button>
         </div>
       </td>
     </tr>
@@ -4997,7 +4997,7 @@ function viewStaff(id, activeTab) {
         ${isSuspended
           ? `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>reinstateStaffModal('${id}'),50)">${icon('check_circle','w-4 h-4')} Reinstate Staff</button>`
           : `<button class="btn btn-warn" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>suspendStaffModal('${id}'),50)">${icon('pause_circle','w-4 h-4')} Suspend Staff</button>`}
-        <button class="btn btn-danger" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>terminateStaffModal('${id}'),50)">${icon('x_circle','w-4 h-4')} Terminate Staff</button>
+        <button class="btn btn-danger" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>terminateStaffModal('${id}'),50)">${icon('logout','w-4 h-4')} Offboard Staff</button>
         <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>issueStaffWarningModal('${id}'),50)">${icon('alert_triangle','w-4 h-4')} Issue Warning</button>
       </div>` : ''}
     `;
@@ -5020,7 +5020,7 @@ function viewStaff(id, activeTab) {
         ${isSuspended
           ? `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>reinstateStaffModal('${id}'),50)">${icon('check_circle','w-4 h-4')} Reinstate</button>`
           : `<button class="btn btn-warn" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>suspendStaffModal('${id}'),50)">${icon('pause_circle','w-4 h-4')} Suspend</button>`}
-        <button class="btn btn-danger" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>terminateStaffModal('${id}'),50)">${icon('x_circle','w-4 h-4')} Terminate</button>
+        <button class="btn btn-danger" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>terminateStaffModal('${id}'),50)">${icon('logout','w-4 h-4')} Offboard</button>
       ` : ''}
     `
   });
@@ -5121,33 +5121,33 @@ function terminateStaffModal(id) {
   const t = DB.find('teachers', id);
   if (!t) return;
   modal({
-    title: `Terminate — ${t.name}`,
+    title: `Offboard Staff — ${t.name}`,
     size: 'md',
     body: `
-      <div class="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-xl p-3 mb-4">
-        ${icon('x_circle','w-5 h-5 text-rose-600 flex-shrink-0')}
-        <div class="text-sm text-rose-800"><strong>Irreversible.</strong> This staff member will be marked as terminated and removed from active payroll. All HR history is preserved.</div>
+      <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4">
+        ${icon('logout','w-5 h-5 text-slate-600 flex-shrink-0')}
+        <div class="text-sm text-slate-700">Records the exit of this staff member — covers resignations, retirements, dismissals, and contract endings. They will be removed from active payroll. All HR history is preserved.</div>
       </div>
       <div class="space-y-3">
-        <div><label class="input-label">Termination Category *</label>
+        <div><label class="input-label">Exit Category *</label>
           <select id="stf_term_cat" class="input">
-            <option value="resignation">Resignation</option>
-            <option value="dismissal">Dismissal</option>
-            <option value="redundancy">Redundancy</option>
-            <option value="contract_end">End of Contract</option>
+            <option value="resignation">Resignation — staff chose to leave</option>
+            <option value="contract_end">End of Contract — contract period completed</option>
             <option value="retirement">Retirement</option>
+            <option value="redundancy">Redundancy — role no longer needed</option>
+            <option value="dismissal">Dismissal — terminated for cause</option>
             <option value="death">Death in Service</option>
           </select></div>
-        <div><label class="input-label">Reason / Summary *</label><textarea id="stf_term_reason" class="input" rows="2" placeholder="Brief reason for termination"></textarea></div>
+        <div><label class="input-label">Reason / Summary *</label><textarea id="stf_term_reason" class="input" rows="2" placeholder="e.g. Resigned to pursue further studies — handover completed with HOD"></textarea></div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label">Effective Date</label><input id="stf_term_date" type="date" class="input" value="${today()}" /></div>
-          <div><label class="input-label">Final Payment (₦)</label><input id="stf_term_pay" type="number" class="input" placeholder="0" value="0" /></div>
+          <div><label class="input-label">Final / Gratuity Payment (₦)</label><input id="stf_term_pay" type="number" class="input" placeholder="0" value="0" /></div>
         </div>
-        <div><label class="input-label">Additional Notes</label><textarea id="stf_term_notes" class="input" rows="2" placeholder="Severance terms, handover, etc."></textarea></div>
+        <div><label class="input-label">Handover / Exit Notes</label><textarea id="stf_term_notes" class="input" rows="2" placeholder="Handover arrangements, equipment returned, clearance status…"></textarea></div>
       </div>`,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
-      <button class="btn btn-danger" onclick="confirmStaffTermination('${id}')">${icon('x_circle','w-4 h-4')} Confirm Termination</button>`
+      <button class="btn btn-danger" onclick="confirmStaffTermination('${id}')">${icon('logout','w-4 h-4')} Confirm Offboarding</button>`
   });
 }
 
@@ -7526,23 +7526,22 @@ function renderHRLeave() {
     ${filtered.length === 0 ? emptyState({ title: 'No leave requests', icon: 'calendar' }) : `
       <div class="card overflow-hidden">
         <table class="tbl">
-          <thead><tr><th>Staff</th><th>Type</th><th>Dates</th><th>Reason</th><th>Source</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Staff</th><th>Type</th><th>Dates</th><th>Source</th><th>Status</th><th></th></tr></thead>
           <tbody>
             ${filtered.sort((a, b) => b.requestedAt.localeCompare(a.requestedAt)).map(l => {
               const staff = DB.find('teachers', l.staffId);
               const days = Math.ceil((new Date(l.to) - new Date(l.from)) / 86400000) + 1;
-              return `<tr>
+              return `<tr class="cursor-pointer hover:bg-slate-50" onclick="viewLeaveDetails('${l.id}')">
                 <td><div class="flex items-center gap-2">${avatar(staff ? staff.name : '?', 'sm')}<div><div class="font-medium text-sm">${staff ? staff.name : '—'}</div><div class="text-xs text-slate-500">${staff ? (staff.role || staff.staffType || 'Staff') : ''}</div></div></div></td>
                 <td><span class="badge badge-info">${l.type}</span></td>
                 <td class="text-sm">${fdate(l.from, { short: true })} – ${fdate(l.to, { short: true })} <span class="text-xs text-slate-500">(${days}d)</span></td>
-                <td class="text-sm">${l.reason || '—'}</td>
-                <td>${l.source === 'self' ? '<span class="badge badge-info">Staff submitted</span>' : '<span class="badge badge-neutral">Admin entered</span>'}</td>
+                <td>${l.source === 'self' ? '<span class="badge badge-neutral">Staff submitted</span>' : '<span class="badge badge-neutral">Admin entered</span>'}</td>
                 <td>${statusBadge(l.status === 'approved' ? 'successful' : l.status === 'rejected' ? 'failed' : 'pending')}</td>
-                <td class="text-right whitespace-nowrap">
+                <td class="text-right whitespace-nowrap" onclick="event.stopPropagation()">
                   ${l.status === 'pending' ? `
                     <button class="btn btn-ghost !p-1.5 text-emerald-700" title="Approve" onclick="decideLeave('${l.id}', 'approved')">${icon('check','w-4 h-4')}</button>
                     <button class="btn btn-ghost !p-1.5 text-rose-600" title="Reject" onclick="decideLeave('${l.id}', 'rejected')">${icon('x','w-4 h-4')}</button>
-                  ` : `<span class="text-xs text-slate-400">${fdate(l.decidedAt || l.requestedAt, { short: true })}</span>`}
+                  ` : icon('arrow_left','w-4 h-4 rotate-180 text-slate-300')}
                 </td>
               </tr>`;
             }).join('')}
@@ -7551,6 +7550,76 @@ function renderHRLeave() {
       </div>
     `}
   `;
+}
+
+function viewLeaveDetails(leaveId) {
+  const l = DB.find('leaveRequests', leaveId);
+  if (!l) return;
+  const staff = DB.find('teachers', l.staffId);
+  const decidedBy = l.decidedBy ? (DB.find('teachers', l.decidedBy) || DB.find('schools', l.decidedBy) || { name: 'Admin' }) : null;
+  const days = Math.ceil((new Date(l.to) - new Date(l.from)) / 86400000) + 1;
+  const statusColor = l.status === 'approved' ? 'emerald' : l.status === 'rejected' ? 'rose' : 'amber';
+  const statusLabel = l.status === 'approved' ? 'Approved' : l.status === 'rejected' ? 'Rejected' : 'Awaiting Decision';
+
+  modal({
+    title: 'Leave Request Details',
+    size: 'md',
+    body: `
+      <div class="space-y-4">
+        <!-- Staff card -->
+        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+          ${avatar(staff ? staff.name : '?', 'md')}
+          <div>
+            <div class="font-bold text-slate-900">${staff ? staff.name : '—'}</div>
+            <div class="text-xs text-slate-500">${staff ? (staff.role || staff.staffType || 'Staff') : ''}</div>
+          </div>
+          <span class="ml-auto badge bg-${statusColor}-100 text-${statusColor}-800 border-${statusColor}-200">${statusLabel}</span>
+        </div>
+
+        <!-- Leave details -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-slate-50 rounded-xl p-3">
+            <div class="text-xs text-slate-400 uppercase font-semibold mb-1">Leave Type</div>
+            <div class="font-semibold text-slate-900">${l.type}</div>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3">
+            <div class="text-xs text-slate-400 uppercase font-semibold mb-1">Duration</div>
+            <div class="font-semibold text-slate-900">${days} day${days !== 1 ? 's' : ''}</div>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3">
+            <div class="text-xs text-slate-400 uppercase font-semibold mb-1">From</div>
+            <div class="font-semibold text-slate-900">${fdate(l.from, { long: true })}</div>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3">
+            <div class="text-xs text-slate-400 uppercase font-semibold mb-1">To</div>
+            <div class="font-semibold text-slate-900">${fdate(l.to, { long: true })}</div>
+          </div>
+        </div>
+
+        <!-- Reason -->
+        <div>
+          <div class="text-xs text-slate-400 uppercase font-semibold mb-1">Reason / Notes</div>
+          <div class="p-3 bg-slate-50 rounded-xl text-sm text-slate-700 min-h-10">${l.reason || '<span class="text-slate-400 italic">No reason provided</span>'}</div>
+        </div>
+
+        <!-- Meta -->
+        <div class="text-xs text-slate-400 space-y-0.5">
+          <div>Submitted: ${fdate(l.requestedAt, { long: true })} · ${l.source === 'self' ? 'by staff member' : 'entered by admin'}</div>
+          ${l.decidedAt ? `<div>${l.status === 'approved' ? 'Approved' : 'Rejected'} on ${fdate(l.decidedAt, { long: true })}${decidedBy ? ' by ' + decidedBy.name : ''}</div>` : ''}
+        </div>
+
+        ${l.status === 'pending' ? `
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+          ${icon('info','w-4 h-4 inline mr-1')} This request is awaiting your decision. Approve to authorise the leave, or reject to decline it (the staff member will be notified either way).
+        </div>` : ''}
+      </div>
+    `,
+    footer: l.status === 'pending'
+      ? `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
+         <button class="btn btn-danger" onclick="document.getElementById('modalBackdrop')?.click(); decideLeave('${l.id}','rejected')">${icon('x','w-4 h-4')} Reject</button>
+         <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); decideLeave('${l.id}','approved')">${icon('check','w-4 h-4')} Approve</button>`
+      : `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
+  });
 }
 
 function decideLeave(leaveId, decision) {
