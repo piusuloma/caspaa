@@ -919,6 +919,24 @@ function view_adm_curriculum() {
   const currentTerm = DB.settings().currentTerm;
   const tab = APP.params.curTab || 'overview';
 
+  // Collect all unique terms from saved schemes + currentTerm
+  const termSet = new Set(allSchemes.map(s => s.term).filter(Boolean));
+  if (currentTerm) termSet.add(currentTerm);
+  // Also include academic terms so newly created schemes for those terms appear
+  DB.query('academicTerms', t => t.schoolId === currentSchoolId()).forEach(t => { if (t.name) termSet.add(t.name); });
+  const allTerms = [...termSet].sort();
+  const displayTerm = APP.params.schTermFilter !== undefined ? APP.params.schTermFilter : (currentTerm || allTerms[0] || '');
+
+  const termChips = allTerms.length > 1
+    ? '<div class="flex flex-wrap gap-1.5 mb-4">'
+      + allTerms.map(t =>
+          '<button class="text-xs font-semibold px-3 py-1 rounded-full border transition-all '
+          + (t === displayTerm ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400')
+          + '" onclick="APP.params.schTermFilter=\'' + t.replace(/'/g, "\\'") + '\';APP.render()">' + t + '</button>'
+        ).join('')
+      + '</div>'
+    : '';
+
   return `
     ${pageHeader({
       title: 'Curriculum (Schemes of Work)',
@@ -929,6 +947,8 @@ function view_adm_curriculum() {
       `
     })}
 
+    ${termChips}
+
     ${tabs([
       { key: 'overview', label: 'Overview' },
       { key: 'by-class', label: 'By Class' },
@@ -936,9 +956,9 @@ function view_adm_curriculum() {
     ], tab, k => { APP.params.curTab = k; APP.render(); })}
 
     <div class="pt-4">
-      ${tab === 'by-class' ? renderCurriculumByClass(classes, subjects, allSchemes, currentTerm) :
-        tab === 'by-subject' ? renderCurriculumBySubject(classes, subjects, allSchemes, currentTerm) :
-        renderCurriculumOverview(classes, subjects, allSchemes, currentTerm)}
+      ${tab === 'by-class' ? renderCurriculumByClass(classes, subjects, allSchemes, displayTerm) :
+        tab === 'by-subject' ? renderCurriculumBySubject(classes, subjects, allSchemes, displayTerm) :
+        renderCurriculumOverview(classes, subjects, allSchemes, displayTerm)}
     </div>
   `;
 }
@@ -1321,7 +1341,17 @@ function createNewScheme() {
   const method = (document.getElementById('nsch_method') || {}).value || 'template';
 
   const existing = DB.query('schemesOfWork', s => s.classId === classId && s.subjectId === subjectId && s.term === term)[0];
-  if (existing) { toast('A scheme for this subject/class/term already exists', 'warn'); return; }
+  if (existing) {
+    document.getElementById('modalBackdrop')?.click();
+    const _eSub = DB.find('subjects', subjectId);
+    const _eCls = DB.find('classes', classId);
+    confirm(
+      'A scheme already exists for ' + (_eSub ? _eSub.name : 'this subject') + ' in ' + (_eCls ? _eCls.name : 'this class') + ' (' + term + '). Open it to view or edit?',
+      () => openSchemeEditor(existing.id),
+      { yesLabel: 'Open Scheme' }
+    );
+    return;
+  }
 
   const cls = DB.find('classes', classId);
   const sub = DB.find('subjects', subjectId);
@@ -1376,6 +1406,8 @@ function createNewScheme() {
     status: 'draft', weeks,
     createdAt: now()
   });
+  // Switch the curriculum view to the term this scheme was just created for
+  APP.params.schTermFilter = term;
   document.getElementById('modalBackdrop')?.click();
   APP.render();
   const msg = method === 'template' ? `${source} template created · ${weeks.length} weeks ready to customise` :
