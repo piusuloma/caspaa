@@ -3612,7 +3612,7 @@ function bulkPromoteModal() {
           </select>
         </div>
         <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
-          Students with status other than "active" will be skipped. You can review what's about to happen on the next step.
+          Students with status other than "active" will be skipped. Students who transferred <em>into</em> this school and are now enrolled (status = active) will be included — this is correct behaviour. You can review who is included on the next step.
         </div>
       </div>
     `,
@@ -3638,6 +3638,7 @@ function previewBulkPromote() {
         ${students.map(s => `<div class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
           ${avatar(s, 'sm')}
           <span class="flex-1 text-sm font-medium">${s.name}</span>
+          ${s.admissionType === 'transfer' ? '<span class="badge badge-warn text-xs">Transfer In</span>' : ''}
           <code class="text-xs text-slate-500">${s.admissionNo}</code>
         </div>`).join('')}
       </div>
@@ -8919,8 +8920,9 @@ function renderAcademicStructure() {
   const sessions = DB.query('academicSessions', s => s.schoolId === currentSchoolId());
   const terms = DB.query('academicTerms', t => t.schoolId === currentSchoolId());
   const arms = DB.query('arms', a => a.schoolId === currentSchoolId());
+  const subjects = DB.get('subjects');
   return `
-    <div class="grid lg:grid-cols-3 gap-4">
+    <div class="grid lg:grid-cols-3 gap-4 mb-4">
       <div class="card p-5">
         <div class="flex items-center justify-between mb-3">
           <h3 class="font-bold text-slate-900">Sessions</h3>
@@ -8957,6 +8959,23 @@ function renderAcademicStructure() {
           ${arms.map(a => `<span class="badge badge-info">${a.name}</span>`).join('')}
         </div>
         <p class="text-xs text-slate-500 mt-3">Arms divide a class into parallel streams (e.g. JSS1A, JSS1B). They appear when creating classes.</p>
+      </div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="font-bold text-slate-900">Subjects</h3>
+          <p class="text-xs text-slate-500 mt-0.5">These subjects appear in scheme of work, results entry, and staff assignments.</p>
+        </div>
+        <button class="btn btn-primary text-sm" onclick="newSubjectModal()">${icon('plus','w-3.5 h-3.5')} Add Subject</button>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        ${subjects.length ? subjects.map(sub => `
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full text-sm font-medium text-slate-700">
+            ${sub.name}
+            <button onclick="deleteSubject('${sub.id}')" class="text-slate-400 hover:text-rose-600 transition-colors leading-none" title="Remove subject">&times;</button>
+          </span>
+        `).join('') : `<p class="text-sm text-slate-400">No subjects added yet. Click "Add Subject" to get started.</p>`}
       </div>
     </div>
   `;
@@ -9037,6 +9056,47 @@ function saveArm() {
   document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Arm added');
+}
+
+function newSubjectModal() {
+  modal({
+    title: 'Add Subject',
+    body: `<div class="space-y-3">
+      <div>
+        <label class="input-label">Subject Name</label>
+        <input id="sub_name" class="input" placeholder="e.g. Mathematics, English Language, Basic Science" />
+      </div>
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveSubject()">Add Subject</button>`
+  });
+  setTimeout(() => document.getElementById('sub_name')?.focus(), 100);
+}
+
+function saveSubject() {
+  const name = document.getElementById('sub_name').value.trim();
+  if (!name) { toast('Subject name required', 'danger'); return; }
+  const existing = DB.get('subjects').find(s => s.name.toLowerCase() === name.toLowerCase());
+  if (existing) { toast('A subject with that name already exists', 'warn'); return; }
+  DB.insert('subjects', { id: uid('sub'), name });
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast('Subject added');
+}
+
+function deleteSubject(subjectId) {
+  const sub = DB.find('subjects', subjectId);
+  if (!sub) return;
+  const inUse = DB.query('schemes', s => s.subjectId === subjectId).length > 0
+              || DB.query('results', r => r.subjectId === subjectId).length > 0;
+  if (inUse) {
+    toast(`"${sub.name}" is referenced in schemes or results and cannot be removed`, 'warn');
+    return;
+  }
+  if (!confirm(`Remove "${sub.name}"? This cannot be undone.`)) return;
+  DB.remove('subjects', subjectId);
+  APP.render();
+  toast('Subject removed');
 }
 
 function renderAcademicCalendar() {
