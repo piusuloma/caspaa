@@ -1017,6 +1017,194 @@ function renderCurriculumOverview(classes, subjects, allSchemes, currentTerm) {
   `;
 }
 
+function adm_generateAllTemplates(classId) {
+  const cls = DB.find('classes', classId);
+  if (!cls) return;
+  const sid      = currentSchoolId();
+  const displayTerm = APP.params.schTermFilter || DB.settings().currentTerm || '';
+  const subjects = DB.get('subjects').filter(s => !s.schoolId || s.schoolId === sid);
+  const existing = DB.query('schemesOfWork', s => s.schoolId === sid && s.classId === classId && s.term === displayTerm);
+  const existingSubIds = new Set(existing.map(s => s.subjectId));
+  const toCreate = subjects.filter(s => !existingSubIds.has(s.id));
+
+  if (!toCreate.length) {
+    toast('All subjects already have a scheme for ' + (displayTerm || 'this term'), 'info');
+    return;
+  }
+
+  const isPrimary = cls.level === 'Primary' || cls.level === 'Nursery';
+  const source    = isPrimary ? 'UBEC' : 'NERDC';
+
+  confirm(
+    'Generate ' + source + ' template schemes for all ' + toCreate.length + ' subject' + (toCreate.length !== 1 ? 's' : '') + ' in ' + cls.name
+    + (existing.length ? ' (' + existing.length + ' already exist and will be skipped)' : '') + '?',
+    () => {
+      toCreate.forEach(sub => {
+        const subName = sub.name;
+        DB.insert('schemesOfWork', {
+          id: uid('sch'), schoolId: sid, classId, subjectId: sub.id,
+          term: displayTerm, source, status: 'draft', createdAt: now(),
+          sessionId: DB.settings().sessionId || '',
+          weeks: [
+            { week: 1,  topic: 'Introduction to ' + subName, subtopics: ['Course overview'], objectives: 'Introduce ' + subName + ' for the term.', methods: 'Lecture, examples', resources: subName + ' textbook', duration: '2 periods', covered: false },
+            { week: 2,  topic: 'Foundational concepts', subtopics: [], objectives: 'Cover prerequisites.', methods: 'Lecture, group work', resources: subName + ' textbook', duration: '3 periods', covered: false },
+            { week: 3,  topic: 'Core unit 1', subtopics: [], objectives: 'Master core concepts.', methods: 'Lecture, examples', resources: subName + ' textbook', duration: '3 periods', covered: false },
+            { week: 4,  topic: 'Core unit 2', subtopics: [], objectives: 'Build on unit 1.', methods: 'Lecture, group work', resources: subName + ' textbook', duration: '3 periods', covered: false },
+            { week: 5,  topic: 'Core unit 3 + Mid-term CA', subtopics: [], objectives: 'Continuous assessment 1.', methods: 'Lecture, assessment', resources: subName + ' textbook', duration: '3 periods', covered: false },
+            { week: 6,  topic: 'Application & practice', subtopics: [], objectives: 'Apply concepts to real problems.', methods: 'Group work', resources: subName + ' textbook', duration: '3 periods', covered: false },
+            { week: 7,  topic: 'Advanced concepts', subtopics: [], objectives: 'Extend and deepen learning.', methods: 'Lecture, examples', resources: subName + ' textbook', duration: '3 periods', covered: false },
+            { week: 8,  topic: 'Project / Practical', subtopics: [], objectives: 'Hands-on practice.', methods: 'Demonstration, project work', resources: subName + ' textbook', duration: '3 periods', covered: false },
+            { week: 9,  topic: 'Integration & review', subtopics: [], objectives: 'Connect all concepts.', methods: 'Discussion, review', resources: subName + ' textbook', duration: '3 periods', covered: false },
+            { week: 10, topic: 'Continuous Assessment 2', subtopics: [], objectives: 'Second continuous assessment.', methods: 'Assessment', resources: 'Assessment papers', duration: '3 periods', covered: false },
+            { week: 11, topic: 'Revision', subtopics: ['Past questions', 'Q&A'], objectives: 'Prepare for exam.', methods: 'Q&A, drilling', resources: 'Past question papers', duration: '3 periods', covered: false },
+            { week: 12, topic: 'Term Examination', subtopics: ['Written examination'], objectives: 'End of term assessment.', methods: 'Examination', resources: 'Question papers', duration: '2 hours', covered: false }
+          ]
+        });
+      });
+      APP.params.schTermFilter = displayTerm;
+      APP.params.curTab = 'by-class';
+      APP.render();
+      toast(toCreate.length + ' ' + source + ' scheme' + (toCreate.length !== 1 ? 's' : '') + ' generated for ' + cls.name, 'success');
+    },
+    { yesLabel: 'Generate ' + toCreate.length + ' Scheme' + (toCreate.length !== 1 ? 's' : '') }
+  );
+}
+
+function adm_bulkUploadClassModal(classId) {
+  const cls = DB.find('classes', classId);
+  if (!cls) return;
+  const sid         = currentSchoolId();
+  const displayTerm = APP.params.schTermFilter || DB.settings().currentTerm || '';
+  const terms       = DB.query('academicTerms', t => t.schoolId === sid);
+
+  modal({
+    title: 'Bulk Upload — ' + cls.name,
+    size: 'lg',
+    body: `
+      <div class="space-y-4">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          <div class="font-semibold mb-1">CSV format — one row per week per subject:</div>
+          <div class="font-mono text-xs bg-white rounded p-2 border border-blue-100 text-slate-700">
+            Subject,Week,Topic,Objectives,Activities,Resources<br>
+            Mathematics,1,Number Bases,Understand base 10 and 2,Group work,Textbook<br>
+            Mathematics,2,Fractions,Convert between types,Practice drill,Textbook<br>
+            English Language,1,Reading Comprehension,Skim and scan,Group reading,Textbook
+          </div>
+          <a href="#" class="inline-flex items-center gap-1 mt-2 text-blue-700 underline font-semibold text-xs" onclick="adm_downloadClassSchemeTemplate('${classId}'); return false;">${icon('download','w-3 h-3')} Download blank template for ${cls.name}</a>
+        </div>
+        <div>
+          <label class="input-label">Term</label>
+          <select id="buc_term" class="input">
+            ${terms.length
+              ? terms.map(t => '<option value="' + t.name + '"' + (t.name === displayTerm ? ' selected' : '') + '>' + t.name + '</option>').join('')
+              : '<option value="' + displayTerm + '">' + displayTerm + '</option>'}
+          </select>
+        </div>
+        <div class="border-2 border-dashed border-slate-300 hover:border-brand-400 rounded-xl p-6 text-center cursor-pointer transition" onclick="document.getElementById('buc_file').click()">
+          ${icon('upload','w-7 h-7 mx-auto text-slate-400 mb-1')}
+          <p class="text-sm font-semibold text-slate-700">Click to select your CSV file</p>
+          <p class="text-xs text-slate-400 mt-0.5">Subject · Week · Topic · Objectives · Activities · Resources</p>
+          <input type="file" id="buc_file" accept=".csv" class="hidden" onchange="adm_previewClassBulkCSV(this, '${classId}')">
+        </div>
+        <div id="buc_preview"></div>
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button id="buc_import_btn" class="btn btn-primary hidden" onclick="adm_confirmClassBulkImport('${classId}')">${icon('check','w-4 h-4')} Import Schemes</button>`
+  });
+}
+
+function adm_downloadClassSchemeTemplate(classId) {
+  const cls   = DB.find('classes', classId);
+  const sid   = currentSchoolId();
+  const subs  = DB.get('subjects').filter(s => !s.schoolId || s.schoolId === sid);
+  let csv = 'Subject,Week,Topic,Objectives,Activities,Resources\n';
+  subs.slice(0, 3).forEach(sub => {
+    for (let i = 1; i <= 3; i++) {
+      csv += '"' + sub.name + '",' + i + ',"Week ' + i + ' Topic","Objectives here","Activities here","Resources here"\n';
+    }
+    csv += '"' + sub.name + '",...,...,...,...,...\n';
+  });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
+    download: (cls ? cls.name.replace(/\s/g, '_') : 'class') + '_scheme_template.csv'
+  });
+  a.click();
+}
+
+function adm_previewClassBulkCSV(input, classId) {
+  const file = input.files[0];
+  if (!file) return;
+  const sid   = currentSchoolId();
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+    const rows  = lines.map(l => l.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+    const isHeader = rows[0] && isNaN(parseInt(rows[0][1]));
+    const data  = (isHeader ? rows.slice(1) : rows).filter(r => r.length >= 3 && r[0]);
+    if (!data.length) {
+      document.getElementById('buc_preview').innerHTML = '<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-800">No valid rows found. Check the file has Subject and Week columns.</div>';
+      return;
+    }
+    const subjectGroups = {};
+    data.forEach(r => { const name = r[0]; if (!subjectGroups[name]) subjectGroups[name] = 0; subjectGroups[name]++; });
+    const subjectList = Object.entries(subjectGroups);
+    const unknownSubs = subjectList.filter(([name]) => {
+      const allSubs = DB.get('subjects').filter(s => !s.schoolId || s.schoolId === sid);
+      return !allSubs.find(s => s.name.toLowerCase() === name.toLowerCase());
+    }).map(([name]) => name);
+    window._bucCSVData = data;
+    document.getElementById('buc_preview').innerHTML =
+      '<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900 space-y-2">'
+      + '<div class="font-semibold">' + icon('check','w-4 h-4 inline') + ' ' + data.length + ' rows · ' + subjectList.length + ' subject' + (subjectList.length !== 1 ? 's' : '') + ' detected:</div>'
+      + '<div class="flex flex-wrap gap-1">' + subjectList.map(([name, cnt]) => '<span class="bg-white border border-emerald-300 rounded-full px-2 py-0.5 text-xs">' + name + ' (' + cnt + ' wks)</span>').join('') + '</div>'
+      + (unknownSubs.length ? '<div class="text-amber-700 text-xs mt-1">⚠ Not found in subject list (will be created as new): ' + unknownSubs.join(', ') + '</div>' : '')
+      + '</div>';
+    document.getElementById('buc_import_btn').classList.remove('hidden');
+  };
+  reader.readAsText(file);
+}
+
+function adm_confirmClassBulkImport(classId) {
+  const data = window._bucCSVData;
+  if (!data || !data.length) { toast('No data to import', 'danger'); return; }
+  const term = (document.getElementById('buc_term') || {}).value || DB.settings().currentTerm || '';
+  const sid  = currentSchoolId();
+  const allSubs = DB.get('subjects').filter(s => !s.schoolId || s.schoolId === sid);
+
+  // Group rows by subject name
+  const schemeMap = {};
+  data.forEach(r => {
+    const [subjectName, weekStr, topic, objectives, activities, resources] = r;
+    if (!subjectName) return;
+    if (!schemeMap[subjectName]) schemeMap[subjectName] = [];
+    const weekNum = parseInt(weekStr) || (schemeMap[subjectName].length + 1);
+    schemeMap[subjectName].push({ week: weekNum, topic: topic || 'Week ' + weekNum, objectives: objectives || '', activities: activities || '', resources: resources || '', methods: 'Lecture, group work', duration: '3 periods', covered: false, subtopics: [] });
+  });
+
+  let created = 0, skipped = 0;
+  Object.entries(schemeMap).forEach(([subjectName, weeks]) => {
+    // Find or create the subject
+    let sub = allSubs.find(s => s.name.toLowerCase() === subjectName.toLowerCase());
+    if (!sub) {
+      const newId = uid('subj');
+      DB.insert('subjects', { id: newId, schoolId: sid, name: subjectName });
+      sub = { id: newId, name: subjectName };
+    }
+    const existing = DB.query('schemesOfWork', s => s.schoolId === sid && s.classId === classId && s.subjectId === sub.id && s.term === term)[0];
+    if (existing) { skipped++; return; }
+    weeks.sort((a, b) => a.week - b.week);
+    DB.insert('schemesOfWork', { id: uid('sch'), schoolId: sid, classId, subjectId: sub.id, term, source: 'CSV Upload', status: 'draft', weeks, createdAt: now(), sessionId: DB.settings().sessionId || '' });
+    created++;
+  });
+
+  delete window._bucCSVData;
+  document.getElementById('modalBackdrop')?.click();
+  APP.params.schTermFilter = term;
+  APP.params.curTab = 'by-class';
+  APP.render();
+  toast(created + ' scheme' + (created !== 1 ? 's' : '') + ' imported' + (skipped ? ' · ' + skipped + ' skipped (already exist)' : ''), 'success');
+}
+
 function renderCurriculumByClass(classes, subjects, allSchemes, currentTerm) {
   return `
     <div class="space-y-4">
@@ -1028,7 +1216,11 @@ function renderCurriculumByClass(classes, subjects, allSchemes, currentTerm) {
               <h3 class="font-bold text-slate-900">${c.name} <span class="text-sm font-normal text-slate-500">· ${c.level}</span></h3>
               <p class="text-xs text-slate-500 mt-0.5">${classSchemes.length} subject scheme${classSchemes.length !== 1 ? 's' : ''} for this term</p>
             </div>
-            <button class="btn btn-secondary text-xs" onclick="newSchemeModal('${c.id}')">${icon('plus','w-3.5 h-3.5')} Add Subject Scheme</button>
+            <div class="flex items-center gap-2">
+              <button class="btn btn-secondary text-xs" onclick="adm_bulkUploadClassModal('${c.id}')">${icon('upload','w-3.5 h-3.5')} Bulk Upload</button>
+              <button class="btn btn-secondary text-xs" onclick="adm_generateAllTemplates('${c.id}')">${icon('plus','w-3.5 h-3.5')} Generate All</button>
+              <button class="btn btn-secondary text-xs" onclick="newSchemeModal('${c.id}')">${icon('plus','w-3.5 h-3.5')} Add One</button>
+            </div>
           </div>
           ${classSchemes.length === 0
             ? '<p class="text-sm text-slate-500 p-5 text-center">No schemes of work for this class yet.</p>'
