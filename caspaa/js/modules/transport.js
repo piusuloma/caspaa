@@ -612,14 +612,21 @@ function adm_renderBusStatusTab(routes, schoolId) {
         const assignments = DB.query('busAssignments', a => a.routeId === route.id && a.schoolId === schoolId);
         const stops = Array.isArray(route.stops) ? route.stops : (route.stops || '').split('\n').map(s => s.trim()).filter(Boolean);
 
-        // Group students by their boarding stop
+        // Group students by their boarding stop, including parent contact + address
         const byStop = {};
         const noStop = [];
         assignments.forEach(a => {
           const stu = DB.find('students', a.studentId);
           if (!stu) return;
-          const cls = DB.find('classes', stu.classId);
-          const entry = { name: stu.name, admissionNo: stu.admissionNo, className: cls ? cls.name : '', direction: a.direction };
+          const cls    = DB.find('classes', stu.classId);
+          const parent = stu.parentId ? DB.find('parents', stu.parentId) : null;
+          const entry  = {
+            id: stu.id, name: stu.name, admissionNo: stu.admissionNo,
+            className: cls ? cls.name : '', direction: a.direction,
+            parentName: parent ? parent.name : '',
+            parentPhone: parent ? parent.phone : '',
+            homeAddress: parent ? (parent.address || '') : ''
+          };
           if (a.boardingStop) {
             if (!byStop[a.boardingStop]) byStop[a.boardingStop] = [];
             byStop[a.boardingStop].push(entry);
@@ -656,7 +663,10 @@ function adm_renderBusStatusTab(routes, schoolId) {
 
             <!-- Boarding manifest by stop -->
             <div class="p-4">
-              <div class="text-xs font-semibold uppercase text-slate-400 mb-3">Boarding Manifest — ${assignments.length} student${assignments.length !== 1 ? 's' : ''} across ${stops.length || 1} stop${stops.length !== 1 ? 's' : ''}</div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="text-xs font-semibold uppercase text-slate-400">Boarding Manifest — ${assignments.length} student${assignments.length !== 1 ? 's' : ''} across ${stops.length || 1} stop${stops.length !== 1 ? 's' : ''}</div>
+                <button class="btn btn-secondary text-xs !py-1.5" onclick="printRouteSheet('${route.id}')">${icon('download','w-3.5 h-3.5')} Print Route Sheet</button>
+              </div>
               ${stops.length === 0 && assignments.length === 0
                 ? `<p class="text-sm text-slate-400">No students assigned to this route yet.</p>`
                 : `<div class="space-y-3">
@@ -672,13 +682,21 @@ function adm_renderBusStatusTab(routes, schoolId) {
                             <div class="font-semibold text-sm text-slate-800 mb-1.5">${stop}</div>
                             ${studentsHere.length === 0
                               ? `<p class="text-xs text-slate-400 italic">No students assigned to this stop</p>`
-                              : `<div class="flex flex-wrap gap-1.5">
+                              : `<div class="space-y-1.5">
                                   ${studentsHere.map(s => `
-                                    <span class="inline-flex items-center gap-1.5 text-xs bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg">
-                                      <span class="font-medium">${s.name}</span>
-                                      <span class="text-slate-400">${s.className}</span>
-                                      ${s.direction !== 'both' ? `<span class="badge badge-warn text-xs">${s.direction === 'pickup' ? 'AM only' : 'PM only'}</span>` : ''}
-                                    </span>
+                                    <div class="flex items-start gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                                      <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                          <span class="font-medium text-sm text-slate-800">${s.name}</span>
+                                          <span class="text-xs text-slate-400">${s.className}</span>
+                                          ${s.direction !== 'both' ? `<span class="badge badge-warn text-xs">${s.direction === 'pickup' ? 'AM only' : 'PM only'}</span>` : ''}
+                                        </div>
+                                        <div class="flex items-center gap-3 mt-0.5 flex-wrap">
+                                          ${s.parentPhone ? `<a href="tel:${s.parentPhone}" class="text-xs text-brand-700 font-medium">${icon('phone','w-3 h-3 inline')} ${s.parentPhone}</a>` : ''}
+                                          ${s.homeAddress ? `<span class="text-xs text-slate-500">${icon('home','w-3 h-3 inline')} ${s.homeAddress}</span>` : '<span class="text-xs text-rose-400 italic">No home address on file</span>'}
+                                        </div>
+                                      </div>
+                                    </div>
                                   `).join('')}
                                 </div>`
                             }
@@ -1219,4 +1237,121 @@ function adm_saveDismissalConfig() {
   document.getElementById('modalBackdrop').click();
   APP.render();
   toast('Dismissal times saved', 'success');
+}
+
+/* ---------- Print Route Sheet ---------- */
+function printRouteSheet(routeId) {
+  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const school   = DB.find('schools', schoolId);
+  const route    = DB.find('busRoutes', routeId);
+  if (!route) return;
+
+  const allStaff   = [...DB.query('teachers', t => t.schoolId === schoolId), ...DB.query('staff', s => s.schoolId === schoolId)];
+  const driver     = allStaff.find(s => s.id === route.driverStaffId);
+  const stops      = Array.isArray(route.stops) ? route.stops : (route.stops || '').split('\n').map(s => s.trim()).filter(Boolean);
+  const assignments = DB.query('busAssignments', a => a.routeId === routeId && a.schoolId === schoolId);
+
+  const byStop = {};
+  const noStop = [];
+  assignments.forEach(a => {
+    const stu    = DB.find('students', a.studentId);
+    if (!stu) return;
+    const cls    = DB.find('classes', stu.classId);
+    const parent = stu.parentId ? DB.find('parents', stu.parentId) : null;
+    const entry  = {
+      name: stu.name, admissionNo: stu.admissionNo,
+      className: cls ? cls.name : '',
+      direction: a.direction,
+      parentName: parent ? parent.name : '',
+      parentPhone: parent ? (parent.phone || '') : '',
+      homeAddress: parent ? (parent.address || '') : ''
+    };
+    if (a.boardingStop) {
+      if (!byStop[a.boardingStop]) byStop[a.boardingStop] = [];
+      byStop[a.boardingStop].push(entry);
+    } else {
+      noStop.push(entry);
+    }
+  });
+
+  const todayFormatted = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  const stopRows = stops.map((stop, i) => {
+    const students = byStop[stop] || [];
+    return `
+      <tr style="background:#f8fafc">
+        <td colspan="5" style="padding:8px 10px;font-weight:700;font-size:13px;border-top:2px solid #334155;color:#1e293b">
+          Stop ${i + 1}: ${stop}
+        </td>
+      </tr>
+      ${students.length === 0
+        ? `<tr><td colspan="5" style="padding:6px 10px;color:#94a3b8;font-style:italic;font-size:12px">No students assigned to this stop</td></tr>`
+        : students.map((s, si) => `
+          <tr style="${si % 2 === 0 ? '' : 'background:#f1f5f9'}">
+            <td style="padding:7px 10px;font-size:12px">${si + 1}</td>
+            <td style="padding:7px 10px;font-size:12px;font-weight:600">${s.name}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#475569">${s.className}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#0f172a">${s.parentPhone || '—'}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#475569">${s.homeAddress || '—'}</td>
+          </tr>`).join('')
+      }
+    `;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><title>Route Sheet — ${route.name}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #1e293b; }
+    h1 { font-size: 20px; margin: 0 0 2px; }
+    .meta { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th { background: #1e293b; color: white; padding: 8px 10px; text-align: left; font-size: 12px; }
+    td { border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    .header-box { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #334155; padding-bottom: 12px; margin-bottom: 16px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .info-cell { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; }
+    .info-label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 2px; }
+    .info-value { font-size: 14px; font-weight: 700; }
+    @media print { body { padding: 10px; } }
+  </style></head><body>
+  <div class="header-box">
+    <div>
+      <div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px">${school ? school.name : 'School'}</div>
+      <h1>${route.name} — Route Sheet</h1>
+      <div class="meta">${todayFormatted} &nbsp;·&nbsp; ${assignments.length} students &nbsp;·&nbsp; ${stops.length} stops</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#64748b">
+      <div><strong>Plate:</strong> ${route.vehiclePlate || '—'}</div>
+      <div><strong>Driver:</strong> ${driver ? driver.name : '—'}</div>
+      <div><strong>Phone:</strong> ${driver ? (driver.phone || '—') : '—'}</div>
+    </div>
+  </div>
+  <div class="info-grid">
+    <div class="info-cell"><div class="info-label">Departure</div><div class="info-value">${route.departureTime || '—'}</div></div>
+    <div class="info-cell"><div class="info-label">Return</div><div class="info-value">${route.returnTime || '—'}</div></div>
+    <div class="info-cell"><div class="info-label">Total Students</div><div class="info-value">${assignments.length}</div></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th style="width:30px">#</th>
+      <th>Student Name</th>
+      <th>Class</th>
+      <th>Parent Phone</th>
+      <th>Home Address</th>
+    </tr></thead>
+    <tbody>
+      ${stopRows}
+      ${noStop.length > 0 ? `
+        <tr style="background:#fef3c7"><td colspan="5" style="padding:8px 10px;font-weight:700;font-size:13px;border-top:2px solid #d97706;color:#92400e">⚠ No Stop Assigned (${noStop.length})</td></tr>
+        ${noStop.map((s, i) => `<tr><td style="padding:7px 10px;font-size:12px">${i+1}</td><td style="padding:7px 10px;font-size:12px;font-weight:600">${s.name}</td><td style="padding:7px 10px;font-size:12px">${s.className}</td><td style="padding:7px 10px;font-size:12px">${s.parentPhone || '—'}</td><td style="padding:7px 10px;font-size:12px">${s.homeAddress || '—'}</td></tr>`).join('')}
+      ` : ''}
+    </tbody>
+  </table>
+  <div style="margin-top:20px;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px">
+    Printed from CASPAA · ${todayFormatted} · Driver: ${driver ? driver.name : '—'}
+  </div>
+  <script>window.onload = () => window.print();</script>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  if (win) { win.document.write(html); win.document.close(); }
 }
