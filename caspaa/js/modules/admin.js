@@ -9240,28 +9240,66 @@ function viewApplication(appId) {
     { key: 'photo',        label: 'Passport Photograph' },
     { key: 'others',       label: 'Others' }
   ];
+  const statusOrder = ['pending', 'reviewing', 'visit_scheduled', 'visit_confirmed', 'accepted'];
+  const statusLabels = { pending: 'Pending Review', reviewing: 'Under Review', visit_scheduled: 'Visit Booked', visit_confirmed: 'Visit Done', accepted: 'Accepted', rejected: 'Rejected' };
+  const stepLabels  = { pending: 'Received', reviewing: 'Reviewing', visit_scheduled: 'Visit Booked', visit_confirmed: 'Visit Done', accepted: 'Enrolled' };
+  const currentIdx  = a.status === 'rejected' ? -1 : statusOrder.indexOf(a.status);
 
   modal({
     title: 'Application — ' + a.applicantName,
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="flex items-center gap-4 pb-4 border-b border-slate-100">
+
+        <!-- Header: name + status badge -->
+        <div class="flex items-center gap-4 pb-3 border-b border-slate-100">
           ${avatar(a.applicantName, 'xl')}
           <div class="flex-1">
             <h2 class="text-lg font-bold text-slate-900">${a.applicantName}</h2>
             <p class="text-sm text-slate-500">${a.gender === 'M' ? 'Male' : 'Female'} · DOB ${fdate(a.dob, { long: true })} (${calcAge(a.dob)} yrs)</p>
-            <span class="badge ${a.status === 'accepted' ? 'badge-success' : a.status === 'rejected' ? 'badge-danger' : 'badge-warn'} mt-1">${a.status}</span>
+            <span class="badge ${a.status === 'accepted' ? 'badge-success' : a.status === 'rejected' ? 'badge-danger' : a.status === 'visit_confirmed' ? 'badge-info' : 'badge-warn'} mt-1">${statusLabels[a.status] || a.status}</span>
           </div>
         </div>
 
+        <!-- Pipeline progress (hidden for rejected) -->
+        ${a.status !== 'rejected' ? '<div class="relative flex items-start justify-between py-1">' +
+            '<div class="absolute top-3.5 left-4 right-4 h-0.5 bg-slate-100 z-0"></div>' +
+            statusOrder.map((s, i) => {
+              const done = i <= currentIdx, active = i === currentIdx;
+              return '<div class="flex flex-col items-center gap-1 text-center flex-1 relative z-10">' +
+                '<div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ' + (done ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400') + (active ? ' ring-2 ring-brand-300 ring-offset-1' : '') + '">' +
+                (done ? icon('check','w-3.5 h-3.5') : String(i + 1)) +
+                '</div><div class="text-xs leading-tight max-w-[3.5rem] ' + (active ? 'text-brand-700 font-semibold' : done ? 'text-slate-600' : 'text-slate-400') + '">' + stepLabels[s] + '</div></div>';
+            }).join('') +
+          '</div>'
+        : '<div class="bg-rose-50 border border-rose-200 rounded-xl p-2 text-xs text-rose-700 text-center font-semibold">This application has been rejected</div>'}
+
+        <!-- What happens next (pending/reviewing only) -->
+        ${a.status === 'pending' ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+          <div class="font-semibold mb-0.5">${icon('bell','w-3.5 h-3.5 inline mr-1')} Next step: Review the application</div>
+          Click <strong>Review</strong> to log notes and mark it as actively considered. Once reviewing, you can <strong>Schedule a Visit</strong> or go straight to <strong>Accept &amp; Enrol</strong> if the family walked in.
+        </div>` : ''}
+        ${a.status === 'reviewing' ? `<div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          <div class="font-semibold mb-0.5">${icon('calendar','w-3.5 h-3.5 inline mr-1')} Next step: Schedule a school visit</div>
+          Use <strong>Schedule Visit</strong> to pick a date and notify the parent. After the family visits, click <strong>Mark Visit Done</strong> — this unlocks the fee preview in the parent portal. You can also <strong>Accept &amp; Enrol</strong> directly without a visit.
+        </div>` : ''}
+        ${a.status === 'visit_scheduled' ? `<div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+          <div class="font-semibold mb-0.5">${icon('check','w-3.5 h-3.5 inline mr-1')} Waiting for the visit to happen</div>
+          Once the family comes in, click <strong>Mark Visit Done</strong>. This confirms the visit, creates a parent account (if they don't have one), and unlocks the fee preview for them.
+        </div>` : ''}
+        ${a.status === 'visit_confirmed' ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+          <div class="font-semibold mb-0.5">${icon('check','w-3.5 h-3.5 inline mr-1')} Visit done — ready to enrol</div>
+          The parent can now see the fee structure in their portal. Click <strong>Accept &amp; Enrol</strong> to create the student record, assign an admission number, and auto-generate the first invoice.
+        </div>` : ''}
+
+        <!-- Details grid -->
         <div class="grid grid-cols-2 gap-3 text-sm">
           <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Requested Class</div><div>${cls ? cls.name : '—'}</div></div>
           <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Current School</div><div>${a.currentSchool || '—'}</div></div>
           <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Parent Name</div><div>${a.parentName}</div></div>
           <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Parent Phone</div><div>${a.parentPhone}</div></div>
-          <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Parent Email</div><div>${a.parentEmail}</div></div>
-          <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Home Address / Location</div><div>${a.location || a.address || '—'}</div></div>
+          <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Parent Email</div><div>${a.parentEmail || '—'}</div></div>
+          <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Home Address</div><div>${a.location || a.address || '—'}</div></div>
         </div>
 
         ${a.reviewNotes ? `<div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
@@ -9320,12 +9358,13 @@ function viewApplication(appId) {
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
       ${a.status === 'pending' ? `<button class="btn btn-secondary" onclick="reviewApplicationModal('${a.id}')">${icon('search','w-4 h-4')} Review</button>` : ''}
+      ${a.status === 'pending' ? `<button class="btn btn-gold" onclick="scheduleVisitModal('${a.id}')">${icon('calendar','w-4 h-4')} Schedule Visit</button>` : ''}
       ${a.status === 'reviewing' ? `<button class="btn btn-secondary" onclick="reviewApplicationModal('${a.id}')">${icon('search','w-4 h-4')} Update Review</button>` : ''}
       ${a.status === 'reviewing' ? `<button class="btn btn-gold" onclick="scheduleVisitModal('${a.id}')">${icon('calendar','w-4 h-4')} Schedule Visit</button>` : ''}
       ${a.status === 'visit_scheduled' ? `<button class="btn btn-gold" onclick="scheduleVisitModal('${a.id}')">${icon('calendar','w-4 h-4')} Reschedule</button>` : ''}
       ${a.status === 'visit_scheduled' ? `<button class="btn btn-secondary" onclick="markVisitCompleteModal('${a.id}')">${icon('check','w-4 h-4')} Mark Visit Done</button>` : ''}
       ${a.status !== 'rejected' && a.status !== 'accepted' ? `<button class="btn btn-danger" onclick="rejectApplicationModal('${a.id}')">Reject</button>` : ''}
-      ${(a.status === 'visit_confirmed' || a.status === 'reviewing' || a.status === 'visit_scheduled') ? `<button class="btn btn-primary" onclick="acceptApplication('${a.id}')">${icon('check','w-4 h-4')} Accept &amp; Enrol</button>` : ''}
+      ${(a.status === 'visit_confirmed' || a.status === 'reviewing' || a.status === 'visit_scheduled' || a.status === 'pending') ? `<button class="btn btn-primary" onclick="acceptApplication('${a.id}')">${icon('check','w-4 h-4')} Accept &amp; Enrol</button>` : ''}
     `
   });
 }
