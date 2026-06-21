@@ -393,13 +393,6 @@ function adm_assignStudentModal() {
     return;
   }
 
-  // Pre-compute home addresses for the JS inline preview
-  const studentAddressMap = {};
-  students.forEach(s => {
-    const parent = s.parentId ? DB.find('parents', s.parentId) : null;
-    studentAddressMap[s.id] = parent ? (parent.address || '') : '';
-  });
-
   modal({
     title: 'Assign Student to Bus Route',
     body: `
@@ -413,9 +406,7 @@ function adm_assignStudentModal() {
               return `<option value="${s.id}">${s.name}${cls ? ' · ' + cls.name : ''}</option>`;
             }).join('')}
           </select>
-          <div id="as_addr_preview" class="mt-1.5 text-xs text-slate-500 hidden">
-            <span class="font-semibold">Home address:</span> <span id="as_addr_text"></span>
-          </div>
+          <div id="as_addr_preview" class="mt-1.5 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 hidden"></div>
         </div>
         <div>
           <label class="input-label">Bus Route *</label>
@@ -437,32 +428,15 @@ function adm_assignStudentModal() {
         </div>
         <div>
           <label class="input-label">Pickup Order *</label>
-          <input id="as_order" type="number" min="1" class="input" placeholder="e.g. 1 = first house the driver visits, 2 = second…" />
-          <p class="text-xs text-slate-400 mt-1">The position in the route where the driver picks up / drops off this student. Determines order on the driver's manifest.</p>
+          <input id="as_order" type="number" min="1" class="input" placeholder="e.g. 1 = first house driver visits, 2 = second…" />
+          <p class="text-xs text-slate-400 mt-1">Position in the route. Sets the order on the driver's manifest and printed route sheet.</p>
         </div>
         <div>
           <label class="input-label">Pickup Address</label>
-          <input id="as_addr" class="input" placeholder="Defaults to home address on file — override if different" />
-          <p class="text-xs text-slate-400 mt-1">Leave blank to use the parent's registered home address.</p>
+          <input id="as_addr" class="input" placeholder="Leave blank to use parent's home address on file" />
+          <p class="text-xs text-slate-400 mt-1">Only fill this if their pickup point differs from their registered home address.</p>
         </div>
       </div>
-      <script>
-        var _addrMap = ${JSON.stringify(studentAddressMap)};
-        function adm_previewStudentAddress(id) {
-          var addr = _addrMap[id] || '';
-          var preview = document.getElementById('as_addr_preview');
-          var text = document.getElementById('as_addr_text');
-          var addrInput = document.getElementById('as_addr');
-          if (addr) {
-            text.textContent = addr;
-            preview.classList.remove('hidden');
-            if (!addrInput.value) addrInput.placeholder = addr;
-          } else {
-            preview.innerHTML = '<span class="text-rose-400 italic">No home address on file for this parent — enter pickup address manually.</span>';
-            preview.classList.remove('hidden');
-          }
-        }
-      </script>
     `,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -509,6 +483,22 @@ function adm_saveAssignment() {
   document.getElementById('modalBackdrop').click();
   APP.params.tab = 'assign'; APP.render();
   toast(`${student ? student.name : 'Student'} assigned to ${route ? route.name : 'route'}`, 'success');
+}
+
+function adm_previewStudentAddress(studentId) {
+  const preview = document.getElementById('as_addr_preview');
+  const addrInput = document.getElementById('as_addr');
+  if (!preview) return;
+  const stu    = DB.find('students', studentId);
+  const parent = stu && stu.parentId ? DB.find('parents', stu.parentId) : null;
+  const addr   = parent ? (parent.address || '') : '';
+  preview.classList.remove('hidden');
+  if (addr) {
+    preview.innerHTML = '<span class="font-semibold text-slate-700">Home address:</span> ' + addr;
+    if (addrInput && !addrInput.value) addrInput.placeholder = addr;
+  } else {
+    preview.innerHTML = '<span class="text-rose-500 italic">No home address on file for this parent — enter pickup address manually below.</span>';
+  }
 }
 
 function adm_editAssignmentModal(assignmentId) {
