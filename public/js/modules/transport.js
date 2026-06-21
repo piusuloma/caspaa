@@ -587,51 +587,116 @@ function adm_revokePickup(pickupId) {
 
 /* ---------- Bus Status tab ---------- */
 function adm_renderBusStatusTab(routes, schoolId) {
-  const today = new Date().toISOString().slice(0, 10);
-  const statuses = DB.query('busStatus', s => s.schoolId === schoolId && s.date === today);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const statuses  = DB.query('busStatus', s => s.schoolId === schoolId && s.date === todayStr);
 
-  const statusLabels = {
-    waiting:  { label: 'Waiting at School',        badge: 'badge-neutral', icon: 'clock' },
-    departed: { label: 'Departed — En Route',       badge: 'badge-warn',    icon: 'navigation' },
-    arrived:  { label: 'Arrived at Destination',    badge: 'badge-success', icon: 'check-circle' },
-    delayed:  { label: 'Delayed',                   badge: 'badge-danger',  icon: 'warning' }
+  const STATUS = {
+    waiting:  { label: 'Waiting at School',  badge: 'badge-neutral', dot: 'bg-slate-400' },
+    departed: { label: 'Departed — En Route', badge: 'badge-warn',    dot: 'bg-amber-500' },
+    arrived:  { label: 'Arrived',             badge: 'badge-success', dot: 'bg-emerald-500' },
+    delayed:  { label: 'Delayed',             badge: 'badge-danger',  dot: 'bg-rose-500' }
   };
 
   if (!routes.length) return emptyState({ icon: 'package', title: 'No routes', body: 'Add bus routes first.' });
 
   return `
-    <div class="space-y-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="font-semibold text-slate-800">Today's Bus Status</h3>
-          <p class="text-sm text-slate-500">Update each route's current status — parents will see this in real time.</p>
-        </div>
+    <div class="space-y-5">
+      <div>
+        <h3 class="font-semibold text-slate-800">Today's Bus Status</h3>
+        <p class="text-sm text-slate-500">Update each route's status and see the full boarding manifest by stop.</p>
       </div>
       ${routes.map(route => {
-        const s = statuses.find(s => s.routeId === route.id);
-        const current = s ? s.status : 'waiting';
-        const info = statusLabels[current] || statusLabels.waiting;
-        const assignedCount = DB.query('busAssignments', a => a.routeId === route.id && a.schoolId === schoolId).length;
+        const statusRec = statuses.find(s => s.routeId === route.id);
+        const current   = statusRec ? statusRec.status : 'waiting';
+        const info      = STATUS[current] || STATUS.waiting;
+        const assignments = DB.query('busAssignments', a => a.routeId === route.id && a.schoolId === schoolId);
+        const stops = Array.isArray(route.stops) ? route.stops : (route.stops || '').split('\n').map(s => s.trim()).filter(Boolean);
+
+        // Group students by their boarding stop
+        const byStop = {};
+        const noStop = [];
+        assignments.forEach(a => {
+          const stu = DB.find('students', a.studentId);
+          if (!stu) return;
+          const cls = DB.find('classes', stu.classId);
+          const entry = { name: stu.name, admissionNo: stu.admissionNo, className: cls ? cls.name : '', direction: a.direction };
+          if (a.boardingStop) {
+            if (!byStop[a.boardingStop]) byStop[a.boardingStop] = [];
+            byStop[a.boardingStop].push(entry);
+          } else {
+            noStop.push(entry);
+          }
+        });
+
         return `
-          <div class="card p-4">
-            <div class="flex items-start justify-between gap-4 flex-wrap">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-bold text-slate-900">${route.name}</span>
-                  <span class="badge ${info.badge}">${info.label}</span>
+          <div class="card overflow-hidden">
+            <!-- Route header + status controls -->
+            <div class="p-4 border-b border-slate-100">
+              <div class="flex items-start justify-between gap-4 flex-wrap">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 ${info.dot}"></span>
+                    <span class="font-bold text-slate-900">${route.name}</span>
+                    <span class="badge ${info.badge}">${info.label}</span>
+                  </div>
+                  <div class="text-xs text-slate-400">${route.vehiclePlate || 'No plate'} · ${assignments.length} students · Departs ${route.departureTime || '—'} · Returns ${route.returnTime || '—'}</div>
+                  ${statusRec && statusRec.note ? `<div class="text-sm text-slate-600 mt-1 italic">"${statusRec.note}"</div>` : ''}
+                  ${statusRec && statusRec.updatedAt ? `<div class="text-xs text-slate-400 mt-0.5">Last updated ${statusRec.updatedAt.slice(11, 16)}</div>` : ''}
                 </div>
-                <div class="text-xs text-slate-400">${route.vehiclePlate || 'No plate'} · ${assignedCount} students · Departs ${route.departureTime || '—'} · Returns ${route.returnTime || '—'}</div>
-                ${s && s.note ? `<div class="text-sm text-slate-600 mt-1 italic">"${s.note}"</div>` : ''}
-                ${s && s.updatedAt ? `<div class="text-xs text-slate-400 mt-0.5">Last updated ${s.updatedAt.slice(11, 16)}</div>` : ''}
+                <div class="flex gap-2 flex-wrap flex-shrink-0">
+                  ${Object.entries(STATUS).map(([k, v]) => `
+                    <button onclick="adm_updateBusStatus('${route.id}', '${k}')"
+                      class="btn btn-sm ${current === k ? 'btn-primary' : 'btn-secondary'} !py-1.5 text-xs">
+                      ${v.label}
+                    </button>`).join('')}
+                  <button onclick="adm_addBusNote('${route.id}')" class="btn btn-ghost btn-sm !py-1.5 text-xs">+ Note</button>
+                </div>
               </div>
-              <div class="flex gap-2 flex-wrap flex-shrink-0">
-                ${Object.entries(statusLabels).map(([k, v]) => `
-                  <button onclick="adm_updateBusStatus('${route.id}', '${k}')"
-                    class="btn btn-sm ${current === k ? 'btn-primary' : 'btn-secondary'} !py-1.5 text-xs">
-                    ${v.label}
-                  </button>`).join('')}
-                <button onclick="adm_addBusNote('${route.id}')" class="btn btn-ghost btn-sm !py-1.5 text-xs">+ Note</button>
-              </div>
+            </div>
+
+            <!-- Boarding manifest by stop -->
+            <div class="p-4">
+              <div class="text-xs font-semibold uppercase text-slate-400 mb-3">Boarding Manifest — ${assignments.length} student${assignments.length !== 1 ? 's' : ''} across ${stops.length || 1} stop${stops.length !== 1 ? 's' : ''}</div>
+              ${stops.length === 0 && assignments.length === 0
+                ? `<p class="text-sm text-slate-400">No students assigned to this route yet.</p>`
+                : `<div class="space-y-3">
+                    ${stops.map((stop, i) => {
+                      const studentsHere = byStop[stop] || [];
+                      return `
+                        <div class="flex gap-3">
+                          <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
+                            <div class="w-6 h-6 rounded-full bg-brand-700 text-white flex items-center justify-center font-bold text-xs">${i + 1}</div>
+                            ${i < stops.length - 1 ? `<div class="w-px flex-1 bg-slate-200 my-0.5"></div>` : ''}
+                          </div>
+                          <div class="flex-1 pb-3">
+                            <div class="font-semibold text-sm text-slate-800 mb-1.5">${stop}</div>
+                            ${studentsHere.length === 0
+                              ? `<p class="text-xs text-slate-400 italic">No students assigned to this stop</p>`
+                              : `<div class="flex flex-wrap gap-1.5">
+                                  ${studentsHere.map(s => `
+                                    <span class="inline-flex items-center gap-1.5 text-xs bg-slate-50 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg">
+                                      <span class="font-medium">${s.name}</span>
+                                      <span class="text-slate-400">${s.className}</span>
+                                      ${s.direction !== 'both' ? `<span class="badge badge-warn text-xs">${s.direction === 'pickup' ? 'AM only' : 'PM only'}</span>` : ''}
+                                    </span>
+                                  `).join('')}
+                                </div>`
+                            }
+                          </div>
+                        </div>
+                      `;
+                    }).join('')}
+                    ${noStop.length > 0 ? `
+                      <div class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                        <div class="text-xs font-semibold text-amber-800 mb-1.5">No boarding stop set (${noStop.length})</div>
+                        <div class="flex flex-wrap gap-1.5">
+                          ${noStop.map(s => `<span class="text-xs bg-white border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full">${s.name}</span>`).join('')}
+                        </div>
+                        <p class="text-xs text-amber-700 mt-1.5">Go to Student Assignments and set their boarding stop.</p>
+                      </div>
+                    ` : ''}
+                  </div>`
+              }
             </div>
           </div>
         `;
@@ -796,10 +861,13 @@ function view_par_transport(params) {
               <div class="mt-4">
                 <div class="text-xs font-semibold uppercase text-slate-400 mb-2">Route Stops</div>
                 <div class="flex flex-wrap gap-1.5">
-                  ${routeStops.map((s, i) => `<span class="inline-flex items-center gap-1.5 text-xs bg-brand-50 text-brand-700 border border-brand-200 px-2.5 py-1 rounded-full">
-                    <span class="w-4 h-4 bg-brand-700 text-white rounded-full flex items-center justify-center font-bold" style="font-size:9px">${i + 1}</span>
-                    ${s}
-                  </span>`).join('')}
+                  ${routeStops.map((s, i) => {
+                    const isMyStop = assignment && assignment.boardingStop === s;
+                    return `<span class="inline-flex items-center gap-1.5 text-xs ${isMyStop ? 'bg-brand-700 text-white border-brand-700' : 'bg-brand-50 text-brand-700 border-brand-200'} border px-2.5 py-1 rounded-full">
+                      <span class="w-4 h-4 ${isMyStop ? 'bg-white text-brand-700' : 'bg-brand-700 text-white'} rounded-full flex items-center justify-center font-bold" style="font-size:9px">${i + 1}</span>
+                      ${s}${isMyStop ? ' <span class="ml-0.5 font-bold">← Your stop</span>' : ''}
+                    </span>`;
+                  }).join('')}
                 </div>
               </div>
             ` : ''}
