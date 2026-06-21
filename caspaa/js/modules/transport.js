@@ -81,13 +81,12 @@ function adm_renderRoutesTab(routes, schoolId) {
       ${routes.map(route => {
         const driver = allStaff.find(s => s.id === route.driverStaffId);
         const assignedCount = DB.query('busAssignments', a => a.routeId === route.id && a.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).length;
-        const stops = Array.isArray(route.stops) ? route.stops : (route.stops || '').split('\n').map(s => s.trim()).filter(Boolean);
         return `
           <div class="card p-5 flex flex-col gap-3">
             <div class="flex items-start justify-between gap-2">
               <div>
                 <h3 class="font-bold text-slate-900 text-base leading-tight">${route.name}</h3>
-                <div class="text-xs text-slate-400 mt-0.5">${route.vehiclePlate || 'No plate'} · Capacity: ${route.capacity || '—'}</div>
+                <div class="text-xs text-slate-400 mt-0.5">${route.vehiclePlate || 'No plate'} · ${route.area || 'House-to-house'}</div>
               </div>
               <div class="flex gap-1 flex-shrink-0">
                 <button class="btn btn-ghost !p-1.5" title="Edit route" onclick="adm_editRouteModal('${route.id}')">${icon('edit','w-4 h-4')}</button>
@@ -114,17 +113,6 @@ function adm_renderRoutesTab(routes, schoolId) {
                 <div class="font-semibold text-slate-800">${route.returnTime || '—'}</div>
               </div>
             </div>
-            ${stops.length ? `
-              <div>
-                <div class="text-xs font-semibold uppercase text-slate-400 mb-1.5">Stops</div>
-                <div class="flex flex-wrap gap-1">
-                  ${stops.map((s, i) => `<span class="inline-flex items-center gap-1 text-xs bg-brand-50 text-brand-700 border border-brand-200 px-2 py-0.5 rounded-full">
-                    <span class="w-3.5 h-3.5 bg-brand-700 text-white rounded-full flex items-center justify-center font-bold" style="font-size:9px">${i + 1}</span>
-                    ${s}
-                  </span>`).join('')}
-                </div>
-              </div>
-            ` : ''}
           </div>
         `;
       }).join('')}
@@ -152,20 +140,24 @@ function adm_renderAssignmentsTab(assignments, schoolId) {
           <h3 class="font-semibold text-slate-800">Assigned Students (${assignments.length})</h3>
         </div>
         <table class="tbl">
-          <thead><tr><th>Student</th><th>Class</th><th>Route</th><th>Direction</th><th>Stop</th><th class="text-right">Actions</th></tr></thead>
+          <thead><tr><th class="text-center">#</th><th>Student</th><th>Class</th><th>Route</th><th>Direction</th><th>Pickup Address</th><th class="text-right">Actions</th></tr></thead>
           <tbody>
-            ${assignments.map(a => {
+            ${assignments.slice().sort((a,b) => (a.pickupOrder||999) - (b.pickupOrder||999)).map(a => {
               const student = DB.find('students', a.studentId);
               const cls     = student ? DB.find('classes', student.classId) : null;
               const route   = DB.find('busRoutes', a.routeId);
+              const parent  = student && student.parentId ? DB.find('parents', student.parentId) : null;
+              const addr    = a.pickupAddress || (parent ? parent.address : '') || '—';
               const dirLabel = { both: 'Both ways', pickup: 'Pickup only', dropoff: 'Drop-off only' }[a.direction] || a.direction;
               return `<tr>
+                <td class="text-center font-bold text-slate-500 text-sm">${a.pickupOrder || '—'}</td>
                 <td><div class="flex items-center gap-2">${avatar(student || { name: '?' }, 'sm')}<span class="font-semibold">${student ? student.name : '—'}</span></div></td>
                 <td class="text-sm text-slate-500">${cls ? cls.name : '—'}</td>
                 <td><span class="badge badge-info">${route ? route.name : '—'}</span></td>
                 <td><span class="text-sm text-slate-600">${dirLabel}</span></td>
-                <td class="text-sm text-slate-600">${a.boardingStop || '—'}</td>
-                <td class="text-right">
+                <td class="text-sm text-slate-600 max-w-xs truncate">${addr}</td>
+                <td class="text-right whitespace-nowrap">
+                  <button class="btn btn-ghost !p-1.5 text-brand-600 hover:bg-brand-50" title="Edit pickup order/address" onclick="adm_editAssignmentModal('${a.id}')">${icon('edit','w-4 h-4')}</button>
                   <button class="btn btn-ghost !p-1.5 text-rose-500 hover:bg-rose-50" title="Remove assignment" onclick="adm_removeAssignment('${a.id}')">${icon('trash','w-4 h-4')}</button>
                 </td>
               </tr>`;
@@ -297,14 +289,13 @@ function adm_editRouteModal(routeId) {
     ...DB.query('staff',    s => s.schoolId === schoolId)
   ];
 
-  const stopsVal = existing
-    ? (Array.isArray(existing.stops) ? existing.stops.join('\n') : (existing.stops || ''))
-    : '';
-
   modal({
     title: existing ? 'Edit Bus Route' : 'Add Bus Route',
     body: `
       <div class="space-y-3">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          This system uses <strong>house-to-house pickup</strong>. After creating a route, assign students to it and set each student's pickup order (1st house, 2nd house, etc.).
+        </div>
         <div>
           <label class="input-label">Route Name *</label>
           <input id="rt_name" class="input" placeholder="e.g. Lekki Morning Route" value="${existing ? existing.name.replace(/"/g, '&quot;') : ''}" />
@@ -322,14 +313,11 @@ function adm_editRouteModal(routeId) {
             <input id="rt_plate" class="input" placeholder="e.g. LND 234 HJ" value="${existing ? (existing.vehiclePlate || '') : ''}" />
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-3 gap-3">
           <div>
             <label class="input-label">Capacity (seats)</label>
             <input id="rt_capacity" type="number" class="input" placeholder="e.g. 25" value="${existing ? (existing.capacity || '') : ''}" />
           </div>
-          <div></div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="input-label">Departure Time</label>
             <input id="rt_departure" type="time" class="input" value="${existing ? (existing.departureTime || '') : '06:30'}" />
@@ -340,9 +328,9 @@ function adm_editRouteModal(routeId) {
           </div>
         </div>
         <div>
-          <label class="input-label">Stops (one per line)</label>
-          <textarea id="rt_stops" class="input" rows="4" placeholder="e.g.&#10;Lekki Phase 1 Gate&#10;Chevron Roundabout&#10;VGC Entrance&#10;School">${stopsVal}</textarea>
-          <p class="text-xs text-slate-400 mt-1">List each bus stop on a new line, in order of route.</p>
+          <label class="input-label">Area / Corridor (optional)</label>
+          <input id="rt_area" class="input" placeholder="e.g. Lekki / Ajah corridor" value="${existing ? (existing.area || '') : ''}" />
+          <p class="text-xs text-slate-400 mt-1">General area this route covers — for reference only.</p>
         </div>
       </div>
     `,
@@ -354,20 +342,19 @@ function adm_editRouteModal(routeId) {
 }
 
 function adm_saveRoute(routeId) {
-  const name       = (document.getElementById('rt_name')      || {}).value.trim();
-  const driverStaffId = (document.getElementById('rt_driver') || {}).value;
-  const vehiclePlate  = (document.getElementById('rt_plate')  || {}).value.trim();
-  const capacity   = parseInt((document.getElementById('rt_capacity')  || {}).value) || null;
+  const name          = (document.getElementById('rt_name')      || {}).value.trim();
+  const driverStaffId = (document.getElementById('rt_driver')    || {}).value;
+  const vehiclePlate  = (document.getElementById('rt_plate')     || {}).value.trim();
+  const capacity      = parseInt((document.getElementById('rt_capacity')  || {}).value) || null;
   const departureTime = (document.getElementById('rt_departure') || {}).value;
-  const returnTime    = (document.getElementById('rt_return')   || {}).value;
-  const stopsRaw      = (document.getElementById('rt_stops')   || {}).value;
-  const stops = stopsRaw.split('\n').map(s => s.trim()).filter(Boolean);
+  const returnTime    = (document.getElementById('rt_return')    || {}).value;
+  const area          = (document.getElementById('rt_area')      || {}).value.trim();
 
   if (!name) { toast('Route name is required', 'danger'); return; }
   if (!driverStaffId) { toast('Please select a driver', 'danger'); return; }
 
   const schoolId = AUTH.current.schoolId || 'sch_brightlights';
-  const data = { schoolId, name, stops, driverStaffId, vehiclePlate, capacity, departureTime, returnTime };
+  const data = { schoolId, name, area, driverStaffId, vehiclePlate, capacity, departureTime, returnTime };
 
   if (routeId) {
     DB.update('busRoutes', routeId, data);
@@ -406,25 +393,38 @@ function adm_assignStudentModal() {
     return;
   }
 
+  // Pre-compute home addresses for the JS inline preview
+  const studentAddressMap = {};
+  students.forEach(s => {
+    const parent = s.parentId ? DB.find('parents', s.parentId) : null;
+    studentAddressMap[s.id] = parent ? (parent.address || '') : '';
+  });
+
   modal({
     title: 'Assign Student to Bus Route',
     body: `
       <div class="space-y-4">
         <div>
           <label class="input-label">Student *</label>
-          <select id="as_student" class="input">
+          <select id="as_student" class="input" onchange="adm_previewStudentAddress(this.value)">
             <option value="">— Select student —</option>
             ${students.map(s => {
               const cls = DB.find('classes', s.classId);
               return `<option value="${s.id}">${s.name}${cls ? ' · ' + cls.name : ''}</option>`;
             }).join('')}
           </select>
+          <div id="as_addr_preview" class="mt-1.5 text-xs text-slate-500 hidden">
+            <span class="font-semibold">Home address:</span> <span id="as_addr_text"></span>
+          </div>
         </div>
         <div>
           <label class="input-label">Bus Route *</label>
           <select id="as_route" class="input">
             <option value="">— Select route —</option>
-            ${routes.map(r => `<option value="${r.id}">${r.name}${r.vehiclePlate ? ' (' + r.vehiclePlate + ')' : ''}</option>`).join('')}
+            ${routes.map(r => {
+              const count = DB.query('busAssignments', a => a.routeId === r.id && a.schoolId === schoolId).length;
+              return `<option value="${r.id}">${r.name}${r.vehiclePlate ? ' (' + r.vehiclePlate + ')' : ''} · ${count} students</option>`;
+            }).join('')}
           </select>
         </div>
         <div>
@@ -436,24 +436,33 @@ function adm_assignStudentModal() {
           </select>
         </div>
         <div>
-          <label class="input-label">Boarding Stop</label>
-          <select id="as_stop" class="input">
-            <option value="">— Select route first —</option>
-          </select>
-          <p class="text-xs text-slate-400 mt-1">The stop where this student boards in the morning and alights in the afternoon.</p>
+          <label class="input-label">Pickup Order *</label>
+          <input id="as_order" type="number" min="1" class="input" placeholder="e.g. 1 = first house the driver visits, 2 = second…" />
+          <p class="text-xs text-slate-400 mt-1">The position in the route where the driver picks up / drops off this student. Determines order on the driver's manifest.</p>
+        </div>
+        <div>
+          <label class="input-label">Pickup Address</label>
+          <input id="as_addr" class="input" placeholder="Defaults to home address on file — override if different" />
+          <p class="text-xs text-slate-400 mt-1">Leave blank to use the parent's registered home address.</p>
         </div>
       </div>
       <script>
-document.getElementById('as_route').addEventListener('change', function() {
-  const sel = document.getElementById('as_stop');
-  sel.innerHTML = '<option value="">— Any stop —</option>';
-  const route = DB.find('busRoutes', this.value);
-  if (route && route.stops) {
-    const stops = Array.isArray(route.stops) ? route.stops : route.stops.split('\n').filter(Boolean);
-    stops.forEach((s,i) => { const o = document.createElement('option'); o.value = s; o.textContent = (i+1) + '. ' + s; sel.appendChild(o); });
-  }
-});
-</script>
+        var _addrMap = ${JSON.stringify(studentAddressMap)};
+        function adm_previewStudentAddress(id) {
+          var addr = _addrMap[id] || '';
+          var preview = document.getElementById('as_addr_preview');
+          var text = document.getElementById('as_addr_text');
+          var addrInput = document.getElementById('as_addr');
+          if (addr) {
+            text.textContent = addr;
+            preview.classList.remove('hidden');
+            if (!addrInput.value) addrInput.placeholder = addr;
+          } else {
+            preview.innerHTML = '<span class="text-rose-400 italic">No home address on file for this parent — enter pickup address manually.</span>';
+            preview.classList.remove('hidden');
+          }
+        }
+      </script>
     `,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -466,10 +475,12 @@ function adm_saveAssignment() {
   const studentId   = (document.getElementById('as_student')   || {}).value;
   const routeId     = (document.getElementById('as_route')     || {}).value;
   const direction   = (document.getElementById('as_direction') || {}).value;
-  const boardingStop = (document.getElementById('as_stop')     || {}).value || '';
+  const pickupOrder = parseInt((document.getElementById('as_order') || {}).value) || 0;
+  const pickupAddress = ((document.getElementById('as_addr') || {}).value || '').trim();
 
   if (!studentId) { toast('Please select a student', 'danger'); return; }
   if (!routeId)   { toast('Please select a route', 'danger');   return; }
+  if (!pickupOrder) { toast('Please enter the pickup order number', 'danger'); return; }
 
   const schoolId = AUTH.current.schoolId || 'sch_brightlights';
 
@@ -491,13 +502,59 @@ function adm_saveAssignment() {
   }
 
   DB.insert('busAssignments', {
-    id: uid('ba'), schoolId, studentId, routeId, direction, boardingStop, createdAt: now()
+    id: uid('ba'), schoolId, studentId, routeId, direction, pickupOrder, pickupAddress, createdAt: now()
   });
 
   const student = DB.find('students', studentId);
   document.getElementById('modalBackdrop').click();
   APP.params.tab = 'assign'; APP.render();
   toast(`${student ? student.name : 'Student'} assigned to ${route ? route.name : 'route'}`, 'success');
+}
+
+function adm_editAssignmentModal(assignmentId) {
+  const a = DB.find('busAssignments', assignmentId);
+  if (!a) return;
+  const stu    = DB.find('students', a.studentId);
+  const parent = stu && stu.parentId ? DB.find('parents', stu.parentId) : null;
+  const homeAddr = parent ? (parent.address || '') : '';
+  modal({
+    title: `Edit Pickup — ${stu ? stu.name : 'Student'}`,
+    size: 'sm',
+    body: `
+      <div class="space-y-3">
+        ${homeAddr ? `<div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-600"><span class="font-semibold text-slate-700">Home address on file:</span> ${homeAddr}</div>` : `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">No home address on file for this parent.</div>`}
+        <div>
+          <label class="input-label">Pickup Order *</label>
+          <input id="ea_order" type="number" min="1" class="input" value="${a.pickupOrder || ''}" placeholder="e.g. 3 = 3rd house the driver visits" />
+        </div>
+        <div>
+          <label class="input-label">Pickup Address (override)</label>
+          <input id="ea_addr" class="input" value="${a.pickupAddress || ''}" placeholder="${homeAddr || 'Enter address if different from home address'}" />
+          <p class="text-xs text-slate-400 mt-1">Leave blank to use home address.</p>
+        </div>
+        <div>
+          <label class="input-label">Direction</label>
+          <select id="ea_dir" class="input">
+            <option value="both" ${a.direction==='both'?'selected':''}>Both ways</option>
+            <option value="pickup" ${a.direction==='pickup'?'selected':''}>Morning pickup only</option>
+            <option value="dropoff" ${a.direction==='dropoff'?'selected':''}>Afternoon drop-off only</option>
+          </select>
+        </div>
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="adm_saveEditAssignment('${assignmentId}')">${icon('check','w-4 h-4')} Save</button>`
+  });
+}
+
+function adm_saveEditAssignment(assignmentId) {
+  const pickupOrder   = parseInt((document.getElementById('ea_order') || {}).value) || 0;
+  const pickupAddress = ((document.getElementById('ea_addr') || {}).value || '').trim();
+  const direction     = (document.getElementById('ea_dir') || {}).value;
+  if (!pickupOrder) { toast('Pickup order is required', 'danger'); return; }
+  DB.update('busAssignments', assignmentId, { pickupOrder, pickupAddress, direction });
+  document.getElementById('modalBackdrop').click();
+  APP.render();
+  toast('Assignment updated', 'success');
 }
 
 function adm_removeAssignment(assignmentId) {
@@ -610,30 +667,24 @@ function adm_renderBusStatusTab(routes, schoolId) {
         const current   = statusRec ? statusRec.status : 'waiting';
         const info      = STATUS[current] || STATUS.waiting;
         const assignments = DB.query('busAssignments', a => a.routeId === route.id && a.schoolId === schoolId);
-        const stops = Array.isArray(route.stops) ? route.stops : (route.stops || '').split('\n').map(s => s.trim()).filter(Boolean);
 
-        // Group students by their boarding stop, including parent contact + address
-        const byStop = {};
-        const noStop = [];
-        assignments.forEach(a => {
-          const stu = DB.find('students', a.studentId);
-          if (!stu) return;
-          const cls    = DB.find('classes', stu.classId);
-          const parent = stu.parentId ? DB.find('parents', stu.parentId) : null;
-          const entry  = {
-            id: stu.id, name: stu.name, admissionNo: stu.admissionNo,
-            className: cls ? cls.name : '', direction: a.direction,
-            parentName: parent ? parent.name : '',
-            parentPhone: parent ? parent.phone : '',
-            homeAddress: parent ? (parent.address || '') : ''
+        // Build ordered manifest for house-to-house pickup
+        const manifest = assignments.map(a => {
+          const stu    = DB.find('students', a.studentId);
+          const cls    = stu ? DB.find('classes', stu.classId) : null;
+          const parent = stu && stu.parentId ? DB.find('parents', stu.parentId) : null;
+          const addr   = a.pickupAddress || (parent ? parent.address : '') || '';
+          return {
+            pickupOrder: a.pickupOrder || 999,
+            name: stu ? stu.name : '—',
+            className: cls ? cls.name : '',
+            direction: a.direction,
+            parentPhone: parent ? (parent.phone || '') : '',
+            pickupAddress: addr,
+            noAddress: !addr
           };
-          if (a.boardingStop) {
-            if (!byStop[a.boardingStop]) byStop[a.boardingStop] = [];
-            byStop[a.boardingStop].push(entry);
-          } else {
-            noStop.push(entry);
-          }
-        });
+        }).sort((a, b) => a.pickupOrder - b.pickupOrder);
+        const noOrder = manifest.filter(m => m.pickupOrder === 999);
 
         return `
           <div class="card overflow-hidden">
@@ -661,56 +712,45 @@ function adm_renderBusStatusTab(routes, schoolId) {
               </div>
             </div>
 
-            <!-- Boarding manifest by stop -->
+            <!-- House-to-house pickup manifest -->
             <div class="p-4">
               <div class="flex items-center justify-between mb-3">
-                <div class="text-xs font-semibold uppercase text-slate-400">Boarding Manifest — ${assignments.length} student${assignments.length !== 1 ? 's' : ''} across ${stops.length || 1} stop${stops.length !== 1 ? 's' : ''}</div>
+                <div class="text-xs font-semibold uppercase text-slate-400">Pickup Manifest — ${manifest.length} student${manifest.length !== 1 ? 's' : ''} in pickup order</div>
                 <button class="btn btn-secondary text-xs !py-1.5" onclick="printRouteSheet('${route.id}')">${icon('download','w-3.5 h-3.5')} Print Route Sheet</button>
               </div>
-              ${stops.length === 0 && assignments.length === 0
+              ${manifest.length === 0
                 ? `<p class="text-sm text-slate-400">No students assigned to this route yet.</p>`
-                : `<div class="space-y-3">
-                    ${stops.map((stop, i) => {
-                      const studentsHere = byStop[stop] || [];
-                      return `
-                        <div class="flex gap-3">
-                          <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
-                            <div class="w-6 h-6 rounded-full bg-brand-700 text-white flex items-center justify-center font-bold text-xs">${i + 1}</div>
-                            ${i < stops.length - 1 ? `<div class="w-px flex-1 bg-slate-200 my-0.5"></div>` : ''}
-                          </div>
-                          <div class="flex-1 pb-3">
-                            <div class="font-semibold text-sm text-slate-800 mb-1.5">${stop}</div>
-                            ${studentsHere.length === 0
-                              ? `<p class="text-xs text-slate-400 italic">No students assigned to this stop</p>`
-                              : `<div class="space-y-1.5">
-                                  ${studentsHere.map(s => `
-                                    <div class="flex items-start gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg">
-                                      <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                          <span class="font-medium text-sm text-slate-800">${s.name}</span>
-                                          <span class="text-xs text-slate-400">${s.className}</span>
-                                          ${s.direction !== 'both' ? `<span class="badge badge-warn text-xs">${s.direction === 'pickup' ? 'AM only' : 'PM only'}</span>` : ''}
-                                        </div>
-                                        <div class="flex items-center gap-3 mt-0.5 flex-wrap">
-                                          ${s.parentPhone ? `<a href="tel:${s.parentPhone}" class="text-xs text-brand-700 font-medium">${icon('phone','w-3 h-3 inline')} ${s.parentPhone}</a>` : ''}
-                                          ${s.homeAddress ? `<span class="text-xs text-slate-500">${icon('home','w-3 h-3 inline')} ${s.homeAddress}</span>` : '<span class="text-xs text-rose-400 italic">No home address on file</span>'}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  `).join('')}
-                                </div>`
-                            }
+                : `<div class="space-y-2">
+                    ${manifest.filter(m => m.pickupOrder !== 999).map((m, i) => `
+                      <div class="flex gap-3 items-start">
+                        <div class="flex flex-col items-center flex-shrink-0">
+                          <div class="w-7 h-7 rounded-full bg-brand-700 text-white flex items-center justify-center font-bold text-xs">${m.pickupOrder}</div>
+                          ${i < manifest.filter(x=>x.pickupOrder!==999).length - 1 ? `<div class="w-px flex-1 bg-slate-200 mt-0.5" style="min-height:16px"></div>` : ''}
+                        </div>
+                        <div class="flex-1 pb-2 min-w-0">
+                          <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+                            <div class="flex items-center gap-2 flex-wrap mb-1">
+                              <span class="font-semibold text-sm text-slate-800">${m.name}</span>
+                              <span class="text-xs text-slate-400">${m.className}</span>
+                              ${m.direction !== 'both' ? `<span class="badge badge-warn text-xs">${m.direction === 'pickup' ? 'AM only' : 'PM only'}</span>` : ''}
+                            </div>
+                            <div class="flex items-center gap-3 flex-wrap">
+                              ${m.pickupAddress
+                                ? `<span class="text-xs text-slate-600">${icon('home','w-3 h-3 inline')} ${m.pickupAddress}</span>`
+                                : `<span class="text-xs text-rose-400 italic">No address on file — edit assignment to add</span>`}
+                              ${m.parentPhone ? `<a href="tel:${m.parentPhone}" class="text-xs text-brand-700 font-medium">${icon('phone','w-3 h-3 inline')} ${m.parentPhone}</a>` : ''}
+                            </div>
                           </div>
                         </div>
-                      `;
-                    }).join('')}
-                    ${noStop.length > 0 ? `
+                      </div>
+                    `).join('')}
+                    ${noOrder.length > 0 ? `
                       <div class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                        <div class="text-xs font-semibold text-amber-800 mb-1.5">No boarding stop set (${noStop.length})</div>
+                        <div class="text-xs font-semibold text-amber-800 mb-1.5">Pickup order not set (${noOrder.length})</div>
                         <div class="flex flex-wrap gap-1.5">
-                          ${noStop.map(s => `<span class="text-xs bg-white border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full">${s.name}</span>`).join('')}
+                          ${noOrder.map(m => `<span class="text-xs bg-white border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full">${m.name}</span>`).join('')}
                         </div>
-                        <p class="text-xs text-amber-700 mt-1.5">Go to Student Assignments and set their boarding stop.</p>
+                        <p class="text-xs text-amber-700 mt-1.5">Go to Student Assignments → edit the pencil icon to set their pickup order.</p>
                       </div>
                     ` : ''}
                   </div>`
@@ -822,9 +862,6 @@ function view_par_transport(params) {
     if (driver) driverName = driver.name;
   }
 
-  const routeStops = route
-    ? (Array.isArray(route.stops) ? route.stops : (route.stops || '').split('\n').map(s => s.trim()).filter(Boolean))
-    : [];
 
   const dirLabel = assignment
     ? ({ both: 'Both ways', pickup: 'Morning pickup only', dropoff: 'Afternoon drop-off only' }[assignment.direction] || assignment.direction)
@@ -875,20 +912,21 @@ function view_par_transport(params) {
                 </div>
               </div>
             </div>
-            ${routeStops.length ? `
-              <div class="mt-4">
-                <div class="text-xs font-semibold uppercase text-slate-400 mb-2">Route Stops</div>
-                <div class="flex flex-wrap gap-1.5">
-                  ${routeStops.map((s, i) => {
-                    const isMyStop = assignment && assignment.boardingStop === s;
-                    return `<span class="inline-flex items-center gap-1.5 text-xs ${isMyStop ? 'bg-brand-700 text-white border-brand-700' : 'bg-brand-50 text-brand-700 border-brand-200'} border px-2.5 py-1 rounded-full">
-                      <span class="w-4 h-4 ${isMyStop ? 'bg-white text-brand-700' : 'bg-brand-700 text-white'} rounded-full flex items-center justify-center font-bold" style="font-size:9px">${i + 1}</span>
-                      ${s}${isMyStop ? ' <span class="ml-0.5 font-bold">← Your stop</span>' : ''}
-                    </span>`;
-                  }).join('')}
+            ${(() => {
+              const parent = child && child.parentId ? DB.find('parents', child.parentId) : null;
+              const pickupAddr = assignment ? (assignment.pickupAddress || (parent ? parent.address : '') || '') : '';
+              return pickupAddr ? `
+                <div class="mt-4 p-3 bg-brand-50 border border-brand-200 rounded-xl">
+                  <div class="text-xs font-semibold uppercase text-brand-600 mb-1">Your Pickup Address</div>
+                  <div class="text-sm font-semibold text-brand-900">${pickupAddr}</div>
+                  ${assignment && assignment.pickupOrder ? `<div class="text-xs text-brand-600 mt-0.5">Stop #${assignment.pickupOrder} on this route</div>` : ''}
                 </div>
-              </div>
-            ` : ''}
+              ` : `
+                <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+                  No pickup address on file. Please contact the school to confirm your pickup location.
+                </div>
+              `;
+            })()}
             ${busStatusInfo ? `
               <div class="mt-4 flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 ${busStatusInfo.dot}"></span>
@@ -1248,55 +1286,35 @@ function printRouteSheet(routeId) {
 
   const allStaff   = [...DB.query('teachers', t => t.schoolId === schoolId), ...DB.query('staff', s => s.schoolId === schoolId)];
   const driver     = allStaff.find(s => s.id === route.driverStaffId);
-  const stops      = Array.isArray(route.stops) ? route.stops : (route.stops || '').split('\n').map(s => s.trim()).filter(Boolean);
   const assignments = DB.query('busAssignments', a => a.routeId === routeId && a.schoolId === schoolId);
 
-  const byStop = {};
-  const noStop = [];
-  assignments.forEach(a => {
+  const manifest = assignments.map(a => {
     const stu    = DB.find('students', a.studentId);
-    if (!stu) return;
-    const cls    = DB.find('classes', stu.classId);
-    const parent = stu.parentId ? DB.find('parents', stu.parentId) : null;
-    const entry  = {
-      name: stu.name, admissionNo: stu.admissionNo,
+    const cls    = stu ? DB.find('classes', stu.classId) : null;
+    const parent = stu && stu.parentId ? DB.find('parents', stu.parentId) : null;
+    return {
+      pickupOrder: a.pickupOrder || 999,
+      name: stu ? stu.name : '—',
+      admissionNo: stu ? (stu.admissionNo || '') : '',
       className: cls ? cls.name : '',
       direction: a.direction,
       parentName: parent ? parent.name : '',
       parentPhone: parent ? (parent.phone || '') : '',
-      homeAddress: parent ? (parent.address || '') : ''
+      pickupAddress: a.pickupAddress || (parent ? parent.address : '') || ''
     };
-    if (a.boardingStop) {
-      if (!byStop[a.boardingStop]) byStop[a.boardingStop] = [];
-      byStop[a.boardingStop].push(entry);
-    } else {
-      noStop.push(entry);
-    }
-  });
+  }).sort((a, b) => a.pickupOrder - b.pickupOrder);
 
   const todayFormatted = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  const stopRows = stops.map((stop, i) => {
-    const students = byStop[stop] || [];
-    return `
-      <tr style="background:#f8fafc">
-        <td colspan="5" style="padding:8px 10px;font-weight:700;font-size:13px;border-top:2px solid #334155;color:#1e293b">
-          Stop ${i + 1}: ${stop}
-        </td>
-      </tr>
-      ${students.length === 0
-        ? `<tr><td colspan="5" style="padding:6px 10px;color:#94a3b8;font-style:italic;font-size:12px">No students assigned to this stop</td></tr>`
-        : students.map((s, si) => `
-          <tr style="${si % 2 === 0 ? '' : 'background:#f1f5f9'}">
-            <td style="padding:7px 10px;font-size:12px">${si + 1}</td>
-            <td style="padding:7px 10px;font-size:12px;font-weight:600">${s.name}</td>
-            <td style="padding:7px 10px;font-size:12px;color:#475569">${s.className}</td>
-            <td style="padding:7px 10px;font-size:12px;color:#0f172a">${s.parentPhone || '—'}</td>
-            <td style="padding:7px 10px;font-size:12px;color:#475569">${s.homeAddress || '—'}</td>
-          </tr>`).join('')
-      }
-    `;
-  }).join('');
+  const stopRows = manifest.map((m, i) => `
+    <tr style="${i % 2 === 0 ? '' : 'background:#f1f5f9'}">
+      <td style="padding:7px 10px;font-size:13px;font-weight:700;color:#1e3a8a;text-align:center">${m.pickupOrder === 999 ? '—' : m.pickupOrder}</td>
+      <td style="padding:7px 10px;font-size:12px;font-weight:600">${m.name}</td>
+      <td style="padding:7px 10px;font-size:12px;color:#475569">${m.className}</td>
+      <td style="padding:7px 10px;font-size:12px;color:#0f172a">${m.parentPhone || '—'}</td>
+      <td style="padding:7px 10px;font-size:12px;color:#475569">${m.pickupAddress || '<span style="color:#f59e0b;font-style:italic">No address on file</span>'}</td>
+    </tr>
+  `).join('');
 
   const html = `<!DOCTYPE html><html><head><title>Route Sheet — ${route.name}</title>
   <style>
@@ -1317,7 +1335,7 @@ function printRouteSheet(routeId) {
     <div>
       <div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:2px">${school ? school.name : 'School'}</div>
       <h1>${route.name} — Route Sheet</h1>
-      <div class="meta">${todayFormatted} &nbsp;·&nbsp; ${assignments.length} students &nbsp;·&nbsp; ${stops.length} stops</div>
+      <div class="meta">${todayFormatted} &nbsp;·&nbsp; ${manifest.length} students &nbsp;·&nbsp; House-to-house pickup</div>
     </div>
     <div style="text-align:right;font-size:11px;color:#64748b">
       <div><strong>Plate:</strong> ${route.vehiclePlate || '—'}</div>
@@ -1340,10 +1358,6 @@ function printRouteSheet(routeId) {
     </tr></thead>
     <tbody>
       ${stopRows}
-      ${noStop.length > 0 ? `
-        <tr style="background:#fef3c7"><td colspan="5" style="padding:8px 10px;font-weight:700;font-size:13px;border-top:2px solid #d97706;color:#92400e">⚠ No Stop Assigned (${noStop.length})</td></tr>
-        ${noStop.map((s, i) => `<tr><td style="padding:7px 10px;font-size:12px">${i+1}</td><td style="padding:7px 10px;font-size:12px;font-weight:600">${s.name}</td><td style="padding:7px 10px;font-size:12px">${s.className}</td><td style="padding:7px 10px;font-size:12px">${s.parentPhone || '—'}</td><td style="padding:7px 10px;font-size:12px">${s.homeAddress || '—'}</td></tr>`).join('')}
-      ` : ''}
     </tbody>
   </table>
   <div style="margin-top:20px;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px">
