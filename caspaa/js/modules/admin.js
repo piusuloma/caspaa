@@ -2285,132 +2285,328 @@ function calcAge(dob) {
   return Math.floor(a);
 }
 
-function viewStudent(id) {
+function viewStudent(id, activeTab) {
   const s = DB.find('students', id);
   if (!s) return;
   const cls = DB.find('classes', s.classId);
   const parent = DB.find('parents', s.parentId);
   const inv = COMPUTE.studentInvoice(s.id);
   const attRate = COMPUTE.attendanceRate(s.id);
-  const results = COMPUTE.studentResults(s.id);
+  const allResults = COMPUTE.studentResults(s.id);
+  const results = allResults;
   const avg = results.length ? Math.round(results.reduce((sum, r) => sum + r.total, 0) / results.length) : 0;
   const subjects = DB.get('subjects');
+  const tab = activeTab || 'profile';
 
-  modal({
-    title: 'Student Profile',
-    size: 'lg',
-    body: `
-      <div class="flex items-center gap-4 mb-5 pb-5 border-b border-slate-100">
-        ${avatar(s, 'xl')}
-        <div class="flex-1">
-          <h2 class="text-xl font-bold text-slate-900">${s.name}</h2>
-          <p class="text-sm text-slate-500">${cls ? cls.name : ''} · ${s.gender === 'M' ? 'Male' : 'Female'} · ${calcAge(s.dob)} years old</p>
-          <code class="text-xs bg-slate-100 px-2 py-0.5 rounded mt-2 inline-block">${s.admissionNo}</code>
-        </div>
-        <div class="text-right">
-          ${inv ? statusBadge(inv.status) : ''}
+  // ─── Tab bar ────────────────────────────────────────────────────────────────
+  const tabs = [
+    { k: 'profile',    l: 'Profile' },
+    { k: 'transcript', l: 'Transcript' },
+    { k: 'attendance', l: 'Attendance' },
+    { k: 'finance',    l: 'Finance' },
+    { k: 'discipline', l: 'Discipline' },
+    { k: 'health',     l: 'Health' },
+  ];
+  const tabBar = `<div class="flex gap-0.5 mb-4 border-b border-slate-200 overflow-x-auto -mx-1 px-1">
+    ${tabs.map(t => `<button onclick="viewStudent('${id}','${t.k}')" class="whitespace-nowrap px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab===t.k?'border-brand-600 text-brand-700':'border-transparent text-slate-500 hover:text-slate-700'}">${t.l}</button>`).join('')}
+  </div>`;
+
+  // ─── Header (always shown) ───────────────────────────────────────────────────
+  const suspensions = DB.query('studentSuspensions', ss => ss.studentId === id).sort((a, b) => b.suspendedAt.localeCompare(a.suspendedAt));
+  const header = `
+    <div class="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
+      ${avatar(s, 'xl')}
+      <div class="flex-1">
+        <h2 class="text-xl font-bold text-slate-900">${s.name}</h2>
+        <p class="text-sm text-slate-500">${cls ? cls.name : '—'} · ${s.gender === 'M' ? 'Male' : 'Female'} · ${calcAge(s.dob)} yrs</p>
+        <div class="flex flex-wrap gap-1.5 mt-1.5">
+          <code class="text-xs bg-slate-100 px-2 py-0.5 rounded">${s.admissionNo}</code>
+          ${statusBadge(s.status)}
+          ${s.admissionType === 'transfer' ? `<span class="badge badge-info">Transfer-In</span>` : ''}
+          ${s.houseId ? (() => { const h = DB.find('houses', s.houseId); return h ? `<span class="badge badge-neutral">${h.name}</span>` : ''; })() : ''}
         </div>
       </div>
+      <div class="text-right flex-shrink-0">
+        <div class="text-xs text-slate-400 mb-1">Att.</div>
+        <div class="text-2xl font-extrabold ${attRate >= 85 ? 'text-brand-700' : 'text-rose-600'}">${attRate}%</div>
+        <div class="text-xs text-slate-400 mt-2">Avg</div>
+        <div class="text-2xl font-extrabold text-blue-700">${avg}%</div>
+      </div>
+    </div>`;
 
-      <div class="grid grid-cols-3 gap-3 mb-5">
-        <div class="bg-brand-50 rounded-xl p-3 text-center">
-          <div class="text-xs text-brand-700 font-semibold uppercase">Attendance</div>
-          <div class="text-2xl font-bold text-brand-900 mt-1">${attRate}%</div>
-        </div>
-        <div class="bg-blue-50 rounded-xl p-3 text-center">
-          <div class="text-xs text-blue-700 font-semibold uppercase">Academic Avg Score</div>
-          <div class="text-2xl font-bold text-blue-900 mt-1">${avg}%</div>
-        </div>
-        <div class="bg-amber-50 rounded-xl p-3 text-center">
-          <div class="text-xs text-amber-700 font-semibold uppercase">Balance</div>
-          <div class="text-lg font-bold text-amber-900 mt-1">${inv ? money(inv.balance) : '—'}</div>
-        </div>
+  // ─── TAB: Profile ────────────────────────────────────────────────────────────
+  const profileTab = () => {
+    const allActs = DB.query('activities', a => a.schoolId === s.schoolId);
+    const enrolled = DB.query('studentActivities', sa => sa.studentId === s.id);
+    const enrolledIds = enrolled.map(sa => sa.activityId);
+    const actTotal = enrolled.reduce((sum, sa) => { const a = DB.find('activities', sa.activityId); return sum + (a ? a.price : 0); }, 0);
+    const docs = s.documents || {};
+    const presentDocs = _docTypes.filter(d => docs[d.key]);
+    return `
+      <div class="grid grid-cols-2 gap-3 text-sm mb-4">
+        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Date of Birth</div><div>${fdate(s.dob, { long: true })}</div></div>
+        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Blood Group</div><div>${s.bloodGroup || '—'}${s.allergies && s.allergies !== 'None' ? ` <span class="badge badge-warn text-xs">${s.allergies}</span>` : ''}</div></div>
+        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Parent / Guardian</div><div>${parent ? parent.name : '—'}</div></div>
+        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Parent Phone</div><div>${parent ? parent.phone : '—'}</div></div>
+        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Admission Date</div><div>${fdate(s.admissionDate, { long: true })}</div></div>
+        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Admission Type</div><div>${s.admissionType === 'transfer' ? 'Transfer-in' : 'New Admission'}</div></div>
+        ${s.admissionType === 'transfer' && s.transferFromSchool ? `
+        <div class="col-span-2 bg-blue-50 border border-blue-200 rounded-xl p-3">
+          <div class="text-xs text-blue-700 font-semibold uppercase mb-1">Transfer Origin</div>
+          <div class="font-semibold text-slate-900">${s.transferFromSchool}</div>
+          ${s.transferFromClass ? `<div class="text-xs text-slate-500">Last class: ${s.transferFromClass}</div>` : ''}
+          ${s.transferInDate ? `<div class="text-xs text-slate-500">Transfer date: ${fdate(s.transferInDate, { long: true })}</div>` : ''}
+          ${s.transferInReason ? `<div class="text-xs text-slate-500 mt-0.5">Reason: ${s.transferInReason}</div>` : ''}
+        </div>` : ''}
+        ${s.status === 'transferred' ? `
+        <div class="col-span-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <div class="text-xs text-amber-700 font-semibold uppercase mb-1">Transferred Out</div>
+          <div class="font-semibold text-slate-900">${s.transferDest || '—'}</div>
+          ${s.transferReason ? `<div class="text-xs text-slate-500">${s.transferReason}</div>` : ''}
+          ${s.transferredAt ? `<div class="text-xs text-slate-500">Date: ${fdate(s.transferredAt, { long: true })}</div>` : ''}
+        </div>` : ''}
+        ${s.status === 'withdrawn' ? `
+        <div class="col-span-2 bg-rose-50 border border-rose-200 rounded-xl p-3">
+          <div class="text-xs text-rose-700 font-semibold uppercase mb-1">Withdrawn</div>
+          <div class="font-semibold text-slate-900">${s.withdrawReason || '—'}</div>
+          ${s.withdrawnAt ? `<div class="text-xs text-slate-500">Date: ${fdate(s.withdrawnAt, { long: true })}</div>` : ''}
+        </div>` : ''}
       </div>
 
-      <div class="grid grid-cols-2 gap-3 text-sm mb-5">
-        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-1">Date of Birth</div><div>${fdate(s.dob, { long: true })}</div></div>
-        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-1">Blood Group</div><div>${s.bloodGroup || '—'}</div></div>
-        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-1">Parent / Guardian</div><div>${parent ? parent.name : '—'}</div></div>
-        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-1">Parent Phone</div><div>${parent ? parent.phone : '—'}</div></div>
-        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-1">Admission Date</div><div>${fdate(s.admissionDate, { long: true })}</div></div>
-        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-1">Status</div><div>${statusBadge(s.status)}</div></div>
-      </div>
-
-      ${(() => {
-        const docs = s.documents || {};
-        const present = _docTypes.filter(d => docs[d.key]);
-        if (!present.length) return '';
-        return `<h3 class="font-bold text-slate-900 mb-2 text-sm uppercase tracking-wide">Documents on File</h3>
-        <div class="grid grid-cols-2 gap-2 mb-5">
-          ${present.map(d => `<a href="${docs[d.key].data}" download="${docs[d.key].name || d.key}" class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg hover:bg-slate-100 text-sm">
+      ${presentDocs.length ? `<div class="mb-4">
+        <div class="text-xs uppercase text-slate-500 font-semibold mb-2">Documents on File</div>
+        <div class="grid grid-cols-2 gap-2">
+          ${presentDocs.map(d => `<a href="${docs[d.key].data}" download="${docs[d.key].name || d.key}" class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg hover:bg-slate-100 text-sm">
             ${icon('paperclip','w-4 h-4 text-brand-600')}
-            <div class="flex-1 min-w-0">
-              <div class="font-semibold truncate">${d.label}</div>
-              <div class="text-xs text-slate-500 truncate">${docs[d.key].name || 'view'}</div>
-            </div>
+            <div class="flex-1 min-w-0"><div class="font-semibold truncate">${d.label}</div><div class="text-xs text-slate-500 truncate">${docs[d.key].name || 'view'}</div></div>
             ${icon('download','w-3.5 h-3.5 text-slate-400')}
           </a>`).join('')}
-        </div>`;
-      })()}
+        </div>
+      </div>` : ''}
 
-      ${results.length ? `
-        <h3 class="font-bold text-slate-900 mb-2 text-sm uppercase tracking-wide">Recent Results</h3>
-        <div class="space-y-1.5 mb-5">
-          ${results.slice(0,5).map(r => {
-            const sub = subjects.find(x => x.id === r.subjectId);
-            return `<div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg text-sm">
-              <span>${sub ? sub.name : '—'}</span>
-              <div class="flex items-center gap-3">
-                <span class="font-mono text-slate-600">${r.total}/100</span>
-                <span class="badge ${r.grade==='A'?'badge-success':r.grade==='F'?'badge-danger':'badge-info'}">${r.grade}</span>
-              </div>
+      ${allActs.length ? `<div class="border-t border-slate-100 pt-4">
+        <div class="flex items-center justify-between mb-2">
+          <div><div class="font-bold text-slate-900 text-sm">Extracurricular Activities</div>
+          <div class="text-xs text-slate-500">Toggle — fees update invoice instantly</div></div>
+          ${actTotal ? `<div class="text-right"><div class="text-xs text-slate-400">On invoice</div><div class="font-extrabold text-brand-700">${money(actTotal)}/term</div></div>` : ''}
+        </div>
+        <div class="space-y-2">
+          ${allActs.map(a => { const isEnrolled = enrolledIds.includes(a.id);
+            return `<div class="flex items-center gap-3 p-2.5 rounded-xl border-2 ${isEnrolled ? 'border-brand-300 bg-brand-50' : 'border-slate-100 hover:border-slate-300'}">
+              <span class="text-xl flex-shrink-0">${a.icon}</span>
+              <div class="flex-1 min-w-0"><div class="font-semibold text-sm">${a.name}</div><div class="text-xs text-slate-500">${money(a.price)}/term</div></div>
+              <button class="btn ${isEnrolled ? 'btn-danger' : 'btn-secondary'} !py-1 !px-3 text-xs" onclick="toggleStudentActivity('${s.id}','${a.id}',${isEnrolled})">
+                ${isEnrolled ? 'Remove' : 'Enroll'}
+              </button>
             </div>`;
           }).join('')}
         </div>
-      ` : ''}
+      </div>` : ''}
+    `;
+  };
 
-      ${(() => {
-        const allActs = DB.query('activities', a => a.schoolId === s.schoolId);
-        const enrolled = DB.query('studentActivities', sa => sa.studentId === s.id);
-        const enrolledIds = enrolled.map(sa => sa.activityId);
-        const actTotal = enrolled.reduce((sum, sa) => { const a = DB.find('activities', sa.activityId); return sum + (a ? a.price : 0); }, 0);
-        if (!allActs.length) return '';
-        return `
-          <div class="border-t border-slate-100 pt-4">
-            <div class="flex items-center justify-between mb-2">
-              <div>
-                <h3 class="font-bold text-slate-900">Extracurricular Activities</h3>
-                <p class="text-xs text-slate-500 mt-0.5">Toggle activities below — fees are instantly added to or removed from the student's invoice.</p>
-              </div>
-              ${actTotal ? `<div class="text-right flex-shrink-0 ml-3"><div class="text-xs text-slate-500">Added to invoice</div><div class="text-lg font-extrabold text-brand-700 font-mono">${money(actTotal)}<span class="text-xs font-normal text-slate-400">/term</span></div></div>` : ''}
-            </div>
-            <div class="space-y-2">
-              ${allActs.map(a => {
-                const isEnrolled = enrolledIds.includes(a.id);
-                return `<div class="flex items-center gap-3 p-3 rounded-xl border-2 transition ${isEnrolled ? 'border-brand-300 bg-brand-50' : 'border-slate-100 bg-white hover:border-slate-300'}">
-                  <span class="text-2xl flex-shrink-0">${a.icon}</span>
-                  <div class="flex-1 min-w-0">
-                    <div class="font-semibold text-sm text-slate-900">${a.name}</div>
-                    <div class="text-xs text-slate-500">${a.description || ''}</div>
-                    <div class="text-xs font-semibold ${isEnrolled ? 'text-brand-700' : 'text-slate-600'} mt-0.5">${money(a.price)} / term${isEnrolled ? ' · <span class="text-emerald-600">On invoice</span>' : ''}</div>
-                  </div>
-                  <button class="btn ${isEnrolled ? 'btn-danger' : 'btn-secondary'} !py-1.5 !px-3 text-xs flex-shrink-0"
-                    onclick="toggleStudentActivity('${s.id}','${a.id}',${isEnrolled})">
-                    ${isEnrolled ? `${icon('x','w-3 h-3')} Remove` : `${icon('plus','w-3 h-3')} Enroll`}
-                  </button>
-                </div>`;
+  // ─── TAB: Transcript ─────────────────────────────────────────────────────────
+  const transcriptTab = () => {
+    if (!results.length) return `<div class="text-center text-slate-400 py-8">No results recorded yet.</div>`;
+    const terms = [...new Set(results.map(r => r.term))].sort((a,b) => b.localeCompare(a));
+    const _es = DB.settings().examStructure || {};
+    return terms.map(term => {
+      const termResults = results.filter(r => r.term === term);
+      const termAvg = termResults.length ? Math.round(termResults.reduce((s,r) => s+r.total, 0) / termResults.length) : 0;
+      const _esTypes = _es.terms ? ((_es.terms.find(t => t.name === term) || {}).types || []) : [];
+      const ca1L = _esTypes[0] ? _esTypes[0].label : 'CA 1';
+      const ca2L = _esTypes[1] ? _esTypes[1].label : 'CA 2';
+      const exL  = _esTypes.length > 2 ? _esTypes[_esTypes.length-1].label : 'Exam';
+      return `<div class="mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="font-bold text-slate-900">${term}</div>
+          <div class="text-sm text-slate-500">Avg: <strong class="${termAvg >= 60 ? 'text-brand-700' : 'text-rose-600'}">${termAvg}%</strong></div>
+        </div>
+        <div class="card overflow-hidden">
+          <table class="tbl text-sm">
+            <thead><tr><th>Subject</th><th class="text-center">${ca1L}</th><th class="text-center">${ca2L}</th><th class="text-center">${exL}</th><th class="text-center">Total</th><th class="text-center">Grade</th><th class="text-center">Status</th></tr></thead>
+            <tbody>
+              ${termResults.map(r => {
+                const sub = subjects.find(x => x.id === r.subjectId);
+                const gBadge = r.grade === 'A' ? 'badge-success' : r.grade === 'F' ? 'badge-danger' : (r.grade==='D'||r.grade==='E') ? 'badge-warn' : 'badge-info';
+                return `<tr>
+                  <td class="font-medium">${sub ? sub.name : '—'}</td>
+                  <td class="text-center">${r.ca1 ?? '—'}</td>
+                  <td class="text-center">${r.ca2 ?? '—'}</td>
+                  <td class="text-center">${r.exam ?? '—'}</td>
+                  <td class="text-center font-bold">${r.total}</td>
+                  <td class="text-center"><span class="badge ${gBadge}">${r.grade}</span></td>
+                  <td class="text-center"><span class="badge ${r.approved ? 'badge-success' : 'badge-warn'}">${r.approved ? 'Approved' : 'Pending'}</span></td>
+                </tr>`;
               }).join('')}
-            </div>
-            ${enrolledIds.length === 0 ? `<p class="text-sm text-slate-400 text-center mt-3 py-2">No activities enrolled — click Enroll on any activity above.</p>` : ''}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+    }).join('');
+  };
+
+  // ─── TAB: Attendance ─────────────────────────────────────────────────────────
+  const attendanceTab = () => {
+    const recs = COMPUTE.studentAttendance(s.id).sort((a,b) => b.date.localeCompare(a.date));
+    const present = recs.filter(r => r.status === 'present').length;
+    const late    = recs.filter(r => r.status === 'late').length;
+    const absent  = recs.filter(r => r.status === 'absent').length;
+    if (!recs.length) return `<div class="text-center text-slate-400 py-8">No attendance records yet.</div>`;
+    return `
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-brand-50 rounded-xl p-3 text-center"><div class="text-xs text-brand-700 font-semibold uppercase">Present</div><div class="text-2xl font-bold text-brand-900">${present}</div></div>
+        <div class="bg-amber-50 rounded-xl p-3 text-center"><div class="text-xs text-amber-700 font-semibold uppercase">Late</div><div class="text-2xl font-bold text-amber-900">${late}</div></div>
+        <div class="bg-rose-50 rounded-xl p-3 text-center"><div class="text-xs text-rose-700 font-semibold uppercase">Absent</div><div class="text-2xl font-bold text-rose-900">${absent}</div></div>
+      </div>
+      <div class="card overflow-hidden">
+        <table class="tbl text-sm">
+          <thead><tr><th>Date</th><th class="text-center">Status</th><th>Recorded By</th></tr></thead>
+          <tbody>
+            ${recs.slice(0, 60).map(r => {
+              const tch = DB.find('teachers', r.recordedBy);
+              return `<tr>
+                <td>${fdate(r.date, { long: true })}</td>
+                <td class="text-center"><span class="badge ${r.status==='present'?'badge-success':r.status==='late'?'badge-warn':'badge-danger'}">${r.status}</span></td>
+                <td class="text-xs text-slate-500">${tch ? tch.name : '—'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+        ${recs.length > 60 ? `<div class="text-center text-xs text-slate-400 py-2">Showing last 60 of ${recs.length} records</div>` : ''}
+      </div>`;
+  };
+
+  // ─── TAB: Finance ────────────────────────────────────────────────────────────
+  const financeTab = () => {
+    const allInv = DB.query('invoices', i => i.studentId === s.id).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+    const allTxns = DB.query('transactions', t => t.studentId === s.id).sort((a,b) => b.timestamp.localeCompare(a.timestamp));
+    const totalOwed = allInv.reduce((sum,i) => sum + i.total, 0);
+    const totalPaid = allInv.reduce((sum,i) => sum + i.paid, 0);
+    const totalBal  = totalOwed - totalPaid;
+    if (!allInv.length) return `<div class="text-center text-slate-400 py-8">No invoices found.</div>`;
+    return `
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-slate-50 rounded-xl p-3 text-center"><div class="text-xs text-slate-500 font-semibold uppercase">Total Billed</div><div class="text-lg font-bold text-slate-900">${money(totalOwed)}</div></div>
+        <div class="bg-brand-50 rounded-xl p-3 text-center"><div class="text-xs text-brand-700 font-semibold uppercase">Total Paid</div><div class="text-lg font-bold text-brand-900">${money(totalPaid)}</div></div>
+        <div class="bg-${totalBal > 0 ? 'amber' : 'emerald'}-50 rounded-xl p-3 text-center"><div class="text-xs text-${totalBal > 0 ? 'amber' : 'emerald'}-700 font-semibold uppercase">Outstanding</div><div class="text-lg font-bold text-${totalBal > 0 ? 'amber' : 'emerald'}-900">${money(totalBal)}</div></div>
+      </div>
+      <div class="space-y-3 mb-4">
+        ${allInv.map(i => `<div class="card p-3">
+          <div class="flex items-center justify-between mb-2">
+            <div class="font-semibold text-slate-900">${i.term}</div>
+            <div class="flex items-center gap-2">${statusBadge(i.status)}<span class="text-xs text-slate-400">${fdate(i.createdAt, { short: true })}</span></div>
           </div>
-        `;
-      })()}
-    `,
+          <div class="space-y-1">
+            ${(i.lineItems || []).map(l => `<div class="flex justify-between text-xs text-slate-600"><span>${l.name}</span><span class="font-mono">${money(l.amount)}</span></div>`).join('')}
+            <div class="flex justify-between text-sm font-bold border-t border-slate-100 pt-1 mt-1"><span>Total</span><span>${money(i.total)}</span></div>
+            <div class="flex justify-between text-sm text-emerald-700"><span>Paid</span><span>${money(i.paid)}</span></div>
+            ${i.balance > 0 ? `<div class="flex justify-between text-sm text-amber-700 font-semibold"><span>Balance</span><span>${money(i.balance)}</span></div>` : ''}
+          </div>
+        </div>`).join('')}
+      </div>
+      ${allTxns.length ? `<div class="card overflow-hidden">
+        <div class="px-4 py-2 border-b border-slate-100 font-semibold text-sm">Payment History</div>
+        <table class="tbl text-xs">
+          <thead><tr><th>Date</th><th>Method</th><th class="text-right">Amount</th><th>Reference</th></tr></thead>
+          <tbody>
+            ${allTxns.map(t => `<tr>
+              <td>${fdate(t.timestamp, { short: true })}</td>
+              <td>${t.method}</td>
+              <td class="text-right font-mono font-semibold text-brand-700">${money(t.amount)}</td>
+              <td><code class="text-xs bg-slate-100 px-1 rounded">${t.reference || '—'}</code></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}`;
+  };
+
+  // ─── TAB: Discipline ─────────────────────────────────────────────────────────
+  const disciplineTab = () => {
+    const discRecs = DB.query('discipline', d => d.studentId === s.id).sort((a,b) => b.date.localeCompare(a.date));
+    const suspRecs = DB.query('studentSuspensions', ss => ss.studentId === s.id).sort((a,b) => b.suspendedAt.localeCompare(a.suspendedAt));
+    const reward = COMPUTE.studentRewards(s.id);
+    return `
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-emerald-50 rounded-xl p-3 text-center"><div class="text-xs text-emerald-700 font-semibold uppercase">Points</div><div class="text-2xl font-bold text-emerald-900">${reward.points}</div></div>
+        <div class="bg-amber-50 rounded-xl p-3 text-center"><div class="text-xs text-amber-700 font-semibold uppercase">Stars</div><div class="text-2xl font-bold text-amber-900">${'★'.repeat(reward.stars)}</div></div>
+        <div class="bg-rose-50 rounded-xl p-3 text-center"><div class="text-xs text-rose-700 font-semibold uppercase">Suspensions</div><div class="text-2xl font-bold text-rose-900">${suspRecs.length}</div></div>
+      </div>
+
+      ${suspRecs.length ? `<div class="mb-4">
+        <div class="font-bold text-slate-900 text-sm mb-2">Suspension History</div>
+        <div class="space-y-2">
+          ${suspRecs.map(ss => `<div class="border border-amber-200 bg-amber-50 rounded-xl p-3 text-sm">
+            <div class="flex items-start justify-between gap-2">
+              <div class="font-semibold text-amber-900">${ss.reason}</div>
+              <span class="badge ${ss.reinstatedAt ? 'badge-success' : 'badge-warn'} flex-shrink-0">${ss.reinstatedAt ? 'Reinstated' : 'Active'}</span>
+            </div>
+            ${ss.notes ? `<div class="text-xs text-amber-700 mt-0.5">${ss.notes}</div>` : ''}
+            <div class="text-xs text-slate-500 mt-1">${ss.days} day(s) · Suspended ${fdate(ss.suspendedAt, { long: true })} · Return ${fdate(ss.resumeDate, { short: true })}</div>
+            ${ss.reinstatedAt ? `<div class="text-xs text-emerald-700 mt-0.5">Reinstated ${fdate(ss.reinstatedAt, { long: true })}${ss.reinstateNotes ? ' — ' + ss.reinstateNotes : ''}</div>` : ''}
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <div class="font-bold text-slate-900 text-sm mb-2">Conduct Record</div>
+      ${discRecs.length === 0 ? `<div class="text-slate-400 text-sm py-4 text-center">No conduct records yet.</div>` : `
+        <div class="card overflow-hidden">
+          <table class="tbl text-sm">
+            <thead><tr><th>Date</th><th>Type</th><th>Note</th><th class="text-center">Points</th></tr></thead>
+            <tbody>
+              ${discRecs.map(d => `<tr>
+                <td class="text-xs text-slate-500">${fdate(d.date, { short: true })}</td>
+                <td><span class="badge ${d.type==='commendation'?'badge-success':d.type==='suspension'?'badge-warn':'badge-danger'}">${d.type}</span></td>
+                <td class="text-xs">${d.note}</td>
+                <td class="text-center font-bold ${d.points >= 0 ? 'text-emerald-700' : 'text-rose-600'}">${d.points >= 0 ? '+' : ''}${d.points}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`}`;
+  };
+
+  // ─── TAB: Health ─────────────────────────────────────────────────────────────
+  const healthTab = () => {
+    const visits = DB.query('sickbayVisits', v => v.studentId === s.id).sort((a,b) => b.date.localeCompare(a.date));
+    return `
+      <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
+        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Blood Group</div><div class="font-bold">${s.bloodGroup || '—'}</div></div>
+        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Allergies</div><div class="${s.allergies && s.allergies !== 'None' ? 'text-rose-700 font-semibold' : ''}">${s.allergies || 'None stated'}</div></div>
+      </div>
+      <div class="font-bold text-slate-900 text-sm mb-2">Sickbay Visits <span class="text-slate-400 font-normal">(${visits.length})</span></div>
+      ${visits.length === 0 ? `<div class="text-slate-400 text-sm py-4 text-center">No sickbay visits recorded.</div>` : `
+        <div class="space-y-2">
+          ${visits.map(v => `<div class="card p-3 text-sm">
+            <div class="flex items-start justify-between gap-2">
+              <div class="font-semibold text-slate-900">${v.complaint}</div>
+              <div class="flex gap-1 flex-shrink-0">
+                <span class="badge ${v.outcome==='returned_to_class'?'badge-success':v.outcome==='sent_home'?'badge-warn':'badge-danger'}">${v.outcome?.replace(/_/g,' ') || '—'}</span>
+                ${v.parentNotified ? `<span class="badge badge-info">Parent notified</span>` : ''}
+              </div>
+            </div>
+            <div class="text-xs text-slate-500 mt-0.5">${fdate(v.date, { long: true })} · Temp: ${v.temperature}°C</div>
+            ${v.treatment ? `<div class="text-xs text-slate-600 mt-1 bg-slate-50 rounded-lg px-2 py-1">${v.treatment}</div>` : ''}
+          </div>`).join('')}
+        </div>`}`;
+  };
+
+  const bodyContent = tab === 'profile' ? profileTab()
+    : tab === 'transcript' ? transcriptTab()
+    : tab === 'attendance' ? attendanceTab()
+    : tab === 'finance' ? financeTab()
+    : tab === 'discipline' ? disciplineTab()
+    : tab === 'health' ? healthTab()
+    : profileTab();
+
+  modal({
+    title: 'Student Record',
+    size: 'lg',
+    body: header + tabBar + `<div class="min-h-40">${bodyContent}</div>`,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
       <button class="btn btn-secondary" onclick="printStudentID('${s.id}')">${icon('download','w-4 h-4')} Print ID</button>
-      <button class="btn btn-secondary" onclick="studentLifecycleModal('${s.id}')">${icon('settings','w-4 h-4')} Actions</button>
-      <button class="btn btn-secondary" onclick="editStudent('${s.id}')">${icon('edit','w-4 h-4')} Edit</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>studentLifecycleModal('${s.id}'),50)">${icon('settings','w-4 h-4')} Actions</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>editStudent('${s.id}'),50)">${icon('edit','w-4 h-4')} Edit</button>
       <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); viewAsParent('${s.parentId}')">View as Parent</button>
     `
   });
@@ -2805,10 +3001,19 @@ function addStudentModal(editingId) {
         </div>
         ${!isEdit ? `<div class="sm:col-span-2">
           <label class="input-label">Admission Type</label>
-          <select id="sf_admType" class="input">
+          <select id="sf_admType" class="input" onchange="toggleTransferFields(this.value)">
             <option value="new">New Admission</option>
             <option value="transfer">Transfer from another school</option>
           </select>
+        </div>
+        <div id="sf_transferFields" class="sm:col-span-2 hidden space-y-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+          <div><label class="input-label">Previous School Name *</label><input id="sf_transferFrom" class="input" placeholder="e.g. Holy Trinity Primary School, Ikeja" /></div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="input-label">Last Class at Previous School</label><input id="sf_transferFromClass" class="input" placeholder="e.g. Primary 3" /></div>
+            <div><label class="input-label">Transfer Date</label><input id="sf_transferInDate" type="date" class="input" value="${today()}" /></div>
+          </div>
+          <div><label class="input-label">Reason for Transfer</label><input id="sf_transferInReason" class="input" placeholder="e.g. Family relocated to this area" /></div>
+          <div class="text-xs text-blue-700">${icon('info','w-3.5 h-3.5 inline mr-1')} A transfer record is created automatically. Upload the student's previous school result/leaving certificate in Documents below.</div>
         </div>` : ''}
         ${isEdit ? `<div class="sm:col-span-2">
           <label class="input-label">Status</label>
@@ -2998,13 +3203,21 @@ function saveStudent(editingId) {
   }
 
   const admTypeEl = document.getElementById('sf_admType');
+  const admType = admTypeEl ? admTypeEl.value : 'new';
+  const transferFromSchool = admType === 'transfer' ? ((document.getElementById('sf_transferFrom') || {}).value || '').trim() : null;
+  const transferFromClass  = admType === 'transfer' ? ((document.getElementById('sf_transferFromClass') || {}).value || '').trim() : null;
+  const transferInDate     = admType === 'transfer' ? ((document.getElementById('sf_transferInDate') || {}).value || today()) : null;
+  const transferInReason   = admType === 'transfer' ? ((document.getElementById('sf_transferInReason') || {}).value || '').trim() : null;
+  if (admType === 'transfer' && !transferFromSchool) { toast('Please enter the previous school name for the transfer', 'danger'); return; }
   const newStudent = {
     id: uid('stu'),
     schoolId: currentSchoolId(),
     name, admissionNo: admNo, classId, dob, gender,
     parentId, bloodGroup: blood,
     admissionDate: today(),
-    admissionType: admTypeEl ? admTypeEl.value : 'new',
+    admissionType: admType,
+    // Transfer-in fields (null for new admissions)
+    transferFromSchool, transferFromClass, transferInDate, transferInReason,
     status: 'active',
     photo: _studentPhotoBuffer,
     documents: Object.assign({}, _studentDocsBuffer),
@@ -3142,6 +3355,11 @@ function copyParentCredentials(parentId) {
   const text = `Username: ${p.credentials.username}\nPassword: ${p.credentials.tempPassword}\nLogin: https://caspaa.com/login`;
   if (navigator.clipboard) navigator.clipboard.writeText(text);
   toast('Credentials copied to clipboard');
+}
+
+function toggleTransferFields(val) {
+  const el = document.getElementById('sf_transferFields');
+  if (el) el.classList.toggle('hidden', val !== 'transfer');
 }
 
 // Backward-compat aliases
@@ -3689,7 +3907,15 @@ function confirmSuspension(studentId) {
   const notes = document.getElementById('susp_notes').value.trim();
   const notify = document.getElementById('susp_notify').checked;
   const s = DB.find('students', studentId);
-  DB.update('students', studentId, { status: 'suspended', suspensionReason: reason, suspensionDays: days, suspensionNotes: notes, suspendedAt: now(), suspensionResumeDate: resumeDate });
+  const suspId = uid('ssp');
+  DB.update('students', studentId, { status: 'suspended', suspensionReason: reason, suspensionDays: days, suspensionNotes: notes, suspendedAt: now(), suspensionResumeDate: resumeDate, activeSuspensionId: suspId });
+  // Permanent record — survives reinstatement, builds lifetime history
+  DB.insert('studentSuspensions', {
+    id: suspId, schoolId: s.schoolId, studentId,
+    reason, days, notes, resumeDate,
+    suspendedAt: now(), suspendedBy: AUTH.current.id || currentSchoolId(),
+    reinstatedAt: null, reinstatedBy: null, reinstateNotes: ''
+  });
   DB.insert('discipline', { id: uid('dis'), schoolId: s.schoolId, studentId, type: 'suspension', points: -10, note: reason + (notes ? ' — ' + notes : ''), recordedBy: AUTH.current.id || currentSchoolId(), date: today() });
   DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'suspended_student', target: `${s.name} (${days}d — ${reason})`, timestamp: now() });
   if (notify && s.parentId) {
@@ -3739,7 +3965,18 @@ function confirmReinstatement(studentId) {
   const s = DB.find('students', studentId);
   const notes = (document.getElementById('ri_notes') || {}).value || '';
   const notify = (document.getElementById('ri_notify') || {}).checked !== false;
-  DB.update('students', studentId, { status: 'active', suspensionReason: null, suspensionDays: null, suspensionNotes: null, suspendedAt: null, suspensionResumeDate: null });
+  // Close the permanent suspension record (keeps full history)
+  if (s.activeSuspensionId) {
+    DB.update('studentSuspensions', s.activeSuspensionId, {
+      reinstatedAt: now(), reinstatedBy: AUTH.current.id || currentSchoolId(), reinstateNotes: notes
+    });
+  } else {
+    // fallback: close most recent open record for this student
+    const open = DB.query('studentSuspensions', ss => ss.studentId === studentId && !ss.reinstatedAt).slice(-1)[0];
+    if (open) DB.update('studentSuspensions', open.id, { reinstatedAt: now(), reinstatedBy: AUTH.current.id || currentSchoolId(), reinstateNotes: notes });
+  }
+  // Clear live fields but history is preserved in studentSuspensions
+  DB.update('students', studentId, { status: 'active', suspensionReason: null, suspensionDays: null, suspensionNotes: null, suspendedAt: null, suspensionResumeDate: null, activeSuspensionId: null });
   DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'reinstated_student', target: s.name + (notes ? ' — ' + notes : ''), timestamp: now() });
   if (notify && s.parentId) {
     DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: `${s.name} — Reinstated`, body: `${s.name} has been reinstated and may resume school activities immediately.${notes ? ' ' + notes : ''}`, type: 'success', read: false, timestamp: now() });
@@ -4292,7 +4529,11 @@ function view_adm_staff() {
         <div class="flex items-center gap-3">
           ${avatar(t.name, 'sm')}
           <div>
-            <div class="font-semibold text-slate-900">${t.name}</div>
+            <div class="flex items-center gap-1.5">
+              <div class="font-semibold text-slate-900">${t.name}</div>
+              ${t.status === 'suspended' ? `<span class="badge badge-warn text-xs">Suspended</span>` : ''}
+              ${t.status === 'terminated' ? `<span class="badge badge-danger text-xs">Terminated</span>` : ''}
+            </div>
             <div class="text-xs text-slate-500">${t.email}</div>
           </div>
         </div>
@@ -4302,7 +4543,15 @@ function view_adm_staff() {
       <td>${fdate(t.hireDate, { short: true })}</td>
       <td><span class="font-mono">${money(t.salary)}</span></td>
       <td class="text-right">
-        <button class="btn btn-ghost !p-1.5" onclick="event.stopPropagation(); viewStaff('${t.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
+        <div class="flex items-center justify-end gap-1">
+          ${t.status !== 'terminated' ? (
+            t.status === 'suspended'
+              ? `<button class="btn btn-ghost !p-1.5 text-emerald-600" title="Reinstate" onclick="event.stopPropagation(); reinstateStaffModal('${t.id}')">${icon('check_circle','w-4 h-4')}</button>`
+              : `<button class="btn btn-ghost !p-1.5 text-amber-600" title="Suspend" onclick="event.stopPropagation(); suspendStaffModal('${t.id}')">${icon('pause_circle','w-4 h-4')}</button>`
+          ) : ''}
+          ${t.status !== 'terminated' ? `<button class="btn btn-ghost !p-1.5 text-rose-500" title="Terminate" onclick="event.stopPropagation(); terminateStaffModal('${t.id}')">${icon('x_circle','w-4 h-4')}</button>` : ''}
+          <button class="btn btn-ghost !p-1.5" title="View profile" onclick="event.stopPropagation(); viewStaff('${t.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
+        </div>
       </td>
     </tr>
   `;
@@ -4390,14 +4639,13 @@ function view_adm_staff() {
   `;
 }
 
-function viewStaff(id) {
+function viewStaff(id, activeTab) {
   const t = DB.find('teachers', id);
   if (!t) return;
   const allClasses = DB.get('classes');
   const allSubjects = DB.get('subjects');
   const classes = allClasses.filter(c => (t.classes || []).includes(c.id));
   const subjectsTaught = (t.subjects || []).map(sid => allSubjects.find(s => s.id === sid)).filter(Boolean);
-  // Performance metrics
   const myResults = DB.query('results', r => (t.classes || []).includes(r.classId) && (t.subjects || []).includes(r.subjectId));
   const avgScore = myResults.length ? Math.round(myResults.reduce((s, r) => s + r.total, 0) / myResults.length) : 0;
   const passRate = myResults.length ? Math.round(myResults.filter(r => r.grade !== 'F').length / myResults.length * 100) : 0;
@@ -4406,76 +4654,436 @@ function viewStaff(id) {
   const myAssignments = DB.query('assignments', a => a.teacherId === t.id);
   const docs = t.documents || {};
   const presentDocs = _staffDocTypes.filter(d => docs[d.key]);
+  const tab = activeTab || 'profile';
+
+  const tabs = [
+    { k: 'profile',    l: 'Profile' },
+    { k: 'leave',      l: 'Leave & Attendance' },
+    { k: 'appraisals', l: 'Appraisals' },
+    { k: 'payslips',   l: 'Payslips' },
+    { k: 'hr',         l: 'HR Actions' },
+  ];
+  const tabBar = `<div class="flex gap-0.5 mb-4 border-b border-slate-200 overflow-x-auto -mx-1 px-1">
+    ${tabs.map(tb => `<button onclick="viewStaff('${id}','${tb.k}')" class="whitespace-nowrap px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab===tb.k?'border-brand-600 text-brand-700':'border-transparent text-slate-500 hover:text-slate-700'}">${tb.l}</button>`).join('')}
+  </div>`;
+
+  const suspensions = DB.query('staffDiscipline', d => d.staffId === id).sort((a,b) => b.date.localeCompare(a.date));
+  const openSusp = suspensions.filter(d => d.type === 'suspension' && !d.reinstatedAt);
+  const isSuspended = t.status === 'suspended';
+  const isTerminated = t.status === 'terminated';
+
+  const header = `
+    <div class="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
+      ${avatar(t.name, 'xl')}
+      <div class="flex-1">
+        <h2 class="text-lg font-bold text-slate-900">${t.name}</h2>
+        <div class="flex flex-wrap gap-1.5 mt-1">
+          <span class="badge ${t.staffType === 'Academic' ? 'badge-success' : 'badge-info'}">${t.staffType || 'Academic'}</span>
+          ${t.role && t.staffType !== 'Academic' ? `<span class="badge badge-neutral">${t.role}</span>` : ''}
+          ${isSuspended ? `<span class="badge badge-warn">Suspended</span>` : ''}
+          ${isTerminated ? `<span class="badge badge-danger">Terminated</span>` : ''}
+        </div>
+        <p class="text-xs text-slate-400 mt-1.5">${t.email || ''} ${t.email && t.phone ? '·' : ''} ${t.phone || ''}</p>
+      </div>
+      <div class="text-right flex-shrink-0">
+        <div class="text-xs text-slate-400 mb-0.5">Attendance</div>
+        <div class="text-2xl font-extrabold ${myAttRate >= 85 ? 'text-brand-700' : 'text-rose-600'}">${myAttRate}%</div>
+        ${t.staffType === 'Academic' ? `<div class="text-xs text-slate-400 mt-1.5">Avg Score</div><div class="text-xl font-extrabold text-blue-700">${avgScore}%</div>` : ''}
+      </div>
+    </div>`;
+
+  // ─── Profile ─────────────────────────────────────────────────────────────────
+  const profileTab = () => `
+    <div class="space-y-3">
+      ${subjectsTaught.length ? `<div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Subjects Taught</div>
+        <div class="flex flex-wrap gap-1.5">${subjectsTaught.map(s => `<span class="badge badge-success">${s.name}</span>`).join('')}</div>
+      </div>` : ''}
+      ${classes.length ? `<div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Assigned Classes</div>
+        <div class="flex flex-wrap gap-1.5">${classes.map(c => `<span class="badge badge-info">${c.name}</span>`).join('')}</div>
+      </div>` : ''}
+      ${t.staffType === 'Academic' ? `<div class="grid grid-cols-4 gap-2">
+        <div class="bg-brand-50 rounded-xl p-3 text-center"><div class="text-xs text-brand-700 font-semibold">AVG SCORE</div><div class="text-xl font-bold text-brand-900 mt-1">${avgScore}%</div></div>
+        <div class="bg-emerald-50 rounded-xl p-3 text-center"><div class="text-xs text-emerald-700 font-semibold">PASS RATE</div><div class="text-xl font-bold text-emerald-900 mt-1">${passRate}%</div></div>
+        <div class="bg-amber-50 rounded-xl p-3 text-center"><div class="text-xs text-amber-700 font-semibold">PUNCTUALITY</div><div class="text-xl font-bold text-amber-900 mt-1">${myAttRate}%</div></div>
+        <div class="bg-blue-50 rounded-xl p-3 text-center"><div class="text-xs text-blue-700 font-semibold">ASSIGNMENTS</div><div class="text-xl font-bold text-blue-900 mt-1">${myAssignments.length}</div></div>
+      </div>` : ''}
+      <div class="grid grid-cols-2 gap-3 text-sm">
+        <div><div class="text-xs uppercase text-slate-500 font-semibold mb-0.5">Date of Birth</div><div>${t.dob ? fdate(t.dob, { long: true }) : '—'}</div></div>
+        <div><div class="text-xs uppercase text-slate-500 font-semibold mb-0.5">Hire Date</div><div>${fdate(t.hireDate, { long: true })}</div></div>
+        <div><div class="text-xs uppercase text-slate-500 font-semibold mb-0.5">Monthly Salary</div><div class="font-mono">${money(t.salary)}</div></div>
+        <div><div class="text-xs uppercase text-slate-500 font-semibold mb-0.5">Payroll Account</div><div>${t.bank ? `${t.bank.name} · ${t.bank.account}` : '—'}</div></div>
+      </div>
+      ${presentDocs.length ? `<div>
+        <div class="text-xs uppercase text-slate-500 font-semibold mb-2">Documents on File</div>
+        <div class="grid grid-cols-2 gap-2">
+          ${presentDocs.map(d => `<a href="${docs[d.key].data}" download="${docs[d.key].name || d.key}" class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg hover:bg-slate-100 text-sm">
+            ${icon('paperclip','w-4 h-4 text-brand-600')}
+            <div class="flex-1 min-w-0"><div class="font-semibold truncate">${d.label}</div><div class="text-xs text-slate-500 truncate">${docs[d.key].name || 'view'}</div></div>
+            ${icon('download','w-3.5 h-3.5 text-slate-400')}
+          </a>`).join('')}
+        </div>
+      </div>` : ''}
+    </div>`;
+
+  // ─── Leave & Attendance ───────────────────────────────────────────────────────
+  const leaveTab = () => {
+    const leaves = DB.query('leaveRequests', l => l.staffId === id).sort((a,b) => b.requestedAt.localeCompare(a.requestedAt));
+    const attRecs = myAttendance.sort((a,b) => b.date.localeCompare(a.date));
+    const present = attRecs.filter(r => r.status === 'present').length;
+    const late    = attRecs.filter(r => r.status === 'late').length;
+    const absent  = attRecs.filter(r => r.status === 'absent').length;
+    return `
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-brand-50 rounded-xl p-3 text-center"><div class="text-xs text-brand-700 font-semibold uppercase">Present</div><div class="text-2xl font-bold text-brand-900">${present}</div></div>
+        <div class="bg-amber-50 rounded-xl p-3 text-center"><div class="text-xs text-amber-700 font-semibold uppercase">Late</div><div class="text-2xl font-bold text-amber-900">${late}</div></div>
+        <div class="bg-rose-50 rounded-xl p-3 text-center"><div class="text-xs text-rose-700 font-semibold uppercase">Absent</div><div class="text-2xl font-bold text-rose-900">${absent}</div></div>
+      </div>
+      <div class="font-bold text-slate-900 text-sm mb-2">Leave Requests <span class="text-slate-400 font-normal">(${leaves.length})</span></div>
+      ${leaves.length === 0 ? `<div class="text-slate-400 text-sm py-3 text-center">No leave requests found.</div>` : `
+        <div class="card overflow-hidden mb-4">
+          <table class="tbl text-sm">
+            <thead><tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th class="text-center">Status</th><th>Reason</th></tr></thead>
+            <tbody>
+              ${leaves.map(l => `<tr>
+                <td class="capitalize">${l.leaveType}</td>
+                <td>${fdate(l.startDate, { short: true })}</td>
+                <td>${fdate(l.endDate, { short: true })}</td>
+                <td>${l.days}</td>
+                <td class="text-center"><span class="badge ${l.status==='approved'?'badge-success':l.status==='rejected'?'badge-danger':'badge-warn'}">${l.status}</span></td>
+                <td class="text-xs text-slate-500 max-w-xs truncate">${l.reason || '—'}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`}
+      ${attRecs.length ? `<div class="font-bold text-slate-900 text-sm mb-2">Attendance Log <span class="text-slate-400 font-normal">(recent 40)</span></div>
+        <div class="card overflow-hidden">
+          <table class="tbl text-sm">
+            <thead><tr><th>Date</th><th class="text-center">Status</th></tr></thead>
+            <tbody>${attRecs.slice(0,40).map(r => `<tr>
+              <td>${fdate(r.date, { long: true })}</td>
+              <td class="text-center"><span class="badge ${r.status==='present'?'badge-success':r.status==='late'?'badge-warn':'badge-danger'}">${r.status}</span></td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>` : ''}
+    `;
+  };
+
+  // ─── Appraisals ───────────────────────────────────────────────────────────────
+  const appraisalsTab = () => {
+    const apps = DB.query('appraisals', a => a.staffId === id).sort((a,b) => b.date.localeCompare(a.date));
+    if (!apps.length) return `<div class="text-slate-400 text-sm py-8 text-center">No appraisals recorded yet.</div>`;
+    return `<div class="space-y-3">
+      ${apps.map(a => `<div class="card p-4">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <div class="font-bold text-slate-900">${a.cycle || a.term || '—'}</div>
+            <div class="text-xs text-slate-400 mt-0.5">${fdate(a.date, { long: true })}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-2xl font-extrabold ${a.score >= 70 ? 'text-brand-700' : a.score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${a.score}<span class="text-sm font-normal text-slate-400">/100</span></div>
+            ${a.rating ? `<div class="badge ${a.rating==='Excellent'?'badge-success':a.rating==='Good'?'badge-info':a.rating==='Poor'?'badge-danger':'badge-warn'}">${a.rating}</div>` : ''}
+          </div>
+        </div>
+        ${a.comments ? `<div class="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg px-3 py-2">${a.comments}</div>` : ''}
+        ${a.goals ? `<div class="text-xs text-slate-500 mt-1">Goals: ${a.goals}</div>` : ''}
+      </div>`).join('')}
+    </div>`;
+  };
+
+  // ─── Payslips ─────────────────────────────────────────────────────────────────
+  const payslipsTab = () => {
+    const slips = DB.query('payslips', p => p.staffId === id).sort((a,b) => b.periodEnd.localeCompare(a.periodEnd));
+    if (!slips.length) return `<div class="text-slate-400 text-sm py-8 text-center">No payslips found.</div>`;
+    return `<div class="card overflow-hidden">
+      <table class="tbl text-sm">
+        <thead><tr><th>Period</th><th class="text-right">Gross</th><th class="text-right">Deductions</th><th class="text-right">Net</th><th class="text-center">Status</th></tr></thead>
+        <tbody>
+          ${slips.map(p => `<tr>
+            <td>${fdate(p.periodStart, { short: true })} → ${fdate(p.periodEnd, { short: true })}</td>
+            <td class="text-right font-mono">${money(p.grossPay || p.salary)}</td>
+            <td class="text-right font-mono text-rose-600">${money(p.totalDeductions || 0)}</td>
+            <td class="text-right font-mono font-bold text-brand-700">${money(p.netPay || p.salary)}</td>
+            <td class="text-center"><span class="badge ${p.status==='paid'?'badge-success':'badge-warn'}">${p.status}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  };
+
+  // ─── HR Actions ───────────────────────────────────────────────────────────────
+  const hrTab = () => {
+    const discRecs = suspensions; // all staffDiscipline records for this staff
+    const termRec = DB.query('staffTerminations', r => r.staffId === id)[0];
+    const suspRecs = discRecs.filter(d => d.type === 'suspension');
+    const warnings = discRecs.filter(d => d.type === 'warning');
+    const commendations = discRecs.filter(d => d.type === 'commendation');
+    return `
+      ${termRec ? `<div class="border border-rose-300 bg-rose-50 rounded-xl p-4 mb-4">
+        <div class="flex items-start gap-3">
+          ${icon('x_circle','w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5')}
+          <div>
+            <div class="font-bold text-rose-900">Termination Record</div>
+            <div class="text-sm text-rose-700 mt-0.5">${termRec.reason}</div>
+            <div class="text-xs text-rose-500 mt-1">Effective ${fdate(termRec.effectiveDate, { long: true })} · Category: ${termRec.category || '—'}</div>
+            ${termRec.notes ? `<div class="text-xs text-slate-600 mt-1">${termRec.notes}</div>` : ''}
+            ${termRec.finalPayment ? `<div class="text-xs text-slate-500 mt-0.5">Final payment: ${money(termRec.finalPayment)}</div>` : ''}
+          </div>
+        </div>
+      </div>` : ''}
+
+      ${suspRecs.length ? `<div class="mb-4">
+        <div class="font-bold text-slate-900 text-sm mb-2">Suspension History <span class="text-slate-400 font-normal">(${suspRecs.length})</span></div>
+        <div class="space-y-2">
+          ${suspRecs.map(d => `<div class="border border-amber-200 bg-amber-50 rounded-xl p-3 text-sm">
+            <div class="flex items-start justify-between gap-2">
+              <div class="font-semibold text-amber-900">${d.reason}</div>
+              <span class="badge ${d.reinstatedAt ? 'badge-success' : 'badge-warn'} flex-shrink-0">${d.reinstatedAt ? 'Reinstated' : 'Active'}</span>
+            </div>
+            ${d.notes ? `<div class="text-xs text-amber-700 mt-0.5">${d.notes}</div>` : ''}
+            <div class="text-xs text-slate-500 mt-1">${d.days} day(s) · ${fdate(d.date, { long: true })}</div>
+            ${d.reinstatedAt ? `<div class="text-xs text-emerald-700 mt-0.5">Reinstated ${fdate(d.reinstatedAt, { long: true })}${d.reinstateNotes ? ' — ' + d.reinstateNotes : ''}</div>` : ''}
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      ${warnings.length ? `<div class="mb-4">
+        <div class="font-bold text-slate-900 text-sm mb-2">Warnings <span class="text-slate-400 font-normal">(${warnings.length})</span></div>
+        <div class="space-y-2">
+          ${warnings.map(d => `<div class="border border-slate-200 bg-slate-50 rounded-xl p-3 text-sm">
+            <div class="font-semibold text-slate-900">${d.reason}</div>
+            ${d.notes ? `<div class="text-xs text-slate-500 mt-0.5">${d.notes}</div>` : ''}
+            <div class="text-xs text-slate-400 mt-1">${fdate(d.date, { long: true })}</div>
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      ${commendations.length ? `<div class="mb-4">
+        <div class="font-bold text-slate-900 text-sm mb-2">Commendations</div>
+        <div class="space-y-2">
+          ${commendations.map(d => `<div class="border border-emerald-200 bg-emerald-50 rounded-xl p-3 text-sm">
+            <div class="font-semibold text-emerald-900">${d.reason}</div>
+            <div class="text-xs text-emerald-600 mt-0.5">${fdate(d.date, { long: true })}</div>
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      ${!termRec && !suspRecs.length && !warnings.length && !commendations.length ? `<div class="text-slate-400 text-sm py-8 text-center">No HR actions recorded for this staff member.</div>` : ''}
+
+      ${!isTerminated ? `<div class="border-t border-slate-100 pt-4 mt-4 flex flex-wrap gap-2">
+        ${isSuspended
+          ? `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>reinstateStaffModal('${id}'),50)">${icon('check_circle','w-4 h-4')} Reinstate Staff</button>`
+          : `<button class="btn btn-warn" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>suspendStaffModal('${id}'),50)">${icon('pause_circle','w-4 h-4')} Suspend Staff</button>`}
+        <button class="btn btn-danger" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>terminateStaffModal('${id}'),50)">${icon('x_circle','w-4 h-4')} Terminate Staff</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>issueStaffWarningModal('${id}'),50)">${icon('alert_triangle','w-4 h-4')} Issue Warning</button>
+      </div>` : ''}
+    `;
+  };
+
+  const bodyContent = tab === 'profile'    ? profileTab()
+    : tab === 'leave'      ? leaveTab()
+    : tab === 'appraisals' ? appraisalsTab()
+    : tab === 'payslips'   ? payslipsTab()
+    : tab === 'hr'         ? hrTab()
+    : profileTab();
 
   modal({
-    title: 'Staff Profile',
+    title: 'Staff Record',
     size: 'lg',
+    body: header + tabBar + `<div class="min-h-40">${bodyContent}</div>`,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
+      ${!isTerminated ? `
+        ${isSuspended
+          ? `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>reinstateStaffModal('${id}'),50)">${icon('check_circle','w-4 h-4')} Reinstate</button>`
+          : `<button class="btn btn-warn" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>suspendStaffModal('${id}'),50)">${icon('pause_circle','w-4 h-4')} Suspend</button>`}
+        <button class="btn btn-danger" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>terminateStaffModal('${id}'),50)">${icon('x_circle','w-4 h-4')} Terminate</button>
+      ` : ''}
+    `
+  });
+}
+
+// ─── Staff HR Action Modals ───────────────────────────────────────────────────
+
+function suspendStaffModal(id) {
+  const t = DB.find('teachers', id);
+  if (!t) return;
+  if (t.status === 'terminated') { toast('This staff member has been terminated', 'danger'); return; }
+  modal({
+    title: `Suspend — ${t.name}`,
+    size: 'md',
     body: `
-      <div class="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
-        ${avatar(t.name, 'xl')}
-        <div class="flex-1">
-          <h2 class="text-lg font-bold text-slate-900">${t.name}</h2>
-          <div class="flex flex-wrap gap-1.5 mt-1">
-            <span class="badge ${t.staffType === 'Academic' ? 'badge-success' : 'badge-info'}">${t.staffType || 'Academic'}</span>
-            ${t.role && t.staffType !== 'Academic' ? `<span class="badge badge-neutral">${t.role}</span>` : ''}
-          </div>
-          <p class="text-xs text-slate-400 mt-2">${t.email} · ${t.phone}</p>
-        </div>
+      <div class="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+        ${icon('alert_triangle','w-5 h-5 text-amber-600 flex-shrink-0')}
+        <div class="text-sm text-amber-800">The staff member will be suspended and access may be restricted until reinstated.</div>
       </div>
       <div class="space-y-3">
-        ${subjectsTaught.length ? `<div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Subjects Taught</div>
-          <div class="flex flex-wrap gap-1.5">${subjectsTaught.map(s => `<span class="badge badge-success">${s.name}</span>`).join('')}</div>
-        </div>` : ''}
-        ${classes.length ? `<div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Assigned Classes</div>
-          <div class="flex flex-wrap gap-1.5">${classes.map(c => `<span class="badge badge-info">${c.name}</span>`).join('')}</div>
-        </div>` : ''}
-
-        ${t.staffType === 'Academic' ? `<div>
-          <div class="text-xs uppercase text-slate-500 font-semibold mb-2">Performance Tracking</div>
-          <div class="grid grid-cols-4 gap-2">
-            <div class="bg-brand-50 rounded-xl p-3 text-center">
-              <div class="text-xs text-brand-700 font-semibold">AVG SCORE</div>
-              <div class="text-xl font-bold text-brand-900 mt-1">${avgScore}%</div>
-            </div>
-            <div class="bg-emerald-50 rounded-xl p-3 text-center">
-              <div class="text-xs text-emerald-700 font-semibold">PASS RATE</div>
-              <div class="text-xl font-bold text-emerald-900 mt-1">${passRate}%</div>
-            </div>
-            <div class="bg-amber-50 rounded-xl p-3 text-center">
-              <div class="text-xs text-amber-700 font-semibold">PUNCTUALITY</div>
-              <div class="text-xl font-bold text-amber-900 mt-1">${myAttRate}%</div>
-            </div>
-            <div class="bg-blue-50 rounded-xl p-3 text-center">
-              <div class="text-xs text-blue-700 font-semibold">ASSIGNMENTS</div>
-              <div class="text-xl font-bold text-blue-900 mt-1">${myAssignments.length}</div>
-            </div>
-          </div>
-        </div>` : ''}
-
-        <div class="grid grid-cols-2 gap-3 text-sm">
-          <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Hired</div><div>${fdate(t.hireDate, { long: true })}</div></div>
-          <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Monthly Salary</div><div class="font-mono">${money(t.salary)}</div></div>
-          ${t.dob ? `<div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Date of Birth</div><div>${fdate(t.dob, { long: true })}</div></div>` : ''}
-          ${t.bank ? `<div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Payroll Account</div><div>${t.bank.name} · ${t.bank.account}</div></div>` : ''}
+        <div><label class="input-label">Reason for Suspension *</label>
+          <select id="stf_susp_reason" class="input">
+            <option>Gross Misconduct</option>
+            <option>Financial Irregularity</option>
+            <option>Insubordination</option>
+            <option>Pending Investigation</option>
+            <option>Absent Without Leave</option>
+            <option>Other</option>
+          </select></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Duration (days)</label><input id="stf_susp_days" class="input" type="number" value="5" min="1" max="90" /></div>
+          <div><label class="input-label">With Pay?</label>
+            <select id="stf_susp_pay" class="input"><option value="yes">Yes — with pay</option><option value="no">No — without pay</option></select></div>
         </div>
-
-        ${presentDocs.length ? `<div>
-          <div class="text-xs uppercase text-slate-500 font-semibold mb-2">Documents on File</div>
-          <div class="grid grid-cols-2 gap-2">
-            ${presentDocs.map(d => `<a href="${docs[d.key].data}" download="${docs[d.key].name || d.key}" class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg hover:bg-slate-100 text-sm">
-              ${icon('paperclip','w-4 h-4 text-brand-600')}
-              <div class="flex-1 min-w-0">
-                <div class="font-semibold truncate">${d.label}</div>
-                <div class="text-xs text-slate-500 truncate">${docs[d.key].name || 'view'}</div>
-              </div>
-              ${icon('download','w-3.5 h-3.5 text-slate-400')}
-            </a>`).join('')}
-          </div>
-        </div>` : ''}
-      </div>
-    `,
-    footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
+        <div><label class="input-label">Additional Notes</label><textarea id="stf_susp_notes" class="input" rows="2" placeholder="Details, incident report reference, etc."></textarea></div>
+      </div>`,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+      <button class="btn btn-warn" onclick="confirmStaffSuspension('${id}')">${icon('pause_circle','w-4 h-4')} Suspend Staff</button>`
   });
+}
+
+function confirmStaffSuspension(staffId) {
+  const t = DB.find('teachers', staffId);
+  const reason  = document.getElementById('stf_susp_reason').value;
+  const days    = parseInt(document.getElementById('stf_susp_days').value) || 5;
+  const withPay = document.getElementById('stf_susp_pay').value === 'yes';
+  const notes   = (document.getElementById('stf_susp_notes') || {}).value || '';
+  const discId  = uid('sdf');
+  DB.update('teachers', staffId, { status: 'suspended', activeStaffSuspId: discId, suspendedAt: now(), suspensionDays: days, suspensionReason: reason });
+  DB.insert('staffDiscipline', {
+    id: discId, schoolId: t.schoolId, staffId,
+    type: 'suspension', reason, days, withPay, notes,
+    date: today(), suspendedAt: now(), suspendedBy: AUTH.current.id || currentSchoolId(),
+    reinstatedAt: null, reinstatedBy: null, reinstateNotes: ''
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: t.schoolId, actor: AUTH.current.id, action: 'suspended_staff', target: `${t.name} (${days}d — ${reason})`, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast(`${t.name} suspended`, 'warn');
+}
+
+function reinstateStaffModal(id) {
+  const t = DB.find('teachers', id);
+  if (!t) return;
+  modal({
+    title: `Reinstate — ${t.name}`,
+    size: 'sm',
+    body: `
+      <div class="flex items-center gap-3 bg-brand-50 border border-brand-200 rounded-xl p-3 mb-4">
+        ${icon('check_circle','w-5 h-5 text-brand-600 flex-shrink-0')}
+        <div class="text-sm text-brand-800">${t.name} will be reinstated and their status set back to active.</div>
+      </div>
+      <div><label class="input-label">Reinstatement Notes</label><textarea id="stf_ri_notes" class="input" rows="2" placeholder="Conditions, outcome, etc."></textarea></div>`,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmStaffReinstatement('${id}')">${icon('check_circle','w-4 h-4')} Reinstate</button>`
+  });
+}
+
+function confirmStaffReinstatement(staffId) {
+  const t = DB.find('teachers', staffId);
+  const notes = (document.getElementById('stf_ri_notes') || {}).value || '';
+  if (t.activeStaffSuspId) {
+    DB.update('staffDiscipline', t.activeStaffSuspId, { reinstatedAt: now(), reinstatedBy: AUTH.current.id || currentSchoolId(), reinstateNotes: notes });
+  } else {
+    const open = DB.query('staffDiscipline', d => d.staffId === staffId && d.type === 'suspension' && !d.reinstatedAt).slice(-1)[0];
+    if (open) DB.update('staffDiscipline', open.id, { reinstatedAt: now(), reinstatedBy: AUTH.current.id || currentSchoolId(), reinstateNotes: notes });
+  }
+  DB.update('teachers', staffId, { status: 'active', activeStaffSuspId: null, suspendedAt: null, suspensionDays: null, suspensionReason: null });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: t.schoolId, actor: AUTH.current.id, action: 'reinstated_staff', target: t.name + (notes ? ' — ' + notes : ''), timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast(`${t.name} reinstated · active`, 'success');
+}
+
+function terminateStaffModal(id) {
+  const t = DB.find('teachers', id);
+  if (!t) return;
+  modal({
+    title: `Terminate — ${t.name}`,
+    size: 'md',
+    body: `
+      <div class="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-xl p-3 mb-4">
+        ${icon('x_circle','w-5 h-5 text-rose-600 flex-shrink-0')}
+        <div class="text-sm text-rose-800"><strong>Irreversible.</strong> This staff member will be marked as terminated and removed from active payroll. All HR history is preserved.</div>
+      </div>
+      <div class="space-y-3">
+        <div><label class="input-label">Termination Category *</label>
+          <select id="stf_term_cat" class="input">
+            <option value="resignation">Resignation</option>
+            <option value="dismissal">Dismissal</option>
+            <option value="redundancy">Redundancy</option>
+            <option value="contract_end">End of Contract</option>
+            <option value="retirement">Retirement</option>
+            <option value="death">Death in Service</option>
+          </select></div>
+        <div><label class="input-label">Reason / Summary *</label><textarea id="stf_term_reason" class="input" rows="2" placeholder="Brief reason for termination"></textarea></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Effective Date</label><input id="stf_term_date" type="date" class="input" value="${today()}" /></div>
+          <div><label class="input-label">Final Payment (₦)</label><input id="stf_term_pay" type="number" class="input" placeholder="0" value="0" /></div>
+        </div>
+        <div><label class="input-label">Additional Notes</label><textarea id="stf_term_notes" class="input" rows="2" placeholder="Severance terms, handover, etc."></textarea></div>
+      </div>`,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmStaffTermination('${id}')">${icon('x_circle','w-4 h-4')} Confirm Termination</button>`
+  });
+}
+
+function confirmStaffTermination(staffId) {
+  const t = DB.find('teachers', staffId);
+  const reason       = (document.getElementById('stf_term_reason') || {}).value || '';
+  const category     = (document.getElementById('stf_term_cat') || {}).value || 'dismissal';
+  const effectiveDate = (document.getElementById('stf_term_date') || {}).value || today();
+  const finalPayment = parseFloat((document.getElementById('stf_term_pay') || {}).value) || 0;
+  const notes        = (document.getElementById('stf_term_notes') || {}).value || '';
+  if (!reason.trim()) { toast('Please provide a reason for termination', 'danger'); return; }
+  DB.update('teachers', staffId, { status: 'terminated', terminatedAt: now(), terminationReason: reason });
+  DB.insert('staffTerminations', {
+    id: uid('stm'), schoolId: t.schoolId, staffId,
+    category, reason, notes, effectiveDate, finalPayment,
+    terminatedAt: now(), terminatedBy: AUTH.current.id || currentSchoolId()
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: t.schoolId, actor: AUTH.current.id, action: 'terminated_staff', target: `${t.name} (${category} — ${reason})`, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast(`${t.name} marked as terminated`, 'danger');
+}
+
+function issueStaffWarningModal(id) {
+  const t = DB.find('teachers', id);
+  if (!t) return;
+  modal({
+    title: `Issue Warning — ${t.name}`,
+    size: 'sm',
+    body: `
+      <div class="space-y-3">
+        <div><label class="input-label">Warning Type</label>
+          <select id="stf_warn_type" class="input">
+            <option value="verbal">Verbal Warning</option>
+            <option value="written">Written Warning</option>
+            <option value="final">Final Warning</option>
+          </select></div>
+        <div><label class="input-label">Reason *</label><input id="stf_warn_reason" class="input" placeholder="Reason for warning" /></div>
+        <div><label class="input-label">Notes</label><textarea id="stf_warn_notes" class="input" rows="2" placeholder="Additional details"></textarea></div>
+      </div>`,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+      <button class="btn btn-warn" onclick="confirmStaffWarning('${id}')">${icon('alert_triangle','w-4 h-4')} Issue Warning</button>`
+  });
+}
+
+function confirmStaffWarning(staffId) {
+  const t       = DB.find('teachers', staffId);
+  const wtype   = (document.getElementById('stf_warn_type') || {}).value || 'written';
+  const reason  = (document.getElementById('stf_warn_reason') || {}).value || '';
+  const notes   = (document.getElementById('stf_warn_notes') || {}).value || '';
+  if (!reason.trim()) { toast('Please enter a reason', 'danger'); return; }
+  DB.insert('staffDiscipline', {
+    id: uid('sdf'), schoolId: t.schoolId, staffId,
+    type: 'warning', subType: wtype, reason, notes,
+    date: today(), issuedAt: now(), issuedBy: AUTH.current.id || currentSchoolId()
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: t.schoolId, actor: AUTH.current.id, action: 'staff_warning', target: `${t.name} (${wtype} — ${reason})`, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  toast(`Warning issued to ${t.name}`, 'warn');
 }
 
 // Buffer for staff documents during the modal lifecycle

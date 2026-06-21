@@ -29,6 +29,8 @@ body { min-height: 100vh; }
 .btn-ghost:hover { background: #f1f5f9; }
 .btn-danger { background: #dc2626; color: #fff; }
 .btn-danger:hover { background: #b91c1c; }
+.btn-warn { background: #d97706; color: #fff; }
+.btn-warn:hover { background: #b45309; }
 .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
 
 /* Inputs */

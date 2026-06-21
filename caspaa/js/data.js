@@ -1287,6 +1287,9 @@ function seedDatabase() {
     sickbayVisits, inventoryRequests,
     schoolItems, studentPurchases,
     smsCampaigns: [],
+    studentSuspensions: [],
+    staffDiscipline: [],
+    staffTerminations: [],
     settings: {
       currentSchoolId: 'sch_brightlights',
       currentTerm: '1st Term 2025/26',
