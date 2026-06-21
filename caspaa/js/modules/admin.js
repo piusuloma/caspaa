@@ -808,8 +808,7 @@ function view_adm_curriculum() {
       title: 'Curriculum (Schemes of Work)',
       subtitle: 'Term-by-term, week-by-week topic plans · NERDC / UBEC aligned',
       actions: `
-        <button class="btn btn-secondary" onclick="importFullSchoolCurriculumModal()">${icon('upload','w-4 h-4')} Import Full School CSV</button>
-        <button class="btn btn-secondary" onclick="importNERDCTemplateModal()">${icon('download','w-4 h-4')} Import NERDC Template</button>
+        <button class="btn btn-secondary" onclick="importFullSchoolCurriculumModal()">${icon('upload','w-4 h-4')} Import All Schemes (CSV)</button>
         <button class="btn btn-primary" onclick="newSchemeModal()">${icon('plus','w-4 h-4')} New Scheme</button>
       `
     })}
@@ -1087,13 +1086,12 @@ function newSchemeModal(prefilledClassId) {
   const classes = DB.get('classes');
   const subjects = DB.get('subjects');
   const terms = DB.query('academicTerms', t => t.schoolId === currentSchoolId());
+  window._newSchemeCsvData = null;
   modal({
     title: 'New Scheme of Work',
+    size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
-          A scheme of work breaks a subject's term plan into weekly topics. You can build from scratch here, or use <strong>Import NERDC Template</strong> for pre-built schemes.
-        </div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label">Class</label>
             <select id="nsch_class" class="input">${classes.map(c => `<option value="${c.id}" ${prefilledClassId === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select>
@@ -1102,15 +1100,41 @@ function newSchemeModal(prefilledClassId) {
             <select id="nsch_subject" class="input">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Term</label>
-            <select id="nsch_term" class="input">${terms.map(t => `<option ${t.current ? 'selected' : ''}>${t.name} 2025/26</option>`).join('')}</select>
-          </div>
-          <div><label class="input-label">Source</label>
-            <select id="nsch_source" class="input"><option>NERDC</option><option>UBEC</option><option>WAEC</option><option>NECO</option><option>custom</option></select>
-          </div>
+        <div><label class="input-label">Term</label>
+          <select id="nsch_term" class="input">${terms.map(t => `<option ${t.current ? 'selected' : ''}>${t.name} 2025/26</option>`).join('')}</select>
         </div>
-        <div><label class="input-label">Number of weeks</label><input id="nsch_weeks" type="number" class="input" value="12" min="4" max="16" /></div>
+        <div>
+          <label class="input-label">How to start</label>
+          <select id="nsch_method" class="input" onchange="nschMethodChange(this.value)">
+            <option value="template">NERDC / UBEC template — 12 weeks, pre-filled (recommended)</option>
+            <option value="blank">Start blank — fill in the weeks yourself</option>
+            <option value="csv">Upload CSV — import from your own file</option>
+          </select>
+        </div>
+        <div id="nsch_template_info" class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+          ${icon('info','w-4 h-4 inline mr-1')} Generates a standard 12-week plan. NERDC structure is used for JSS/SS classes; UBEC for Primary/Nursery. You can edit, add or remove weeks after creation.
+        </div>
+        <div id="nsch_blank_row" class="hidden">
+          <label class="input-label">Number of weeks</label>
+          <input id="nsch_weeks" type="number" class="input" value="12" min="4" max="16" />
+        </div>
+        <div id="nsch_csv_row" class="hidden space-y-2">
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+            ${icon('info','w-3.5 h-3.5 inline mr-1')} One row per week. Required columns: <strong>Week, Topic</strong>. Optional: Objectives, Activities, Resources.
+            &nbsp;<a href="#" class="underline font-semibold" onclick="downloadSchemeCSVTemplate(); return false;">${icon('download','w-3 h-3 inline')} Download template</a>
+          </div>
+          <div class="border-2 border-dashed border-slate-300 hover:border-brand-400 rounded-xl p-6 text-center cursor-pointer transition" onclick="document.getElementById('nsch_csv_file').click()">
+            ${icon('upload','w-7 h-7 mx-auto text-slate-400 mb-1')}
+            <p class="text-sm font-semibold text-slate-700">Click to upload CSV</p>
+            <p class="text-xs text-slate-400">Week · Topic · Objectives · Activities · Resources</p>
+            <input type="file" id="nsch_csv_file" accept=".csv" class="hidden" onchange="nschPreviewCSV(this)">
+          </div>
+          <div id="nsch_csv_preview"></div>
+        </div>
+        <div id="nsch_alignment_row" class="hidden">
+          <label class="input-label">Curriculum alignment <span class="text-slate-400 font-normal text-xs">— for labelling only</span></label>
+          <select id="nsch_source" class="input"><option>NERDC</option><option>UBEC</option><option>WAEC</option><option>NECO</option><option>Custom</option></select>
+        </div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -1118,29 +1142,106 @@ function newSchemeModal(prefilledClassId) {
   });
 }
 
+function nschMethodChange(method) {
+  document.getElementById('nsch_template_info').classList.toggle('hidden', method !== 'template');
+  document.getElementById('nsch_blank_row').classList.toggle('hidden', method !== 'blank');
+  document.getElementById('nsch_csv_row').classList.toggle('hidden', method !== 'csv');
+  document.getElementById('nsch_alignment_row').classList.toggle('hidden', method === 'template');
+}
+
+function nschPreviewCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+    const rows = lines.map(l => l.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+    const isHeader = rows[0] && isNaN(parseInt(rows[0][0]));
+    const data = isHeader ? rows.slice(1) : rows;
+    const valid = data.filter(r => r.length >= 2 && r[0]);
+    window._newSchemeCsvData = valid;
+    const preview = document.getElementById('nsch_csv_preview');
+    if (preview) preview.innerHTML = valid.length
+      ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2 text-xs text-emerald-900">${icon('check','w-3.5 h-3.5 inline')} <strong>${file.name}</strong> — ${valid.length} week${valid.length !== 1 ? 's' : ''} ready to import</div>`
+      : `<div class="bg-rose-50 border border-rose-200 rounded-xl p-2 text-xs text-rose-800">${icon('alert','w-3.5 h-3.5 inline')} No valid rows found. Check the file has Week and Topic columns.</div>`;
+  };
+  reader.readAsText(file);
+}
+
+function downloadSchemeCSVTemplate() {
+  const csv = 'Week,Topic,Objectives,Activities,Resources\n1,Introduction,Students will be able to...,Group work,Textbook p.1\n2,Core Unit 1,Students will understand...,Discussion,Worksheet\n3,Core Unit 2,Students will apply...,Demonstration,Textbook p.10\n';
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: 'scheme_template.csv' });
+  a.click();
+}
+
 function createNewScheme() {
   const classId = document.getElementById('nsch_class').value;
   const subjectId = document.getElementById('nsch_subject').value;
   const term = document.getElementById('nsch_term').value;
-  const source = document.getElementById('nsch_source').value;
-  const weekCount = parseInt(document.getElementById('nsch_weeks').value) || 12;
-  // Check duplicate
+  const method = (document.getElementById('nsch_method') || {}).value || 'template';
+
   const existing = DB.query('schemesOfWork', s => s.classId === classId && s.subjectId === subjectId && s.term === term)[0];
   if (existing) { toast('A scheme for this subject/class/term already exists', 'warn'); return; }
-  const weeks = [];
-  for (let i = 1; i <= weekCount; i++) {
-    weeks.push({ week: i, topic: i === weekCount ? 'Term Examination' : i === weekCount - 1 ? 'Revision' : `Week ${i} Topic`, subtopics: [], objectives: '', methods: 'Lecture, examples, group work', resources: 'Approved textbook', duration: '3 periods', covered: false });
+
+  const cls = DB.find('classes', classId);
+  const sub = DB.find('subjects', subjectId);
+  let weeks = [], source = '';
+
+  if (method === 'template') {
+    const isPrimary = cls && (cls.level === 'Primary' || cls.level === 'Nursery');
+    source = isPrimary ? 'UBEC' : 'NERDC';
+    const subName = sub ? sub.name : 'Subject';
+    weeks = [
+      { week: 1, topic: `Introduction to ${subName}`, subtopics: ['Welcome', 'Course overview'], objectives: `Introduce ${subName} for the term.`, methods: 'Lecture, examples, group work', resources: `${subName} textbook`, duration: '2 periods', covered: false },
+      { week: 2, topic: 'Foundational concepts', subtopics: [], objectives: 'Cover prerequisites and prior knowledge.', methods: 'Lecture, examples, group work', resources: `${subName} textbook`, duration: '3 periods', covered: false },
+      { week: 3, topic: 'Core unit 1', subtopics: [], objectives: 'Master core concepts.', methods: 'Lecture, examples, group work', resources: `${subName} textbook`, duration: '3 periods', covered: false },
+      { week: 4, topic: 'Core unit 2', subtopics: [], objectives: 'Build on unit 1.', methods: 'Lecture, examples, group work', resources: `${subName} textbook`, duration: '3 periods', covered: false },
+      { week: 5, topic: 'Core unit 3 + Mid-term CA', subtopics: [], objectives: 'Continuous assessment 1.', methods: 'Lecture, assessment', resources: `${subName} textbook`, duration: '3 periods', covered: false },
+      { week: 6, topic: 'Application & practice', subtopics: [], objectives: 'Apply concepts to real problems.', methods: 'Group work, problem solving', resources: `${subName} textbook`, duration: '3 periods', covered: false },
+      { week: 7, topic: 'Advanced concepts', subtopics: [], objectives: 'Extend and deepen learning.', methods: 'Lecture, examples, group work', resources: `${subName} textbook`, duration: '3 periods', covered: false },
+      { week: 8, topic: 'Project / Practical', subtopics: [], objectives: 'Hands-on practice and project work.', methods: 'Demonstration, project work', resources: `${subName} textbook`, duration: '3 periods', covered: false },
+      { week: 9, topic: 'Integration & review', subtopics: [], objectives: 'Connect all concepts covered so far.', methods: 'Discussion, review exercises', resources: `${subName} textbook`, duration: '3 periods', covered: false },
+      { week: 10, topic: 'Continuous Assessment 2', subtopics: [], objectives: 'Second continuous assessment.', methods: 'Assessment', resources: 'Assessment papers', duration: '3 periods', covered: false },
+      { week: 11, topic: 'Revision', subtopics: ['Past questions', 'Q&A session'], objectives: 'Prepare students for the terminal exam.', methods: 'Q&A, drilling, past questions', resources: 'Past question papers', duration: '3 periods', covered: false },
+      { week: 12, topic: 'Term Examination', subtopics: ['Written examination'], objectives: 'End of term assessment.', methods: 'Examination', resources: 'Question papers', duration: '2 hours', covered: false }
+    ];
+  } else if (method === 'csv') {
+    const csvData = window._newSchemeCsvData;
+    if (!csvData || !csvData.length) { toast('Please upload a CSV file first', 'danger'); return; }
+    source = (document.getElementById('nsch_source') || {}).value || 'Custom';
+    weeks = csvData.map((r, i) => ({
+      week: parseInt(r[0]) || (i + 1),
+      topic: r[1] || `Week ${i + 1}`,
+      objectives: r[2] || '',
+      activities: r[3] || '',
+      resources: r[4] || '',
+      subtopics: [],
+      methods: 'Lecture, group work',
+      duration: '3 periods',
+      covered: false
+    }));
+    window._newSchemeCsvData = null;
+  } else {
+    source = (document.getElementById('nsch_source') || {}).value || 'Custom';
+    const weekCount = parseInt((document.getElementById('nsch_weeks') || {}).value) || 12;
+    for (let i = 1; i <= weekCount; i++) {
+      weeks.push({ week: i, topic: i === weekCount ? 'Term Examination' : i === weekCount - 1 ? 'Revision' : `Week ${i} Topic`, subtopics: [], objectives: '', methods: 'Lecture, examples, group work', resources: 'Approved textbook', duration: '3 periods', covered: false });
+    }
   }
+
   DB.insert('schemesOfWork', {
     id: uid('sch'), schoolId: currentSchoolId(),
     classId, subjectId, term, source,
-    sessionId: 'sess_2025_26',
+    sessionId: DB.settings().sessionId || 'sess_2025_26',
     status: 'draft', weeks,
     createdAt: now()
   });
   document.getElementById('modalBackdrop')?.click();
   APP.render();
-  toast('Scheme of work created · open it to edit weeks');
+  const msg = method === 'template' ? `${source} template created · ${weeks.length} weeks ready to customise` :
+              method === 'csv'      ? `Scheme imported from CSV · ${weeks.length} weeks` :
+                                     'Scheme created · open it to fill in the weeks';
+  toast(msg, 'success');
 }
 
 function importExcelCurriculumModal() {
@@ -1338,6 +1439,7 @@ function confirmFullSchoolImport() {
 function importNERDCTemplateModal() {
   const classes = DB.get('classes');
   const subjects = DB.get('subjects');
+  const terms = DB.query('academicTerms', t => t.schoolId === currentSchoolId());
   modal({
     title: 'Import NERDC / UBEC Template',
     body: `
@@ -1352,6 +1454,9 @@ function importNERDCTemplateModal() {
           <div><label class="input-label">Subject</label>
             <select id="nrd_subject" class="input">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
           </div>
+        </div>
+        <div><label class="input-label">Term</label>
+          <select id="nrd_term" class="input">${terms.map(t => `<option ${t.current ? 'selected' : ''}>${t.name} 2025/26</option>`).join('')}</select>
         </div>
         <div class="bg-slate-50 rounded-xl p-3 text-xs text-slate-600">
           The template will be imported as a draft. You can edit/remove/add weeks before publishing. Coverage will start at 0%.
@@ -1368,7 +1473,7 @@ function importNERDCTemplate() {
   const subjectId = document.getElementById('nrd_subject').value;
   const cls = DB.find('classes', classId);
   const sub = DB.find('subjects', subjectId);
-  const term = '1st Term 2025/26';
+  const term = document.getElementById('nrd_term').value;
   const existing = DB.query('schemesOfWork', s => s.classId === classId && s.subjectId === subjectId && s.term === term)[0];
   if (existing) { toast('A scheme for this subject/class/term already exists', 'warn'); return; }
   // Generic 12-week NERDC-style template
