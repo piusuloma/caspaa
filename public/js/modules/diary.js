@@ -5,7 +5,7 @@
    - Separate from the live chat system
    ============================================================ */
 
-const DIARY_CATEGORIES = ['Homework', 'Behaviour', 'Academic', 'Health', 'General'];
+function getDiaryCategories() { return DB.settings().diaryCategories || ['Homework','Behaviour','Academic','Health','General']; }
 
 // ── Teacher Views ─────────────────────────────────────────────
 
@@ -101,7 +101,7 @@ function diary_viewStudent(studentId, classId) {
         <div class="font-semibold text-emerald-800 mb-3 text-sm">Write New Entry</div>
         <div class="grid grid-cols-2 gap-3 mb-3">
           <div><label class="input-label text-xs">Category</label>
-            <select id="de_cat" class="input text-sm">${DIARY_CATEGORIES.map(c => `<option>${c}</option>`).join('')}</select></div>
+            <select id="de_cat" class="input text-sm">${getDiaryCategories().map(c => `<option>${c}</option>`).join('')}</select></div>
           <div><label class="input-label text-xs">Date</label>
             <input id="de_date" type="date" class="input text-sm" value="${today()}"></div>
         </div>
@@ -232,7 +232,7 @@ function diary_notesParent() {
   const catFilter = APP.params.notesCategory;
   const filteredEntries = catFilter ? entries.filter(e => e.category === catFilter) : entries;
 
-  const categories = ['All', 'Homework', 'Academic', 'Behaviour', 'Health', 'General'];
+  const categories = ['All', ...getDiaryCategories()];
   const catBtns = categories.map(c => `<button onclick="APP.params.notesCategory=${c === 'All' ? 'null' : "'" + c + "'"}; APP.render()" class="badge ${(catFilter || 'All') === c ? 'badge-primary' : 'badge-neutral'} cursor-pointer">${c}</button>`).join('');
 
   return `

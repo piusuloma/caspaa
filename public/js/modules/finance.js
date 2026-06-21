@@ -231,8 +231,8 @@ function invoiceReminderSettingsModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
-          ${icon('info','w-4 h-4 inline')} Configure automated reminders that the system sends to parents. You can also trigger manual reminders from the Invoices page.
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+          ${icon('info','w-4 h-4 inline')} These settings are saved for reference. Automated sending requires a server-side scheduler — use the <strong>Manual Reminder Trigger</strong> below to send reminders now.
         </div>
         <div class="card p-4 space-y-3">
           <h4 class="font-bold text-slate-900">Automated Reminders</h4>
@@ -366,10 +366,17 @@ function confirmBulkGenerateInvoices() {
   returning.forEach(s => {
     const fs = feeStructures.find(f => f.classId === s.classId && f.term === currentTerm);
     if (!fs) { skipped++; return; }
-    const total = fs.tuition + fs.books + fs.uniform + fs.pta;
+    const extraLines = (fs.extraItems || []).filter(i => i.name && i.amount > 0).map(i => ({ name: i.name, amount: i.amount }));
+    const total = fs.tuition + fs.books + fs.uniform + fs.pta + extraLines.reduce((s, l) => s + l.amount, 0);
     DB.insert('invoices', {
       id: uid('inv'), schoolId, studentId: s.id, term: currentTerm,
-      lineItems: [{ name: 'Tuition Fee', amount: fs.tuition }, { name: 'Books & Materials', amount: fs.books }, { name: 'Uniform', amount: fs.uniform }, { name: 'PTA Levy', amount: fs.pta }],
+      lineItems: [
+        { name: 'Tuition Fee', amount: fs.tuition },
+        { name: 'Books & Materials', amount: fs.books },
+        { name: 'Uniform', amount: fs.uniform },
+        { name: 'PTA Levy', amount: fs.pta },
+        ...extraLines
+      ],
       total, paid: 0, balance: total, status: 'outstanding', dueDate: fs.dueDate, createdAt: now()
     });
     // Notify parent
@@ -722,6 +729,22 @@ function feeStructureModal(editingId) {
             <input id="fs_pta" type="number" class="input" value="${existing ? existing.pta : 5000}" oninput="updateFeeTotal()" />
           </div>
         </div>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-semibold text-slate-800">Additional Fees</span>
+            <button type="button" class="btn btn-secondary !py-1 !px-2.5 text-xs" onclick="addFeeExtraItem()">${icon('plus','w-3 h-3')} Add Row</button>
+          </div>
+          <div id="fs_extra_items" class="space-y-2">
+            ${(existing && existing.extraItems || []).map((item, i) => `
+              <div class="flex items-center gap-2 fs-extra-row" data-idx="${i}">
+                <input class="input flex-1" placeholder="e.g. Lab Fee, ICT Levy…" id="fs_ei_name_${i}" value="${item.name || ''}">
+                <input type="number" class="input w-32" placeholder="0" id="fs_ei_amt_${i}" value="${item.amount || 0}" oninput="updateFeeTotal()">
+                <button type="button" class="text-rose-500 hover:text-rose-700 flex-shrink-0 p-1" onclick="this.closest('.fs-extra-row').remove(); updateFeeTotal()" title="Remove">${icon('x','w-4 h-4')}</button>
+              </div>
+            `).join('')}
+          </div>
+          ${!(existing && existing.extraItems && existing.extraItems.length) ? '<p id="fs_extra_hint" class="text-xs text-slate-400 mt-1">No additional fees — add rows for items like Lab Fee, ICT Levy, etc.</p>' : ''}
+        </div>
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
           ${icon('info','w-4 h-4 inline mr-1')} Extracurricular fees (swimming, ballet, music, etc.) are <strong>per student</strong> — set them under the <strong>Activities tab</strong> and assign to each student from their profile.
         </div>
@@ -785,9 +808,23 @@ function toggleInstallmentOptions() {
 }
 
 function updateFeeTotal() {
-  const total = ['fs_tuition','fs_books','fs_uniform','fs_pta'].reduce((s, id) => { const el = document.getElementById(id); return s + (el ? (parseInt(el.value) || 0) : 0); }, 0);
+  const base = ['fs_tuition','fs_books','fs_uniform','fs_pta'].reduce((s, id) => { const el = document.getElementById(id); return s + (el ? (parseInt(el.value) || 0) : 0); }, 0);
+  const extra = Array.from(document.querySelectorAll('[id^="fs_ei_amt_"]')).reduce((s, el) => s + (parseInt(el.value) || 0), 0);
   const el = document.getElementById('fs_total');
-  if (el) el.textContent = money(total);
+  if (el) el.textContent = money(base + extra);
+}
+
+function addFeeExtraItem() {
+  const container = document.getElementById('fs_extra_items');
+  if (!container) return;
+  const hint = document.getElementById('fs_extra_hint');
+  if (hint) hint.remove();
+  const i = Date.now();
+  const row = document.createElement('div');
+  row.className = 'flex items-center gap-2 fs-extra-row';
+  row.setAttribute('data-idx', i);
+  row.innerHTML = `<input class="input flex-1" placeholder="e.g. Lab Fee, ICT Levy…" id="fs_ei_name_${i}"><input type="number" class="input w-32" placeholder="0" id="fs_ei_amt_${i}" value="0" oninput="updateFeeTotal()"><button type="button" class="text-rose-500 hover:text-rose-700 flex-shrink-0 p-1" onclick="this.closest('.fs-extra-row').remove(); updateFeeTotal()" title="Remove">${icon('x','w-4 h-4')}</button>`;
+  container.appendChild(row);
 }
 
 function saveFeeStructure(editingId) {
@@ -800,6 +837,10 @@ function saveFeeStructure(editingId) {
     books: parseInt(document.getElementById('fs_books').value) || 0,
     uniform: parseInt(document.getElementById('fs_uniform').value) || 0,
     pta: parseInt(document.getElementById('fs_pta').value) || 0,
+    extraItems: Array.from(document.querySelectorAll('.fs-extra-row')).map(row => {
+      const idx = row.getAttribute('data-idx');
+      return { name: ((document.getElementById('fs_ei_name_' + idx) || {}).value || '').trim(), amount: parseInt((document.getElementById('fs_ei_amt_' + idx) || {}).value) || 0 };
+    }).filter(i => i.name),
     dueDate: document.getElementById('fs_due').value,
     discountDeadline: (document.getElementById('fs_discountDeadline') || {}).value || null,
     installmentEnabled,
@@ -1316,7 +1357,7 @@ function addExpenseModal() {
       <div class="space-y-3">
         <div><label class="input-label">Date</label><input id="ex_date" type="date" class="input" value="${today()}" /></div>
         <div><label class="input-label">Category</label>
-          <select id="ex_cat" class="input"><option>Salaries</option><option>Electricity</option><option>Diesel</option><option>Maintenance</option><option>Supplies</option><option>Internet</option><option>Transport</option><option>Security</option><option>Cleaning</option><option>Bank Charges</option><option>Other</option></select>
+          <select id="ex_cat" class="input">${(DB.settings().expenseCategories || ['Salaries','Electricity','Diesel','Maintenance','Supplies','Internet','Transport','Security','Cleaning','Bank Charges','Other']).map(c => `<option>${c}</option>`).join('')}</select>
         </div>
         <div><label class="input-label">Amount (NGN)</label><input id="ex_amt" type="number" class="input" /></div>
         <div><label class="input-label">Description</label><textarea id="ex_desc" class="input" rows="2"></textarea></div>
@@ -2137,30 +2178,35 @@ function exportPayrollCSV() {
 }
 
 /* ---------- Financial Reports ---------- */
-function view_fin_reports() {
+function view_fin_reports(embedded) {
   const tab = APP.params.accTab || 'unit';
+  const accTabs = [
+    { key: 'unit',     label: 'Unit Economics' },
+    { key: 'pl',       label: 'Profit & Loss' },
+    { key: 'trial',    label: 'Trial Balance' },
+    { key: 'cashflow', label: 'Cash Flow' },
+    { key: 'balance',  label: 'Balance Sheet' },
+    { key: 'budget',   label: 'Budgets' }
+  ];
+  const content = tab === 'unit'     ? renderUnitEconomics() :
+                  tab === 'trial'    ? renderTrialBalance() :
+                  tab === 'cashflow' ? renderCashFlow() :
+                  tab === 'balance'  ? renderBalanceSheet() :
+                  tab === 'budget'   ? renderBudgets() :
+                  renderProfitLoss();
+  if (embedded) {
+    return `
+      ${tabs(accTabs, tab, k => { APP.params.accTab = k; APP.render(); })}
+      <div class="pt-4">${content}</div>`;
+  }
   return `
     ${pageHeader({
       title: 'Accounting & Reports',
       subtitle: 'P&L, trial balance, cash flow, balance sheet and budgets',
       actions: `<button class="btn btn-primary" onclick="exportPL()">${icon('download','w-4 h-4')} Export P&L (PDF)</button>`
     })}
-    ${tabs([
-      { key: 'unit', label: 'Unit Economics' },
-      { key: 'pl', label: 'Profit & Loss' },
-      { key: 'trial', label: 'Trial Balance' },
-      { key: 'cashflow', label: 'Cash Flow' },
-      { key: 'balance', label: 'Balance Sheet' },
-      { key: 'budget', label: 'Budgets' }
-    ], tab, k => { APP.params.accTab = k; APP.render(); })}
-    <div class="pt-4">${
-      tab === 'unit' ? renderUnitEconomics() :
-      tab === 'trial' ? renderTrialBalance() :
-      tab === 'cashflow' ? renderCashFlow() :
-      tab === 'balance' ? renderBalanceSheet() :
-      tab === 'budget' ? renderBudgets() :
-      renderProfitLoss()
-    }</div>
+    ${tabs(accTabs, tab, k => { APP.params.accTab = k; APP.render(); })}
+    <div class="pt-4">${content}</div>
   `;
 }
 
@@ -2257,30 +2303,21 @@ function renderUnitEconomics() {
         <div class="text-right text-sm text-slate-500">Billed: <strong class="text-slate-900 font-mono">${money(billed)}</strong></div>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm min-w-[560px]">
+        <table class="w-full text-sm min-w-[400px]">
           <thead><tr class="border-b text-xs text-slate-500 uppercase">
             <th class="text-left py-2">Component</th>
             <th class="text-right py-2">Billed</th>
             <th class="text-right py-2">Collected</th>
             <th class="text-right py-2">Outstanding</th>
-            <th class="text-right py-2 pr-2">% Share</th>
-            <th class="py-2 min-w-[100px]">Collection rate</th>
           </tr></thead>
           <tbody>
             ${components.map(([name, d]) => {
-              const share  = billed > 0   ? Math.round(d.billed    / billed    * 100) : 0;
-              const cRate  = d.billed > 0 ? Math.round(d.collected / d.billed  * 100) : 0;
-              const owed   = d.billed - d.collected;
-              const rColor = cRate >= 80 ? 'emerald' : cRate >= 50 ? 'amber' : 'rose';
+              const owed = d.billed - d.collected;
               return `<tr class="border-b hover:bg-slate-50">
                 <td class="py-2.5 font-medium">${name}</td>
                 <td class="py-2.5 text-right font-mono">${money(d.billed)}</td>
                 <td class="py-2.5 text-right font-mono text-emerald-700">${money(d.collected)}</td>
                 <td class="py-2.5 text-right font-mono ${owed > 0 ? 'text-rose-700 font-semibold' : 'text-slate-300'}">${owed > 0 ? money(owed) : '—'}</td>
-                <td class="py-2.5 text-right text-slate-500 pr-2">${share}%</td>
-                <td class="py-2.5">
-                  <div class="flex items-center gap-1.5">${bar(cRate, rColor)}<span class="text-xs w-8 text-right font-mono">${cRate}%</span></div>
-                </td>
               </tr>`;
             }).join('')}
             <tr class="bg-slate-50 font-bold text-sm">
@@ -2288,10 +2325,6 @@ function renderUnitEconomics() {
               <td class="py-2.5 text-right font-mono">${money(billed)}</td>
               <td class="py-2.5 text-right font-mono text-emerald-700">${money(collected)}</td>
               <td class="py-2.5 text-right font-mono text-rose-700">${money(outstanding)}</td>
-              <td class="py-2.5 text-right pr-2">100%</td>
-              <td class="py-2.5">
-                <div class="flex items-center gap-1.5">${bar(billed > 0 ? Math.round(collected/billed*100) : 0, 'brand')}<span class="text-xs w-8 text-right font-mono">${billed > 0 ? Math.round(collected/billed*100) : 0}%</span></div>
-              </td>
             </tr>
           </tbody>
         </table>
@@ -2301,23 +2334,21 @@ function renderUnitEconomics() {
     <!-- ③ Revenue by Class -->
     <div class="card p-5 mb-4">
       <h3 class="font-bold text-slate-900 mb-1">Revenue by Class</h3>
-      <p class="text-sm text-slate-500 mb-4">Which classes generate the most income — and average fee per seat</p>
+      <p class="text-sm text-slate-500 mb-4">Which classes generate the most income</p>
       <table class="w-full text-sm">
         <thead><tr class="border-b text-xs text-slate-500 uppercase">
-          <th class="text-left py-2">Class</th><th class="text-right py-2">Students</th><th class="text-right py-2">Billed</th><th class="text-right py-2">Collected</th><th class="text-right py-2">Outstanding</th><th class="text-right py-2">Avg/Seat</th>
+          <th class="text-left py-2">Class</th><th class="text-right py-2">Students</th><th class="text-right py-2">Billed</th><th class="text-right py-2">Collected</th><th class="text-right py-2">Outstanding</th>
         </tr></thead>
         <tbody>
           ${clsByRev.map(([cId, d]) => {
             const cls  = classes.find(c => c.id === cId);
             const owed = d.billed - d.paid;
-            const avg  = d.count > 0 ? Math.round(d.billed / d.count) : 0;
             return `<tr class="border-b hover:bg-slate-50">
               <td class="py-2.5 font-medium">${cls ? cls.name : cId}</td>
               <td class="py-2.5 text-right text-slate-500">${d.count}</td>
               <td class="py-2.5 text-right font-mono">${money(d.billed)}</td>
               <td class="py-2.5 text-right font-mono text-emerald-700">${money(d.paid)}</td>
               <td class="py-2.5 text-right font-mono ${owed > 0 ? 'text-rose-700 font-semibold' : 'text-slate-300'}">${owed > 0 ? money(owed) : '—'}</td>
-              <td class="py-2.5 text-right font-mono font-semibold text-brand-700">${money(avg)}</td>
             </tr>`;
           }).join('')}
         </tbody>

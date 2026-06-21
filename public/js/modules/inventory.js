@@ -1,217 +1,135 @@
-// inventory.js — Enhanced inventory module for CASPAA
-// Redefines view_adm_inventory() from admin.js (this file loads after admin.js)
+// inventory.js — School store / inventory module for CASPAA
 
-function view_adm_inventory(params) {
+function view_adm_inventory() {
   const schoolId = currentSchoolId();
   const items = DB.query('inventory', i => i.schoolId === schoolId);
-
   const activeCat = APP.params.invCat || 'All';
   const categories = ['All', 'Books', 'Stationery', 'Equipment', 'Uniforms', 'Furniture', 'Sports', 'Other'];
 
-  // Compute stats
-  const totalItems = items.length;
-  const totalValue = items.reduce((sum, i) => sum + (i.quantity || 0) * (i.unitCost || 0), 0);
-  const lowStockItems = items.filter(i => (i.quantity || 0) < (i.minStock || 0));
-  const totalStockValue = totalValue; // same metric, shown as separate card label
+  const totalValue     = items.reduce((sum, i) => sum + (i.quantity || 0) * (i.unitCost || 0), 0);
+  const lowStockItems  = items.filter(i => (i.quantity || 0) < (i.minStock || 0));
+  const filtered       = activeCat === 'All' ? items : items.filter(i => i.category === activeCat);
 
-  // Filter by category
-  const filtered = activeCat === 'All' ? items : items.filter(i => i.category === activeCat);
+  const tabsHtml = categories.map(cat =>
+    `<button class="btn ${cat === activeCat ? 'btn-primary' : 'btn-secondary'} !py-1.5 !px-3 text-sm"
+      onclick="APP.params.invCat='${cat}';APP.render();">${cat}</button>`
+  ).join('');
 
-  // Low stock alert banner HTML
-  let lowStockBanner = '';
-  if (lowStockItems.length > 0) {
-    const names = lowStockItems.map(i => `<strong>${i.name}</strong>`).join(', ');
-    lowStockBanner = `
-      <div id="inv-low-stock-banner" class="card p-4" style="background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;margin-bottom:16px;">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
-          <div style="display:flex;align-items:flex-start;gap:10px;">
-            <span style="color:#d97706;font-size:1.2rem;">&#9888;</span>
-            <div>
-              <div style="font-weight:600;color:#92400e;margin-bottom:4px;">Low Stock Alert — ${lowStockItems.length} item${lowStockItems.length > 1 ? 's' : ''} below minimum</div>
-              <div style="color:#78350f;font-size:0.9rem;">${names}</div>
+  const tableBody = filtered.length === 0
+    ? `<tr><td colspan="7" class="border-none p-0">${emptyState({ icon: 'package', title: 'No items found', body: activeCat === 'All' ? 'Add your first inventory item to get started.' : `No items in the "${activeCat}" category.` })}</td></tr>`
+    : filtered.map(item => {
+        const qty    = item.quantity || 0;
+        const minS   = item.minStock || 0;
+        const isLow  = qty < minS;
+        const val    = qty * (item.unitCost || 0);
+        return `<tr>
+          <td class="font-medium">${item.name || '—'}</td>
+          <td><span class="badge badge-neutral">${item.category || '—'}</span></td>
+          <td>
+            <span class="font-bold ${isLow ? 'text-rose-600' : ''}">${qty}</span>
+            <span class="text-slate-400 text-xs"> / min ${minS}</span>
+            ${isLow ? `<span class="badge badge-danger ml-1 text-xs">LOW</span>` : ''}
+          </td>
+          <td>${money(item.unitCost || 0)}</td>
+          <td class="font-mono">${money(val)}</td>
+          <td class="text-slate-500 text-sm">${item.supplier || '—'}</td>
+          <td>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button class="btn btn-secondary !py-1 !px-2.5 text-xs" onclick="inv_issueModal('${item.id}')">Issue</button>
+              <button class="btn btn-primary !py-1 !px-2.5 text-xs" onclick="inv_restockModal('${item.id}')">Restock</button>
+              <button class="btn btn-secondary !py-1 !px-2" title="History" onclick="viewInventoryHistory('${item.id}')">${icon('reports','w-3.5 h-3.5')}</button>
+              <button class="btn btn-danger !py-1 !px-2" title="Write Off" onclick="inv_writeOffModal('${item.id}')">${icon('trash','w-3.5 h-3.5')}</button>
             </div>
-          </div>
-          <button onclick="document.getElementById('inv-low-stock-banner').style.display='none'" style="background:none;border:none;cursor:pointer;color:#92400e;font-size:1.1rem;line-height:1;">&times;</button>
-        </div>
-      </div>
-    `;
-  }
+          </td>
+        </tr>`;
+      }).join('');
 
-  // Category tab buttons
-  const tabsHtml = categories.map(cat => {
-    const isActive = cat === activeCat;
-    return `<button
-      class="btn ${isActive ? 'btn-primary' : 'btn-secondary'}"
-      style="font-size:0.82rem;padding:5px 14px;"
-      onclick="APP.params.invCat='${cat}';APP.render();"
-    >${cat}</button>`;
-  }).join('');
-
-  // Table rows
-  let tableBody = '';
-  if (filtered.length === 0) {
-    tableBody = `<tr><td colspan="7" style="padding:0;border:none;">
-      ${emptyState({ icon: 'package', title: 'No items found', body: activeCat === 'All' ? 'Add your first inventory item to get started.' : `No items in the "${activeCat}" category.` })}
-    </td></tr>`;
-  } else {
-    tableBody = filtered.map(item => {
-      const qty = item.quantity || 0;
-      const minS = item.minStock || 0;
-      const isLow = qty < minS;
-      const stockValue = qty * (item.unitCost || 0);
-
-      const stockLevelHtml = `
-        <span style="font-weight:700;color:${isLow ? '#dc2626' : 'inherit'};">${qty}</span>
-        <span style="color:#94a3b8;font-size:0.85rem;"> / min ${minS}</span>
-        ${isLow ? ' <span class="badge badge-danger" style="font-size:0.72rem;padding:2px 6px;">LOW</span>' : ''}
-      `;
-
-      return `<tr>
-        <td style="font-weight:500;">${item.name || '—'}</td>
-        <td><span class="badge badge-neutral">${item.category || '—'}</span></td>
-        <td>${stockLevelHtml}</td>
-        <td>${money(item.unitCost || 0)}</td>
-        <td>${money(stockValue)}</td>
-        <td style="color:#64748b;font-size:0.9rem;">${item.supplier || '—'}</td>
-        <td>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-            <button class="btn btn-secondary" style="font-size:0.78rem;padding:4px 10px;" onclick="inv_issueModal('${item.id}')">Issue</button>
-            <button class="btn btn-primary" style="font-size:0.78rem;padding:4px 10px;background:#16a34a;border-color:#16a34a;" onclick="inv_restockModal('${item.id}')">Restock</button>
-            <button class="btn btn-secondary" style="font-size:0.78rem;padding:4px 8px;" title="View History" onclick="viewInventoryHistory('${item.id}')">${icon('reports', 'w-4 h-4')}</button>
-            <button class="btn btn-danger" style="font-size:0.78rem;padding:4px 8px;" title="Write Off" onclick="inv_writeOffModal('${item.id}')">${icon('trash', 'w-4 h-4')}</button>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
-  }
-
-  const html = `
+  return `
     ${pageHeader({
-      title: 'Inventory Management',
-      subtitle: 'Track and manage school supplies, equipment, and resources.',
-      actions: `<button class="btn btn-primary" onclick="addInventoryModal()">${icon('plus', 'w-4 h-4')} Add Item</button>`
+      title: 'Inventory & Store',
+      subtitle: 'Track school supplies, equipment, and resources.',
+      actions: `
+        <button class="btn btn-secondary" onclick="exportPurchaseOrders()">${icon('download','w-4 h-4')} Export Purchase Orders</button>
+        <button class="btn btn-primary" onclick="addInventoryModal()">${icon('plus','w-4 h-4')} Add Item</button>`
     })}
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;">
-      ${statCard({ label: 'Total Items', value: totalItems, icon: 'package', color: 'blue' })}
-      ${statCard({ label: 'Total Stock Value', value: money(totalValue), icon: 'fees', color: 'green' })}
-      ${statCard({ label: 'Low Stock Items', value: lowStockItems.length, icon: 'bell', color: lowStockItems.length > 0 ? 'red' : 'green' })}
-      ${statCard({ label: 'Categories Tracked', value: [...new Set(items.map(i => i.category).filter(Boolean))].length, icon: 'book', color: 'purple' })}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      ${statCard({ label: 'Total Items', value: items.length, icon: 'package', color: 'blue' })}
+      ${statCard({ label: 'Stock Value', value: money(totalValue), icon: 'fees', color: 'green' })}
+      ${statCard({ label: 'Low Stock', value: lowStockItems.length, icon: 'bell', color: lowStockItems.length > 0 ? 'red' : 'green' })}
+      ${statCard({ label: 'Categories', value: [...new Set(items.map(i => i.category).filter(Boolean))].length, icon: 'book', color: 'purple' })}
     </div>
 
-    ${lowStockBanner}
+    ${lowStockItems.length ? `
+      <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+        ${icon('bell','w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5')}
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-amber-900 mb-0.5">Low Stock — ${lowStockItems.length} item${lowStockItems.length > 1 ? 's' : ''} below minimum</div>
+          <div class="text-sm text-amber-700">${lowStockItems.map(i => `<strong>${i.name}</strong>`).join(', ')}</div>
+        </div>
+      </div>` : ''}
 
     <div class="card p-4">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
-        ${tabsHtml}
-      </div>
-
-      <div style="overflow-x:auto;">
-        <table class="tbl" style="width:100%;">
+      <div class="flex gap-2 flex-wrap mb-4">${tabsHtml}</div>
+      <div class="overflow-x-auto">
+        <table class="tbl w-full">
           <thead>
-            <tr>
-              <th>Item</th>
-              <th>Category</th>
-              <th>Stock Level</th>
-              <th>Unit Cost</th>
-              <th>Stock Value</th>
-              <th>Supplier</th>
-              <th>Actions</th>
-            </tr>
+            <tr><th>Item</th><th>Category</th><th>Stock</th><th>Unit Cost</th><th>Value</th><th>Supplier</th><th>Actions</th></tr>
           </thead>
-          <tbody>
-            ${tableBody}
-          </tbody>
+          <tbody>${tableBody}</tbody>
         </table>
       </div>
     </div>
   `;
-
-  return html;
 }
 
-// ─── Issue Modal ─────────────────────────────────────────────────────────────
+// ─── Issue Modal ──────────────────────────────────────────────────────────────
 
 function inv_issueModal(itemId) {
   const item = DB.find('inventory', itemId);
   if (!item) return toast('Item not found.', 'danger');
-
   const qty = item.quantity || 0;
-
   modal({
     title: 'Issue Items — ' + item.name,
     size: 'md',
     body: `
-      <div style="margin-bottom:14px;padding:10px 14px;background:#f1f5f9;border-radius:6px;font-size:0.9rem;">
-        Current stock: <strong>${qty}</strong> ${qty < (item.minStock || 0) ? '<span class="badge badge-danger" style="margin-left:6px;">LOW</span>' : ''}
+      <div class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm mb-4">
+        Current stock: <strong>${qty}</strong>${qty < (item.minStock || 0) ? ` <span class="badge badge-danger ml-1">LOW</span>` : ''}
       </div>
-
-      <div style="margin-bottom:14px;">
-        <label class="input-label">Quantity to Issue <span style="color:#dc2626;">*</span></label>
-        <input id="inv-issue-qty" class="input" type="number" min="1" max="${qty}" placeholder="e.g. 5" />
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <label class="input-label">Issued To <span style="color:#dc2626;">*</span></label>
-        <input id="inv-issue-to" class="input" type="text" placeholder="e.g. JSS 2A Classroom, Mr. Adamu Ibrahim" />
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <label class="input-label">Purpose <span style="color:#dc2626;">*</span></label>
-        <input id="inv-issue-purpose" class="input" type="text" placeholder="e.g. Classroom setup, New term distribution" />
-      </div>
-
-      <div style="margin-bottom:4px;">
-        <label class="input-label">Date</label>
-        <input id="inv-issue-date" class="input" type="date" value="${today()}" />
-      </div>
-    `,
+      <div class="space-y-3">
+        <div><label class="input-label">Quantity to Issue *</label>
+          <input id="inv-issue-qty" class="input" type="number" min="1" max="${qty}" placeholder="e.g. 5" /></div>
+        <div><label class="input-label">Issued To *</label>
+          <input id="inv-issue-to" class="input" placeholder="e.g. JSS 2A Classroom, Mr. Adamu Ibrahim" /></div>
+        <div><label class="input-label">Purpose *</label>
+          <input id="inv-issue-purpose" class="input" placeholder="e.g. Classroom setup, New term distribution" /></div>
+        <div><label class="input-label">Date</label>
+          <input id="inv-issue-date" class="input" type="date" value="${today()}" /></div>
+      </div>`,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
-      <button class="btn btn-primary" onclick="inv_doIssue('${itemId}')">Issue Items</button>
-    `
+      <button class="btn btn-primary" onclick="inv_doIssue('${itemId}')">Issue Items</button>`
   });
 }
 
 function inv_doIssue(itemId) {
   const item = DB.find('inventory', itemId);
   if (!item) return toast('Item not found.', 'danger');
-
-  const qtyInput = document.getElementById('inv-issue-qty');
-  const toInput = document.getElementById('inv-issue-to');
-  const purposeInput = document.getElementById('inv-issue-purpose');
-
-  const quantity = parseInt(qtyInput ? qtyInput.value : 0, 10);
-  const issuedTo = toInput ? toInput.value.trim() : '';
-  const purpose = purposeInput ? purposeInput.value.trim() : '';
-
+  const quantity  = parseInt((document.getElementById('inv-issue-qty') || {}).value, 10);
+  const issuedTo  = ((document.getElementById('inv-issue-to') || {}).value || '').trim();
+  const purpose   = ((document.getElementById('inv-issue-purpose') || {}).value || '').trim();
   const currentQty = item.quantity || 0;
-
   if (!quantity || quantity < 1) return toast('Please enter a valid quantity.', 'danger');
-  if (!issuedTo) return toast('Please enter who the items are issued to.', 'danger');
-  if (!purpose) return toast('Please enter the purpose for this issue.', 'danger');
-
-  if (quantity > currentQty) {
-    return toast(`Insufficient stock. Only ${currentQty} item${currentQty !== 1 ? 's' : ''} available.`, 'danger');
-  }
-
-  const newQty = currentQty - quantity;
-  const newEntry = {
-    delta: -quantity,
-    reason: 'Issued to: ' + issuedTo + ' — ' + purpose,
-    type: 'Issue',
-    by: AUTH.current.id,
-    timestamp: now()
-  };
-
+  if (!issuedTo)  return toast('Please enter who the items are issued to.', 'danger');
+  if (!purpose)   return toast('Please enter the purpose for this issue.', 'danger');
+  if (quantity > currentQty) return toast(`Insufficient stock. Only ${currentQty} available.`, 'danger');
   DB.update('inventory', itemId, {
-    quantity: newQty,
-    history: [...(item.history || []), newEntry]
+    quantity: currentQty - quantity,
+    history: [...(item.history || []), { delta: -quantity, reason: `Issued to: ${issuedTo} — ${purpose}`, type: 'Issue', by: AUTH.current.id, timestamp: now() }]
   });
-
   document.getElementById('modalBackdrop').click();
   APP.render();
-  toast(`${quantity} item${quantity !== 1 ? 's' : ''} issued successfully.`, 'success');
+  toast(`${quantity} item${quantity !== 1 ? 's' : ''} issued.`, 'success');
 }
 
 // ─── Restock Modal ────────────────────────────────────────────────────────────
@@ -219,92 +137,48 @@ function inv_doIssue(itemId) {
 function inv_restockModal(itemId) {
   const item = DB.find('inventory', itemId);
   if (!item) return toast('Item not found.', 'danger');
-
-  const qty = item.quantity || 0;
-
   modal({
-    title: 'Restock / Add Stock — ' + item.name,
+    title: 'Restock — ' + item.name,
     size: 'md',
     body: `
-      <div style="margin-bottom:14px;padding:10px 14px;background:#f1f5f9;border-radius:6px;font-size:0.9rem;">
-        Current stock: <strong>${qty}</strong>
+      <div class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm mb-4">
+        Current stock: <strong>${item.quantity || 0}</strong>
       </div>
-
-      <div style="margin-bottom:14px;">
-        <label class="input-label">Quantity Received <span style="color:#dc2626;">*</span></label>
-        <input id="inv-restock-qty" class="input" type="number" min="1" placeholder="e.g. 20" />
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <label class="input-label">Supplier</label>
-        <input id="inv-restock-supplier" class="input" type="text" value="${item.supplier || ''}" placeholder="e.g. ABC Supplies Ltd" />
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <label class="input-label">Purchase Price per Unit <span style="color:#94a3b8;font-size:0.8rem;">(optional — updates unit cost)</span></label>
-        <input id="inv-restock-price" class="input" type="number" min="0" step="0.01" placeholder="e.g. 450" />
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <label class="input-label">Date Received</label>
-        <input id="inv-restock-date" class="input" type="date" value="${today()}" />
-      </div>
-
-      <div style="margin-bottom:4px;">
-        <label class="input-label">Notes <span style="color:#94a3b8;font-size:0.8rem;">(optional)</span></label>
-        <textarea id="inv-restock-notes" class="input" rows="2" style="resize:vertical;" placeholder="Any additional notes..."></textarea>
-      </div>
-    `,
+      <div class="space-y-3">
+        <div><label class="input-label">Quantity Received *</label>
+          <input id="inv-restock-qty" class="input" type="number" min="1" placeholder="e.g. 20" /></div>
+        <div><label class="input-label">Supplier</label>
+          <input id="inv-restock-supplier" class="input" value="${item.supplier || ''}" placeholder="e.g. ABC Supplies Ltd" /></div>
+        <div><label class="input-label">Purchase Price per Unit <span class="text-slate-400 text-xs">(optional — updates unit cost)</span></label>
+          <input id="inv-restock-price" class="input" type="number" min="0" placeholder="e.g. 450" /></div>
+        <div><label class="input-label">Date Received</label>
+          <input id="inv-restock-date" class="input" type="date" value="${today()}" /></div>
+        <div><label class="input-label">Notes <span class="text-slate-400 text-xs">(optional)</span></label>
+          <textarea id="inv-restock-notes" class="input" rows="2" placeholder="Any additional notes…"></textarea></div>
+      </div>`,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
-      <button class="btn btn-primary" style="background:#16a34a;border-color:#16a34a;" onclick="inv_doRestock('${itemId}')">Save Restock</button>
-    `
+      <button class="btn btn-primary" onclick="inv_doRestock('${itemId}')">Save Restock</button>`
   });
 }
 
 function inv_doRestock(itemId) {
-  const item = DB.find('inventory', itemId);
+  const item     = DB.find('inventory', itemId);
   if (!item) return toast('Item not found.', 'danger');
-
-  const qtyInput = document.getElementById('inv-restock-qty');
-  const supplierInput = document.getElementById('inv-restock-supplier');
-  const priceInput = document.getElementById('inv-restock-price');
-  const notesInput = document.getElementById('inv-restock-notes');
-
-  const quantity = parseInt(qtyInput ? qtyInput.value : 0, 10);
-  const supplier = supplierInput ? supplierInput.value.trim() : (item.supplier || '');
-  const newPrice = priceInput && priceInput.value ? parseFloat(priceInput.value) : null;
-  const notes = notesInput ? notesInput.value.trim() : '';
-
+  const quantity = parseInt((document.getElementById('inv-restock-qty') || {}).value, 10);
+  const supplier = ((document.getElementById('inv-restock-supplier') || {}).value || '').trim() || (item.supplier || '');
+  const newPrice = (document.getElementById('inv-restock-price') || {}).value;
+  const notes    = ((document.getElementById('inv-restock-notes') || {}).value || '').trim();
   if (!quantity || quantity < 1) return toast('Please enter a valid quantity (minimum 1).', 'danger');
-
-  const currentQty = item.quantity || 0;
-  const newQty = currentQty + quantity;
-
-  const reasonParts = ['Restock from ' + (supplier || 'unknown supplier')];
-  if (notes) reasonParts.push(notes);
-
-  const newEntry = {
-    delta: quantity,
-    reason: reasonParts.join(' — '),
-    type: 'Stock-In',
-    by: AUTH.current.id,
-    timestamp: now()
-  };
-
-  const updatePayload = {
-    quantity: newQty,
-    history: [...(item.history || []), newEntry]
-  };
-
-  if (supplier) updatePayload.supplier = supplier;
-  if (newPrice !== null && newPrice >= 0) updatePayload.unitCost = newPrice;
-
-  DB.update('inventory', itemId, updatePayload);
-
+  const newQty   = (item.quantity || 0) + quantity;
+  const entry    = { delta: quantity, reason: `Restock from ${supplier || 'unknown'}${notes ? ' — ' + notes : ''}`, type: 'Stock-In', by: AUTH.current.id, timestamp: now() };
+  const patch    = { quantity: newQty, history: [...(item.history || []), entry] };
+  if (supplier) patch.supplier = supplier;
+  if (newPrice !== '' && newPrice != null) patch.unitCost = parseFloat(newPrice);
+  DB.update('inventory', itemId, patch);
   document.getElementById('modalBackdrop').click();
   APP.render();
-  toast(`Stock updated — new total: ${newQty} item${newQty !== 1 ? 's' : ''}.`, 'success');
+  toast(`Stock updated — new total: ${newQty}.`, 'success');
 }
 
 // ─── Write-Off Modal ──────────────────────────────────────────────────────────
@@ -312,145 +186,102 @@ function inv_doRestock(itemId) {
 function inv_writeOffModal(itemId) {
   const item = DB.find('inventory', itemId);
   if (!item) return toast('Item not found.', 'danger');
-
-  const qty = item.quantity || 0;
-
   modal({
-    title: 'Write Off Items — ' + item.name,
+    title: 'Write Off — ' + item.name,
     size: 'md',
     body: `
-      <div style="margin-bottom:14px;padding:10px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;font-size:0.875rem;color:#7f1d1d;">
-        <strong>Warning:</strong> Write-offs permanently reduce stock. This action is logged and cannot be undone.
+      <div class="flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2.5 text-sm text-rose-900 mb-4">
+        ${icon('alert_triangle','w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5')}
+        <span><strong>Warning:</strong> Write-offs permanently reduce stock. This action is logged and cannot be undone.</span>
       </div>
-
-      <div style="margin-bottom:14px;padding:10px 14px;background:#f1f5f9;border-radius:6px;font-size:0.9rem;">
-        Current stock: <strong>${qty}</strong>
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <label class="input-label">Quantity to Write Off <span style="color:#dc2626;">*</span></label>
-        <input id="inv-writeoff-qty" class="input" type="number" min="1" max="${qty}" placeholder="e.g. 3" />
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <label class="input-label">Reason <span style="color:#dc2626;">*</span></label>
-        <select id="inv-writeoff-reason" class="input" onchange="inv_toggleWriteOffNotes()">
-          <option value="">— Select a reason —</option>
-          <option value="Damaged">Damaged</option>
-          <option value="Lost">Lost</option>
-          <option value="Expired">Expired</option>
-          <option value="Stolen">Stolen</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-
-      <div style="margin-bottom:4px;">
-        <label class="input-label" id="inv-writeoff-notes-label">Notes <span id="inv-writeoff-notes-req" style="color:#94a3b8;font-size:0.8rem;">(optional)</span></label>
-        <textarea id="inv-writeoff-notes" class="input" rows="2" style="resize:vertical;" placeholder="Additional details..."></textarea>
-      </div>
-    `,
+      <div class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm mb-4">Current stock: <strong>${item.quantity || 0}</strong></div>
+      <div class="space-y-3">
+        <div><label class="input-label">Quantity to Write Off *</label>
+          <input id="inv-writeoff-qty" class="input" type="number" min="1" max="${item.quantity || 0}" placeholder="e.g. 3" /></div>
+        <div><label class="input-label">Reason *</label>
+          <select id="inv-writeoff-reason" class="input" onchange="inv_toggleWriteOffNotes()">
+            <option value="">— Select a reason —</option>
+            <option value="Damaged">Damaged</option>
+            <option value="Lost">Lost</option>
+            <option value="Expired">Expired</option>
+            <option value="Stolen">Stolen</option>
+            <option value="Other">Other</option>
+          </select></div>
+        <div><label class="input-label">Notes <span id="inv-writeoff-notes-req" class="text-slate-400 text-xs">(optional)</span></label>
+          <textarea id="inv-writeoff-notes" class="input" rows="2" placeholder="Additional details…"></textarea></div>
+      </div>`,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
-      <button class="btn btn-danger" onclick="inv_doWriteOff('${itemId}')">Confirm Write-Off</button>
-    `
+      <button class="btn btn-danger" onclick="inv_doWriteOff('${itemId}')">Confirm Write-Off</button>`
   });
 }
 
 function inv_toggleWriteOffNotes() {
   const reasonEl = document.getElementById('inv-writeoff-reason');
-  const reqEl = document.getElementById('inv-writeoff-notes-req');
+  const reqEl    = document.getElementById('inv-writeoff-notes-req');
   if (!reasonEl || !reqEl) return;
-  if (reasonEl.value === 'Other') {
-    reqEl.textContent = '(required)';
-    reqEl.style.color = '#dc2626';
-  } else {
-    reqEl.textContent = '(optional)';
-    reqEl.style.color = '#94a3b8';
-  }
+  if (reasonEl.value === 'Other') { reqEl.textContent = '(required)'; reqEl.className = 'text-rose-600 text-xs'; }
+  else { reqEl.textContent = '(optional)'; reqEl.className = 'text-slate-400 text-xs'; }
 }
 
 function inv_doWriteOff(itemId) {
-  const item = DB.find('inventory', itemId);
+  const item     = DB.find('inventory', itemId);
   if (!item) return toast('Item not found.', 'danger');
-
-  const qtyInput = document.getElementById('inv-writeoff-qty');
-  const reasonInput = document.getElementById('inv-writeoff-reason');
-  const notesInput = document.getElementById('inv-writeoff-notes');
-
-  const quantity = parseInt(qtyInput ? qtyInput.value : 0, 10);
-  const reason = reasonInput ? reasonInput.value : '';
-  const notes = notesInput ? notesInput.value.trim() : '';
-
+  const quantity = parseInt((document.getElementById('inv-writeoff-qty') || {}).value, 10);
+  const reason   = ((document.getElementById('inv-writeoff-reason') || {}).value || '');
+  const notes    = ((document.getElementById('inv-writeoff-notes') || {}).value || '').trim();
   const currentQty = item.quantity || 0;
-
   if (!quantity || quantity < 1) return toast('Please enter a valid quantity.', 'danger');
-  if (!reason) return toast('Please select a reason for the write-off.', 'danger');
-  if (reason === 'Other' && !notes) return toast('Notes are required when the reason is "Other".', 'danger');
-
-  if (quantity > currentQty) {
-    return toast(`Cannot write off more than current stock. Only ${currentQty} item${currentQty !== 1 ? 's' : ''} available.`, 'danger');
-  }
-
-  const newQty = currentQty - quantity;
-  const fullReason = reason + (notes ? ': ' + notes : '');
-
-  const newEntry = {
-    delta: -quantity,
-    reason: fullReason,
-    type: 'Write-Off',
-    by: AUTH.current.id,
-    timestamp: now()
-  };
-
+  if (!reason)   return toast('Please select a reason for the write-off.', 'danger');
+  if (reason === 'Other' && !notes) return toast('Notes are required when reason is "Other".', 'danger');
+  if (quantity > currentQty) return toast(`Cannot write off more than current stock (${currentQty}).`, 'danger');
   DB.update('inventory', itemId, {
-    quantity: newQty,
-    history: [...(item.history || []), newEntry]
+    quantity: currentQty - quantity,
+    history: [...(item.history || []), { delta: -quantity, reason: reason + (notes ? ': ' + notes : ''), type: 'Write-Off', by: AUTH.current.id, timestamp: now() }]
   });
-
   document.getElementById('modalBackdrop').click();
   APP.render();
-  toast('Write-off recorded successfully.', 'success');
+  toast('Write-off recorded.', 'success');
 }
 
-// ─── Add Inventory Modal ──────────────────────────────────────────────────────
+// ─── Add Item Modal ───────────────────────────────────────────────────────────
 
 function addInventoryModal() {
   modal({
     title: 'Add Inventory Item',
     size: 'md',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Item Name *</label><input id="inv_name" class="input" placeholder="e.g. A4 Notebooks"></div>
+      <div><label class="input-label">Item Name *</label><input id="inv_name" class="input" placeholder="e.g. A4 Notebooks" /></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="input-label">Category</label>
           <select id="inv_cat" class="input">
-            <option>Books</option><option>Stationery</option><option>Equipment</option><option>Uniforms</option><option>Furniture</option><option>Sports</option><option>Other</option>
-          </select>
-        </div>
-        <div><label class="input-label">Initial Quantity</label><input id="inv_qty" class="input" type="number" min="0" placeholder="0"></div>
+            ${(DB.settings().inventoryCategories || ['Books','Stationery','Equipment','Uniforms','Furniture','Sports','Other']).map(c => `<option>${c}</option>`).join('')}
+          </select></div>
+        <div><label class="input-label">Initial Quantity</label><input id="inv_qty" class="input" type="number" min="0" placeholder="0" /></div>
       </div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Unit Cost (NGN)</label><input id="inv_cost" class="input" type="number" min="0" placeholder="0"></div>
-        <div><label class="input-label">Min. Stock Level</label><input id="inv_min" class="input" type="number" min="0" placeholder="5"></div>
+        <div><label class="input-label">Unit Cost (₦)</label><input id="inv_cost" class="input" type="number" min="0" placeholder="0" /></div>
+        <div><label class="input-label">Min. Stock Level</label><input id="inv_min" class="input" type="number" min="0" placeholder="5" /></div>
       </div>
-      <div><label class="input-label">Supplier</label><input id="inv_supplier" class="input" placeholder="e.g. ABC Supplies Ltd"></div>
+      <div><label class="input-label">Supplier</label><input id="inv_supplier" class="input" placeholder="e.g. ABC Supplies Ltd" /></div>
     </div>`,
-    footer: '<button class="btn btn-secondary" onclick="document.getElementById(\'modalBackdrop\').click()">Cancel</button><button class="btn btn-primary" onclick="inv_saveNewItem()">Add Item</button>'
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-primary" onclick="inv_saveNewItem()">Add Item</button>`
   });
 }
 
 function inv_saveNewItem() {
-  const name = (document.getElementById('inv_name') || {}).value.trim();
+  const name = ((document.getElementById('inv_name') || {}).value || '').trim();
   if (!name) { toast('Item name is required', 'danger'); return; }
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
   DB.insert('inventory', {
-    id: uid('inv'),
-    schoolId,
+    id: uid('inv'), schoolId: currentSchoolId(),
     name,
     category: (document.getElementById('inv_cat') || {}).value,
     quantity: parseInt((document.getElementById('inv_qty') || {}).value) || 0,
     unitCost: parseFloat((document.getElementById('inv_cost') || {}).value) || 0,
     minStock: parseInt((document.getElementById('inv_min') || {}).value) || 5,
-    supplier: (document.getElementById('inv_supplier') || {}).value.trim(),
+    supplier: ((document.getElementById('inv_supplier') || {}).value || '').trim(),
     history: []
   });
   document.getElementById('modalBackdrop').click();
@@ -458,7 +289,41 @@ function inv_saveNewItem() {
   toast('Item added to inventory', 'success');
 }
 
-// ─── View Inventory History ───────────────────────────────────────────────────
+// ─── Purchase Order Export ────────────────────────────────────────────────────
+
+function exportPurchaseOrders() {
+  const items = DB.query('inventory', i => i.schoolId === currentSchoolId());
+  const rows = [['Date', 'Item', 'Category', 'Supplier', 'Qty Received', 'Unit Cost (₦)', 'Total Value (₦)', 'Notes']];
+  items.forEach(item => {
+    (item.history || []).filter(h => h.type === 'Stock-In').forEach(h => {
+      const rawReason = (h.reason || '').replace(/^Restock from /i, '');
+      const dashIdx = rawReason.indexOf(' — ');
+      const supplier = (dashIdx >= 0 ? rawReason.slice(0, dashIdx) : rawReason) || item.supplier || '';
+      const notes = dashIdx >= 0 ? rawReason.slice(dashIdx + 3) : '';
+      const qty = h.delta || 0;
+      const cost = item.unitCost || 0;
+      rows.push([
+        h.timestamp ? h.timestamp.slice(0, 10) : '',
+        item.name || '',
+        item.category || '',
+        supplier,
+        qty,
+        cost,
+        qty * cost,
+        notes
+      ]);
+    });
+  });
+  if (rows.length <= 1) { toast('No purchase records found. Use Restock on any item to start recording.', 'info'); return; }
+  const header = rows[0];
+  const data = rows.slice(1).sort((a, b) => b[0].localeCompare(a[0]));
+  const csv = [header, ...data].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: 'purchase_orders.csv' });
+  a.click();
+  toast(data.length + ' purchase record' + (data.length !== 1 ? 's' : '') + ' exported');
+}
+
+// ─── History Modal ────────────────────────────────────────────────────────────
 
 function viewInventoryHistory(itemId) {
   const item = DB.find('inventory', itemId);
@@ -468,8 +333,20 @@ function viewInventoryHistory(itemId) {
     title: 'History — ' + item.name,
     size: 'md',
     body: history.length === 0
-      ? '<p class="text-slate-500 text-sm p-4 text-center">No history recorded yet.</p>'
-      : `<table class="tbl w-full"><thead><tr><th>Type</th><th>Change</th><th>Reason</th><th>Date</th></tr></thead><tbody>${history.map(h => `<tr><td><span class="badge ${h.type === 'Issue' ? 'badge-warn' : h.type === 'Write-Off' ? 'badge-danger' : 'badge-success'}">${h.type}</span></td><td class="font-bold ${h.delta < 0 ? 'text-rose-600' : 'text-emerald-600'}">${h.delta > 0 ? '+' : ''}${h.delta}</td><td class="text-sm">${h.reason || '—'}</td><td class="text-xs text-slate-400">${h.timestamp ? h.timestamp.slice(0, 10) : '—'}</td></tr>`).join('')}</tbody></table>`,
-    footer: '<button class="btn btn-secondary" onclick="document.getElementById(\'modalBackdrop\').click()">Close</button>'
+      ? `<p class="text-slate-500 text-sm p-4 text-center">No history recorded yet.</p>`
+      : `<div class="card overflow-hidden">
+          <table class="tbl">
+            <thead><tr><th>Type</th><th>Change</th><th>Reason</th><th>Date</th></tr></thead>
+            <tbody>
+              ${history.map(h => `<tr>
+                <td><span class="badge ${h.type==='Issue'?'badge-warn':h.type==='Write-Off'?'badge-danger':'badge-success'}">${h.type}</span></td>
+                <td class="font-bold font-mono ${h.delta < 0 ? 'text-rose-600' : 'text-emerald-600'}">${h.delta > 0 ? '+' : ''}${h.delta}</td>
+                <td class="text-sm">${h.reason || '—'}</td>
+                <td class="text-xs text-slate-400">${h.timestamp ? h.timestamp.slice(0,10) : '—'}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
   });
 }

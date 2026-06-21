@@ -88,7 +88,7 @@ function view_messages_shared(role) {
         <!-- Convo list -->
         <div class="w-full sm:w-72 border-r border-slate-200 flex flex-col ${activeConvo ? 'hidden sm:flex' : ''}">
           <div class="p-3 border-b border-slate-100">
-            <input class="input" placeholder="Search conversations…" />
+            <input id="chat_search" class="input" placeholder="Search conversations…" oninput="chatSearchFilter(this)" />
           </div>
           <div class="flex-1 overflow-y-auto scroll-area">
             ${myConvos.length === 0 ? `<div class="p-6 text-center text-slate-500">
@@ -98,7 +98,7 @@ function view_messages_shared(role) {
               const otherId = c.participants.find(p => p !== me);
               const other = DB.find('teachers', otherId) || DB.find('parents', otherId) || { name: 'Unknown' };
               const last = c.messages[c.messages.length - 1];
-              return `<div class="p-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50 ${activeConvoId === c.id ? 'bg-brand-50' : ''}" onclick="APP.go('${role==='parent'?'par_messages':role==='teacher'?'tch_messages':'adm_messages'}', { convoId: '${c.id}' })">
+              return `<div class="p-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50 ${activeConvoId === c.id ? 'bg-brand-50' : ''}" data-chat-name="${other.name.toLowerCase()}" onclick="APP.go('${role==='parent'?'par_messages':role==='teacher'?'tch_messages':'adm_messages'}', { convoId: '${c.id}' })">
                 <div class="flex items-center gap-2.5">
                   ${avatar(other.name, 'md')}
                   <div class="flex-1 min-w-0">
@@ -335,8 +335,8 @@ function saveAnnouncement() {
   const deliveryReport = {
     totalRecipients: recipients.length,
     channels,
-    delivered: { 'in-app': recipients.length, 'WhatsApp': wa ? Math.round(recipients.length * 0.96) : 0, 'Email': em ? Math.round(recipients.length * 0.99) : 0 },
-    failed:    { 'in-app': 0, 'WhatsApp': wa ? recipients.length - Math.round(recipients.length * 0.96) : 0, 'Email': em ? recipients.length - Math.round(recipients.length * 0.99) : 0 },
+    sent:   { 'in-app': recipients.length, 'WhatsApp': wa ? recipients.length : 0, 'Email': em ? recipients.length : 0 },
+    failed: { 'in-app': 0, 'WhatsApp': 0, 'Email': 0 },
     generatedAt: now()
   };
   DB.insert('announcements', {
@@ -358,17 +358,23 @@ function saveAnnouncement() {
         <div class="text-sm text-slate-500">${title}</div>
       </div>
       <table class="tbl mt-3">
-        <thead><tr><th>Channel</th><th class="text-right">Delivered</th><th class="text-right">Failed</th><th class="text-right">Success %</th></tr></thead>
+        <thead><tr><th>Channel</th><th class="text-right">Sent</th><th class="text-right text-slate-400 text-xs font-normal">Note</th></tr></thead>
         <tbody>
           ${channels.map(c => {
-            const d = deliveryReport.delivered[c] || 0;
-            const f = deliveryReport.failed[c] || 0;
-            const pct = (d + f) ? Math.round((d / (d + f)) * 100) : 100;
-            return `<tr><td><strong>${c}</strong></td><td class="text-right text-emerald-700">${d}</td><td class="text-right text-rose-700">${f}</td><td class="text-right font-bold">${pct}%</td></tr>`;
+            const d = deliveryReport.sent[c] || 0;
+            const note = c === 'in-app' ? 'Delivered' : 'Queued — delivery status not tracked';
+            return `<tr><td><strong>${c}</strong></td><td class="text-right text-emerald-700 font-bold">${d}</td><td class="text-right text-xs text-slate-400">${note}</td></tr>`;
           }).join('')}
         </tbody>
       </table>
     `,
     footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click()">Done</button>`
+  });
+}
+
+function chatSearchFilter(inp) {
+  const q = (inp.value || '').toLowerCase().trim();
+  document.querySelectorAll('[data-chat-name]').forEach(el => {
+    el.style.display = (!q || el.dataset.chatName.includes(q)) ? '' : 'none';
   });
 }

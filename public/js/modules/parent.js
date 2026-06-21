@@ -80,15 +80,63 @@ function view_par_dashboard() {
         <span class="text-amber-700">${icon('arrow_left','w-4 h-4 rotate-180')}</span>
       </button>` : ''}
 
-      <!-- Children cards -->
+      <!-- Children cards / Admission tracker -->
       <div>
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="font-bold text-slate-900">My Children</h2>
-          <button class="text-sm text-brand-700 font-semibold" onclick="APP.go('par_children')">See all →</button>
-        </div>
-        <div class="grid sm:grid-cols-2 gap-3">
-          ${children.map(c => renderChildCard(c)).join('')}
-        </div>
+        ${(() => {
+          if (children.length > 0) {
+            return `
+              <div class="flex items-center justify-between mb-3">
+                <h2 class="font-bold text-slate-900">My Children</h2>
+                <button class="text-sm text-brand-700 font-semibold" onclick="APP.go('par_children')">See all →</button>
+              </div>
+              <div class="grid sm:grid-cols-2 gap-3">
+                ${children.map(c => renderChildCard(c)).join('')}
+              </div>`;
+          }
+          // Prospective parent — look for their active application
+          const me = DB.find('parents', AUTH.current.id);
+          const myApp = me ? DB.query('admissionApplications', a =>
+            a.schoolId === (me.schoolId || AUTH.current.schoolId || 'sch_brightlights') &&
+            a.parentPhone === me.phone && a.status !== 'rejected'
+          )[0] : null;
+          if (!myApp) {
+            return `
+              <div class="flex items-center justify-between mb-3">
+                <h2 class="font-bold text-slate-900">My Children</h2>
+              </div>
+              <div class="card p-6 text-center">
+                <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">${icon('user','w-6 h-6')}</div>
+                <div class="font-semibold text-slate-700 mb-1">No children enrolled yet</div>
+                <div class="text-sm text-slate-500">Contact the school admissions office to start an application.</div>
+              </div>`;
+          }
+          const appCls = DB.find('classes', myApp.requestedClass);
+          const appStatusLabel = { pending: 'Pending Review', reviewing: 'Under Review', visit_scheduled: 'Visit Booked', visit_confirmed: 'Fees Unlocked', accepted: 'Accepted' };
+          const appStatusBadge = { pending: 'badge-warn', reviewing: 'badge-warn', visit_scheduled: 'badge-info', visit_confirmed: 'badge-success', accepted: 'badge-success' };
+          const visitLine = myApp.status === 'visit_scheduled' && myApp.visitDate
+            ? '<div class="bg-brand-50 rounded-xl p-2 text-xs text-brand-700 flex items-center gap-2 mb-2">' + icon('calendar','w-3.5 h-3.5') + ' Visit: ' + fdate(myApp.visitDate, { long: true }) + (myApp.visitTime ? ' at ' + myApp.visitTime : '') + '</div>'
+            : myApp.status === 'visit_confirmed'
+            ? '<div class="bg-emerald-50 rounded-xl p-2 text-xs text-emerald-700 flex items-center gap-2 mb-2">' + icon('check','w-3.5 h-3.5') + ' Visit complete — fee details are now available</div>'
+            : (myApp.status === 'pending' || myApp.status === 'reviewing')
+            ? '<div class="bg-amber-50 rounded-xl p-2 text-xs text-amber-700 flex items-center gap-2 mb-2">' + icon('bell','w-3.5 h-3.5') + ' Our admissions team will contact you to arrange a school visit</div>'
+            : '';
+          return `
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="font-bold text-slate-900">Admission Tracker</h2>
+            </div>
+            <button class="w-full card p-4 text-left hover:shadow-md transition border border-brand-100" onclick="APP.go('par_fees')">
+              <div class="flex items-center gap-3 mb-2">
+                ${avatar(myApp.applicantName, 'md')}
+                <div class="flex-1">
+                  <div class="font-bold text-slate-900">${myApp.applicantName}</div>
+                  <div class="text-xs text-slate-500">${appCls ? appCls.name : 'Application in progress'} · Applied ${fdate(myApp.appliedAt, { relative: true })}</div>
+                </div>
+                <span class="badge ${appStatusBadge[myApp.status] || 'badge-neutral'}">${appStatusLabel[myApp.status] || myApp.status}</span>
+              </div>
+              ${visitLine}
+              <div class="text-xs text-brand-700 font-semibold text-right">View full progress →</div>
+            </button>`;
+        })()}
       </div>
 
       <!-- Student achievements banner -->
@@ -278,7 +326,7 @@ function parentWelcomeStep1Next() {
   if (!pw || pw.length < 8) { toast('Password must be at least 8 characters', 'danger'); return; }
   if (pw !== pw2) { toast('Passwords do not match', 'danger'); return; }
   const parent = DB.find('parents', AUTH.current.id);
-  DB.update('parents', parent.id, { credentials: Object.assign({}, parent.credentials, { tempPassword: null, passwordChangedAt: now() }) });
+  DB.update('parents', parent.id, { credentials: Object.assign({}, parent.credentials, { tempPassword: null, password: pw, passwordChangedAt: now() }) });
   APP.params.welcomeStep = 2;
   parentWelcomeWizard();
 }
@@ -342,7 +390,7 @@ function renderChildCard(child) {
         <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
           <div class="h-full bg-emerald-500 rounded-full" style="width: ${inv.total ? Math.round((inv.paid / inv.total) * 100) : 0}%"></div>
         </div>
-      </div>` : '<div class="bg-slate-50 rounded-lg p-3 mb-3 text-xs text-slate-500 text-center">No invoice yet for this term</div>'}
+      </div>` : '<div class="bg-slate-50 rounded-lg p-3 mb-3 text-xs text-slate-500 text-center">No invoice yet for this term &mdash; <span class="text-brand-700 cursor-pointer underline" onclick="event.stopPropagation();APP.go(\'par_messages\')">contact school</span></div>'}
       <button class="btn btn-secondary w-full text-sm" onclick="event.stopPropagation(); viewChildDetail('${child.id}')">View full profile →</button>
     </div>
   `;
@@ -833,12 +881,12 @@ function renderProspectFeeGate(app) {
         <span class="ml-auto badge badge-info">Preview</span>
       </div>
       <div class="space-y-2 mb-4">
-        ${[{ name: 'Tuition Fee', amount: fs.tuition }, { name: 'Books & Materials', amount: fs.books }, { name: 'Uniform', amount: fs.uniform }, { name: 'PTA Levy', amount: fs.pta }]
+        ${[{ name: 'Tuition Fee', amount: fs.tuition }, { name: 'Books & Materials', amount: fs.books }, { name: 'Uniform', amount: fs.uniform }, { name: 'PTA Levy', amount: fs.pta }, ...(fs.extraItems || [])]
           .filter(l => l.amount > 0)
           .map(l => `<div class="flex justify-between text-sm"><span class="text-slate-600">${l.name}</span><span class="font-mono font-semibold">${money(l.amount)}</span></div>`).join('')}
         <div class="flex justify-between text-sm font-bold border-t border-slate-200 pt-2 mt-1">
           <span>Total</span>
-          <span class="font-mono text-brand-700">${money(fs.tuition + fs.books + fs.uniform + fs.pta)}</span>
+          <span class="font-mono text-brand-700">${money(fs.tuition + fs.books + fs.uniform + fs.pta + (fs.extraItems || []).reduce((s, i) => s + (i.amount || 0), 0))}</span>
         </div>
       </div>
       <div class="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 flex items-start gap-2">
@@ -851,12 +899,34 @@ function renderProspectFeeGate(app) {
       <div class="text-xs">The school will update fees shortly. Check back soon or contact the admissions office.</div>
     </div>`}` : ''}
 
+    ${app.status === 'pending' ? `
+    <div class="card p-4 mb-4 border border-amber-200 bg-amber-50">
+      <div class="flex items-start gap-3">
+        <div class="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 flex-shrink-0">${icon('bell','w-5 h-5')}</div>
+        <div>
+          <div class="font-semibold text-amber-900">Application received — awaiting review</div>
+          <div class="text-sm text-amber-800 mt-0.5">Our admissions team will review your application within 3–5 working days. They will contact you on <strong>${app.parentPhone}</strong> to arrange a school visit. Fee information will be shared after your visit.</div>
+        </div>
+      </div>
+    </div>` : ''}
+
+    ${app.status === 'reviewing' ? `
+    <div class="card p-4 mb-4 border border-blue-200 bg-blue-50">
+      <div class="flex items-start gap-3">
+        <div class="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 flex-shrink-0">${icon('search','w-5 h-5')}</div>
+        <div>
+          <div class="font-semibold text-blue-900">Your application is being reviewed</div>
+          <div class="text-sm text-blue-800 mt-0.5">The admissions office is actively looking at your application. They may reach out for additional documents or to schedule a school visit. You will be notified here as soon as there is an update.</div>
+        </div>
+      </div>
+    </div>` : ''}
+
     ${app.status !== 'visit_scheduled' && app.status !== 'visit_confirmed' ? `
-    <div class="card p-6 text-center">
-      <div class="w-14 h-14 mx-auto mb-3 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">${icon('fees','w-7 h-7')}</div>
-      <h3 class="font-bold text-slate-800 mb-1">Fees Available After School Visit</h3>
-      <p class="text-sm text-slate-500 max-w-xs mx-auto">Our admissions team will contact you to schedule a visit. Fee details are shared once the visit is complete.</p>
-      ${school ? `<p class="text-xs text-slate-400 mt-3">Questions? Call ${school.phone || school.email || 'the school office'}</p>` : ''}
+    <div class="card p-5 text-center border border-slate-200">
+      <div class="w-14 h-14 mx-auto mb-3 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400">${icon('fees','w-7 h-7')}</div>
+      <h3 class="font-bold text-slate-700 mb-1">Fees visible after your school visit</h3>
+      <p class="text-sm text-slate-500 max-w-xs mx-auto">Fee information is unlocked once the admissions team confirms your visit has taken place.</p>
+      ${school ? `<p class="text-xs text-slate-400 mt-3">Questions? Call ${school.phone || school.email || 'the admissions office'}</p>` : ''}
     </div>` : ''}
   `;
 }
@@ -882,6 +952,7 @@ function viewInvoice(invoiceId) {
             <div class="font-semibold">${DB.find('parents', s.parentId).name}</div>
             <div class="text-xs">For: ${s.name}</div>
             <div class="text-xs">${cls ? cls.name : ''}</div>
+            <div class="text-xs text-slate-400">Adm. No: ${s.admissionNo || '—'}</div>
           </div>
           <div class="text-right">
             <div class="text-xs text-slate-500">INVOICE NO.</div>
@@ -1324,6 +1395,7 @@ function downloadReceipt(invoiceId) {
       <table style="width:100%;font-size:14px">
         <tr><td><strong>Received From:</strong></td><td align="right">${parent.name}</td></tr>
         <tr><td><strong>For Student:</strong></td><td align="right">${s.name} (${cls.name})</td></tr>
+        <tr><td><strong>Admission No:</strong></td><td align="right">${s.admissionNo || '—'}</td></tr>
         <tr><td><strong>Term:</strong></td><td align="right">${inv.term}</td></tr>
         <tr><td><strong>Issued:</strong></td><td align="right">${fdate(now(), { long: true })}</td></tr>
       </table>
