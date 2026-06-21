@@ -172,7 +172,8 @@ function view_adm_workforce() {
     { key: 'attendance',  label: 'Staff Attendance',  view: 'view_adm_staff_att' },
     { key: 'leave',       label: 'Leave Requests',    view: 'view_adm_leave_requests', badge: () => DB.query('leaveRequests', l => l.schoolId === currentSchoolId() && l.status === 'pending').length || null },
     { key: 'apr_cycles',  label: 'Appraisal Cycles',  view: 'view_adm_appraisal_cycles', badge: () => { const sid=currentSchoolId(); return DB.query('appraisals', a => a.schoolId===sid && ['manager_pending','principal_pending','outcome_pending'].includes(a.status)).length || null; } },
-    { key: 'apr_advances',label: 'Salary Advances',   view: 'view_adm_salary_advances',  badge: () => { const sid=currentSchoolId(); return DB.query('salaryAdvances', a => a.schoolId===sid && a.status==='pending').length || null; } }
+    { key: 'apr_advances',label: 'Salary Advances',   view: 'view_adm_salary_advances',  badge: () => { const sid=currentSchoolId(); return DB.query('salaryAdvances', a => a.schoolId===sid && a.status==='pending').length || null; } },
+    { key: 'former',      label: 'Former Staff',      view: 'view_adm_former_staff' }
   ], 'staff', 'workforceTab');
 }
 
@@ -5109,6 +5110,112 @@ function view_adm_staff() {
       }
     </div>
   `;
+}
+
+function view_adm_former_staff() {
+  const sid = currentSchoolId();
+  const former = DB.query('teachers', t => t.schoolId === sid && t.status === 'terminated');
+  const terminations = DB.query('staffTerminations', r => r.schoolId === sid);
+  const termMap = {};
+  terminations.forEach(r => { termMap[r.staffId] = r; });
+
+  const catLabel = { resignation: 'Resignation', contract_end: 'Contract End', retirement: 'Retirement', redundancy: 'Redundancy', dismissal: 'Dismissal', death: 'Death in Service' };
+  const catBadge = { resignation: 'badge-info', contract_end: 'badge-neutral', retirement: 'badge-success', redundancy: 'badge-warn', dismissal: 'badge-danger', death: 'badge-neutral' };
+
+  const filterCat = APP.params.formerCat || 'all';
+  const displayed = filterCat === 'all' ? former : former.filter(t => (termMap[t.id] || {}).category === filterCat);
+
+  const counts = {};
+  terminations.forEach(r => { counts[r.category] = (counts[r.category] || 0) + 1; });
+  const totalFinal = terminations.reduce((s, r) => s + (r.finalPayment || 0), 0);
+
+  const cats = [['all','All Categories'], ['resignation','Resignations'], ['contract_end','Contract Ends'], ['retirement','Retirements'], ['redundancy','Redundancy'], ['dismissal','Dismissals'], ['death','Death in Service']];
+
+  if (!former.length) {
+    return pageHeader({ title: 'Former Staff', subtitle: 'History of all offboarded staff members' })
+      + emptyState({ title: 'No offboarded staff yet', body: 'When a staff member is offboarded via Staff Directory → Offboard, their record will appear here.', icon: 'people' });
+  }
+
+  const rows = displayed.map(t => {
+    const tr = termMap[t.id];
+    const cat = tr ? tr.category : '';
+    const badge = catBadge[cat] || 'badge-neutral';
+    const label = catLabel[cat] || cat || '—';
+    return '<tr class="cursor-pointer hover:bg-slate-50" onclick="viewStaff(\'' + t.id + '\')">'
+      + '<td><div class="flex items-center gap-3">' + avatar(t.name, 'sm')
+      + '<div><div class="font-semibold text-slate-900">' + t.name + '</div>'
+      + '<div class="text-xs text-slate-500">' + (t.email || '') + '</div></div></div></td>'
+      + '<td><div class="text-sm">' + staffSubjectLabel(t) + '</div><div class="text-xs text-slate-400">' + (t.staffType || '') + '</div></td>'
+      + '<td><span class="badge ' + badge + '">' + label + '</span></td>'
+      + '<td class="text-sm">' + (tr && tr.effectiveDate ? fdate(tr.effectiveDate, { short: true }) : (t.terminatedAt ? fdate(t.terminatedAt, { short: true }) : '—')) + '</td>'
+      + '<td class="text-sm text-slate-600 max-w-xs"><div class="truncate">' + (tr ? (tr.reason || '—') : (t.terminationReason || '—')) + '</div></td>'
+      + '<td class="text-sm font-mono">' + (tr && tr.finalPayment ? money(tr.finalPayment) : '—') + '</td>'
+      + '<td onclick="event.stopPropagation()">'
+      + '<button class="btn btn-secondary text-xs !py-1" onclick="adm_rehireStaffModal(\'' + t.id + '\')">Re-hire</button>'
+      + '</td>'
+      + '</tr>';
+  }).join('');
+
+  return `
+    ${pageHeader({ title: 'Former Staff', subtitle: former.length + ' offboarded staff member' + (former.length !== 1 ? 's' : '') + ' on record' })}
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      ${statCard({ label: 'Total Offboarded', value: former.length, icon: 'people', color: 'slate' })}
+      ${statCard({ label: 'Resignations', value: counts.resignation || 0, icon: 'logout', color: 'blue' })}
+      ${statCard({ label: 'Dismissals', value: counts.dismissal || 0, icon: 'alert', color: 'rose' })}
+      ${statCard({ label: 'Total Final Payments', value: money(totalFinal), icon: 'fees', color: 'gold' })}
+    </div>
+
+    <div class="flex flex-wrap gap-1.5 mb-4">
+      ${cats.map(([key, lbl]) => {
+        const cnt = key === 'all' ? former.length : (counts[key] || 0);
+        if (key !== 'all' && cnt === 0) return '';
+        return '<button class="text-xs font-semibold px-3 py-1 rounded-full border transition-all '
+          + (filterCat === key ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400')
+          + '" onclick="APP.params.formerCat=\'' + key + '\';APP.render()">' + lbl + (key !== 'all' ? ' (' + cnt + ')' : '') + '</button>';
+      }).join('')}
+    </div>
+
+    ${displayed.length === 0
+      ? '<div class="text-center text-slate-400 py-12 text-sm">No records in this category.</div>'
+      : `<div class="card overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="tbl">
+              <thead><tr><th>Name</th><th>Role</th><th>Exit Reason</th><th>Effective Date</th><th>Summary</th><th>Final Payment</th><th></th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`}
+  `;
+}
+
+function adm_rehireStaffModal(staffId) {
+  const t = DB.find('teachers', staffId);
+  if (!t) return;
+  modal({
+    title: 'Re-hire — ' + t.name,
+    size: 'sm',
+    body: `
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900 mb-4">
+        This will restore ${t.name} as an active staff member. Their full history and records are preserved.
+      </div>
+      <div><label class="input-label">Re-hire Notes</label>
+        <textarea id="rh_notes" class="input" rows="2" placeholder="e.g. Re-hired as contract teacher for 2nd Term 2025/26"></textarea>
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="adm_confirmRehire('${staffId}')">Confirm Re-hire</button>`
+  });
+}
+
+function adm_confirmRehire(staffId) {
+  const t = DB.find('teachers', staffId);
+  if (!t) return;
+  const notes = (document.getElementById('rh_notes') || {}).value || '';
+  DB.update('teachers', staffId, { status: 'active', rehiredAt: now(), rehireNotes: notes, terminatedAt: null, terminationReason: null });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: t.schoolId, actor: AUTH.current.id, action: 're_hired_staff', target: t.name + (notes ? ' — ' + notes : ''), timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast(t.name + ' re-hired and active', 'success');
 }
 
 function viewStaff(id, activeTab) {
