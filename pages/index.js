@@ -27,10 +27,11 @@ const APP_SCRIPTS = [
   '/js/app.js',
 ]
 
+const SCRIPT_V = '20260621'
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const el = document.createElement('script')
-    el.src = src
+    el.src = src + '?v=' + SCRIPT_V
     el.onload = resolve
     el.onerror = reject
     document.body.appendChild(el)

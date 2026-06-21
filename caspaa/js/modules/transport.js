@@ -866,6 +866,17 @@ function view_par_transport(params) {
     delayed:  { label: 'Bus is delayed',      color: 'text-rose-700',    dot: 'bg-rose-500' }
   }[busStatusRecord.status] : null;
 
+  // Pre-compute pickup address block to avoid deeply nested template literals
+  const childParent = child && child.parentId ? DB.find('parents', child.parentId) : null;
+  const pickupAddr  = assignment ? (assignment.pickupAddress || (childParent ? childParent.address : '') || '') : '';
+  const pickupBlock = pickupAddr
+    ? '<div class="mt-4 p-3 bg-brand-50 border border-brand-200 rounded-xl">'
+      + '<div class="text-xs font-semibold uppercase text-brand-600 mb-1">Your Pickup Address</div>'
+      + '<div class="text-sm font-semibold text-brand-900">' + pickupAddr + '</div>'
+      + (assignment && assignment.pickupOrder ? '<div class="text-xs text-brand-600 mt-0.5">Stop #' + assignment.pickupOrder + ' on this route</div>' : '')
+      + '</div>'
+    : '<div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">No pickup address on file. Please contact the school to confirm your pickup location.</div>';
+
   return `
     <div class="space-y-5">
       ${pageHeader({ title: 'Transport & Pickup', subtitle: 'Bus route and authorized pickup persons for your children' })}
@@ -902,21 +913,7 @@ function view_par_transport(params) {
                 </div>
               </div>
             </div>
-            ${(() => {
-              const parent = child && child.parentId ? DB.find('parents', child.parentId) : null;
-              const pickupAddr = assignment ? (assignment.pickupAddress || (parent ? parent.address : '') || '') : '';
-              return pickupAddr ? `
-                <div class="mt-4 p-3 bg-brand-50 border border-brand-200 rounded-xl">
-                  <div class="text-xs font-semibold uppercase text-brand-600 mb-1">Your Pickup Address</div>
-                  <div class="text-sm font-semibold text-brand-900">${pickupAddr}</div>
-                  ${assignment && assignment.pickupOrder ? `<div class="text-xs text-brand-600 mt-0.5">Stop #${assignment.pickupOrder} on this route</div>` : ''}
-                </div>
-              ` : `
-                <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-                  No pickup address on file. Please contact the school to confirm your pickup location.
-                </div>
-              `;
-            })()}
+            ${pickupBlock}
             ${busStatusInfo ? `
               <div class="mt-4 flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 ${busStatusInfo.dot}"></span>
