@@ -912,7 +912,7 @@ function view_fin_invoices() {
             const s = DB.find('students', inv.studentId);
             const cls = DB.find('classes', s.classId);
             return `<tr>
-              <td><div class="flex items-center gap-2">${avatar(s.name, 'sm')}<span class="font-medium">${s.name}</span></div></td>
+              <td><div class="flex items-center gap-2">${avatar(s.name, 'sm')}<div><div class="font-medium">${s.name}</div>${s.admissionNo ? `<div class="text-xs text-slate-400">${s.admissionNo}</div>` : ''}</div></div></td>
               <td>${cls ? cls.name : '—'}</td>
               <td class="font-mono">${money(inv.total)}</td>
               <td class="font-mono text-emerald-700">${money(inv.paid)}</td>
@@ -1000,7 +1000,7 @@ function view_fin_payments() {
             const s = DB.find('students', t.studentId);
             return `<tr>
               <td><code class="text-xs">${t.reference}</code></td>
-              <td>${s ? s.name : '—'}</td>
+              <td><div class="font-medium text-sm">${s ? s.name : '—'}</div>${s && s.admissionNo ? `<div class="text-xs text-slate-400">${s.admissionNo}</div>` : ''}</td>
               <td class="font-mono font-semibold">${money(t.amount)}</td>
               <td><span class="badge badge-neutral uppercase">${t.method}</span></td>
               <td>${statusBadge(t.status)}</td>
