@@ -35,6 +35,8 @@ function view_adm_people() {
     { key: 'new_enrollment', label: 'New Enrollment',  view: 'view_adm_new_enrollment' },
     { key: 'returning',      label: 'Returning',       view: 'view_adm_returning_students' },
     { key: 'admissions',     label: 'Admissions',      view: 'view_adm_admissions', badge: () => DB.query('admissionApplications', a => a.schoolId === currentSchoolId() && a.status !== 'accepted' && a.status !== 'rejected').length || null },
+    { key: 'transfers',      label: 'Transfers',       view: 'view_adm_student_transfers' },
+    { key: 'suspensions',    label: 'Suspensions',     view: 'view_adm_student_suspensions', badge: () => DB.query('studentSuspensions', s => s.schoolId === currentSchoolId() && !s.reinstatedAt).length || null },
     { key: 'alumni',         label: 'Alumni',          view: 'view_adm_alumni' },
     { key: 'analytics',      label: 'Analytics',       view: 'view_adm_enrollment_analytics' }
   ], 'students', 'peopleTab');
@@ -48,6 +50,120 @@ function view_adm_new_enrollment() {
 function view_adm_returning_students() {
   APP.params.enrollmentView = 'returning';
   return view_adm_students();
+}
+
+function view_adm_student_transfers() {
+  const schoolId = currentSchoolId();
+  const transfersIn  = DB.query('students', s => s.schoolId === schoolId && s.admissionType === 'transfer' && s.status === 'active');
+  const transfersOut = DB.query('students', s => s.schoolId === schoolId && s.status === 'transferred');
+  const trTab = APP.params.trTab || 'in';
+  return `
+    ${pageHeader({ title: 'Transfer Records', subtitle: 'Students who transferred in or out of this school' })}
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      ${statCard({ label: 'Transferred In', value: transfersIn.length, icon: 'arrow_left', color: 'brand' })}
+      ${statCard({ label: 'Transferred Out', value: transfersOut.length, icon: 'arrow_left', color: 'rose' })}
+    </div>
+    <div class="flex gap-2 mb-4">
+      <button class="chip ${trTab==='in'?'active':''}" onclick="APP.params.trTab='in'; APP.render()">Transfer-In ${transfersIn.length ? `<span class="ml-1 badge badge-success">${transfersIn.length}</span>` : ''}</button>
+      <button class="chip ${trTab==='out'?'active':''}" onclick="APP.params.trTab='out'; APP.render()">Transfer-Out ${transfersOut.length ? `<span class="ml-1 badge badge-danger">${transfersOut.length}</span>` : ''}</button>
+    </div>
+    <div class="card overflow-hidden">
+      ${trTab === 'in' ? `
+        <div class="px-5 py-3 border-b border-slate-100">
+          <h3 class="font-bold text-slate-900">Students Who Joined From Another School</h3>
+          <p class="text-xs text-slate-400 mt-0.5">These students are currently enrolled</p>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Student</th><th>Class</th><th>Previous School</th><th>Last Class</th><th>Transfer Date</th><th>Reason</th></tr></thead>
+          <tbody>
+            ${transfersIn.length === 0
+              ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No transfer-in students recorded yet</td></tr>`
+              : transfersIn.map(s => {
+                  const cls = DB.find('classes', s.classId);
+                  return `<tr onclick="viewStudentProfile('${s.id}')" class="cursor-pointer hover:bg-slate-50">
+                    <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-400">${s.admissionNo || ''}</div></div></div></td>
+                    <td class="text-sm">${cls ? cls.name : '—'}</td>
+                    <td class="text-sm">${s.transferFromSchool || '—'}</td>
+                    <td class="text-sm text-slate-500">${s.transferFromClass || '—'}</td>
+                    <td class="text-xs text-slate-500">${s.transferInDate ? fdate(s.transferInDate, { short: true }) : '—'}</td>
+                    <td class="text-sm text-slate-500">${s.transferInReason || '—'}</td>
+                  </tr>`;
+                }).join('')
+            }
+          </tbody>
+        </table>
+      ` : `
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-slate-900">Students Who Left to Another School</h3>
+            <p class="text-xs text-slate-400 mt-0.5">These students are no longer enrolled here</p>
+          </div>
+          <button class="btn btn-secondary text-sm" onclick="exportLeaversCSV()">${icon('download','w-4 h-4')} Export CSV</button>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Student</th><th>Class</th><th>Destination School</th><th>Reason</th><th>Transfer Date</th></tr></thead>
+          <tbody>
+            ${transfersOut.length === 0
+              ? `<tr><td colspan="5" class="text-center text-slate-400 py-8">No transfer-out students recorded yet</td></tr>`
+              : transfersOut.map(s => {
+                  const cls = DB.find('classes', s.classId);
+                  return `<tr>
+                    <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-400">${s.admissionNo || ''}</div></div></div></td>
+                    <td class="text-sm">${cls ? cls.name : '—'}</td>
+                    <td class="text-sm">${s.transferDest || '—'}</td>
+                    <td class="text-sm text-slate-500">${s.transferReason || '—'}</td>
+                    <td class="text-xs text-slate-500">${s.transferredAt ? fdate(s.transferredAt, { short: true }) : '—'}</td>
+                  </tr>`;
+                }).join('')
+            }
+          </tbody>
+        </table>
+      `}
+    </div>
+  `;
+}
+
+function view_adm_student_suspensions() {
+  const schoolId = currentSchoolId();
+  const suspensions = DB.query('studentSuspensions', s => s.schoolId === schoolId).sort((a, b) => b.suspendedAt.localeCompare(a.suspendedAt));
+  const active = suspensions.filter(s => !s.reinstatedAt);
+  const past   = suspensions.filter(s => !!s.reinstatedAt);
+  const susTab = APP.params.susTab || 'active';
+  const shown  = susTab === 'active' ? active : past;
+  return `
+    ${pageHeader({ title: 'Suspension Records', subtitle: 'All student suspension history' })}
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      ${statCard({ label: 'Currently Suspended', value: active.length, icon: 'x', color: 'rose' })}
+      ${statCard({ label: 'Past Suspensions', value: past.length, icon: 'check', color: 'slate' })}
+    </div>
+    <div class="flex gap-2 mb-4">
+      <button class="chip ${susTab==='active'?'active':''}" onclick="APP.params.susTab='active'; APP.render()">Active ${active.length ? `<span class="ml-1 badge badge-danger">${active.length}</span>` : ''}</button>
+      <button class="chip ${susTab==='past'?'active':''}" onclick="APP.params.susTab='past'; APP.render()">Reinstated / Past ${past.length ? `<span class="ml-1 badge badge-neutral">${past.length}</span>` : ''}</button>
+    </div>
+    <div class="card overflow-hidden">
+      ${shown.length === 0
+        ? emptyState({ title: susTab === 'active' ? 'No active suspensions' : 'No past suspensions yet', icon: 'check' })
+        : `<table class="tbl">
+            <thead><tr><th>Student</th><th>Class</th><th>Reason</th><th class="text-center">Days</th><th>Suspended</th><th>Resume Date</th><th class="text-center">Status</th></tr></thead>
+            <tbody>
+              ${shown.map(sus => {
+                const stu = DB.find('students', sus.studentId);
+                const cls = stu ? DB.find('classes', stu.classId) : null;
+                return `<tr onclick="${stu ? `viewStudentProfile('${stu.id}')` : ''}" class="${stu ? 'cursor-pointer hover:bg-slate-50' : ''}">
+                  <td><div class="flex items-center gap-2">${avatar(stu ? stu.name : '?','sm')}<div><div class="font-medium text-sm">${stu ? stu.name : '—'}</div><div class="text-xs text-slate-400">${stu ? (stu.admissionNo || '') : ''}</div></div></div></td>
+                  <td class="text-sm">${cls ? cls.name : '—'}</td>
+                  <td class="text-sm">${sus.reason || '—'}</td>
+                  <td class="text-center">${sus.days || '—'}</td>
+                  <td class="text-xs text-slate-500">${sus.suspendedAt ? fdate(sus.suspendedAt, { short: true }) : '—'}</td>
+                  <td class="text-xs text-slate-500">${sus.resumeDate ? fdate(sus.resumeDate, { short: true }) : '—'}</td>
+                  <td class="text-center"><span class="badge ${sus.reinstatedAt ? 'badge-neutral' : 'badge-danger'}">${sus.reinstatedAt ? 'Reinstated' : 'Active'}</span></td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>`
+      }
+    </div>
+  `;
 }
 
 function view_adm_workforce() {
