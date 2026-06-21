@@ -4986,7 +4986,7 @@ function staffSubjectLabel(t) {
 }
 
 function view_adm_staff() {
-  const teachers = DB.query('teachers', t => t.schoolId === currentSchoolId());
+  const teachers = DB.query('teachers', t => t.schoolId === currentSchoolId() && t.status !== 'terminated');
   const academic = teachers.filter(t => t.staffType === 'Academic' || !t.staffType);
   const nonAcademic = teachers.filter(t => t.staffType && t.staffType !== 'Academic');
   // Group non-academic by type
