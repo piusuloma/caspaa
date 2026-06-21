@@ -276,7 +276,7 @@ function cal_deleteEvent(id) {
 }
 
 function cal_editEventModal(id) {
-  const ev = DB.find('events', id);
+  const ev = DB.find('schoolEvents', id);
   if (!ev) return;
   modal({
     title: 'Edit Event',
@@ -306,7 +306,7 @@ function cal_editEventModal(id) {
 function cal_saveEdit(id) {
   const title = (document.getElementById('ce_edit_title') || {}).value.trim();
   if (!title) { toast('Title is required', 'danger'); return; }
-  DB.update('events', id, {
+  DB.update('schoolEvents', id, {
     title,
     startDate: (document.getElementById('ce_edit_start') || {}).value,
     endDate: (document.getElementById('ce_edit_end') || {}).value,

@@ -2098,8 +2098,9 @@ function view_adm_students() {
 
   const filtered = students.filter(s => {
     if (filter !== 'all' && s.classId !== filter) return false;
-    // Enrollment category filter
+    // Enrollment category filter — only applies to active students
     if (enrollmentView !== 'all') {
+      if (s.status !== 'active') return false;
       const isNew = s.enrollmentSession === currentSession || s.enrollmentYear === currentYear || (s.admissionDate && s.admissionDate.startsWith(currentYear));
       if (enrollmentView === 'new' && !isNew) return false;
       if (enrollmentView === 'returning' && isNew) return false;

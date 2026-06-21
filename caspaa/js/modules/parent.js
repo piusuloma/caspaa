@@ -278,7 +278,7 @@ function parentWelcomeStep1Next() {
   if (!pw || pw.length < 8) { toast('Password must be at least 8 characters', 'danger'); return; }
   if (pw !== pw2) { toast('Passwords do not match', 'danger'); return; }
   const parent = DB.find('parents', AUTH.current.id);
-  DB.update('parents', parent.id, { credentials: Object.assign({}, parent.credentials, { tempPassword: null, passwordChangedAt: now() }) });
+  DB.update('parents', parent.id, { credentials: Object.assign({}, parent.credentials, { tempPassword: null, password: pw, passwordChangedAt: now() }) });
   APP.params.welcomeStep = 2;
   parentWelcomeWizard();
 }
@@ -342,7 +342,7 @@ function renderChildCard(child) {
         <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
           <div class="h-full bg-emerald-500 rounded-full" style="width: ${inv.total ? Math.round((inv.paid / inv.total) * 100) : 0}%"></div>
         </div>
-      </div>` : '<div class="bg-slate-50 rounded-lg p-3 mb-3 text-xs text-slate-500 text-center">No invoice yet for this term</div>'}
+      </div>` : '<div class="bg-slate-50 rounded-lg p-3 mb-3 text-xs text-slate-500 text-center">No invoice yet for this term &mdash; <span class="text-brand-700 cursor-pointer underline" onclick="event.stopPropagation();APP.go(\'par_messages\')">contact school</span></div>'}
       <button class="btn btn-secondary w-full text-sm" onclick="event.stopPropagation(); viewChildDetail('${child.id}')">View full profile →</button>
     </div>
   `;

@@ -487,7 +487,10 @@ function adm_viewStudentHealth(studentId) {
 
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>`
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Close</button>
+      <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').click(); setTimeout(() => viewStudent('${studentId}', 'health'), 100)">${icon('user','w-4 h-4')} Full Student Record</button>
+    `
   });
 }
 

@@ -231,8 +231,8 @@ function invoiceReminderSettingsModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
-          ${icon('info','w-4 h-4 inline')} Configure automated reminders that the system sends to parents. You can also trigger manual reminders from the Invoices page.
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+          ${icon('info','w-4 h-4 inline')} These settings are saved for reference. Automated sending requires a server-side scheduler — use the <strong>Manual Reminder Trigger</strong> below to send reminders now.
         </div>
         <div class="card p-4 space-y-3">
           <h4 class="font-bold text-slate-900">Automated Reminders</h4>
