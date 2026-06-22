@@ -1164,6 +1164,14 @@ function view_tch_lessons(params) {
                 <span class="text-xs text-emerald-700">${l.file.size}</span>
                 ${icon('download','w-3.5 h-3.5 text-emerald-700')}
               </a>` : ''}
+              ${l.principalNote ? `
+                <div class="mt-3 pt-3 border-t border-brand-100 bg-brand-50 -mx-4 -mb-4 px-4 pb-4 rounded-b-xl flex items-start gap-2">
+                  ${icon('chat','w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5')}
+                  <div>
+                    <div class="text-xs font-semibold text-brand-700 mb-0.5">Note from management · ${fdate(l.principalNoteAt, { short: true })}</div>
+                    <div class="text-sm text-slate-700">${l.principalNote}</div>
+                  </div>
+                </div>` : ''}
             </div>`;
           }).join('')}
         </div>

@@ -32,7 +32,7 @@ function view_fin_dashboard() {
         data: {
           labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
           datasets: [
-            { label: 'Income', data: [3200000, 3800000, 4100000, 3900000, 4500000, collected], backgroundColor: '#10b981', borderRadius: 6 },
+            { label: 'Revenue', data: [3200000, 3800000, 4100000, 3900000, 4500000, collected], backgroundColor: '#10b981', borderRadius: 6 },
             { label: 'Expenses', data: [2400000, 2600000, 2800000, 2500000, 2700000, expense], backgroundColor: '#ef4444', borderRadius: 6 }
           ]
         },
@@ -60,6 +60,37 @@ function view_fin_dashboard() {
         <button class="btn btn-primary !py-1.5" onclick="APP.go('fin_recon')">Review</button>
       </div>` : ''}
 
+      ${(() => {
+        const activeRun = DB.query('payrollRuns', r => r.schoolId === schoolId && r.stage !== 'paid')
+                           .sort((a, b) => b.computedAt.localeCompare(a.computedAt))[0];
+        if (!activeRun || activeRun.stage === 'draft') return '';
+        if (activeRun.stage === 'pending_approval') {
+          return `<div class="card bg-blue-50 border border-blue-200 p-4 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center flex-shrink-0">${icon('bell','w-5 h-5')}</div>
+              <div>
+                <div class="font-bold text-blue-900">Payroll awaiting your authorization — ${activeRun.period}</div>
+                <div class="text-sm text-blue-800 mt-0.5">HR has submitted the payroll run. ${activeRun.staffCount} staff · Net ${money(activeRun.netTotal)}. Confirm fund availability and authorize disbursement.</div>
+              </div>
+            </div>
+            <button class="btn btn-primary flex-shrink-0" onclick="APP.go('fin_payroll')">${icon('check','w-4 h-4')} Review &amp; Authorize →</button>
+          </div>`;
+        }
+        if (activeRun.stage === 'approved') {
+          return `<div class="card bg-emerald-50 border border-emerald-200 p-4 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-emerald-200 text-emerald-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
+              <div>
+                <div class="font-bold text-emerald-900">Payroll authorized — ready to disburse — ${activeRun.period}</div>
+                <div class="text-sm text-emerald-800 mt-0.5">${money(activeRun.netTotal)} to ${activeRun.staffCount} staff. Click to process payment via NIBSS.</div>
+              </div>
+            </div>
+            <button class="btn btn-primary flex-shrink-0" onclick="APP.go('fin_payroll')">${icon('send','w-4 h-4')} Process Payment →</button>
+          </div>`;
+        }
+        return '';
+      })()}
+
       <div class="grid lg:grid-cols-3 gap-4">
         <div class="card p-5">
           <h3 class="font-bold text-slate-900 mb-3">Fee Collection</h3>
@@ -67,7 +98,7 @@ function view_fin_dashboard() {
           <p class="text-center text-sm text-slate-600 mt-2"><strong>${(collected + outstanding) > 0 ? Math.round((collected/(collected+outstanding))*100) : 0}%</strong> of fees collected this term</p>
         </div>
         <div class="card p-5 lg:col-span-2">
-          <h3 class="font-bold text-slate-900 mb-3">Income vs Expenses (6 months)</h3>
+          <h3 class="font-bold text-slate-900 mb-3">Revenue vs Expenses (6 months)</h3>
           <div style="height: 200px;"><canvas id="finChart2"></canvas></div>
         </div>
       </div>
@@ -123,7 +154,7 @@ function view_fin_dashboard() {
       <!-- Per-Child Financial Breakdown -->
       <div class="card overflow-hidden">
         <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-          <h3 class="font-bold text-slate-900">Income Breakdown per Student</h3>
+          <h3 class="font-bold text-slate-900">Revenue per Student</h3>
           <button class="btn btn-secondary text-xs" onclick="exportPerChildReport()">${icon('download','w-3.5 h-3.5')} Export CSV</button>
         </div>
         <div class="overflow-x-auto">
@@ -1672,11 +1703,21 @@ function view_fin_payroll() {
       actions: `<button class="btn btn-secondary" onclick="exportPayrollCSV()">${icon('download','w-4 h-4')} Export Payroll Schedule</button>`
     })}
 
-    ${currentRun ? renderPayrollStepper(currentRun) : `<div class="card p-5 mb-4 bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-3">
-      ${icon('check','w-5 h-5')}
-      <div class="flex-1"><div class="font-bold">All caught up</div><div class="text-sm">No payroll run in progress. Start a new one for the current month.</div></div>
-      <button class="btn btn-primary" onclick="startNewPayrollRun()">${icon('plus','w-4 h-4')} New Run</button>
-    </div>`}
+    ${(() => {
+      if (currentRun && currentRun.stage !== 'draft') return renderPayrollStepper(currentRun);
+      const msg = currentRun
+        ? { icon: 'edit', bg: 'bg-amber-50 border-amber-200', iconBg: 'bg-amber-100 text-amber-700',
+            title: `HR is preparing ${currentRun.period} payroll`,
+            body: 'Adjustments are being applied. You will be notified once HR submits the run for your review and authorization.' }
+        : { icon: 'check', bg: 'bg-slate-50 border-slate-200', iconBg: 'bg-emerald-100 text-emerald-700',
+            title: 'No payroll run in progress',
+            body: 'Payroll runs are initiated by HR. Once HR submits a run, it will appear here for your review and authorization.' };
+      return `<div class="card p-5 mb-4 ${msg.bg} flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full ${msg.iconBg} flex items-center justify-center flex-shrink-0">${icon(msg.icon,'w-5 h-5')}</div>
+        <div class="flex-1"><div class="font-bold text-slate-900">${msg.title}</div><div class="text-sm text-slate-600 mt-0.5">${msg.body}</div></div>
+        <button class="btn btn-secondary text-sm" onclick="APP.go('adm_hr', { hrTab: 'payroll' })">${icon('teacher','w-3.5 h-3.5')} Go to HR →</button>
+      </div>`;
+    })()}
 
     ${pastRuns.length ? `<div class="card mb-4">
       <div class="px-5 py-3 border-b border-slate-100">
@@ -1846,6 +1887,7 @@ function startNewPayrollRun() {
     adjustments: [],
     computedAt: now(), computedBy: AUTH.current.id
   });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: 'sch_brightlights', actor: AUTH.current.id, action: 'payroll_draft_created', target: period, timestamp: now() });
   toast(`Started ${period} payroll run`, 'success');
   APP.render();
 }
@@ -2258,7 +2300,7 @@ function view_fin_cost_center() {
     </div>
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-      ${statCard({ label: 'Total Income', value: money(collected), icon: 'trending_up', color: 'brand' })}
+      ${statCard({ label: 'Revenue', value: money(collected), icon: 'trending_up', color: 'brand' })}
       ${statCard({ label: 'Total Expenses', value: money(totalExp), icon: 'trending_down', color: 'rose' })}
       ${statCard({ label: 'Net Cash', value: money(netCash), icon: 'fees', color: netCash >= 0 ? 'brand' : 'rose', trend: { direction: netCash >= 0 ? 'up' : 'down', label: netCash >= 0 ? 'Surplus' : 'Deficit' } })}
       ${statCard({ label: 'Profit Margin', value: profitMargin + '%', icon: 'check', color: profitMargin >= targetMargin ? 'brand' : 'gold', trend: { direction: profitMargin >= targetMargin ? 'up' : 'down', label: 'Target: ' + targetMargin + '%' } })}
@@ -2284,7 +2326,7 @@ function view_fin_cost_center() {
             <div class="progress"><div class="progress-bar ${teacherCostRatio > targetTeacherRatio ? 'bg-amber-500' : ''}" style="width:${Math.min(100,teacherCostRatio)}%"></div></div>
           </div>
           <div>
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">Non-Staff Expenses</span><span class="font-semibold">${collected > 0 ? Math.round(nonStaffExp/collected*100) : 0}% of income</span></div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-600">Non-Staff Expenses</span><span class="font-semibold">${collected > 0 ? Math.round(nonStaffExp/collected*100) : 0}% of revenue</span></div>
             <div class="progress"><div class="progress-bar bg-rose-400" style="width:${collected>0?Math.min(100,Math.round(nonStaffExp/collected*100)):0}%"></div></div>
           </div>
           <div>
@@ -2331,13 +2373,15 @@ function view_fin_reports(embedded) {
     { key: 'trial',    label: 'Trial Balance' },
     { key: 'cashflow', label: 'Cash Flow' },
     { key: 'balance',  label: 'Balance Sheet' },
-    { key: 'budget',   label: 'Budgets' }
+    { key: 'budget',   label: 'Budgets' },
+    { key: 'activity', label: 'Activity Log' }
   ];
   const content = tab === 'unit'     ? renderUnitEconomics() :
                   tab === 'trial'    ? renderTrialBalance() :
                   tab === 'cashflow' ? renderCashFlow() :
                   tab === 'balance'  ? renderBalanceSheet() :
                   tab === 'budget'   ? renderBudgets() :
+                  tab === 'activity' ? renderFinanceActivityLog() :
                   renderProfitLoss();
   if (embedded) {
     return `
@@ -2353,6 +2397,52 @@ function view_fin_reports(embedded) {
     ${tabs(accTabs, tab, k => { APP.params.accTab = k; APP.render(); })}
     <div class="pt-4">${content}</div>
   `;
+}
+
+function renderFinanceActivityLog() {
+  const sid = AUTH.current.schoolId || 'sch_brightlights';
+  const FIN_ACTIONS = ['payroll_draft_created','payroll_submitted','payroll_approved','payroll_paid','issued_refund'];
+  const ACTION_META = {
+    payroll_draft_created: { label: 'Payroll started',    color: 'bg-blue-100 text-blue-700' },
+    payroll_submitted:     { label: 'Payroll submitted',  color: 'bg-amber-100 text-amber-700' },
+    payroll_approved:      { label: 'Payroll approved',   color: 'bg-emerald-100 text-emerald-700' },
+    payroll_paid:          { label: 'Payroll disbursed',  color: 'bg-emerald-100 text-emerald-700' },
+    issued_refund:         { label: 'Refund issued',      color: 'bg-pink-100 text-pink-700' }
+  };
+  const allTeachers = DB.get('teachers');
+  function actorName(id) {
+    const t = allTeachers.find(x => x.id === id);
+    return t ? t.name : id;
+  }
+  const logs = DB.query('auditLog', l => l.schoolId === sid && FIN_ACTIONS.includes(l.action))
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+  if (!logs.length) return `<div class="card py-12 text-center text-slate-400">${icon('reports','w-8 h-8 mx-auto mb-2 opacity-30')}<div>No finance activity recorded yet</div></div>`;
+
+  return `
+    <div class="card p-0">
+      <div class="px-4 py-3 border-b border-slate-100">
+        <span class="text-sm font-semibold text-slate-700">${logs.length} finance event${logs.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="px-4 divide-y divide-slate-100">
+        ${logs.map(l => {
+          const meta = ACTION_META[l.action] || { label: l.action, color: 'bg-slate-100 text-slate-600' };
+          return `<div class="flex items-start gap-3 py-3">
+            <div class="w-2 h-2 rounded-full bg-slate-300 mt-2.5 flex-shrink-0"></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${meta.color}">${meta.label}</span>
+                <span class="text-sm font-medium text-slate-800">${l.target}</span>
+              </div>
+              <div class="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                <span>${icon('teacher','w-3 h-3 inline -mt-0.5')} ${actorName(l.actor)}</span>
+                <span>${icon('calendar','w-3 h-3 inline -mt-0.5')} ${fdate(l.timestamp, { time: true })}</span>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
 }
 
 function _accFigures() {
@@ -2479,7 +2569,7 @@ function renderUnitEconomics() {
     <!-- ③ Revenue by Class -->
     <div class="card p-5 mb-4">
       <h3 class="font-bold text-slate-900 mb-1">Revenue by Class</h3>
-      <p class="text-sm text-slate-500 mb-4">Which classes generate the most income</p>
+      <p class="text-sm text-slate-500 mb-4">Which classes generate the most revenue</p>
       <table class="w-full text-sm">
         <thead><tr class="border-b text-xs text-slate-500 uppercase">
           <th class="text-left py-2">Class</th><th class="text-right py-2">Students</th><th class="text-right py-2">Billed</th><th class="text-right py-2">Collected</th><th class="text-right py-2">Outstanding</th>

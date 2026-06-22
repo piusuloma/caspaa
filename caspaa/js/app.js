@@ -39,7 +39,8 @@ const APP = {
         { key: 'adm_feedback',      label: 'Surveys',           icon: 'check' },
         { key: 'adm_health',        label: 'Sickbay',           icon: 'reports' },
         { key: 'adm_support',       label: 'Help & Support',    icon: 'chat' },
-        { key: 'adm_settings',      label: 'School Settings',   icon: 'settings' }
+        { key: 'adm_settings',      label: 'School Settings',   icon: 'settings' },
+        { key: 'adm_audit',         label: 'Audit Log',         icon: 'reports' }
       ],
       principal: [
         { key: 'adm_dashboard',  label: 'Dashboard',      icon: 'dashboard' },

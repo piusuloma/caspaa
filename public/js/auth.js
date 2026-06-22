@@ -160,6 +160,23 @@ function renderLogin() {
             <button class="btn btn-primary w-full" id="emailLoginBtn">Sign in</button>
           </div>
 
+          <div class="text-center mt-2">
+            <button id="studentLoginToggle" class="text-sm text-brand-700 hover:text-brand-800 font-semibold">Student login (Admission No.) →</button>
+          </div>
+
+          <div id="studentLoginForm" class="hidden mt-5 pt-5 border-t border-slate-100 space-y-3">
+            <p class="text-xs text-slate-500">Enter your admission number and date of birth exactly as registered by the school.</p>
+            <div>
+              <label class="input-label">Admission Number</label>
+              <input type="text" class="input" id="studentAdmNo" placeholder="e.g. BL/2025/001" style="text-transform:uppercase" />
+            </div>
+            <div>
+              <label class="input-label">Date of Birth</label>
+              <input type="date" class="input" id="studentDob" />
+            </div>
+            <button class="btn btn-primary w-full" id="studentLoginBtn">Sign in as Student</button>
+          </div>
+
           <div class="mt-6 pt-5 border-t border-slate-100 text-center">
             <p class="text-xs text-slate-400">By signing in, you agree to CASPAA's Terms and Privacy Policy. Your data is encrypted with AES-256.</p>
           </div>
@@ -189,7 +206,46 @@ function bindLoginHandlers() {
   });
 
   document.getElementById('emailLoginToggle').onclick = () => {
+    document.getElementById('studentLoginForm').classList.add('hidden');
     document.getElementById('emailLoginForm').classList.toggle('hidden');
+  };
+
+  document.getElementById('studentLoginToggle').onclick = () => {
+    document.getElementById('emailLoginForm').classList.add('hidden');
+    document.getElementById('studentLoginForm').classList.toggle('hidden');
+  };
+
+  document.getElementById('studentLoginBtn').onclick = () => {
+    const admNo = document.getElementById('studentAdmNo').value.trim().toUpperCase();
+    const dob   = document.getElementById('studentDob').value;
+    if (!admNo || !dob) { toast('Please enter your admission number and date of birth', 'danger'); return; }
+
+    const student = DB.get('students').find(s =>
+      s.admissionNo && s.admissionNo.toUpperCase() === admNo &&
+      s.dob === dob && s.status === 'active'
+    );
+    if (!student) { toast('No active student found — please check your admission number and date of birth', 'danger'); return; }
+
+    const cls        = DB.find('classes', student.classId);
+    const schoolName = DB.settings().schoolName || 'School';
+    const isSecondary = cls && cls.level === 'Secondary';
+
+    const sessionUser = {
+      id:         student.id,
+      role:       'student',
+      name:       student.name,
+      email:      student.email || '',
+      title:      'Student',
+      subtitle:   `${cls ? cls.name : ''} — ${schoolName}`,
+      schoolId:   student.schoolId,
+      firstLogin: isSecondary && !student.passwordChanged
+    };
+
+    AUTH.login(sessionUser);
+    DB.insert('auditLog', { id: uid('aud'), schoolId: student.schoolId, actor: student.id, action: 'student_login', target: student.name, timestamp: now() });
+    toast(`Welcome, ${student.name.split(' ')[0]}!`, 'success');
+    APP.render();
+    if (sessionUser.firstLogin) promptFirstLoginPasswordChange(sessionUser);
   };
 
   document.getElementById('emailLoginBtn').onclick = () => {
@@ -256,7 +312,10 @@ function saveFirstLoginPassword(accountId) {
   if (pw.length < 8) { toast('Password must be at least 8 characters', 'danger'); return; }
   if (pw !== confirm) { toast('Passwords do not match', 'danger'); return; }
   // Mark password as changed — in a real app this would hash and store server-side
-  const collection = AUTH.current.role === 'parent' ? 'parents' : AUTH.current.role === 'teacher' ? 'teachers' : 'staff';
+  const collection = AUTH.current.role === 'parent'  ? 'parents'
+                   : AUTH.current.role === 'teacher' ? 'teachers'
+                   : AUTH.current.role === 'student' ? 'students'
+                   : 'staff';
   const record = DB.find(collection, accountId);
   if (record) {
     DB.update(collection, accountId, { firstLogin: false, passwordChanged: true, passwordChangedAt: now() });

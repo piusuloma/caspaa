@@ -5,24 +5,6 @@
 
 /* ---------- Messages / Chat ---------- */
 function view_messages_shared(role) {
-  // Student Notes tab (teacher/parent only) — diary merged into Messages
-  const msgTab = (role === 'teacher' || role === 'parent')
-    ? (APP.params.msgTab || 'chat')
-    : 'chat';
-
-  if (msgTab === 'notes') {
-    const navKey = role === 'parent' ? 'par_messages' : 'tch_messages';
-    const tabBar = `<div class="flex gap-2 mb-5">
-      <button onclick="APP.params.msgTab='chat';APP.render()" class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors bg-white text-slate-600 border-slate-200 hover:border-brand-400">Chat</button>
-      <button class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors bg-brand-700 text-white border-brand-700">Student Notes</button>
-    </div>`;
-    return `
-      ${pageHeader({ title: 'Messages', subtitle: role === 'parent' ? 'Chat and teacher notes about your child' : 'Chat and per-student notes to parents' })}
-      ${tabBar}
-      ${diary_notesContent(role)}
-    `;
-  }
-
   const me = AUTH.current.id;
   const myConvos = COMPUTE.conversationsFor(me);
   const activeConvoId = APP.params.convoId || (myConvos[0] ? myConvos[0].id : null);
@@ -70,18 +52,12 @@ function view_messages_shared(role) {
        <button class="btn btn-primary" onclick="newChatModal(${JSON.stringify(parentContacts.map(c=>c.id)).replace(/"/g,'&quot;')}, 'Parent')">${icon('students','w-4 h-4')} Chat with Parent</button>`
     : contacts.length ? `<button class="btn btn-primary" onclick="newChatModal(${JSON.stringify(contacts.map(c=>c.id)).replace(/"/g,'&quot;')})">${icon('plus','w-4 h-4')} New Chat</button>` : '';
 
-  const noteTabBar = (role === 'teacher' || role === 'parent') ? `<div class="flex gap-2 mb-5">
-    <button class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors bg-brand-700 text-white border-brand-700">Chat</button>
-    <button onclick="APP.params.msgTab='notes';APP.render()" class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors bg-white text-slate-600 border-slate-200 hover:border-brand-400">Student Notes</button>
-  </div>` : '';
-
   return `
     ${pageHeader({
       title: 'Messages',
-      subtitle: role === 'parent' ? 'Chat and teacher notes about your child' : 'Connect with parents and teachers',
+      subtitle: role === 'parent' ? 'Chat with your child\'s teachers' : 'Connect with parents and teachers',
       actions: newChatActions
     })}
-    ${noteTabBar}
 
     <div class="card overflow-hidden" style="height: calc(100vh - 220px); min-height: 500px;">
       <div class="flex h-full">

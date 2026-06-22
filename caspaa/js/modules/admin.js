@@ -902,8 +902,117 @@ function view_adm_academic() {
     { key: 'attendance', label: 'Attendance',        view: 'view_adm_attendance' },
     { key: 'results',    label: 'Results',           view: 'view_adm_results' },
     { key: 'discipline', label: 'Discipline',        view: 'view_adm_discipline' },
-    { key: 'assessment', label: 'Assessment Setup',  view: 'view_adm_exam_structure' }
+    { key: 'assessment',   label: 'Assessment Setup', view: 'view_adm_exam_structure' },
+    { key: 'lesson_plans', label: 'Lesson Plans',     view: 'view_adm_lesson_plans'   }
   ], 'classes', 'academicTab');
+}
+
+function view_adm_lesson_plans() {
+  const sid            = currentSchoolId();
+  const filterTeacher  = APP.params.lpTeacher || '';
+  const filterClass    = APP.params.lpClass   || '';
+  const teachers       = DB.query('teachers', t => t.schoolId === sid);
+  const classes        = DB.query('classes',  c => c.schoolId === sid);
+  const subjects       = DB.get('subjects');
+
+  let plans = DB.query('lessonPlans', l => l.schoolId === sid);
+  if (filterTeacher) plans = plans.filter(l => l.teacherId === filterTeacher);
+  if (filterClass)   plans = plans.filter(l => l.classId   === filterClass);
+  plans = plans.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  return `
+    ${pageHeader({ title: 'Lesson Plans', subtitle: 'Review all lesson plans submitted by teachers — add notes where needed' })}
+    <div class="flex flex-wrap gap-3 mb-5">
+      <select class="input w-auto" onchange="APP.params.lpTeacher=this.value; APP.render()">
+        <option value="">All Teachers</option>
+        ${teachers.map(t => `<option value="${t.id}" ${filterTeacher===t.id?'selected':''}>${t.name}</option>`).join('')}
+      </select>
+      <select class="input w-auto" onchange="APP.params.lpClass=this.value; APP.render()">
+        <option value="">All Classes</option>
+        ${classes.map(c => `<option value="${c.id}" ${filterClass===c.id?'selected':''}>${c.name}</option>`).join('')}
+      </select>
+      <span class="text-sm text-slate-400 self-center">${plans.length} plan${plans.length!==1?'s':''}</span>
+    </div>
+    ${plans.length === 0
+      ? emptyState({ title: 'No lesson plans yet', body: 'Teachers will appear here once they submit lesson plans from their Lessons & Content view.', icon: 'book' })
+      : `<div class="space-y-3">
+          ${plans.map(l => {
+            const teacher = teachers.find(t => t.id === l.teacherId);
+            const cls     = classes.find(c => c.id === l.classId);
+            const sub     = subjects.find(s => s.id === l.subjectId);
+            return `<div class="card p-4">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap mb-2">
+                    <span class="badge badge-info">${cls ? cls.name : '—'}</span>
+                    <span class="badge badge-neutral">${sub ? sub.name : '—'}</span>
+                    ${l.week ? `<span class="badge badge-success">${l.week}</span>` : ''}
+                    ${teacher ? `<span class="text-xs text-slate-500 flex items-center gap-1">${icon('teacher','w-3.5 h-3.5')} ${teacher.name}</span>` : ''}
+                  </div>
+                  <h3 class="font-bold text-slate-900">${l.topic}</h3>
+                  <div class="grid sm:grid-cols-3 gap-3 mt-3 text-sm">
+                    <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Objectives</div><div class="text-slate-700">${l.objectives}</div></div>
+                    <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Activities</div><div class="text-slate-700">${l.activities}</div></div>
+                    <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Resources</div><div class="text-slate-700">${l.resources}</div></div>
+                  </div>
+                  ${l.file ? `<a href="${l.file.data}" download="${l.file.name}" class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-sm hover:bg-emerald-100">
+                    ${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="font-semibold text-emerald-900">${l.file.name}</span>${icon('download','w-3.5 h-3.5 text-emerald-700')}
+                  </a>` : ''}
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <div class="text-xs text-slate-400 mb-2">${fdate(l.createdAt, { short: true })}</div>
+                  <button class="btn btn-ghost text-xs !py-1" onclick="adm_commentLessonPlan('${l.id}')">${icon('chat','w-3.5 h-3.5')} ${l.principalNote ? 'Edit note' : 'Add note'}</button>
+                </div>
+              </div>
+              ${l.principalNote ? `
+                <div class="mt-3 pt-3 border-t border-brand-100 bg-brand-50 -mx-4 -mb-4 px-4 pb-4 rounded-b-xl flex items-start gap-2">
+                  ${icon('chat','w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5')}
+                  <div class="flex-1">
+                    <div class="text-xs font-semibold text-brand-700 mb-0.5">Your note · ${fdate(l.principalNoteAt, { short: true })}</div>
+                    <div class="text-sm text-slate-700">${l.principalNote}</div>
+                  </div>
+                  <button class="btn btn-ghost !p-1 text-slate-400 hover:text-rose-500" onclick="adm_deleteLessonPlanNote('${l.id}')" title="Remove note">${icon('trash','w-3.5 h-3.5')}</button>
+                </div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>`
+    }
+  `;
+}
+
+function adm_commentLessonPlan(planId) {
+  const plan = DB.find('lessonPlans', planId);
+  if (!plan) return;
+  modal({
+    title: 'Note to Teacher',
+    body: `
+      <p class="text-sm text-slate-500 mb-3">Leave a note for the teacher on this lesson plan. They will see it highlighted when they next open their Lessons view.</p>
+      <label class="input-label">Note</label>
+      <textarea id="lpNoteText" class="input" rows="4" placeholder="e.g. Please ensure this aligns with the term scheme of work…">${plan.principalNote || ''}</textarea>`,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+      <button class="btn btn-primary" onclick="adm_saveLessonPlanNote('${planId}')">Save Note</button>`
+  });
+}
+
+function adm_saveLessonPlanNote(planId) {
+  const note = document.getElementById('lpNoteText').value.trim();
+  if (!note) { toast('Please enter a note before saving', 'danger'); return; }
+  const plan = DB.find('lessonPlans', planId);
+  DB.update('lessonPlans', planId, { principalNote: note, principalNoteAt: now() });
+  const action = plan && plan.principalNote ? 'lesson_plan_note_updated' : 'lesson_plan_note_added';
+  DB.insert('auditLog', { id: uid('aud'), schoolId: AUTH.current.schoolId, actor: AUTH.current.id, action, target: plan ? plan.topic : planId, timestamp: now() });
+  document.getElementById('modalBackdrop').click();
+  toast('Note saved — the teacher will see it in their Lesson Plans', 'success');
+  APP.render();
+}
+
+function adm_deleteLessonPlanNote(planId) {
+  const plan = DB.find('lessonPlans', planId);
+  DB.update('lessonPlans', planId, { principalNote: null, principalNoteAt: null });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: AUTH.current.schoolId, actor: AUTH.current.id, action: 'lesson_plan_note_deleted', target: plan ? plan.topic : planId, timestamp: now() });
+  toast('Note removed', 'success');
+  APP.render();
 }
 
 function view_adm_exam_structure() {
@@ -2365,7 +2474,7 @@ function revenueAnalyticsParamsModal() {
           <div class="flex items-start justify-between mb-2">
             <div>
               <p class="font-semibold text-slate-800 text-sm">Profit Margin Target</p>
-              <p class="text-xs text-slate-500 mt-0.5">% of income that should remain after all expenses</p>
+              <p class="text-xs text-slate-500 mt-0.5">% of revenue that should remain after all expenses</p>
             </div>
             <div class="flex items-center gap-1 bg-slate-100 rounded-lg px-2.5 py-1">
               <input id="ra_margin" type="number" min="0" max="60"
@@ -2387,7 +2496,7 @@ function revenueAnalyticsParamsModal() {
           <div class="flex items-start justify-between mb-2">
             <div>
               <p class="font-semibold text-slate-800 text-sm">Max Teacher Cost Ratio</p>
-              <p class="text-xs text-slate-500 mt-0.5">Teaching staff payroll as % of total income</p>
+              <p class="text-xs text-slate-500 mt-0.5">Teaching staff payroll as % of total revenue</p>
             </div>
             <div class="flex items-center gap-1 bg-slate-100 rounded-lg px-2.5 py-1">
               <input id="ra_teacher" type="number" min="0" max="80"
@@ -2681,6 +2790,7 @@ function viewStudent(id, activeTab) {
     { k: 'finance',    l: 'Finance' },
     { k: 'discipline', l: 'Discipline' },
     { k: 'health',     l: 'Health' },
+    { k: 'history',    l: 'History' },
   ];
   const tabBar = `<div class="flex gap-0.5 mb-4 border-b border-slate-200 overflow-x-auto -mx-1 px-1">
     ${tabs.map(t => `<button onclick="viewStudent('${id}','${t.k}')" class="whitespace-nowrap px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab===t.k?'border-brand-600 text-brand-700':'border-transparent text-slate-500 hover:text-slate-700'}">${t.l}</button>`).join('')}
@@ -2973,12 +3083,56 @@ function viewStudent(id, activeTab) {
         </div>`}`;
   };
 
+  const historyTab = () => {
+    const ACTION_LABEL = {
+      student_login: 'Logged in', added_student: 'Account created', updated_student: 'Profile updated',
+      promoted_student: 'Promoted', bulk_promoted: 'Bulk promoted', bulk_graduated: 'Bulk graduated',
+      graduated_student: 'Graduated', transferred_student: 'Transferred out', withdrew_student: 'Withdrew',
+      suspended_student: 'Suspended', changed_status: 'Status changed', deferred_promotion: 'Promotion deferred',
+      issued_refund: 'Refund issued'
+    };
+    const ACTION_COLOR = {
+      student_login: 'bg-blue-100 text-blue-700', added_student: 'bg-emerald-100 text-emerald-700',
+      updated_student: 'bg-sky-100 text-sky-700', promoted_student: 'bg-violet-100 text-violet-700',
+      bulk_promoted: 'bg-violet-100 text-violet-700', bulk_graduated: 'bg-amber-100 text-amber-700',
+      graduated_student: 'bg-amber-100 text-amber-700', transferred_student: 'bg-orange-100 text-orange-700',
+      withdrew_student: 'bg-red-100 text-red-700', suspended_student: 'bg-red-100 text-red-700',
+      changed_status: 'bg-slate-100 text-slate-600', deferred_promotion: 'bg-orange-100 text-orange-700',
+      issued_refund: 'bg-pink-100 text-pink-700'
+    };
+    const logs = DB.query('auditLog', l => l.schoolId === s.schoolId && (l.actor === s.id || (l.target && l.target.includes(s.name))))
+      .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    if (!logs.length) return `<div class="py-8 text-center text-slate-400 text-sm">No history recorded for this student yet.</div>`;
+    const actorMap = {};
+    DB.get('teachers').forEach(t => { actorMap[t.id] = t.name; });
+    return `
+      <div class="space-y-0 divide-y divide-slate-100">
+        ${logs.map(l => {
+          const label = ACTION_LABEL[l.action] || l.action;
+          const color = ACTION_COLOR[l.action] || 'bg-slate-100 text-slate-600';
+          const actor = l.actor === s.id ? s.name : (actorMap[l.actor] || l.actor);
+          return `<div class="flex items-start gap-3 py-3">
+            <div class="w-2 h-2 rounded-full bg-slate-300 mt-2.5 flex-shrink-0"></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${color}">${label}</span>
+                <span class="text-xs text-slate-500">${fdate(l.timestamp, { time: true })}</span>
+              </div>
+              ${l.target && l.target !== s.name ? `<div class="text-sm text-slate-700 mt-0.5">${l.target}</div>` : ''}
+              <div class="text-xs text-slate-400 mt-0.5">by ${actor}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  };
+
   const bodyContent = tab === 'profile' ? profileTab()
     : tab === 'transcript' ? transcriptTab()
     : tab === 'attendance' ? attendanceTab()
     : tab === 'finance' ? financeTab()
     : tab === 'discipline' ? disciplineTab()
     : tab === 'health' ? healthTab()
+    : tab === 'history' ? historyTab()
     : profileTab();
 
   modal({
@@ -5933,8 +6087,9 @@ function saveNewStaff() {
   const tempPassword = 'Caspaa' + Math.floor(Math.random() * 9000 + 1000);
   const username = email || phone; // fall back to phone if no email
   const channels = email ? ['email', 'whatsapp'] : ['whatsapp'];
+  const newStaffId = uid('tch');
   DB.insert('teachers', {
-    id: uid('tch'), schoolId: AUTH.current.schoolId || AUTH.current.id,
+    id: newStaffId, schoolId: AUTH.current.schoolId || AUTH.current.id,
     name, email, phone,
     staffType, role, roleId,
     subjects: subjectsSel,
@@ -5946,6 +6101,7 @@ function saveNewStaff() {
     permissions,
     invitation: { username, tempPassword, sentAt: now(), accepted: false, channels }
   });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: AUTH.current.schoolId || AUTH.current.id, actor: AUTH.current.id, action: 'staff_hired', target: name, timestamp: now() });
   document.getElementById('modalBackdrop')?.click();
   APP.render();
   // Show invitation confirmation
@@ -6700,11 +6856,14 @@ function view_adm_results() {
       ` : ''
     })}
     ${tabs([
-      { key: 'overview',   label: 'School Overview' },
-      { key: 'broadsheet', label: 'Class Broadsheet' }
+      { key: 'overview',   label: 'School Overview'  },
+      { key: 'broadsheet', label: 'Class Broadsheet' },
+      { key: 'by_teacher', label: 'By Teacher'       }
     ], resView, k => { APP.params.resView = k; APP.render(); })}
     <div class="pt-4">
-      ${resView === 'broadsheet' ? _renderResultsBroadsheet(classes, classId) : _renderSchoolResultsOverview()}
+      ${resView === 'broadsheet' ? _renderResultsBroadsheet(classes, classId)
+      : resView === 'by_teacher' ? _renderTeacherPerformance()
+      : _renderSchoolResultsOverview()}
     </div>
   `;
 }
@@ -6811,6 +6970,81 @@ function _renderSchoolResultsOverview() {
       </div>
     </div>
     `}
+  `;
+}
+
+function _renderTeacherPerformance() {
+  const sid      = currentSchoolId();
+  const teachers = DB.query('teachers', t => t.schoolId === sid);
+  const classes  = DB.query('classes',  c => c.schoolId === sid);
+  const subjects = DB.get('subjects');
+  const allRes   = DB.query('results', r => r.schoolId === sid && r.approved);
+
+  const availableTerms = [...new Set(allRes.map(r => r.term).filter(Boolean))].sort().reverse();
+  const currentTerm    = DB.settings().currentTerm;
+  const term = APP.params.resTerm || (availableTerms.includes(currentTerm) ? currentTerm : (availableTerms[0] || currentTerm));
+  const termRes  = allRes.filter(r => r.term === term);
+  const passMin  = (DB.settings().gradeScale || []).slice().reverse().find(g => g.remark && g.remark.toLowerCase() !== 'fail') || { min: 40 };
+
+  const _pBadge  = rate => `<span class="badge ${rate>=80?'badge-success':rate>=60?'badge-warn':'badge-danger'}">${rate}%</span>`;
+  const _avgColor = avg  => avg>=70?'text-emerald-700':avg>=50?'text-amber-700':'text-rose-700';
+
+  const rows = teachers.map(teacher => {
+    const myClasses = classes.filter(c => c.teacherId === teacher.id);
+    if (!myClasses.length) return null;
+    const clsRes = termRes.filter(r => myClasses.some(c => c.id === r.classId));
+    if (!clsRes.length) return { teacher, myClasses, studs: 0, avg: null, pass: null, best: null, weak: null };
+    const studs = new Set(clsRes.map(r => r.studentId)).size;
+    const avg   = Math.round(clsRes.reduce((s, r) => s + (r.total || 0), 0) / clsRes.length);
+    const pass  = Math.round(clsRes.filter(r => (r.total || 0) >= passMin.min).length / clsRes.length * 100);
+    const subAvgs = subjects.map(sub => {
+      const subs = clsRes.filter(r => r.subjectId === sub.id);
+      return subs.length ? { name: sub.name, avg: Math.round(subs.reduce((s, r) => s + (r.total || 0), 0) / subs.length) } : null;
+    }).filter(Boolean).sort((a, b) => b.avg - a.avg);
+    return { teacher, myClasses, studs, avg, pass, best: subAvgs[0] || null, weak: subAvgs[subAvgs.length - 1] || null };
+  }).filter(Boolean).sort((a, b) => (b.avg || 0) - (a.avg || 0));
+
+  if (!rows.length) return emptyState({ title: 'No teacher performance data', body: 'Results will appear here once teachers submit and results are approved.', icon: 'teacher' });
+
+  return `
+    ${availableTerms.length > 1 ? `
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
+      <span class="text-xs text-slate-500 font-semibold uppercase mr-1">Term:</span>
+      ${availableTerms.map(t => `<button class="chip ${t===term?'active':''}" onclick="APP.params.resTerm='${t}'; APP.render()">${t}</button>`).join('')}
+    </div>` : ''}
+    <div class="card overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900">Form Teacher Performance — ${term}</h3>
+        <span class="text-xs text-slate-400">Shows each teacher's form class results</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="tbl">
+          <thead><tr>
+            <th>Teacher</th>
+            <th>Form Class</th>
+            <th class="text-center">Students</th>
+            <th class="text-center">Average</th>
+            <th class="text-center">Pass Rate</th>
+            <th>Strongest Subject</th>
+            <th>Needs Attention</th>
+          </tr></thead>
+          <tbody>
+            ${rows.map(d => `<tr>
+              <td>
+                <div class="font-semibold text-slate-900">${d.teacher.name}</div>
+                <div class="text-xs text-slate-400">${d.teacher.staffType || 'Academic'}</div>
+              </td>
+              <td>${d.myClasses.map(c => `<span class="badge badge-info mr-1">${c.name}</span>`).join('')}</td>
+              <td class="text-center font-medium">${d.studs || '—'}</td>
+              <td class="text-center">${d.avg !== null ? `<span class="font-bold text-lg ${_avgColor(d.avg)}">${d.avg}%</span>` : '<span class="text-slate-400">—</span>'}</td>
+              <td class="text-center">${d.pass !== null ? _pBadge(d.pass) : '<span class="text-slate-400">—</span>'}</td>
+              <td>${d.best ? `<span class="font-medium text-emerald-700">${d.best.name}</span> <span class="text-xs text-slate-400">(${d.best.avg}%)</span>` : '<span class="text-slate-400">—</span>'}</td>
+              <td>${d.weak && d.weak.avg < 50 ? `<span class="font-medium text-rose-600">${d.weak.name}</span> <span class="text-xs text-slate-400">(${d.weak.avg}%)</span>` : '<span class="text-emerald-600 text-xs">No weak areas</span>'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
   `;
 }
 
@@ -7885,19 +8119,77 @@ function view_adm_leave_requests() {
   `;
 }
 
-/* ---------- HR Hub (Leave + Staff Attendance) ---------- */
+/* ---------- HR Hub (Leave + Staff Attendance + Payroll initiation) ---------- */
+function renderHRPayrollPanel() {
+  const schoolId = currentSchoolId();
+  const runs = DB.query('payrollRuns', r => r.schoolId === schoolId).sort((a, b) => b.computedAt.localeCompare(a.computedAt));
+  const activeRun = runs.find(r => r.stage !== 'paid');
+  const paidRuns  = runs.filter(r => r.stage === 'paid');
+
+  const historySection = paidRuns.length ? `
+    <div class="mt-6">
+      <h3 class="text-sm font-semibold text-slate-600 mb-3">Payroll History</h3>
+      <div class="card p-0 divide-y divide-slate-100">
+        ${paidRuns.map(r => `
+          <div class="flex items-center gap-3 px-4 py-3">
+            <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">${icon('check','w-4 h-4')}</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-semibold text-slate-800">${r.period}</div>
+              <div class="text-xs text-slate-500">${r.staffCount} staff · ${money(r.netTotal)} net · Paid ${fdate(r.paidAt, { short: true })}</div>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold">Paid</span>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  if (!activeRun) {
+    return `
+      <div class="card p-5 bg-slate-50 border border-slate-200 flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">${icon('check','w-5 h-5')}</div>
+        <div class="flex-1">
+          <div class="font-bold text-slate-900">No payroll run in progress</div>
+          <div class="text-sm text-slate-600 mt-0.5">Initiate the payroll for the current month, add adjustments, then submit to Accounting for authorization.</div>
+        </div>
+        <button class="btn btn-primary" onclick="startNewPayrollRun()">${icon('plus','w-4 h-4')} Start Payroll Run</button>
+      </div>
+      ${historySection}
+    `;
+  }
+
+  if (activeRun.stage === 'draft') {
+    return renderPayrollStepper(activeRun) + historySection;
+  }
+
+  const stageLabel = { pending_approval: 'Awaiting Accounting approval', approved: 'Approved — disbursement in progress' }[activeRun.stage] || activeRun.stage;
+  return `
+    <div class="card p-5 bg-blue-50 border border-blue-200">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-lg bg-blue-200 text-blue-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
+        <div class="flex-1">
+          <div class="font-bold text-blue-900">${activeRun.period} Payroll — ${stageLabel}</div>
+          <p class="text-sm text-blue-800 mt-1">Submitted to Accounting on ${fdate(activeRun.submittedAt, { long: true })}. The accountant will confirm funds and authorize disbursement.</p>
+          <button class="btn btn-secondary text-sm mt-3" onclick="APP.go('adm_finance_hub', { financeTab: 'payroll' })">${icon('fees','w-3.5 h-3.5')} View in Finance →</button>
+        </div>
+      </div>
+    </div>
+    ${historySection}
+  `;
+}
+
 function view_adm_hr() {
   const tab = APP.params.hrTab || 'leave';
-  const teachers = DB.query('teachers', t => t.schoolId === currentSchoolId());
-  const leaves = DB.query('leaveRequests', l => l.schoolId === currentSchoolId());
+  const schoolId = currentSchoolId();
+  const teachers = DB.query('teachers', t => t.schoolId === schoolId);
+  const leaves = DB.query('leaveRequests', l => l.schoolId === schoolId);
   const pendingLeaves = leaves.filter(l => l.status === 'pending');
   const today_ = today();
-  const todayAttendance = DB.query('staffAttendance', a => a.schoolId === currentSchoolId() && a.date === today_);
+  const todayAttendance = DB.query('staffAttendance', a => a.schoolId === schoolId && a.date === today_);
+  const draftPayroll = DB.query('payrollRuns', r => r.schoolId === schoolId && r.stage === 'draft').length;
 
   return `
     ${pageHeader({
       title: 'HR Hub',
-      subtitle: 'Leave requests and HR management',
+      subtitle: 'Leave management, staff attendance and payroll initiation',
       actions: `<button class="btn btn-secondary" onclick="APP.go('adm_staff_att')">${icon('attendance','w-4 h-4')} Staff Attendance Report</button>`
     })}
 
@@ -7909,18 +8201,18 @@ function view_adm_hr() {
     </div>
 
     ${tabs([
-      { key: 'leave', label: 'Leave Requests', badge: pendingLeaves.length || null }
+      { key: 'leave',   label: 'Leave Requests', badge: pendingLeaves.length || null },
+      { key: 'payroll', label: 'Payroll',         badge: draftPayroll || null }
     ], tab, k => { APP.params.hrTab = k; APP.render(); })}
 
     <div class="pt-4">
-      ${renderHRLeave()}
-      <div class="mt-4 p-3 bg-slate-50 rounded-xl flex items-center justify-between">
-        <span class="text-sm text-slate-600">${icon('attendance','w-4 h-4 inline')} Staff Attendance has been moved for better visibility.</span>
-        <button class="btn btn-secondary text-sm" onclick="APP.go('adm_staff_att')">${icon('arrow_left','w-4 h-4 rotate-180')} Go to Staff Attendance</button>
-      </div>
-      <div class="mt-2 text-center text-xs text-slate-500">
-        Looking for payroll? It's been moved to <button class="text-brand-700 font-semibold underline" onclick="APP.go('adm_finance_hub', { financeTab: 'payroll' })">Finance → Payroll</button> (handled by the bursar/accountant).
-      </div>
+      ${tab === 'payroll' ? renderHRPayrollPanel() : `
+        ${renderHRLeave()}
+        <div class="mt-4 p-3 bg-slate-50 rounded-xl flex items-center justify-between">
+          <span class="text-sm text-slate-600">${icon('attendance','w-4 h-4 inline')} Staff Attendance has been moved for better visibility.</span>
+          <button class="btn btn-secondary text-sm" onclick="APP.go('adm_staff_att')">${icon('arrow_left','w-4 h-4 rotate-180')} Go to Staff Attendance</button>
+        </div>
+      `}
     </div>
   `;
 }
@@ -11120,7 +11412,7 @@ function _renderPrintCenter() {
 
     ${section('Finance Reports', 'fees', 'emerald', `
       ${card({ title: 'Fee Collection Report', desc: 'Class-by-class breakdown showing what each student was billed, how much has been paid, and what is still outstanding.', onPrint: 'rpt_feeCollection()', onCsv: 'rpt_feeCollectionCSV()' })}
-      ${card({ title: 'Income & Expenses Summary', desc: 'Total money received this term minus all recorded costs (salaries, electricity, maintenance, etc.) — shows your net profit or loss.', onPrint: 'rpt_incomeExpenses()' })}
+      ${card({ title: 'Revenue & Expenses Summary', desc: 'Total revenue collected this term minus all recorded costs (salaries, electricity, maintenance, etc.) — shows your net profit or loss.', onPrint: 'rpt_incomeExpenses()' })}
       ${card({ title: 'All Payments Received', desc: 'Every payment made by parents this term — student name, amount paid, date, and how the payment was made.', onPrint: 'rpt_paymentsLog()', onCsv: 'rpt_paymentsLogCSV()' })}
       ${card({ title: 'Expense Record', desc: 'All costs recorded this term — salaries, electricity, diesel, maintenance, supplies, internet, security and more.', onPrint: 'rpt_expenseRecord()', onCsv: 'rpt_expenseRecordCSV()' })}
     `)}
@@ -11619,4 +11911,117 @@ function rpt_classBroadsheet(classId) {
     <div style="overflow-x:auto"><table><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>
     ${_rptSign()}
   `);
+}
+
+/* ── Audit Log ────────────────────────────────────────────────────────── */
+function view_adm_audit() {
+  const sid = currentSchoolId();
+  const cat  = APP.params.audCat  || 'all';
+  const range = APP.params.audRange || '30d';
+  const q    = (APP.params.audQ || '').toLowerCase();
+
+  const CATEGORIES = {
+    students: ['student_login','added_student','updated_student','promoted_student','bulk_promoted','bulk_graduated','graduated_student','transferred_student','withdrew_student','suspended_student','changed_status','deferred_promotion','issued_refund'],
+    staff:    ['staff_hired','staff_terminated','staff_updated'],
+    finance:  ['payroll_draft_created','payroll_submitted','payroll_approved','payroll_paid'],
+    academic: ['lesson_plan_note_added','lesson_plan_note_updated','lesson_plan_note_deleted','opened_appraisal_cycle','appraisal_outcome_set']
+  };
+
+  const ACTION_META = {
+    student_login:             { label: 'Student login',          color: 'bg-blue-100 text-blue-700' },
+    added_student:             { label: 'Student added',          color: 'bg-emerald-100 text-emerald-700' },
+    updated_student:           { label: 'Student updated',        color: 'bg-sky-100 text-sky-700' },
+    promoted_student:          { label: 'Student promoted',       color: 'bg-violet-100 text-violet-700' },
+    bulk_promoted:             { label: 'Bulk promotion',         color: 'bg-violet-100 text-violet-700' },
+    bulk_graduated:            { label: 'Bulk graduation',        color: 'bg-amber-100 text-amber-700' },
+    graduated_student:         { label: 'Graduated',              color: 'bg-amber-100 text-amber-700' },
+    transferred_student:       { label: 'Transfer out',           color: 'bg-orange-100 text-orange-700' },
+    withdrew_student:          { label: 'Withdrawal',             color: 'bg-red-100 text-red-700' },
+    suspended_student:         { label: 'Suspension',             color: 'bg-red-100 text-red-700' },
+    changed_status:            { label: 'Status change',          color: 'bg-slate-100 text-slate-600' },
+    deferred_promotion:        { label: 'Promotion deferred',     color: 'bg-orange-100 text-orange-700' },
+    issued_refund:             { label: 'Refund issued',          color: 'bg-pink-100 text-pink-700' },
+    staff_hired:               { label: 'Staff hired',            color: 'bg-emerald-100 text-emerald-700' },
+    staff_terminated:          { label: 'Staff terminated',       color: 'bg-red-100 text-red-700' },
+    staff_updated:             { label: 'Staff updated',          color: 'bg-sky-100 text-sky-700' },
+    payroll_draft_created:     { label: 'Payroll started',        color: 'bg-blue-100 text-blue-700' },
+    payroll_submitted:         { label: 'Payroll submitted',      color: 'bg-amber-100 text-amber-700' },
+    payroll_approved:          { label: 'Payroll approved',       color: 'bg-emerald-100 text-emerald-700' },
+    payroll_paid:              { label: 'Payroll disbursed',      color: 'bg-emerald-100 text-emerald-700' },
+    lesson_plan_note_added:    { label: 'Plan note added',        color: 'bg-indigo-100 text-indigo-700' },
+    lesson_plan_note_updated:  { label: 'Plan note updated',      color: 'bg-indigo-100 text-indigo-700' },
+    lesson_plan_note_deleted:  { label: 'Plan note removed',      color: 'bg-slate-100 text-slate-600' },
+    opened_appraisal_cycle:    { label: 'Appraisal opened',       color: 'bg-violet-100 text-violet-700' },
+    appraisal_outcome_set:     { label: 'Appraisal outcome set',  color: 'bg-violet-100 text-violet-700' }
+  };
+
+  const nowTs  = Date.parse(now());
+  const dayMs  = 86400000;
+  const cutoff = range === '1d' ? nowTs - dayMs : range === '7d' ? nowTs - 7*dayMs : range === '30d' ? nowTs - 30*dayMs : 0;
+
+  const allTeachers = DB.get('teachers');
+  function actorName(id) {
+    const t = allTeachers.find(x => x.id === id);
+    if (t) return t.name;
+    const s = DB.get('students').find(x => x.id === id);
+    if (s) return s.name;
+    return id;
+  }
+
+  let logs = DB.query('auditLog', l => l.schoolId === sid)
+    .filter(l => cutoff === 0 || Date.parse(l.timestamp) >= cutoff)
+    .filter(l => cat === 'all' || (CATEGORIES[cat] || []).includes(l.action))
+    .filter(l => !q || l.target.toLowerCase().includes(q) || actorName(l.actor).toLowerCase().includes(q) || l.action.includes(q))
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+  const catTabs = [
+    { key: 'all',      label: 'All Activity' },
+    { key: 'students', label: 'Students' },
+    { key: 'staff',    label: 'Staff' },
+    { key: 'finance',  label: 'Finance' },
+    { key: 'academic', label: 'Academic' }
+  ];
+
+  const rangeBtns = [
+    { key: '1d',  label: 'Today' },
+    { key: '7d',  label: '7 days' },
+    { key: '30d', label: '30 days' },
+    { key: 'all', label: 'All time' }
+  ];
+
+  const rows = logs.length ? logs.slice(0, 200).map(l => {
+    const meta = ACTION_META[l.action] || { label: l.action, color: 'bg-slate-100 text-slate-600' };
+    return `
+      <div class="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
+        <div class="w-2 h-2 rounded-full bg-slate-300 mt-2.5 flex-shrink-0"></div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${meta.color}">${meta.label}</span>
+            <span class="text-sm font-medium text-slate-800 truncate">${l.target}</span>
+          </div>
+          <div class="flex items-center gap-3 mt-1 text-xs text-slate-500">
+            <span>${icon('teacher','w-3 h-3 inline -mt-0.5')} ${actorName(l.actor)}</span>
+            <span>${icon('calendar','w-3 h-3 inline -mt-0.5')} ${fdate(l.timestamp, { time: true })}</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('') : `<div class="py-12 text-center text-slate-400">${icon('reports','w-8 h-8 mx-auto mb-2 opacity-30')}<div>No activity found for this filter</div></div>`;
+
+  return `
+    ${pageHeader({ title: 'Audit Log', subtitle: 'A complete record of all significant actions taken in the system' })}
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
+      ${rangeBtns.map(r => `<button class="btn ${range === r.key ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="APP.params.audRange='${r.key}';APP.render()">${r.label}</button>`).join('')}
+      <div class="ml-auto">
+        <input class="input input-sm w-56" placeholder="Search actions, names…" value="${APP.params.audQ || ''}" oninput="APP.params.audQ=this.value;APP.render()">
+      </div>
+    </div>
+    ${tabs(catTabs, cat, k => { APP.params.audCat = k; APP.render(); })}
+    <div class="card mt-4 p-0">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <span class="text-sm font-semibold text-slate-700">${logs.length} record${logs.length !== 1 ? 's' : ''}${logs.length > 200 ? ' (showing 200 most recent)' : ''}</span>
+        <button class="btn btn-secondary btn-sm" onclick="window.print()">${icon('reports','w-4 h-4')} Export</button>
+      </div>
+      <div class="px-4 divide-y-0">${rows}</div>
+    </div>
+  `;
 }
