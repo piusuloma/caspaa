@@ -3005,6 +3005,7 @@ function _storeView() {
       return `<tr>
         <td><div class="font-semibold text-sm">${x.it.name}</div><div class="text-xs text-slate-400">${x.it.category}</div></td>
         <td class="text-right">${x.unitsSold}</td>
+        <td class="text-right text-slate-600">${money(x.cost)}</td>
         <td class="text-right font-bold ${unitMargin>0?'text-emerald-700':'text-red-700'}">${money(unitMargin)}</td>
         <td class="text-right"><span class="badge ${x.marginPct>=30?'badge-success':x.marginPct>=15?'badge-info':'badge-warn'}">${x.marginPct}%</span></td>
         <td class="text-right font-semibold">${money(x.revenue)}</td>
@@ -3053,8 +3054,9 @@ function _storeView() {
         <table class="w-full text-sm">
           <thead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
             <th class="text-left p-3">Item</th><th class="text-right p-3">Units Sold</th>
-            <th class="text-right p-3">Margin / Unit</th><th class="text-right p-3">Margin %</th>
-            <th class="text-right p-3">Total Revenue</th><th class="text-right p-3">Total Profit</th>
+            <th class="text-right p-3">Total Cost</th><th class="text-right p-3">Margin / Unit</th>
+            <th class="text-right p-3">Margin %</th><th class="text-right p-3">Total Revenue</th>
+            <th class="text-right p-3">Total Profit</th>
           </tr></thead>
           <tbody class="divide-y divide-slate-100">${itemRows}</tbody>
         </table>
