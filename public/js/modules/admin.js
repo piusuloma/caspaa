@@ -166,14 +166,41 @@ function view_adm_student_suspensions() {
 }
 
 function view_adm_workforce() {
-  return buildHub('Staff & HR', 'Staff directory, attendance, leave requests, appraisal', [
+  return buildHub('Staff & HR', 'Staff directory, attendance, leave requests, appraisal and payroll', [
     { key: 'staff',       label: 'Staff Directory',   view: 'view_adm_staff' },
     { key: 'attendance',  label: 'Staff Attendance',  view: 'view_adm_staff_att' },
     { key: 'leave',       label: 'Leave Requests',    view: 'view_adm_leave_requests', badge: () => DB.query('leaveRequests', l => l.schoolId === currentSchoolId() && l.status === 'pending').length || null },
     { key: 'apr_cycles',  label: 'Appraisal Cycles',  view: 'view_adm_appraisal_cycles', badge: () => { const sid=currentSchoolId(); return DB.query('appraisals', a => a.schoolId===sid && ['manager_pending','principal_pending','outcome_pending'].includes(a.status)).length || null; } },
     { key: 'apr_advances',label: 'Salary Advances',   view: 'view_adm_salary_advances',  badge: () => { const sid=currentSchoolId(); return DB.query('salaryAdvances', a => a.schoolId===sid && a.status==='pending').length || null; } },
+    { key: 'payroll',     label: 'Payroll',           view: 'view_adm_hr_panel',          badge: () => { const sid=currentSchoolId(); return DB.query('payrollRuns', r => r.schoolId===sid && r.stage==='draft').length || null; } },
     { key: 'former',      label: 'Former Staff',      view: 'view_adm_former_staff' }
   ], 'staff', 'workforceTab');
+}
+
+function view_adm_hr_panel() {
+  const tab = APP.params.hrTab || 'leave';
+  const schoolId = currentSchoolId();
+  const teachers = DB.query('teachers', t => t.schoolId === schoolId);
+  const leaves = DB.query('leaveRequests', l => l.schoolId === schoolId);
+  const pendingLeaves = leaves.filter(l => l.status === 'pending');
+  const today_ = today();
+  const todayAttendance = DB.query('staffAttendance', a => a.schoolId === schoolId && a.date === today_);
+  const draftPayroll = DB.query('payrollRuns', r => r.schoolId === schoolId && r.stage === 'draft').length;
+  return `
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      ${statCard({ label: 'Total Staff', value: teachers.length, icon: 'teacher', color: 'brand' })}
+      ${statCard({ label: 'Pending Leave', value: pendingLeaves.length, icon: 'bell', color: pendingLeaves.length ? 'gold' : 'brand' })}
+      ${statCard({ label: 'In Today', value: todayAttendance.length, icon: 'check', color: 'blue' })}
+      ${statCard({ label: 'Monthly Payroll', value: money(teachers.reduce((s, t) => s + (t.salary || 0), 0)), icon: 'fees', color: 'purple' })}
+    </div>
+    ${tabs([
+      { key: 'leave',   label: 'Leave Requests', badge: pendingLeaves.length || null },
+      { key: 'payroll', label: 'Start Payroll',   badge: draftPayroll || null }
+    ], tab, k => { APP.params.hrTab = k; APP.render(); })}
+    <div class="pt-4">
+      ${tab === 'payroll' ? renderHRPayrollPanel() : renderHRLeave()}
+    </div>
+  `;
 }
 
 /* ---------- Permissions Report ---------- */
@@ -4528,11 +4555,9 @@ function confirmReinstatement(studentId) {
 function view_adm_alumni() {
   const schoolId = currentSchoolId();
   const alumni = DB.query('students', s => s.schoolId === schoolId && s.status === 'alumni');
-  const transfersIn  = DB.query('students', s => s.schoolId === schoolId && s.admissionType === 'transfer' && s.status === 'active');
   const transfersOut = DB.query('students', s => s.schoolId === schoolId && s.status === 'transferred');
   const alumniTab = APP.params.alumniMainTab || 'graduates';
 
-  if (alumniTab === 'transfers_in')  return _renderTransfersIn(transfersIn, schoolId);
   if (alumniTab === 'transfers_out') return _renderTransfersOut(transfersOut, schoolId);
 
   const yearF = APP.params.alumniYear || 'all';
@@ -4553,15 +4578,14 @@ function view_adm_alumni() {
   if (yearF !== 'all') filtered = filtered.filter(a => String(a.graduationYear) === yearF);
 
   const mainTabs = [
-    { key: 'graduates',    label: `Graduates (${alumni.length})` },
-    { key: 'transfers_in', label: `Transfer-In (${transfersIn.length})` },
-    { key: 'transfers_out',label: `Transfer-Out (${transfersOut.length})` }
+    { key: 'graduates',     label: `Graduates (${alumni.length})` },
+    { key: 'transfers_out', label: `Transfer-Out (${transfersOut.length})` }
   ];
 
   return `
     ${pageHeader({
-      title: 'Alumni & Transfers',
-      subtitle: `${alumni.length} graduate${alumni.length !== 1 ? 's' : ''} · ${transfersIn.length} transfer-in · ${transfersOut.length} transfer-out`,
+      title: 'Alumni',
+      subtitle: `${alumni.length} graduate${alumni.length !== 1 ? 's' : ''} · ${transfersOut.length} transferred out`,
       actions: alumni.length ? `<button class="btn btn-secondary" onclick="exportAlumniCSV()">${icon('download','w-4 h-4')} CSV</button>` : ''
     })}
     ${tabs(mainTabs, alumniTab, k => { APP.params.alumniMainTab = k; APP.render(); })}
@@ -4625,36 +4649,10 @@ function view_adm_alumni() {
   `;
 }
 
-function _renderTransfersIn(transfersIn, schoolId) {
-  return `
-    ${pageHeader({ title: 'Alumni & Transfers', subtitle: 'Students who joined from another school' })}
-    ${tabs([{key:'graduates',label:'Graduates'},{key:'transfers_in',label:`Transfer-In (${transfersIn.length})`},{key:'transfers_out',label:'Transfer-Out'}], 'transfers_in', k => { APP.params.alumniMainTab = k; APP.render(); })}
-    <div class="card overflow-hidden mt-4">
-      <table class="tbl">
-        <thead><tr><th>Student</th><th>Class</th><th>Previous School</th><th>Last Class</th><th>Transfer Date</th><th>Reason</th></tr></thead>
-        <tbody>
-          ${transfersIn.length === 0
-            ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No transfer-in students recorded yet</td></tr>`
-            : transfersIn.map(s => {
-                const cls = DB.find('classes', s.classId);
-                return `<tr onclick="viewStudent('${s.id}')" class="cursor-pointer hover:bg-slate-50">
-                  <td><div class="flex items-center gap-2">${avatar(s,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-400">${s.admissionNo||''}</div></div></div></td>
-                  <td class="text-sm">${cls?cls.name:'—'}</td>
-                  <td class="text-sm">${s.transferFromSchool||'—'}</td>
-                  <td class="text-sm text-slate-500">${s.transferFromClass||'—'}</td>
-                  <td class="text-xs text-slate-500">${s.transferInDate?fdate(s.transferInDate,{short:true}):'—'}</td>
-                  <td class="text-sm text-slate-500">${s.transferInReason||'—'}</td>
-                </tr>`;
-              }).join('')}
-        </tbody>
-      </table>
-    </div>`;
-}
-
 function _renderTransfersOut(transfersOut, schoolId) {
   return `
-    ${pageHeader({ title: 'Alumni & Transfers', subtitle: 'Students who left to another school' })}
-    ${tabs([{key:'graduates',label:'Graduates'},{key:'transfers_in',label:'Transfer-In'},{key:'transfers_out',label:`Transfer-Out (${transfersOut.length})`}], 'transfers_out', k => { APP.params.alumniMainTab = k; APP.render(); })}
+    ${pageHeader({ title: 'Alumni', subtitle: 'Students who transferred to another school' })}
+    ${tabs([{key:'graduates',label:'Graduates'},{key:'transfers_out',label:`Transfer-Out (${transfersOut.length})`}], 'transfers_out', k => { APP.params.alumniMainTab = k; APP.render(); })}
     <div class="card overflow-hidden mt-4">
       <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
         <h3 class="font-bold text-slate-900">Transfer-Out Records</h3>
