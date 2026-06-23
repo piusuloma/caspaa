@@ -1131,6 +1131,7 @@ function view_tch_lessons(params) {
   const tab = (params && params.tab) || 'plans';
   const tabs = [
     { key: 'plans',  label: 'Lesson Plans' },
+    { key: 'scheme', label: 'Scheme of Work' },
     { key: 'notes',  label: 'Class Notes' },
     { key: 'videos', label: 'Videos' }
   ];
@@ -1151,17 +1152,28 @@ function view_tch_lessons(params) {
             const cls = DB.find('classes', l.classId);
             const sub = subjects.find(s => s.id === l.subjectId);
             return `<div class="card p-4">
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2">
+              ${(() => {
+                let schemeBadge = '';
+                if (l.schemeRef) {
+                  const [sid, widx] = l.schemeRef.split('|');
+                  const sc = DB.find('schemesOfWork', sid);
+                  if (sc) { const wk = sc.weeks[parseInt(widx)]; schemeBadge = wk ? `<span class="badge badge-success text-xs">${icon('check','w-3 h-3 inline')} Scheme Wk ${wk.week}</span>` : ''; }
+                } else {
+                  schemeBadge = `<span class="badge badge-warn text-xs" title="Not linked to a scheme of work">Off-scheme</span>`;
+                }
+                return `<div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <span class="badge badge-info">${cls ? cls.name : ''}</span>
                   <span class="badge badge-neutral">${sub ? sub.name : ''}</span>
-                  <span class="badge badge-success">${l.week}</span>
+                  <span class="badge badge-brand">${l.week}</span>
+                  ${schemeBadge}
                 </div>
                 <div class="flex items-center gap-1">
                   <span class="text-xs text-slate-400">${fdate(l.createdAt, { short: true })}</span>
                   <button class="btn btn-ghost !p-1.5" onclick="editLessonModal('${l.id}')" title="Edit lesson plan">${icon('edit','w-3.5 h-3.5')}</button>
                 </div>
-              </div>
+              </div>`;
+              })()}
               <h3 class="font-bold text-slate-900">${l.topic}</h3>
               <div class="grid sm:grid-cols-3 gap-3 mt-3 text-sm">
                 <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Objectives</div><div>${l.objectives}</div></div>
@@ -1187,6 +1199,10 @@ function view_tch_lessons(params) {
         </div>
       `}
     `;
+  }
+
+  if (tab === 'scheme') {
+    return tch_renderSchemeTab(tabBar);
   }
 
   if (tab === 'notes') {
@@ -1615,6 +1631,157 @@ function onLessonFilePick(ev) {
     if (preview) preview.innerHTML = `<div class="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="flex-1 truncate font-semibold text-emerald-900">${file.name}</span><span class="text-xs text-emerald-700">${_lessonFileBuffer.size}</span><button class="text-rose-600 text-xs" onclick="_lessonFileBuffer=null; document.getElementById('lp_filePreview').innerHTML=''">Remove</button></div>`;
   };
   reader.readAsDataURL(file);
+}
+
+function tch_renderSchemeTab(tabBar) {
+  const schoolId = AUTH.current.schoolId || AUTH.current.id;
+  const teacher = DB.find('teachers', AUTH.current.id);
+  const subjects = DB.get('subjects');
+  const classes = DB.get('classes');
+
+  // All schemes for subjects/classes this teacher is assigned to
+  const mySubjectIds = Array.isArray(teacher && teacher.subjects) ? teacher.subjects : (teacher && teacher.subjectId ? [teacher.subjectId] : []);
+  const myClassIds = Array.isArray(teacher && teacher.classes) ? teacher.classes : [];
+
+  const mySchemes = DB.query('schemesOfWork', s => s.schoolId === schoolId &&
+    (mySubjectIds.includes(s.subjectId) || myClassIds.includes(s.classId))
+  ).sort((a, b) => {
+    const subA = (subjects.find(s => s.id === a.subjectId) || {}).name || '';
+    const subB = (subjects.find(s => s.id === b.subjectId) || {}).name || '';
+    return subA.localeCompare(subB);
+  });
+
+  const myLessonPlans = DB.query('lessonPlans', l => l.teacherId === AUTH.current.id);
+
+  if (mySchemes.length === 0) {
+    return `
+      ${pageHeader({ title: 'Lessons & Content', subtitle: 'Your curriculum roadmap and coverage tracker' })}
+      ${tabBar}
+      ${emptyState({ title: 'No schemes of work assigned', body: 'Ask your admin to create schemes of work for your subjects — they will appear here as your teaching roadmap.', icon: 'book' })}
+    `;
+  }
+
+  const schemeCards = mySchemes.map(sc => {
+    const sub = subjects.find(s => s.id === sc.subjectId);
+    const cls = classes.find(c => c.id === sc.classId);
+    const covered = sc.weeks.filter(w => w.covered).length;
+    const total = sc.weeks.length;
+    const pct = total > 0 ? Math.round(covered / total * 100) : 0;
+    const color = pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-rose-500';
+    const remaining = sc.weeks.filter(w => !w.covered);
+
+    const weekRows = sc.weeks.map(w => {
+      const linked = myLessonPlans.find(l => l.schemeRef === `${sc.id}|${sc.weeks.indexOf(w)}`);
+      return `<tr class="${w.covered ? 'bg-emerald-50' : 'hover:bg-slate-50'}">
+        <td class="px-3 py-2 text-xs font-bold text-slate-500 w-14">Wk ${w.week}</td>
+        <td class="px-3 py-2">
+          <div class="text-sm font-semibold text-slate-900">${w.topic}</div>
+          ${w.subtopics && w.subtopics.length ? `<div class="text-xs text-slate-400 mt-0.5">${w.subtopics.slice(0,2).join(' · ')}${w.subtopics.length > 2 ? ' …' : ''}</div>` : ''}
+        </td>
+        <td class="px-3 py-2 text-xs text-slate-500 hidden sm:table-cell">${w.duration || '—'}</td>
+        <td class="px-3 py-2 text-center">
+          ${w.covered
+            ? `<span class="inline-flex items-center gap-1 text-xs text-emerald-700 font-semibold">${icon('check','w-3.5 h-3.5')} Done</span>`
+            : `<span class="text-xs text-amber-600 font-semibold">Pending</span>`}
+        </td>
+        <td class="px-3 py-2 text-right">
+          ${linked
+            ? `<span class="text-xs text-brand-700 font-semibold">${icon('book','w-3 h-3 inline')} Plan written</span>`
+            : `<button class="btn btn-secondary text-xs !py-1 !px-2" onclick="tch_quickPlanFromScheme('${sc.id}',${sc.weeks.indexOf(w)})">${icon('plus','w-3 h-3')} Write plan</button>`}
+        </td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="card overflow-hidden mb-5">
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <div class="font-bold text-slate-900">${sub ? sub.name : '—'} <span class="text-slate-400 font-normal">·</span> ${cls ? cls.name : '—'}</div>
+          <div class="text-xs text-slate-500">${sc.term} · ${total} weeks · ${covered} covered</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="w-32">
+            <div class="flex justify-between text-xs mb-0.5"><span class="text-slate-500">Coverage</span><span class="font-bold ${pct>=80?'text-emerald-700':pct>=50?'text-amber-600':'text-rose-600'}">${pct}%</span></div>
+            <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full ${color} rounded-full transition-all" style="width:${pct}%"></div></div>
+          </div>
+          ${remaining.length > 0 ? `<span class="badge badge-warn text-xs">${remaining.length} left</span>` : `<span class="badge badge-success text-xs">${icon('check','w-3 h-3 inline')} Complete</span>`}
+        </div>
+      </div>
+      <table class="w-full text-sm">
+        <thead><tr class="bg-slate-50 text-xs uppercase text-slate-400 border-b border-slate-100">
+          <th class="px-3 py-2 text-left w-14">Week</th>
+          <th class="px-3 py-2 text-left">Topic</th>
+          <th class="px-3 py-2 text-left hidden sm:table-cell">Duration</th>
+          <th class="px-3 py-2 text-center">Status</th>
+          <th class="px-3 py-2 text-right">Lesson Plan</th>
+        </tr></thead>
+        <tbody class="divide-y divide-slate-100">${weekRows}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  return `
+    ${pageHeader({ title: 'Lessons & Content', subtitle: 'Your scheme of work — curriculum roadmap and coverage tracker' })}
+    ${tabBar}
+    ${schemeCards}
+  `;
+}
+
+function tch_quickPlanFromScheme(schemeId, weekIdx) {
+  const sc = DB.find('schemesOfWork', schemeId);
+  if (!sc) return;
+  const w = sc.weeks[weekIdx];
+  _lessonFileBuffer = null;
+  const classes = DB.get('classes');
+  const subjects = DB.get('subjects');
+  const cls = classes.find(c => c.id === sc.classId);
+  const sub = subjects.find(s => s.id === sc.subjectId);
+  modal({
+    title: `Lesson Plan — ${sub ? sub.name : ''} · Week ${w.week}`,
+    body: `
+      <div class="bg-slate-50 rounded-xl p-3 mb-3 text-sm">
+        <div class="font-semibold text-slate-800 mb-1">${icon('book','w-4 h-4 inline text-brand-600')} Scheme Week ${w.week}: ${w.topic}</div>
+        ${w.subtopics && w.subtopics.length ? `<div class="text-xs text-slate-500">${w.subtopics.join(', ')}</div>` : ''}
+        ${w.objectives ? `<div class="text-xs text-slate-600 mt-1"><strong>Objectives:</strong> ${w.objectives}</div>` : ''}
+      </div>
+      <div class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Class</label><input class="input" value="${cls ? cls.name : ''}" readonly /></div>
+          <div><label class="input-label">Week</label><input id="qp_week" class="input" value="Week ${w.week}" /></div>
+        </div>
+        <div><label class="input-label">Topic</label><input id="qp_topic" class="input" value="${w.topic}" /></div>
+        <div><label class="input-label">Objectives</label><textarea id="qp_obj" rows="2" class="input">${w.objectives || ''}</textarea></div>
+        <div><label class="input-label">Activities</label><textarea id="qp_act" rows="2" class="input" placeholder="e.g. Group work, guided practice, board examples"></textarea></div>
+        <div><label class="input-label">Resources</label><input id="qp_res" class="input" value="${w.resources || ''}" /></div>
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="tch_saveQuickPlan('${schemeId}',${weekIdx},'${sc.classId}','${sc.subjectId}')">Save Lesson Plan</button>`
+  });
+}
+
+function tch_saveQuickPlan(schemeId, weekIdx, classId, subjectId) {
+  const week = document.getElementById('qp_week').value.trim();
+  const topic = document.getElementById('qp_topic').value.trim();
+  if (!topic || !week) { toast('Week and topic required', 'danger'); return; }
+  const lp = {
+    id: uid('lp'), schoolId: AUTH.current.schoolId || AUTH.current.id, teacherId: AUTH.current.id,
+    classId, subjectId, week, topic,
+    objectives: document.getElementById('qp_obj').value.trim(),
+    activities: document.getElementById('qp_act').value.trim(),
+    resources: document.getElementById('qp_res').value.trim(),
+    schemeRef: `${schemeId}|${weekIdx}`,
+    file: null, createdAt: now()
+  };
+  DB.insert('lessonPlans', lp);
+  const sc = DB.find('schemesOfWork', schemeId);
+  if (sc && !sc.weeks[weekIdx].covered) {
+    sc.weeks[weekIdx].covered = true;
+    sc.weeks[weekIdx].coveredAt = now();
+    sc.weeks[weekIdx].coveredBy = AUTH.current.id;
+    DB.update('schemesOfWork', schemeId, { weeks: sc.weeks });
+  }
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast('Lesson plan saved and scheme week marked covered', 'success');
 }
 
 function createLessonModal() {
