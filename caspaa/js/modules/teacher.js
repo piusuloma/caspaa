@@ -980,26 +980,14 @@ function openAssignment(assignmentId) {
                   ${sub.text ? `<div class="text-sm text-slate-700 bg-white rounded-lg p-2 border border-slate-200">${sub.text}</div>` : ''}
                   ${sub.file ? `<a href="${sub.file.data}" download="${sub.file.name}" class="inline-flex items-center gap-1.5 text-xs text-brand-700 font-semibold">${icon('paperclip','w-3.5 h-3.5')} ${sub.file.name}</a>` : ''}
                 </div>` : ''}
-                ${sub && !graded ? `<div class="mt-2 pl-11 space-y-2">
-                  <div class="flex items-center gap-2">
-                    <input type="number" min="0" max="100" placeholder="/100" class="input !w-20 text-sm" id="grd_${s.id}" />
-                    <select id="mk_${s.id}" class="input text-sm flex-1">
-                      <option value="">— Mark status —</option>
-                      <option value="excellent">⭐ Excellent</option>
-                      <option value="satisfactory">✓ Satisfactory</option>
-                      <option value="needs_revision">🔄 Needs Revision</option>
-                    </select>
-                  </div>
-                  <textarea id="fb_${s.id}" rows="2" class="input text-sm w-full" placeholder="Comments for student (they will see this)…"></textarea>
-                  <div class="flex gap-2">
-                    <button class="btn btn-primary !py-1.5 !px-3 text-xs" onclick="gradeSubmission('${a.id}', '${s.id}')">${icon('check','w-3.5 h-3.5')} Grade</button>
-                    <button class="btn btn-secondary !py-1.5 !px-3 text-xs" onclick="tch_returnToStudent('${a.id}', '${s.id}')">${icon('arrow_left','w-3.5 h-3.5 rotate-180')} Return to Student</button>
-                  </div>
+                ${sub && !graded ? `<div class="mt-2 pl-11">
+                  <button class="btn btn-primary text-sm w-full" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>tch_openMarkingView('${a.id}','${s.id}'),120)">${icon('edit','w-4 h-4')} Open Full Marking View</button>
                 </div>` : ''}
                 ${graded ? `<div class="mt-2 pl-11 space-y-1">
                   <div class="flex items-center gap-2 flex-wrap">
                     ${sub.markStatus ? `<span class="text-xs font-semibold ${sub.markStatus === 'excellent' ? 'text-emerald-600' : sub.markStatus === 'satisfactory' ? 'text-blue-600' : 'text-amber-600'}">${sub.markStatus === 'excellent' ? '⭐ Excellent' : sub.markStatus === 'needs_revision' ? '🔄 Needs Revision' : '✓ Satisfactory'}</span>` : ''}
                     ${sub.resubmissionRequested ? `<span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">${icon('refresh','w-3 h-3')} Awaiting resubmission</span>` : ''}
+                    <button class="btn btn-ghost !py-0.5 !px-2 text-xs text-slate-500" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>tch_openMarkingView('${a.id}','${s.id}'),120)">${icon('edit','w-3 h-3')} View / Re-mark</button>
                   </div>
                   ${sub.feedback ? `<div class="text-xs text-slate-700 bg-white rounded-lg p-2 border border-slate-200"><strong class="text-slate-500">Teacher comments:</strong> ${sub.feedback}</div>` : ''}
                   ${sub.returned ? `<div class="text-xs text-brand-700 font-semibold">${icon('check','w-3 h-3 inline')} Returned to student ${fdate(sub.returnedAt, { relative: true })}</div>` : `<button class="btn btn-ghost !py-0.5 !px-2 text-xs text-slate-500" onclick="tch_returnToStudent('${a.id}', '${s.id}')">Mark as returned</button>`}
@@ -1057,6 +1045,264 @@ function deleteAssignmentConfirm(assignmentId) {
     APP.render();
     toast('Assignment deleted', 'info');
   }, { yesLabel: 'Delete', danger: true });
+}
+
+/* ─── Full Marking View ──────────────────────────────────────────────── */
+let _mkv = {}; // marking view state
+
+function tch_openMarkingView(assignmentId, studentId) {
+  const a = DB.find('assignments', assignmentId);
+  if (!a) return;
+  const sub = a.submissions.find(s => s.studentId === studentId);
+  if (!sub) return;
+  const student = DB.find('students', studentId);
+  const allSubmitted = a.submissions.filter(s => s.text || s.file || s.imageData);
+  const idx = allSubmitted.findIndex(s => s.studentId === studentId);
+
+  _mkv = { assignmentId, studentId, tool: 'pen', color: '#ef4444', size: 3, drawing: false };
+
+  const isImage = sub.file && sub.file.type && sub.file.type.startsWith('image/');
+  const hasImage = isImage || sub.imageData;
+  const imgSrc = sub.imageData || (isImage ? sub.file.data : null);
+
+  const navPrev = idx > 0 ? allSubmitted[idx - 1].studentId : null;
+  const navNext = idx < allSubmitted.length - 1 ? allSubmitted[idx + 1].studentId : null;
+
+  const graded = sub.grade != null;
+  const QUICK = ['Good work!', 'Well done', 'See correction above', 'Revise and resubmit', 'Check your working', 'Needs more detail', 'Excellent effort'];
+
+  const submissionArea = hasImage ? `
+    <div class="relative bg-slate-900 rounded-xl overflow-hidden select-none" id="mkv_wrap" style="min-height:320px">
+      <img id="mkv_img" src="${imgSrc}" class="w-full block rounded-xl" style="opacity:0.97" draggable="false" />
+      <canvas id="mkv_canvas" class="absolute inset-0 w-full h-full rounded-xl cursor-crosshair" style="touch-action:none"></canvas>
+    </div>
+    <div class="flex items-center gap-2 mt-2 flex-wrap">
+      <span class="text-xs text-slate-500 font-semibold">Tool:</span>
+      <button id="mkv_pen" class="btn btn-secondary !py-1 !px-3 text-xs active-tool" onclick="mkvSetTool('pen')">✏️ Pen</button>
+      <button id="mkv_highlight" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('highlight')">🖊 Highlight</button>
+      <button id="mkv_eraser" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('eraser')">⬜ Eraser</button>
+      <span class="text-xs text-slate-500 font-semibold ml-2">Colour:</span>
+      ${['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#000000'].map(c =>
+        `<button class="w-6 h-6 rounded-full border-2 ${c === '#ef4444' ? 'border-slate-700 scale-110' : 'border-transparent'} transition-all" style="background:${c}" onclick="mkvSetColor('${c}',this)"></button>`
+      ).join('')}
+      <span class="text-xs text-slate-500 font-semibold ml-2">Size:</span>
+      <input type="range" min="1" max="12" value="3" id="mkv_size" class="w-24" oninput="mkvSetSize(this.value)">
+      <button class="btn btn-secondary !py-1 !px-3 text-xs ml-auto text-rose-600" onclick="mkvClear()">🗑 Clear</button>
+    </div>` : sub.text ? `
+    <div class="bg-slate-50 rounded-xl p-4 text-sm text-slate-800 leading-relaxed min-h-48 whitespace-pre-wrap border border-slate-200">${sub.text}</div>` : sub.file ? `
+    <div class="flex flex-col items-center justify-center bg-slate-50 rounded-xl p-8 min-h-48 border border-slate-200">
+      ${icon('paperclip','w-10 h-10 text-brand-400 mb-3')}
+      <div class="font-semibold text-slate-700 mb-1">${sub.file.name}</div>
+      <div class="text-xs text-slate-500 mb-3">${sub.file.size || ''}</div>
+      <a href="${sub.file.data}" download="${sub.file.name}" class="btn btn-primary text-sm">${icon('download','w-4 h-4')} Download to View</a>
+    </div>` : `<div class="text-slate-400 text-center py-12">No submission content</div>`;
+
+  modal({
+    title: '',
+    size: 'xl',
+    body: `
+      <div class="flex flex-col lg:flex-row gap-4" style="min-height:520px">
+        <!-- Left: submission viewer -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              ${avatar(student, 'sm')}
+              <div>
+                <div class="font-bold text-slate-900">${student ? student.name : '—'}</div>
+                <div class="text-xs text-slate-500">Submitted ${fdate(sub.submittedAt, { relative: true })}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1">
+              ${navPrev ? `<button class="btn btn-secondary !py-1 !px-2 text-xs" onclick="tch_openMarkingView('${assignmentId}','${navPrev}')" title="Previous student">← Prev</button>` : ''}
+              <span class="text-xs text-slate-500 px-1">${idx+1} / ${allSubmitted.length}</span>
+              ${navNext ? `<button class="btn btn-secondary !py-1 !px-2 text-xs" onclick="tch_openMarkingView('${assignmentId}','${navNext}')" title="Next student">Next →</button>` : ''}
+            </div>
+          </div>
+          ${submissionArea}
+          ${sub.annotation && !hasImage ? `<div class="mt-3 p-2 bg-slate-50 rounded-lg text-xs text-slate-500">${icon('check','w-3 h-3 inline text-emerald-500')} Annotation saved</div>` : ''}
+        </div>
+
+        <!-- Right: marking panel -->
+        <div class="w-full lg:w-72 flex-shrink-0 flex flex-col gap-3">
+          <div class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">${a.title}</div>
+
+          <!-- Score -->
+          <div>
+            <label class="input-label">Score / 100</label>
+            <input id="mkv_grade" type="number" min="0" max="100" class="input !text-2xl !font-extrabold !text-brand-700 text-center" placeholder="—" value="${graded ? sub.grade : ''}" />
+          </div>
+
+          <!-- Status -->
+          <div>
+            <label class="input-label">Mark Status</label>
+            <div class="grid grid-cols-3 gap-1.5">
+              ${[['excellent','⭐','bg-emerald-50 border-emerald-300 text-emerald-800'],['satisfactory','✓','bg-blue-50 border-blue-300 text-blue-800'],['needs_revision','🔄','bg-amber-50 border-amber-300 text-amber-800']].map(([val,emoji,cls]) =>
+                `<button id="mkvst_${val}" onclick="mkvSetStatus('${val}')" class="border rounded-xl py-2 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all ${sub.markStatus===val ? cls + ' ring-2 ring-offset-1' : 'border-slate-200 hover:bg-slate-50'}">
+                  <span class="text-base">${emoji}</span>${val.replace('_',' ')}
+                </button>`).join('')}
+            </div>
+          </div>
+
+          <!-- Comments -->
+          <div>
+            <label class="input-label">Comments for student</label>
+            <textarea id="mkv_feedback" rows="4" class="input text-sm" placeholder="Write your feedback, corrections, and suggestions here...">${graded && sub.feedback ? sub.feedback : ''}</textarea>
+          </div>
+
+          <!-- Quick comment chips -->
+          <div>
+            <div class="text-xs text-slate-500 mb-1.5">Quick comments</div>
+            <div class="flex flex-wrap gap-1.5">
+              ${QUICK.map(q => `<button class="chip text-xs !py-1" onclick="mkvAddComment('${q.replace(/'/g,'&#39;')}')">${q}</button>`).join('')}
+            </div>
+          </div>
+
+          <!-- Save -->
+          <div class="mt-auto pt-3 border-t border-slate-100 flex gap-2">
+            <button class="btn btn-primary flex-1" onclick="tch_saveMarking('${assignmentId}','${studentId}')">${icon('check','w-4 h-4')} Save &amp; Grade</button>
+            ${navNext ? `<button class="btn btn-secondary text-sm" onclick="tch_saveMarkingAndNext('${assignmentId}','${studentId}','${navNext}')">${icon('arrow_left','w-4 h-4 rotate-180')} Save &amp; Next</button>` : ''}
+          </div>
+        </div>
+      </div>`,
+    footer: ''
+  });
+
+  if (hasImage) setTimeout(() => mkvInitCanvas(imgSrc, sub.annotation), 80);
+}
+
+function mkvInitCanvas(imgSrc, existingAnnotation) {
+  const canvas = document.getElementById('mkv_canvas');
+  const img = document.getElementById('mkv_img');
+  if (!canvas || !img) return;
+  const resize = () => {
+    canvas.width = img.naturalWidth || img.offsetWidth;
+    canvas.height = img.naturalHeight || img.offsetHeight;
+    canvas.style.width = img.offsetWidth + 'px';
+    canvas.style.height = img.offsetHeight + 'px';
+    if (existingAnnotation) {
+      const ann = new Image();
+      ann.onload = () => { const ctx = canvas.getContext('2d'); ctx.drawImage(ann, 0, 0, canvas.width, canvas.height); };
+      ann.src = existingAnnotation;
+    }
+  };
+  if (img.complete) resize(); else img.onload = resize;
+
+  const ctx = canvas.getContext('2d');
+  const pos = (e) => {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / r.width;
+    const scaleY = canvas.height / r.height;
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * scaleX, y: (src.clientY - r.top) * scaleY };
+  };
+  const start = (e) => {
+    e.preventDefault();
+    _mkv.drawing = true;
+    const p = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  };
+  const move = (e) => {
+    e.preventDefault();
+    if (!_mkv.drawing) return;
+    const p = pos(e);
+    if (_mkv.tool === 'eraser') {
+      ctx.clearRect(p.x - 12, p.y - 12, 24, 24);
+    } else {
+      ctx.globalAlpha = _mkv.tool === 'highlight' ? 0.35 : 1;
+      ctx.strokeStyle = _mkv.color;
+      ctx.lineWidth = _mkv.tool === 'highlight' ? (_mkv.size * 4) : _mkv.size;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+    }
+  };
+  const stop = () => { _mkv.drawing = false; ctx.globalAlpha = 1; };
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', stop);
+  canvas.addEventListener('mouseleave', stop);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', stop);
+}
+
+function mkvSetTool(t) {
+  _mkv.tool = t;
+  ['pen','highlight','eraser'].forEach(k => {
+    const b = document.getElementById('mkv_' + k);
+    if (b) b.classList.toggle('active-tool', k === t);
+  });
+}
+function mkvSetColor(c, btn) {
+  _mkv.color = c;
+  document.querySelectorAll('[onclick^="mkvSetColor"]').forEach(b => b.style.borderColor = 'transparent');
+  if (btn) btn.style.borderColor = '#334155';
+  if (_mkv.tool === 'eraser') mkvSetTool('pen');
+}
+function mkvSetSize(v) { _mkv.size = parseInt(v); }
+function mkvClear() {
+  const canvas = document.getElementById('mkv_canvas');
+  if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+}
+function mkvAddComment(text) {
+  const el = document.getElementById('mkv_feedback');
+  if (!el) return;
+  el.value = el.value ? el.value + '\n' + text : text;
+  el.focus();
+}
+function mkvSetStatus(val) {
+  _mkv.status = val === _mkv.status ? null : val;
+  ['excellent','satisfactory','needs_revision'].forEach(k => {
+    const b = document.getElementById('mkvst_' + k);
+    if (!b) return;
+    const cls = k==='excellent'?'bg-emerald-50 border-emerald-300 text-emerald-800 ring-2 ring-emerald-400 ring-offset-1':k==='satisfactory'?'bg-blue-50 border-blue-300 text-blue-800 ring-2 ring-blue-400 ring-offset-1':'bg-amber-50 border-amber-300 text-amber-800 ring-2 ring-amber-400 ring-offset-1';
+    b.className = b.className.replace(/bg-\S+|border-\S+|text-\S+|ring\S*/g,'').trim();
+    if (k === _mkv.status) b.className += ' ' + cls;
+    else b.className += ' border-slate-200 hover:bg-slate-50';
+  });
+}
+
+function tch_saveMarking(assignmentId, studentId, nextStudentId) {
+  const a = DB.find('assignments', assignmentId);
+  const gradeVal = document.getElementById('mkv_grade');
+  const grade = gradeVal && gradeVal.value !== '' ? parseInt(gradeVal.value) : null;
+  if (grade !== null && (isNaN(grade) || grade < 0 || grade > 100)) { toast('Enter a valid score 0–100', 'danger'); return; }
+  const feedback = (document.getElementById('mkv_feedback') || {}).value.trim();
+  const markStatus = _mkv.status || null;
+  const canvas = document.getElementById('mkv_canvas');
+  const annotation = canvas && canvas.width > 0 ? canvas.toDataURL('image/png') : null;
+  const idx = a.submissions.findIndex(s => s.studentId === studentId);
+  if (idx === -1) return;
+  const resubmissionRequested = markStatus === 'needs_revision';
+  Object.assign(a.submissions[idx], {
+    ...(grade !== null ? { grade, gradedAt: now() } : {}),
+    feedback: feedback || a.submissions[idx].feedback,
+    markStatus: markStatus || a.submissions[idx].markStatus,
+    resubmissionRequested,
+    ...(annotation ? { annotation } : {})
+  });
+  DB.update('assignments', assignmentId, { submissions: a.submissions });
+  const student = DB.find('students', studentId);
+  if (grade !== null && student) {
+    const statusLabel = markStatus === 'excellent' ? ' · ⭐ Excellent' : markStatus === 'needs_revision' ? ' · 🔄 Needs Revision' : markStatus === 'satisfactory' ? ' · ✓ Satisfactory' : '';
+    DB.insert('notifications', { id: uid('not'), userId: student.id, title: 'Assignment Graded', body: `${a.title}: ${grade}/100${statusLabel}${feedback ? ' — ' + feedback : ''}`, type: 'success', read: false, timestamp: now(), link: { view: 'stu_assignments' } });
+    if (resubmissionRequested) DB.insert('notifications', { id: uid('not'), userId: student.id, title: 'Resubmission Requested', body: `Your teacher has reviewed "${a.title}" and requested a resubmission. Check the feedback.`, type: 'warn', read: false, timestamp: now(), link: { view: 'stu_assignments' } });
+  }
+  toast(grade !== null ? 'Graded and saved' : 'Feedback saved', 'success');
+  if (nextStudentId) {
+    tch_openMarkingView(assignmentId, nextStudentId);
+  } else {
+    document.getElementById('modalBackdrop')?.click();
+    APP.render();
+  }
+}
+
+function tch_saveMarkingAndNext(assignmentId, studentId, nextStudentId) {
+  tch_saveMarking(assignmentId, studentId, nextStudentId);
 }
 
 function editAssignmentModal(assignmentId) {

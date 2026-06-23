@@ -29,6 +29,8 @@ body { min-height: 100vh; }
 .btn-ghost:hover { background: #f1f5f9; }
 .btn-danger { background: #dc2626; color: #fff; }
 .btn-danger:hover { background: #b91c1c; }
+.btn-warn { background: #d97706; color: #fff; }
+.btn-warn:hover { background: #b45309; }
 .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
 
 /* Inputs */
@@ -103,6 +105,9 @@ body { min-height: 100vh; }
 /* Chip / pill */
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; background: #f1f5f9; color: #334155; font-size: 0.75rem; font-weight: 500; cursor: pointer; }
 .chip.active { background: #047857; color: #fff; }
+
+/* Marking tool active state */
+.active-tool { background: #1e3a8a !important; color: #fff !important; }
 
 /* Progress */
 .progress { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
