@@ -801,8 +801,8 @@ function view_par_fees() {
           ${(() => {
             const credit = getStudentCredit(s.id);
             return credit > 0 ? `<div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 mt-3 text-sm">
-              <div class="flex items-center gap-2 text-emerald-800 font-semibold">${icon('check','w-4 h-4')} Credit balance: ${money(credit)}</div>
-              ${inv.balance > 0 ? `<button class="text-xs underline text-emerald-700 font-semibold" onclick="applyStudentCredit('${inv.id}')">Apply to balance →</button>` : '<span class="text-xs text-emerald-600">Auto-applies next term</span>'}
+              <div class="flex items-center gap-2 text-emerald-800 font-semibold">${icon('check','w-4 h-4')} Advance Payment: ${money(credit)}</div>
+              ${inv.balance > 0 ? `<button class="text-xs underline text-emerald-700 font-semibold" onclick="applyStudentCredit('${inv.id}')">Apply to balance →</button>` : '<span class="text-xs text-emerald-600">Auto-applies to next invoice</span>'}
             </div>` : '';
           })()}
           <div class="grid grid-cols-2 gap-2 mt-3">
@@ -1188,7 +1188,7 @@ function saveDiscount(invoiceId) {
   toast(`${label} of ${money(amount)} applied`, 'success');
 }
 
-/* ---------- Credit Balance Helpers ---------- */
+/* ---------- Advance Payment Helpers ---------- */
 function getStudentCredit(studentId) {
   return (DB.query('studentCredits', c => c.studentId === studentId)[0] || { balance: 0 }).balance;
 }
@@ -1204,15 +1204,15 @@ function applyStudentCredit(invoiceId) {
   const inv = DB.find('invoices', invoiceId);
   if (!inv || inv.balance <= 0) return;
   const credit = getStudentCredit(inv.studentId);
-  if (credit <= 0) { toast('No credit balance available', 'info'); return; }
+  if (credit <= 0) { toast('No advance payment balance available', 'info'); return; }
   const apply = Math.min(credit, inv.balance);
   const newPaid = inv.paid + apply;
   const newBalance = inv.balance - apply;
   DB.update('invoices', inv.id, { paid: newPaid, balance: newBalance, status: newBalance === 0 ? 'paid' : 'partial' });
   adjustStudentCredit(inv.studentId, inv.schoolId, -apply);
-  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'credit_applied', target: `${money(apply)} credit to ${DB.find('students', inv.studentId)?.name}`, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'advance_applied', target: `${money(apply)} advance to ${DB.find('students', inv.studentId)?.name}`, timestamp: now() });
   const remaining = credit - apply;
-  toast(`${money(apply)} credit applied${remaining > 0 ? ` · ${money(remaining)} credit remaining` : ''}`, 'success');
+  toast(`${money(apply)} advance payment applied${remaining > 0 ? ` · ${money(remaining)} remaining` : ''}`, 'success');
   document.getElementById('modalBackdrop')?.click();
   APP.render();
 }
@@ -1231,7 +1231,7 @@ function payInvoiceModal(invoiceId) {
         <div class="text-xs text-slate-500">Outstanding balance</div>
         <div class="text-3xl font-extrabold text-brand-700 mt-1">${money(inv.balance)}</div>
         ${credit > 0 ? `<div class="mt-2 inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-3 py-1 text-sm font-semibold">
-          ${icon('check','w-3.5 h-3.5')} Credit: ${money(credit)}
+          ${icon('check','w-3.5 h-3.5')} Advance Payment: ${money(credit)}
           <button class="ml-1 text-xs underline font-normal hover:text-emerald-900" onclick="applyStudentCredit('${inv.id}')">Apply now →</button>
         </div>` : ''}
       </div>
@@ -1239,7 +1239,7 @@ function payInvoiceModal(invoiceId) {
       <div class="bg-slate-50 rounded-xl p-3 mb-2">
         <label class="input-label">Pay Amount (₦)</label>
         <input id="pay_amount" type="number" class="input text-xl font-bold" value="${inv.balance}" min="1" />
-        <div class="text-xs text-slate-500 mt-1.5">${icon('info','w-3.5 h-3.5 inline')} Paying more than your balance saves the excess as credit for next term.</div>
+        <div class="text-xs text-slate-500 mt-1.5">${icon('info','w-3.5 h-3.5 inline')} Paying more than your balance is recorded as an advance payment and auto-applied to your next term's invoice.</div>
       </div>
 
       <div>
@@ -1383,9 +1383,9 @@ function completePayment(invoiceId, amount, method) {
 
   const student = DB.find('students', inv.studentId);
   let notifBody = `Your payment of ${money(amount)} was received.`;
-  if (creditToAdd > 0) notifBody += ` ${money(applyToInvoice)} applied to invoice — ${money(creditToAdd)} saved as credit balance for next term.`;
+  if (creditToAdd > 0) notifBody += ` ${money(applyToInvoice)} applied to invoice — ${money(creditToAdd)} recorded as advance payment and will be applied to your next invoice.`;
   DB.insert('notifications', { id: uid('not'), userId: AUTH.current.id, title: 'Payment Received', body: notifBody, type: 'success', read: false, timestamp: now(), link: { view: 'par_fees' } });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'payment', target: `${money(amount)} for ${student ? student.name : inv.studentId}${creditToAdd > 0 ? ` · ${money(creditToAdd)} to credit` : ''}`, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'payment', target: `${money(amount)} for ${student ? student.name : inv.studentId}${creditToAdd > 0 ? ` · ${money(creditToAdd)} advance` : ''}`, timestamp: now() });
 
   document.getElementById('modalBackdrop')?.click();
   const hasMore = _payQueue.length > 0;
@@ -1398,7 +1398,7 @@ function completePayment(invoiceId, amount, method) {
         <h2 class="text-2xl font-bold text-slate-900">${money(amount)}</h2>
         <p class="text-slate-500 mt-1">paid successfully</p>
         ${creditToAdd > 0 ? `<div class="mt-3 bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
-          ${icon('check','w-4 h-4 inline')} <strong>${money(creditToAdd)}</strong> saved as advance credit — will be auto-applied to your next invoice.
+          ${icon('check','w-4 h-4 inline')} <strong>${money(creditToAdd)}</strong> recorded as advance payment — will be automatically applied to your next invoice.
         </div>` : ''}
         <div class="bg-slate-50 rounded-xl p-3 mt-3 text-left text-sm">
           <div class="flex justify-between py-1"><span class="text-slate-500">Reference</span><code class="text-xs">${txn.reference}</code></div>

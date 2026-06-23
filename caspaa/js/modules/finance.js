@@ -422,7 +422,7 @@ function confirmBulkGenerateInvoices() {
     }
     // Notify parent
     if (s.parentId) {
-      const creditNote = autoApply > 0 ? ` ${money(autoApply)} credit automatically applied — ${initBalance > 0 ? `balance due: ${money(initBalance)}` : 'fully covered by credit!'}.` : '';
+      const creditNote = autoApply > 0 ? ` ${money(autoApply)} advance payment automatically applied — ${initBalance > 0 ? `balance due: ${money(initBalance)}` : 'fully covered by your advance payment!'}.` : '';
       DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'New Invoice', body: `${s.name}'s invoice for ${currentTerm} is ready. Total: ${money(total)}.${creditNote}`, type: 'info', read: false, timestamp: now(), link: { view: 'par_fees' } });
     }
     created++;
@@ -1076,7 +1076,7 @@ function view_fin_ledger() {
               <th class="text-right">Fee Amount</th>
               <th class="text-right">Received</th>
               <th class="text-right">Outstanding</th>
-              <th class="text-right">Credit</th>
+              <th class="text-right">Advance Paid</th>
               <th>Status</th>
               <th class="text-right">Actions</th>
             </tr>
@@ -1095,7 +1095,7 @@ function view_fin_ledger() {
                 <td>${statusBadge(inv.status)}</td>
                 <td class="text-right whitespace-nowrap">
                   ${inv.balance > 0 ? `<button class="btn btn-primary !py-1 !px-2.5 text-xs mr-1" onclick="ledgerQuickPay('${inv.id}')">${icon('fees','w-3.5 h-3.5')} Pay</button>` : ''}
-                  ${credit > 0 && inv.balance > 0 ? `<button class="btn btn-ghost !p-1.5 text-blue-600" title="Apply credit to invoice" onclick="ledgerApplyCredit('${inv.id}')">${icon('check','w-4 h-4')}</button>` : ''}
+                  ${credit > 0 && inv.balance > 0 ? `<button class="btn btn-ghost !p-1.5 text-blue-600" title="Apply advance payment to invoice" onclick="ledgerApplyCredit('${inv.id}')">${icon('check','w-4 h-4')}</button>` : ''}
                   ${inv.paid > 0 ? `<button class="btn btn-ghost !p-1.5 text-emerald-700" title="Print receipt" onclick="sendReceiptToParent('${inv.id}')">${icon('download','w-4 h-4')}</button>` : ''}
                   ${inv.balance > 0 ? `<button class="btn btn-ghost !p-1.5 text-amber-600" title="Send reminder to parent" onclick="sendManualReminder('${inv.id}')">${icon('bell','w-4 h-4')}</button>` : ''}
                 </td>
@@ -1172,12 +1172,12 @@ function ledgerSaveQuickPay(invoiceId) {
   const s = DB.find('students', inv.studentId);
   if (s && s.parentId) {
     let body = `${money(amount)} received for ${s.name}. ${newBalance > 0 ? `Balance: ${money(newBalance)}.` : 'Account fully settled — thank you!'}`;
-    if (creditToAdd > 0) body += ` ${money(creditToAdd)} saved as advance credit.`;
+    if (creditToAdd > 0) body += ` ${money(creditToAdd)} recorded as advance payment for next term.`;
     DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Payment Received', body, type: 'success', read: false, timestamp: now(), link: { view: 'par_fees' } });
   }
-  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'fee_payment_recorded', target: `${s ? s.name : inv.studentId} · ${money(amount)}${creditToAdd > 0 ? ` · ${money(creditToAdd)} to credit` : ''}`, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'fee_payment_recorded', target: `${s ? s.name : inv.studentId} · ${money(amount)}${creditToAdd > 0 ? ` · ${money(creditToAdd)} advance` : ''}`, timestamp: now() });
   document.getElementById('modalBackdrop')?.click();
-  toast(`${money(amount)} recorded${creditToAdd > 0 ? ` · ${money(creditToAdd)} added as credit` : ''}`, 'success');
+  toast(`${money(amount)} recorded${creditToAdd > 0 ? ` · ${money(creditToAdd)} saved as advance payment` : ''}`, 'success');
   APP.render();
 }
 
@@ -1185,7 +1185,7 @@ function ledgerApplyCredit(invoiceId) {
   const inv = DB.find('invoices', invoiceId);
   if (!inv) return;
   const creditRec = DB.query('studentCredits', c => c.studentId === inv.studentId)[0];
-  if (!creditRec || creditRec.balance <= 0) { toast('No credit balance to apply', 'info'); return; }
+  if (!creditRec || creditRec.balance <= 0) { toast('No advance payment balance to apply', 'info'); return; }
   const apply = Math.min(creditRec.balance, inv.balance);
   const newPaid    = inv.paid + apply;
   const newBalance = inv.balance - apply;
@@ -1193,10 +1193,10 @@ function ledgerApplyCredit(invoiceId) {
   DB.update('studentCredits', creditRec.id, { balance: creditRec.balance - apply, updatedAt: now() });
   const s = DB.find('students', inv.studentId);
   if (s && s.parentId) {
-    DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Credit Applied', body: `${money(apply)} credit balance applied to ${s.name}'s fees. ${newBalance > 0 ? `Remaining balance: ${money(newBalance)}.` : 'Account fully settled!'}`, type: 'success', read: false, timestamp: now(), link: { view: 'par_fees' } });
+    DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Advance Payment Applied', body: `${money(apply)} advance payment applied to ${s.name}'s fees. ${newBalance > 0 ? `Remaining balance: ${money(newBalance)}.` : 'Account fully settled!'}`, type: 'success', read: false, timestamp: now(), link: { view: 'par_fees' } });
   }
-  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'credit_applied', target: `${money(apply)} to ${s ? s.name : inv.studentId}`, timestamp: now() });
-  toast(`${money(apply)} credit applied to ${s ? s.name : 'student'}`, 'success');
+  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'advance_applied', target: `${money(apply)} to ${s ? s.name : inv.studentId}`, timestamp: now() });
+  toast(`${money(apply)} advance payment applied to ${s ? s.name : 'student'}`, 'success');
   APP.render();
 }
 
