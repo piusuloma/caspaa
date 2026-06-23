@@ -10153,9 +10153,9 @@ function renderAcademicCalendar() {
     { key: 'vacationEnd',      label: 'Vacation Ends / Next Resumption' }
   ];
 
-  const events = DB.query('academicCalendar', e => e.schoolId === currentSchoolId()).sort((a, b) => a.date.localeCompare(b.date));
-  const upcoming = events.filter(e => new Date(e.date) >= new Date());
-  const past = events.filter(e => new Date(e.date) < new Date());
+  const events = DB.query('schoolEvents', e => e.schoolId === currentSchoolId()).sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const upcoming = events.filter(e => new Date(e.startDate) >= new Date());
+  const past = events.filter(e => new Date(e.startDate) < new Date());
   return `
     <!-- Academic Year Term Dates -->
     <div class="card p-5 mb-6">
@@ -10196,66 +10196,103 @@ function renderAcademicCalendar() {
     </div>
     <div class="space-y-2 mb-5">
       <h4 class="text-xs uppercase font-semibold text-slate-500">Upcoming (${upcoming.length})</h4>
-      ${upcoming.length === 0 ? '<p class="text-sm text-slate-500">No upcoming events.</p>' : upcoming.map(e => `
-        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-          <div class="w-12 h-12 rounded-xl bg-brand-100 text-brand-700 flex flex-col items-center justify-center flex-shrink-0">
-            <div class="text-xs font-bold">${new Date(e.date).toLocaleString('en-GB', { month: 'short' }).toUpperCase()}</div>
-            <div class="text-lg font-extrabold leading-none">${new Date(e.date).getDate()}</div>
+      ${upcoming.length === 0 ? '<p class="text-sm text-slate-500">No upcoming events. Use "Add Event" to schedule PTA meetings, sports days, prize-giving and more.</p>' : upcoming.map(e => {
+        const d = new Date(e.startDate);
+        const typeBadge = e.type === 'exam' ? 'badge-danger' : e.type === 'holiday' ? 'badge-info' : e.type === 'meeting' ? 'badge-warn' : e.type === 'milestone' ? 'badge-success' : 'badge-neutral';
+        const dateLabel = e.endDate && e.endDate !== e.startDate ? `${fdate(e.startDate,{short:true})} – ${fdate(e.endDate,{short:true})}` : fdate(e.startDate,{long:true});
+        return `<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+          <div class="w-12 h-12 rounded-xl bg-brand-100 text-brand-700 flex flex-col items-center justify-center flex-shrink-0 text-center">
+            <div class="text-xs font-bold leading-none">${d.toLocaleString('en-GB',{month:'short'}).toUpperCase()}</div>
+            <div class="text-lg font-extrabold leading-none">${d.getDate()}</div>
           </div>
           <div class="flex-1 min-w-0">
             <div class="font-semibold">${e.title}</div>
-            <div class="text-xs text-slate-500">${fdate(e.date, { long: true })} · ${e.audience}</div>
+            <div class="text-xs text-slate-500">${dateLabel} · ${e.audience}</div>
           </div>
-          <span class="badge ${e.type === 'exam' ? 'badge-danger' : e.type === 'break' ? 'badge-info' : e.type === 'meeting' ? 'badge-warn' : 'badge-neutral'}">${e.type}</span>
-        </div>
-      `).join('')}
+          <span class="badge ${typeBadge}">${e.type}</span>
+          <button class="btn btn-ghost !p-1.5" onclick="newCalendarEventModal('${e.id}')" title="Edit">${icon('edit','w-3.5 h-3.5')}</button>
+          <button class="btn btn-ghost !p-1.5 text-rose-500" onclick="cal_deleteSettingsEvent('${e.id}')" title="Delete">${icon('x','w-3.5 h-3.5')}</button>
+        </div>`;
+      }).join('')}
     </div>
-    ${past.length ? `<div class="space-y-2">
-      <h4 class="text-xs uppercase font-semibold text-slate-500">Past</h4>
-      ${past.slice(-5).reverse().map(e => `
+    ${past.length ? `<div class="space-y-2 mt-4">
+      <h4 class="text-xs uppercase font-semibold text-slate-500">Past Events (${past.length})</h4>
+      ${past.slice(-8).reverse().map(e => `
         <div class="flex items-center gap-3 p-2 bg-slate-50 rounded-lg opacity-60">
-          <span class="text-xs text-slate-500 w-20">${fdate(e.date, { short: true })}</span>
+          <span class="text-xs text-slate-500 w-20 flex-shrink-0">${fdate(e.startDate, { short: true })}</span>
           <span class="text-sm flex-1">${e.title}</span>
           <span class="badge badge-neutral">${e.type}</span>
+          <button class="btn btn-ghost !p-1 text-rose-400" onclick="cal_deleteSettingsEvent('${e.id}')">${icon('x','w-3 h-3')}</button>
         </div>
       `).join('')}
     </div>` : ''}
   `;
 }
 
-function newCalendarEventModal() {
+function newCalendarEventModal(editId) {
+  const ev = editId ? DB.find('schoolEvents', editId) : null;
   modal({
-    title: 'Add Calendar Event',
+    title: ev ? 'Edit School Event' : 'Add School Event',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Title</label><input id="cal_title" class="input" placeholder="e.g. Inter-House Sports Day" /></div>
+      <div><label class="input-label">Event Title *</label>
+        <input id="cal_title" class="input" placeholder="e.g. PTA Meeting, Inter-House Sports Day, Prize Giving" value="${ev ? ev.title : ''}" /></div>
       <div class="grid grid-cols-2 gap-2">
-        <div><label class="input-label">Date</label><input id="cal_date" type="date" class="input" /></div>
+        <div><label class="input-label">Start Date *</label><input id="cal_start" type="date" class="input" value="${ev ? ev.startDate : today()}" /></div>
+        <div><label class="input-label">End Date</label><input id="cal_end" type="date" class="input" value="${ev ? (ev.endDate || '') : ''}" /></div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
         <div><label class="input-label">Type</label>
-          <select id="cal_type" class="input"><option>event</option><option>exam</option><option>break</option><option>meeting</option><option>milestone</option></select>
+          <select id="cal_type" class="input">
+            <option value="event" ${ev&&ev.type==='event'?'selected':''}>Event</option>
+            <option value="meeting" ${ev&&ev.type==='meeting'?'selected':''}>Meeting</option>
+            <option value="exam" ${ev&&ev.type==='exam'?'selected':''}>Exam</option>
+            <option value="holiday" ${ev&&ev.type==='holiday'?'selected':''}>Holiday / Break</option>
+            <option value="milestone" ${ev&&ev.type==='milestone'?'selected':''}>Milestone</option>
+          </select>
+        </div>
+        <div><label class="input-label">Audience</label>
+          <select id="cal_audience" class="input">
+            <option value="all" ${ev&&ev.audience==='all'?'selected':''}>Everyone</option>
+            <option value="parents" ${ev&&ev.audience==='parents'?'selected':''}>Parents Only</option>
+            <option value="students" ${ev&&ev.audience==='students'?'selected':''}>Students Only</option>
+            <option value="teachers" ${ev&&ev.audience==='teachers'?'selected':''}>Staff Only</option>
+          </select>
         </div>
       </div>
-      <div><label class="input-label">Audience</label>
-        <select id="cal_audience" class="input"><option>all</option><option>parents</option><option>students</option><option>teachers</option></select>
-      </div>
+      <div><label class="input-label">Description (optional)</label>
+        <textarea id="cal_desc" rows="2" class="input" placeholder="Extra details shown when people click the event">${ev ? (ev.description || '') : ''}</textarea></div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
-             <button class="btn btn-primary" onclick="saveCalendarEvent()">Add</button>`
+             <button class="btn btn-primary" onclick="saveCalendarEvent(${editId ? `'${editId}'` : ''})">${ev ? 'Save Changes' : 'Add Event'}</button>`
   });
 }
 
-function saveCalendarEvent() {
+function saveCalendarEvent(editId) {
   const title = document.getElementById('cal_title').value.trim();
-  if (!title) { toast('Title required', 'danger'); return; }
-  DB.insert('academicCalendar', {
-    id: uid('cal'), schoolId: currentSchoolId(),
-    title,
-    date: document.getElementById('cal_date').value,
-    type: document.getElementById('cal_type').value,
-    audience: document.getElementById('cal_audience').value
-  });
+  const startDate = document.getElementById('cal_start').value;
+  if (!title || !startDate) { toast('Title and start date are required', 'danger'); return; }
+  const endDate = document.getElementById('cal_end').value || startDate;
+  const type = document.getElementById('cal_type').value;
+  const audience = document.getElementById('cal_audience').value;
+  const description = document.getElementById('cal_desc').value.trim();
+  const schoolId = currentSchoolId();
+  if (editId) {
+    DB.update('schoolEvents', editId, { title, startDate, endDate, type, audience, description });
+    toast('Event updated');
+  } else {
+    DB.insert('schoolEvents', { id: uid('evt'), schoolId, title, startDate, endDate, type, audience, description, createdBy: AUTH.current.id, createdAt: now() });
+    toast('Event added to calendar');
+  }
   document.getElementById('modalBackdrop')?.click();
   APP.render();
-  toast('Event added');
+}
+
+function cal_deleteSettingsEvent(id) {
+  confirm('Delete this event from the calendar?', () => {
+    DB.remove('schoolEvents', id);
+    APP.render();
+    toast('Event removed', 'info');
+  }, { yesLabel: 'Delete' });
 }
 
 function saveAcademicTermDates() {

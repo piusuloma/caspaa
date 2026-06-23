@@ -359,9 +359,9 @@ function cal_renderAcademicYear() {
     `;
   }
 
-  // All school holiday events (for tagging celebrations per term)
-  const holidays = DB.query('schoolEvents', e => e.schoolId === schoolId && (e.type === 'holiday' || e.type === 'milestone'));
-  const holidayDates = holidays.map(h => h.startDate);
+  // All school events (shown per-term in the academic year view)
+  const holidays = DB.query('schoolEvents', e => e.schoolId === schoolId);
+  const holidayDates = holidays.filter(h => h.type === 'holiday').map(h => h.startDate);
 
   const termColors = [
     { bg: 'bg-blue-50', border: 'border-blue-300', header: 'bg-blue-600', text: 'text-blue-900', label: 'text-blue-700' },
@@ -374,11 +374,11 @@ function cal_renderAcademicYear() {
     const midBreak = (term.midtermStart && term.midtermEnd) ? [{ start: term.midtermStart, end: term.midtermEnd }] : [];
     const totalDays = cal_schoolDays(term.resumptionDate, term.termEndDate, midBreak, holidayDates);
 
-    // Celebrations = public holidays from schoolEvents that fall within this term
+    // School events that fall within this term
     const termHolidays = holidays.filter(h =>
       term.resumptionDate && term.termEndDate &&
       h.startDate >= term.resumptionDate && h.startDate <= term.termEndDate
-    );
+    ).sort((a, b) => a.startDate.localeCompare(b.startDate));
 
     const row = (label, value, highlight) => value ? `
       <tr class="${highlight ? c.bg : 'bg-white'}">
@@ -417,10 +417,14 @@ function cal_renderAcademicYear() {
             ${(term.secondHalfStart && term.termEndDate) ? `<tr class="bg-white"><td class="px-4 py-2.5 text-sm font-semibold text-slate-700">Second Half</td><td class="px-4 py-2.5 text-sm text-slate-800">${fmtRange(term.secondHalfStart, term.termEndDate)}</td><td class="px-4 py-2.5 text-xs text-right ${c.label} font-bold">${secondHalfDays} days</td></tr>` : ''}
             ${termHolidays.length ? `
               <tr class="bg-purple-50">
-                <td class="px-4 py-2.5 text-sm font-semibold text-purple-700 align-top">Celebrations / Holidays</td>
+                <td class="px-4 py-2.5 text-sm font-semibold text-purple-700 align-top">School Events</td>
                 <td class="px-4 py-2.5 text-sm text-slate-800" colspan="2">
-                  <div class="space-y-1">
-                    ${termHolidays.map(h => `<div>${h.title} – <span class="text-slate-500">${fdate(h.startDate, {long: true})}${h.endDate && h.endDate !== h.startDate ? ' – ' + fdate(h.endDate, {long:true}) : ''}</span></div>`).join('')}
+                  <div class="space-y-1.5">
+                    ${termHolidays.map(h => {
+                      const typeColor = h.type==='exam'?'bg-red-100 text-red-700':h.type==='holiday'?'bg-blue-100 text-blue-700':h.type==='meeting'?'bg-amber-100 text-amber-700':h.type==='milestone'?'bg-emerald-100 text-emerald-700':'bg-purple-100 text-purple-700';
+                      const dateStr = h.endDate && h.endDate !== h.startDate ? `${fdate(h.startDate,{long:true})} – ${fdate(h.endDate,{long:true})}` : fdate(h.startDate,{long:true});
+                      return `<div class="flex items-center gap-2"><span class="text-xs px-2 py-0.5 rounded-full font-semibold ${typeColor}">${h.type}</span><span>${h.title}</span><span class="text-slate-400 text-xs">— ${dateStr}</span></div>`;
+                    }).join('')}
                   </div>
                 </td>
               </tr>` : ''}
