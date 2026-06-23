@@ -1691,8 +1691,9 @@ function rejectLoan(loanId) {
 
 /* ---------- Payroll (4-stage flow: HR → Accounting → Pay → Post-Payroll) ---------- */
 function view_fin_payroll() {
-  const teachers = DB.query('teachers', t => t.schoolId === 'sch_brightlights');
-  const runs = DB.query('payrollRuns', r => r.schoolId === 'sch_brightlights').sort((a, b) => b.computedAt.localeCompare(a.computedAt));
+  const schoolId = currentSchoolId();
+  const teachers = DB.query('teachers', t => t.schoolId === schoolId);
+  const runs = DB.query('payrollRuns', r => r.schoolId === schoolId).sort((a, b) => b.computedAt.localeCompare(a.computedAt));
   const currentRun = runs.find(r => r.stage !== 'paid');
   const pastRuns = runs.filter(r => r.stage === 'paid');
 
@@ -1873,12 +1874,13 @@ function renderPayrollStageAction(run) {
 
 /* ---------- Stage transition handlers ---------- */
 function startNewPayrollRun() {
-  const teachers = DB.query('teachers', t => t.schoolId === 'sch_brightlights');
+  const schoolId = currentSchoolId();
+  const teachers = DB.query('teachers', t => t.schoolId === schoolId && t.status !== 'terminated');
   const base = teachers.reduce((s, t) => s + (t.salary || 0), 0);
   const period = new Date().toLocaleString('en-GB', { month: 'long', year: 'numeric' });
-  if (DB.query('payrollRuns', r => r.period === period)[0]) { toast(`Payroll for ${period} already exists`, 'warn'); return; }
+  if (DB.query('payrollRuns', r => r.schoolId === schoolId && r.period === period)[0]) { toast(`Payroll for ${period} already exists`, 'warn'); return; }
   DB.insert('payrollRuns', {
-    id: uid('pr'), schoolId: 'sch_brightlights', period, stage: 'draft',
+    id: uid('pr'), schoolId, period, stage: 'draft',
     grossTotal: base,
     netTotal: Math.round(base * 0.85),
     payeTotal: Math.round(base * 0.07),
@@ -1887,21 +1889,23 @@ function startNewPayrollRun() {
     adjustments: [],
     computedAt: now(), computedBy: AUTH.current.id
   });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: 'sch_brightlights', actor: AUTH.current.id, action: 'payroll_draft_created', target: period, timestamp: now() });
-  toast(`Started ${period} payroll run`, 'success');
+  DB.insert('auditLog', { id: uid('aud'), schoolId, actor: AUTH.current.id, action: 'payroll_draft_created', target: period, timestamp: now() });
+  toast(`Started ${period} payroll run — ${teachers.length} staff · Gross ${money(base)}`, 'success');
   APP.render();
 }
 
 function submitPayrollToAccounting(runId) {
+  const run = DB.find('payrollRuns', runId);
   DB.update('payrollRuns', runId, { stage: 'pending_approval', submittedAt: now(), submittedBy: AUTH.current.id });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: 'sch_brightlights', actor: AUTH.current.id, action: 'payroll_submitted', target: DB.find('payrollRuns', runId).period, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: run.schoolId, actor: AUTH.current.id, action: 'payroll_submitted', target: run.period, timestamp: now() });
   toast('Submitted to Accounting for approval', 'success');
   APP.render();
 }
 
 function approvePayrollRun(runId) {
+  const run = DB.find('payrollRuns', runId);
   DB.update('payrollRuns', runId, { stage: 'approved', approvedAt: now(), approvedBy: AUTH.current.id });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: 'sch_brightlights', actor: AUTH.current.id, action: 'payroll_approved', target: DB.find('payrollRuns', runId).period, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: run.schoolId, actor: AUTH.current.id, action: 'payroll_approved', target: run.period, timestamp: now() });
   toast('Payroll approved · ready to disburse', 'success');
   APP.render();
 }
@@ -1994,9 +1998,10 @@ function postPayrollModal(runId) {
 }
 
 function remitTax(runId, type) {
+  const run = DB.find('payrollRuns', runId);
   const field = type === 'paye' ? 'taxRemitted' : 'pensionRemitted';
   DB.update('payrollRuns', runId, { [field]: true, [field + 'At']: now() });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: 'sch_brightlights', actor: AUTH.current.id, action: type + '_remitted', target: DB.find('payrollRuns', runId).period, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: run.schoolId, actor: AUTH.current.id, action: type + '_remitted', target: run.period, timestamp: now() });
   toast(type === 'paye' ? 'PAYE remitted to LIRS' : 'Pension remitted to PFA', 'success');
   document.getElementById('modalBackdrop')?.click();
   APP.render();
@@ -2159,57 +2164,9 @@ function staffSubjectLabel(t) {
   return t.subject || 'Teacher';
 }
 
-function runPayrollModal() {
-  const teachers = DB.query('teachers', t => t.schoolId === 'sch_brightlights');
-  const total = teachers.reduce((s, t) => s + (t.salary || 0), 0);
-  const missing = teachers.filter(t => !t.bank || !t.bank.account).length;
-  modal({
-    title: 'Run Payroll',
-    body: `
-      <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
-          Process this month's salaries. Funds debit the school's settlement account and credit each staff member's bank account via NIBSS.
-        </div>
-        <div class="bg-slate-50 rounded-xl p-4 space-y-2">
-          <div class="flex justify-between text-sm"><span class="text-slate-500">Staff members</span><strong>${teachers.length}</strong></div>
-          <div class="flex justify-between text-sm"><span class="text-slate-500">With bank details</span><strong class="${missing > 0 ? 'text-amber-700' : 'text-emerald-700'}">${teachers.length - missing}${missing ? ' (' + missing + ' missing)' : ''}</strong></div>
-          <div class="flex justify-between text-base font-bold pt-2 border-t border-slate-200"><span>Total debit</span><span class="font-mono text-brand-700">${money(total)}</span></div>
-        </div>
-        ${missing ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">${missing} staff are missing bank details and will be skipped. Add their account before next run.</div>` : ''}
-        <label class="flex items-start gap-2 text-sm">
-          <input type="checkbox" id="pay_confirm" />
-          <span>I confirm this payroll run for ${new Date().toLocaleString('en-GB', { month: 'long', year: 'numeric' })} totaling <strong>${money(total - (missing ? teachers.filter(t => !t.bank).reduce((s, t) => s + (t.salary || 0), 0) : 0))}</strong>.</span>
-        </label>
-      </div>
-    `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
-             <button class="btn btn-primary" onclick="executePayrollRun()">${icon('check','w-4 h-4')} Process Payroll</button>`
-  });
-}
-
-function executePayrollRun() {
-  if (!document.getElementById('pay_confirm').checked) { toast('Please tick the confirmation', 'danger'); return; }
-  const teachers = DB.query('teachers', t => t.schoolId === 'sch_brightlights' && t.bank && t.bank.account);
-  const total = teachers.reduce((s, t) => s + (t.salary || 0), 0);
-  // Record as expense
-  DB.insert('expenses', {
-    id: uid('exp'), schoolId: 'sch_brightlights',
-    category: 'Salaries', amount: total,
-    description: `Monthly payroll for ${teachers.length} staff (${new Date().toLocaleString('en-GB', { month: 'long', year: 'numeric' })})`,
-    date: today(), recordedBy: AUTH.current.id
-  });
-  // Notify each staff member
-  teachers.forEach(t => {
-    DB.insert('notifications', { id: uid('not'), userId: t.id, title: 'Salary Paid', body: `Your salary of ${money(t.salary)} has been paid to ${t.bank.name} · ${t.bank.account}.`, type: 'success', read: false, timestamp: now() });
-  });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: 'sch_brightlights', actor: AUTH.current.id, action: 'ran_payroll', target: `${money(total)} to ${teachers.length} staff`, timestamp: now() });
-  document.getElementById('modalBackdrop')?.click();
-  APP.render();
-  toast(`Payroll processed · ${money(total)} disbursed to ${teachers.length} staff`, 'success');
-}
 
 function exportPayrollCSV() {
-  const teachers = DB.query('teachers', t => t.schoolId === 'sch_brightlights');
+  const teachers = DB.query('teachers', t => t.schoolId === currentSchoolId() && t.status !== 'terminated');
   const headers = ['Name', 'Email', 'Staff Type', 'Role', 'Bank', 'Account', 'Salary'];
   const rows = teachers.map(t => [t.name, t.email, t.staffType || 'Academic', t.role || '', t.bank ? t.bank.name : '', t.bank ? t.bank.account : '', t.salary || 0]);
   const csv = [headers, ...rows].map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(',')).join('\n');

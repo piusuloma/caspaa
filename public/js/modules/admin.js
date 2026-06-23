@@ -8996,33 +8996,6 @@ function saveStaffAttendance(date) {
   toast(`Saved ${saved} staff attendance entries`, 'success');
 }
 
-function renderHRPayroll() {
-  const teachers = DB.query('teachers', t => t.schoolId === currentSchoolId());
-  const total = teachers.reduce((s, t) => s + (t.salary || 0), 0);
-  return `
-    <div class="card p-4 mb-4 flex items-center justify-between">
-      <div>
-        <div class="text-xs text-slate-500 uppercase">Monthly Payroll Total</div>
-        <div class="text-2xl font-extrabold text-slate-900">${money(total)}</div>
-      </div>
-      <button class="btn btn-primary" onclick="toast('Payroll run queued for end of month','success')">${icon('check','w-4 h-4')} Run Payroll</button>
-    </div>
-    <div class="card overflow-hidden">
-      <table class="tbl">
-        <thead><tr><th>Staff</th><th>Role</th><th>Bank</th><th>Account</th><th>Net Salary</th></tr></thead>
-        <tbody>
-          ${teachers.map(t => `<tr>
-            <td><div class="flex items-center gap-2">${avatar(t.name, 'sm')}<span class="font-medium text-sm">${t.name}</span></div></td>
-            <td><span class="badge badge-neutral">${t.role || t.staffType || '—'}</span></td>
-            <td class="text-sm">${t.bank ? t.bank.name : '—'}</td>
-            <td class="text-sm"><code class="text-xs">${t.bank ? t.bank.account : '—'}</code></td>
-            <td class="font-mono font-semibold">${money(t.salary || 0)}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
 
 /* ---------- School Settings (Branding, Academic Structure, Calendar) ---------- */
 function view_adm_settings() {
