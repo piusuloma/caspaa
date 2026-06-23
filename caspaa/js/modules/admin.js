@@ -178,28 +178,17 @@ function view_adm_workforce() {
 }
 
 function view_adm_hr_panel() {
-  const tab = APP.params.hrTab || 'leave';
   const schoolId = currentSchoolId();
-  const teachers = DB.query('teachers', t => t.schoolId === schoolId);
-  const leaves = DB.query('leaveRequests', l => l.schoolId === schoolId);
-  const pendingLeaves = leaves.filter(l => l.status === 'pending');
-  const today_ = today();
-  const todayAttendance = DB.query('staffAttendance', a => a.schoolId === schoolId && a.date === today_);
-  const draftPayroll = DB.query('payrollRuns', r => r.schoolId === schoolId && r.stage === 'draft').length;
+  const teachers = DB.query('teachers', t => t.schoolId === schoolId && t.status !== 'terminated');
+  const todayAttendance = DB.query('staffAttendance', a => a.schoolId === schoolId && a.date === today());
   return `
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Total Staff', value: teachers.length, icon: 'teacher', color: 'brand' })}
-      ${statCard({ label: 'Pending Leave', value: pendingLeaves.length, icon: 'bell', color: pendingLeaves.length ? 'gold' : 'brand' })}
-      ${statCard({ label: 'In Today', value: todayAttendance.length, icon: 'check', color: 'blue' })}
-      ${statCard({ label: 'Monthly Payroll', value: money(teachers.reduce((s, t) => s + (t.salary || 0), 0)), icon: 'fees', color: 'purple' })}
+      ${statCard({ label: 'Monthly Gross', value: money(teachers.reduce((s, t) => s + (t.salary || 0), 0)), icon: 'fees', color: 'purple' })}
+      ${statCard({ label: 'Net Est.', value: money(Math.round(teachers.reduce((s, t) => s + (t.salary || 0), 0) * 0.85)), icon: 'check', color: 'blue' })}
+      ${statCard({ label: 'In Today', value: todayAttendance.length, icon: 'attendance', color: 'brand' })}
     </div>
-    ${tabs([
-      { key: 'leave',   label: 'Leave Requests', badge: pendingLeaves.length || null },
-      { key: 'payroll', label: 'Start Payroll',   badge: draftPayroll || null }
-    ], tab, k => { APP.params.hrTab = k; APP.render(); })}
-    <div class="pt-4">
-      ${tab === 'payroll' ? renderHRPayrollPanel() : renderHRLeave()}
-    </div>
+    ${renderHRPayrollPanel()}
   `;
 }
 
