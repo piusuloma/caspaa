@@ -35,9 +35,8 @@ function view_adm_people() {
     { key: 'new_enrollment', label: 'New Enrollment',  view: 'view_adm_new_enrollment' },
     { key: 'returning',      label: 'Returning',       view: 'view_adm_returning_students' },
     { key: 'admissions',     label: 'Admissions',      view: 'view_adm_admissions', badge: () => DB.query('admissionApplications', a => a.schoolId === currentSchoolId() && a.status !== 'accepted' && a.status !== 'rejected').length || null },
-    { key: 'transfers',      label: 'Transfers',       view: 'view_adm_student_transfers' },
     { key: 'suspensions',    label: 'Suspensions',     view: 'view_adm_student_suspensions', badge: () => DB.query('studentSuspensions', s => s.schoolId === currentSchoolId() && !s.reinstatedAt).length || null },
-    { key: 'alumni',         label: 'Alumni',          view: 'view_adm_alumni' },
+    { key: 'alumni',         label: 'Alumni & Transfers', view: 'view_adm_alumni' },
     { key: 'analytics',      label: 'Analytics',       view: 'view_adm_enrollment_analytics' }
   ], 'students', 'peopleTab');
 }
@@ -2791,6 +2790,7 @@ function viewStudent(id, activeTab) {
     { k: 'discipline', l: 'Discipline' },
     { k: 'health',     l: 'Health' },
     { k: 'history',    l: 'History' },
+    { k: 'wallet',     l: 'Wallet' },
   ];
   const tabBar = `<div class="flex gap-0.5 mb-4 border-b border-slate-200 overflow-x-auto -mx-1 px-1">
     ${tabs.map(t => `<button onclick="viewStudent('${id}','${t.k}')" class="whitespace-nowrap px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab===t.k?'border-brand-600 text-brand-700':'border-transparent text-slate-500 hover:text-slate-700'}">${t.l}</button>`).join('')}
@@ -3133,6 +3133,7 @@ function viewStudent(id, activeTab) {
     : tab === 'discipline' ? disciplineTab()
     : tab === 'health' ? healthTab()
     : tab === 'history' ? historyTab()
+    : tab === 'wallet' ? renderStudentWallet(s.id, s.schoolId)
     : profileTab();
 
   modal({
@@ -3762,6 +3763,14 @@ function saveStudent(editingId) {
   };
   // Capture selected activities BEFORE inserting (checkboxes are still in the DOM)
   const selectedActIds = [...(document.querySelectorAll('.act_enroll_cb:checked') || [])].map(cb => cb.value);
+
+  // Auto-assign to house with lowest current enrolment (balances houses)
+  const schoolHouses = DB.query('houses', h => h.schoolId === currentSchoolId());
+  if (schoolHouses.length && !newStudent.houseId) {
+    const houseCounts = schoolHouses.map(h => ({ h, count: DB.query('students', s => s.houseId === h.id && s.status === 'active').length }));
+    houseCounts.sort((a, b) => a.count - b.count);
+    newStudent.houseId = houseCounts[0].h.id;
+  }
 
   DB.insert('students', newStudent);
   DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'added_student', target: name, timestamp: now() });
@@ -4517,7 +4526,15 @@ function confirmReinstatement(studentId) {
 
 /* ---------- Alumni Page ---------- */
 function view_adm_alumni() {
-  const alumni = DB.query('students', s => s.schoolId === currentSchoolId() && s.status === 'alumni');
+  const schoolId = currentSchoolId();
+  const alumni = DB.query('students', s => s.schoolId === schoolId && s.status === 'alumni');
+  const transfersIn  = DB.query('students', s => s.schoolId === schoolId && s.admissionType === 'transfer' && s.status === 'active');
+  const transfersOut = DB.query('students', s => s.schoolId === schoolId && s.status === 'transferred');
+  const alumniTab = APP.params.alumniMainTab || 'graduates';
+
+  if (alumniTab === 'transfers_in')  return _renderTransfersIn(transfersIn, schoolId);
+  if (alumniTab === 'transfers_out') return _renderTransfersOut(transfersOut, schoolId);
+
   const yearF = APP.params.alumniYear || 'all';
   const years = [...new Set(alumni.map(a => a.graduationYear).filter(Boolean))].sort((a, b) => b - a);
 
@@ -4535,12 +4552,19 @@ function view_adm_alumni() {
   }
   if (yearF !== 'all') filtered = filtered.filter(a => String(a.graduationYear) === yearF);
 
+  const mainTabs = [
+    { key: 'graduates',    label: `Graduates (${alumni.length})` },
+    { key: 'transfers_in', label: `Transfer-In (${transfersIn.length})` },
+    { key: 'transfers_out',label: `Transfer-Out (${transfersOut.length})` }
+  ];
+
   return `
     ${pageHeader({
-      title: 'Alumni',
-      subtitle: `${alumni.length} graduate${alumni.length !== 1 ? 's' : ''} across ${years.length} year${years.length !== 1 ? 's' : ''}`,
+      title: 'Alumni & Transfers',
+      subtitle: `${alumni.length} graduate${alumni.length !== 1 ? 's' : ''} · ${transfersIn.length} transfer-in · ${transfersOut.length} transfer-out`,
       actions: alumni.length ? `<button class="btn btn-secondary" onclick="exportAlumniCSV()">${icon('download','w-4 h-4')} CSV</button>` : ''
     })}
+    ${tabs(mainTabs, alumniTab, k => { APP.params.alumniMainTab = k; APP.render(); })}
 
     ${alumni.length === 0 ? emptyState({
       title: 'No alumni yet',
@@ -4562,6 +4586,7 @@ function view_adm_alumni() {
       ${filtered.length === 0 ? '<div class="text-center text-slate-500 py-8">No alumni match your search.</div>' : `
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         ${filtered.map(a => {
+          const resolvedClass = a.finalClass || (DB.find('classes', a.classId) || {}).name || '—';
           const hasPostInfo = a.currentInstitution || a.alumniEmail || a.alumniPhone;
           const postInfoHtml = hasPostInfo
             ? '<div class="mt-2 space-y-1 text-xs text-slate-700">'
@@ -4570,6 +4595,7 @@ function view_adm_alumni() {
               + (a.alumniPhone ? `<div>${icon('phone','w-3 h-3 inline-block mr-1 text-green-500')} ${a.alumniPhone}</div>` : '')
               + '</div>'
             : '<div class="mt-2 text-xs text-slate-400 italic">No post-graduation info</div>';
+          const examRecs = DB.query('examResults', r => r.studentId === a.id);
           return '<div class="card p-4">'
             + '<div class="flex items-center gap-3 mb-3">'
             + avatar(a, 'lg')
@@ -4577,9 +4603,9 @@ function view_adm_alumni() {
             + '<div class="text-xs text-slate-500">Class of ' + (a.graduationYear || '—') + '</div></div>'
             + '<span class="badge badge-success">🎓</span></div>'
             + '<div class="text-sm space-y-1">'
-            + '<div><span class="text-slate-500">Final class:</span> <strong>' + (a.finalClass || '—') + '</strong></div>'
+            + '<div><span class="text-slate-500">Final class:</span> <strong>' + resolvedClass + '</strong></div>'
             + '<div><span class="text-slate-500">Admission:</span> <code class="text-xs">' + a.admissionNo + '</code></div>'
-            + (a.examType ? '<div><span class="text-slate-500">Exam:</span> <strong>' + a.examType + '</strong>' + (a.examIndex ? ' · <code class="text-xs">' + a.examIndex + '</code>' : '') + '</div>' : '')
+            + (a.examType ? '<div><span class="text-slate-500">Exam:</span> <strong>' + a.examType + '</strong>' + (a.examIndex ? ' · <code class="text-xs">' + a.examIndex + '</code>' : '') + (examRecs.length ? ` <span class="badge badge-info ml-1">${examRecs.length} result${examRecs.length > 1 ? 's' : ''}</span>` : '') + '</div>' : '')
             + (a.awards ? '<div class="bg-purple-50 rounded-lg p-2 text-xs text-purple-900 mt-2"><strong>Awards:</strong> ' + a.awards + '</div>' : '')
             + postInfoHtml
             + '</div>'
@@ -4597,6 +4623,61 @@ function view_adm_alumni() {
       `}
     `}
   `;
+}
+
+function _renderTransfersIn(transfersIn, schoolId) {
+  return `
+    ${pageHeader({ title: 'Alumni & Transfers', subtitle: 'Students who joined from another school' })}
+    ${tabs([{key:'graduates',label:'Graduates'},{key:'transfers_in',label:`Transfer-In (${transfersIn.length})`},{key:'transfers_out',label:'Transfer-Out'}], 'transfers_in', k => { APP.params.alumniMainTab = k; APP.render(); })}
+    <div class="card overflow-hidden mt-4">
+      <table class="tbl">
+        <thead><tr><th>Student</th><th>Class</th><th>Previous School</th><th>Last Class</th><th>Transfer Date</th><th>Reason</th></tr></thead>
+        <tbody>
+          ${transfersIn.length === 0
+            ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No transfer-in students recorded yet</td></tr>`
+            : transfersIn.map(s => {
+                const cls = DB.find('classes', s.classId);
+                return `<tr onclick="viewStudent('${s.id}')" class="cursor-pointer hover:bg-slate-50">
+                  <td><div class="flex items-center gap-2">${avatar(s,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-400">${s.admissionNo||''}</div></div></div></td>
+                  <td class="text-sm">${cls?cls.name:'—'}</td>
+                  <td class="text-sm">${s.transferFromSchool||'—'}</td>
+                  <td class="text-sm text-slate-500">${s.transferFromClass||'—'}</td>
+                  <td class="text-xs text-slate-500">${s.transferInDate?fdate(s.transferInDate,{short:true}):'—'}</td>
+                  <td class="text-sm text-slate-500">${s.transferInReason||'—'}</td>
+                </tr>`;
+              }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function _renderTransfersOut(transfersOut, schoolId) {
+  return `
+    ${pageHeader({ title: 'Alumni & Transfers', subtitle: 'Students who left to another school' })}
+    ${tabs([{key:'graduates',label:'Graduates'},{key:'transfers_in',label:'Transfer-In'},{key:'transfers_out',label:`Transfer-Out (${transfersOut.length})`}], 'transfers_out', k => { APP.params.alumniMainTab = k; APP.render(); })}
+    <div class="card overflow-hidden mt-4">
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900">Transfer-Out Records</h3>
+        <button class="btn btn-secondary text-sm" onclick="exportLeaversCSV()">${icon('download','w-4 h-4')} Export CSV</button>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>Student</th><th>Class</th><th>Destination School</th><th>Reason</th><th>Transfer Date</th></tr></thead>
+        <tbody>
+          ${transfersOut.length === 0
+            ? `<tr><td colspan="5" class="text-center text-slate-400 py-8">No transfer-out students recorded yet</td></tr>`
+            : transfersOut.map(s => {
+                const cls = DB.find('classes', s.classId);
+                return `<tr>
+                  <td><div class="flex items-center gap-2">${avatar(s,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-400">${s.admissionNo||''}</div></div></div></td>
+                  <td class="text-sm">${cls?cls.name:'—'}</td>
+                  <td class="text-sm">${s.transferDest||'—'}</td>
+                  <td class="text-sm text-slate-500">${s.transferReason||'—'}</td>
+                  <td class="text-xs text-slate-500">${s.transferredAt?fdate(s.transferredAt,{short:true}):'—'}</td>
+                </tr>`;
+              }).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 /* ---------- Alumni Record ---------- */
@@ -4687,17 +4768,45 @@ function viewAlumniRecord(alumniId, activeTab) {
     }).join('') + '</div>';
   }
 
+  // ── Exam Records ─────────────────────────────────────────────────────────────
+  const examRecs = DB.query('examResults', r => r.studentId === alumniId).sort((x, y) => (y.year||'').localeCompare(x.year||''));
+  const EXAM_GRADES = ['A1','B2','B3','C4','C5','C6','D7','E8','F9'];
+  const examHtml = examRecs.length === 0
+    ? '<div class="text-center text-slate-400 py-8 text-sm">No external exam results on file.</div>'
+      + '<button class="btn btn-primary mx-auto block mt-3" onclick="adm_addExamResultsModal(\'' + alumniId + '\')">' + icon('plus','w-4 h-4 inline') + ' Add Exam Results</button>'
+    : examRecs.map(rec => {
+        const passed = (rec.results || []).filter(r => !['D7','E8','F9'].includes(r.grade)).length;
+        return '<div class="mb-4">'
+          + '<div class="flex items-center justify-between mb-2">'
+          + '<div><div class="font-bold text-slate-900">' + rec.examType + ' ' + rec.year + '</div>'
+          + (rec.candidateNo ? '<div class="text-xs text-slate-400">Candidate No: ' + rec.candidateNo + '</div>' : '')
+          + '</div>'
+          + '<div class="text-right"><span class="badge badge-success text-xs">' + passed + ' credit' + (passed !== 1 ? 's' : '') + '</span></div>'
+          + '</div>'
+          + '<div class="card overflow-hidden"><table class="tbl text-sm"><thead><tr><th>Subject</th><th class="text-center">Grade</th><th class="text-center">Remark</th></tr></thead><tbody>'
+          + (rec.results || []).map(r => {
+              const gradeColor = ['A1','B2','B3'].includes(r.grade) ? 'text-emerald-700' : ['C4','C5','C6'].includes(r.grade) ? 'text-blue-700' : 'text-red-700';
+              const remark = ['A1'].includes(r.grade) ? 'Excellent' : ['B2','B3'].includes(r.grade) ? 'Very Good' : ['C4','C5','C6'].includes(r.grade) ? 'Credit' : ['D7'].includes(r.grade) ? 'Pass' : 'Fail';
+              return '<tr><td class="font-medium">' + r.subject + '</td>'
+                + '<td class="text-center font-bold ' + gradeColor + '">' + r.grade + '</td>'
+                + '<td class="text-center text-xs text-slate-500">' + remark + '</td></tr>';
+            }).join('')
+          + '</tbody></table></div></div>';
+      }).join('')
+      + '<button class="btn btn-secondary text-sm mt-3" onclick="adm_addExamResultsModal(\'' + alumniId + '\')">' + icon('plus','w-4 h-4 inline') + ' Add Another Sitting</button>';
+
   // ── Tab pills ───────────────────────────────────────────────────────────────
-  const tabs = [['transcript','📊 Transcript'],['attendance','📅 Attendance'],['activities','🏅 Activities']];
+  const resolvedFinalClass = a.finalClass || (DB.find('classes', a.classId) || {}).name || '—';
+  const tabDefs = [['transcript','📊 Transcript'],['attendance','📅 Attendance'],['activities','🏅 Activities'],['exams','🎓 Exam Results']];
   const tabNav = '<div class="flex gap-1 mb-4 bg-slate-100 rounded-xl p-1">'
-    + tabs.map(([key, label]) =>
+    + tabDefs.map(([key, label]) =>
         '<button class="flex-1 text-xs font-semibold py-1.5 px-2 rounded-lg transition-all '
         + (tab === key ? 'bg-white shadow text-brand-700' : 'text-slate-500 hover:text-slate-700')
         + '" onclick="viewAlumniRecord(\'' + alumniId + '\',\'' + key + '\')">' + label + '</button>'
       ).join('')
     + '</div>';
 
-  const content = tab === 'transcript' ? transcriptHtml : tab === 'attendance' ? attendanceHtml : activitiesHtml;
+  const content = tab === 'transcript' ? transcriptHtml : tab === 'attendance' ? attendanceHtml : tab === 'exams' ? examHtml : activitiesHtml;
 
   modal({
     title: 'Alumni Record — ' + a.name,
@@ -4707,8 +4816,8 @@ function viewAlumniRecord(alumniId, activeTab) {
         ${avatar(a, 'xl')}
         <div class="flex-1 min-w-0">
           <div class="font-bold text-xl text-slate-900">${a.name}</div>
-          <div class="text-sm text-slate-500">Class of ${a.graduationYear || '—'} · ${a.finalClass || '—'}</div>
-          <div class="text-xs text-slate-400 mt-0.5">Adm No: ${a.admissionNo}</div>
+          <div class="text-sm text-slate-500">Class of ${a.graduationYear || '—'} · ${resolvedFinalClass}</div>
+          <div class="text-xs text-slate-400 mt-0.5">Adm No: ${a.admissionNo}${a.examType ? ' · ' + a.examType + (a.examIndex ? ' ' + a.examIndex : '') : ''}</div>
           ${a.awards ? '<div class="mt-1 inline-block bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded-full font-medium">' + a.awards + '</div>' : ''}
         </div>
         <button class="btn btn-secondary text-xs flex-shrink-0" onclick="adm_printTranscript('${a.id}')">🖨️ Print Transcript</button>
@@ -4718,6 +4827,76 @@ function viewAlumniRecord(alumniId, activeTab) {
     `,
     footer: '<button class="btn btn-secondary" onclick="document.getElementById(\'modalBackdrop\')?.click()">Close</button>'
   });
+}
+
+function adm_addExamResultsModal(alumniId) {
+  const a = DB.find('students', alumniId);
+  if (!a) return;
+  const subjects = ['English Language','Mathematics','Biology','Chemistry','Physics','Economics','Government','Literature in English','History','Geography','Agricultural Science','Further Mathematics','Technical Drawing','Food and Nutrition','Computer Studies','Civic Education','Christian Religious Studies','Islamic Studies'];
+  const grades = ['A1','B2','B3','C4','C5','C6','D7','E8','F9'];
+  const rows = subjects.slice(0, 9).map((s, i) => `
+    <div class="grid grid-cols-3 gap-2 items-center">
+      <input class="input col-span-2" id="er_sub_${i}" placeholder="Subject" value="${s}">
+      <select id="er_grade_${i}" class="input">
+        <option value="">—</option>
+        ${grades.map(g => `<option value="${g}">${g}</option>`).join('')}
+      </select>
+    </div>`).join('');
+  modal({
+    title: `Add Exam Results — ${a.name}`,
+    body: `
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div><label class="input-label">Exam Type</label>
+          <select id="er_type" class="input"><option>WAEC</option><option>NECO</option><option>NABTEB</option><option>JAMB</option></select>
+        </div>
+        <div><label class="input-label">Year</label>
+          <input id="er_year" class="input" placeholder="e.g. 2024" value="${a.graduationYear || ''}">
+        </div>
+      </div>
+      <div><label class="input-label">Candidate Number (optional)</label>
+        <input id="er_candidate" class="input" placeholder="e.g. 4240/123" value="${a.examIndex || ''}">
+      </div>
+      <div class="mt-3"><label class="input-label">Results (Subject + Grade)</label>
+        <div class="space-y-2 mt-1">${rows}</div>
+        <button class="btn btn-ghost text-sm mt-2 text-brand-600" onclick="adm_addExamRow()">+ Add row</button>
+        <div id="er_extra_rows" class="space-y-2 mt-2"></div>
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn btn-primary" onclick="adm_saveExamResults('${alumniId}')">Save Results</button>`
+  });
+}
+
+function adm_addExamRow() {
+  const container = document.getElementById('er_extra_rows');
+  if (!container) return;
+  const i = 'ex_' + Date.now();
+  const grades = ['A1','B2','B3','C4','C5','C6','D7','E8','F9'];
+  const div = document.createElement('div');
+  div.className = 'grid grid-cols-3 gap-2 items-center';
+  div.innerHTML = `<input class="input col-span-2 er_dyn_sub" placeholder="Subject"><select class="input er_dyn_grade"><option value="">—</option>${grades.map(g=>`<option>${g}</option>`).join('')}</select>`;
+  container.appendChild(div);
+}
+
+function adm_saveExamResults(alumniId) {
+  const examType = (document.getElementById('er_type') || {}).value;
+  const year = (document.getElementById('er_year') || {}).value.trim();
+  const candidateNo = (document.getElementById('er_candidate') || {}).value.trim();
+  if (!year) { toast('Please enter the exam year', 'danger'); return; }
+  const results = [];
+  for (let i = 0; i < 9; i++) {
+    const sub = (document.getElementById('er_sub_' + i) || {}).value?.trim();
+    const grade = (document.getElementById('er_grade_' + i) || {}).value;
+    if (sub && grade) results.push({ subject: sub, grade });
+  }
+  document.querySelectorAll('.er_dyn_sub').forEach((el, i) => {
+    const gradeEl = document.querySelectorAll('.er_dyn_grade')[i];
+    if (el.value.trim() && gradeEl && gradeEl.value) results.push({ subject: el.value.trim(), grade: gradeEl.value });
+  });
+  if (!results.length) { toast('Please enter at least one result', 'danger'); return; }
+  DB.insert('examResults', { id: uid('er'), schoolId: currentSchoolId(), studentId: alumniId, examType, year, candidateNo, results, createdAt: now() });
+  document.getElementById('modalBackdrop')?.click();
+  toast(`${examType} ${year} results saved`, 'success');
+  setTimeout(() => viewAlumniRecord(alumniId, 'exams'), 100);
 }
 
 function adm_printTranscript(alumniId) {
@@ -12024,4 +12203,101 @@ function view_adm_audit() {
       <div class="px-4 divide-y-0">${rows}</div>
     </div>
   `;
+}
+
+/* ── Student Wallet / Ledger ─────────────────────────────────────────── */
+function renderStudentWallet(studentId, schoolId) {
+  const s = DB.find('students', studentId);
+  if (!s) return '';
+  const entries = [];
+
+  DB.query('invoices', i => i.studentId === studentId && i.schoolId === schoolId).forEach(inv => {
+    entries.push({ date: inv.createdAt, type: 'debit', amount: inv.total, description: `School fees — ${inv.term}`, ref: inv.id });
+  });
+  DB.query('transactions', t => t.studentId === studentId && t.schoolId === schoolId && t.status === 'successful').forEach(txn => {
+    entries.push({ date: txn.timestamp, type: 'credit', amount: txn.amount, description: `Payment via ${txn.method || txn.gateway || 'bank'} · ${txn.reference || ''}`, ref: txn.id });
+  });
+  DB.query('walletLedger', e => e.studentId === studentId).forEach(e => {
+    entries.push({ date: e.createdAt, type: e.type, amount: e.amount, description: e.description, ref: e.id });
+  });
+
+  entries.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  let running = 0;
+  entries.forEach(e => { running += e.type === 'credit' ? e.amount : -e.amount; e.balance = running; });
+  const finalBalance = running;
+  const creditTotal = entries.filter(e => e.type === 'credit').reduce((s, e) => s + e.amount, 0);
+  const debitTotal  = entries.filter(e => e.type === 'debit').reduce((s, e) => s + e.amount, 0);
+
+  const rows = [...entries].reverse().map(e => `
+    <div class="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
+      <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${e.type === 'credit' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'} text-xs font-bold">
+        ${e.type === 'credit' ? '+' : '−'}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-medium text-slate-800 truncate">${e.description}</div>
+        <div class="text-xs text-slate-400">${fdate(e.date, { short: true })}</div>
+      </div>
+      <div class="text-right flex-shrink-0">
+        <div class="font-bold text-sm ${e.type === 'credit' ? 'text-emerald-700' : 'text-red-600'}">${e.type === 'credit' ? '+' : '−'}${money(e.amount)}</div>
+        <div class="text-xs text-slate-400">Bal: ${money(e.balance)}</div>
+      </div>
+    </div>`).join('');
+
+  const isAdmin = ['schooladmin','principal','finance'].includes(AUTH.current.role);
+  return `
+    <div class="grid grid-cols-3 gap-2 mb-3">
+      <div class="text-center p-3 bg-emerald-50 rounded-xl">
+        <div class="text-lg font-extrabold text-emerald-700">${money(creditTotal)}</div>
+        <div class="text-xs text-slate-500">Paid In</div>
+      </div>
+      <div class="text-center p-3 bg-rose-50 rounded-xl">
+        <div class="text-lg font-extrabold text-rose-700">${money(debitTotal)}</div>
+        <div class="text-xs text-slate-500">Billed</div>
+      </div>
+      <div class="text-center p-3 ${finalBalance >= 0 ? 'bg-emerald-50' : 'bg-rose-50'} rounded-xl">
+        <div class="text-lg font-extrabold ${finalBalance >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${money(Math.abs(finalBalance))}</div>
+        <div class="text-xs text-slate-500">${finalBalance >= 0 ? 'Credit' : 'Owed'}</div>
+      </div>
+    </div>
+    ${isAdmin ? `<div class="flex gap-2 mb-3">
+      <button class="btn btn-secondary text-xs flex-1" onclick="adm_walletEntry('${studentId}','credit')">+ Credit Account</button>
+      <button class="btn btn-secondary text-xs flex-1" onclick="adm_walletEntry('${studentId}','debit')">− Debit Account</button>
+    </div>` : ''}
+    <div class="card p-0">
+      <div class="px-4 py-2.5 border-b border-slate-100">
+        <span class="text-sm font-semibold text-slate-700">Transaction Ledger</span>
+      </div>
+      <div class="px-4 max-h-64 overflow-y-auto">
+        ${rows || '<div class="py-6 text-center text-slate-400 text-sm">No transactions yet.</div>'}
+      </div>
+    </div>`;
+}
+
+function adm_walletEntry(studentId, type) {
+  const s = DB.find('students', studentId);
+  if (!s) return;
+  modal({
+    title: type === 'credit' ? 'Credit Account' : 'Debit Account',
+    body: `
+      <div class="space-y-3">
+        <p class="text-sm text-slate-600">${type === 'credit' ? 'Add a credit (payment, bursary, overpayment, etc.) to' : 'Record a debit (charge, deduction) against'} <strong>${s.name}</strong>'s account.</p>
+        <div><label class="input-label">Amount (₦)</label><input id="we_amount" type="number" class="input" placeholder="e.g. 50000" min="1"></div>
+        <div><label class="input-label">Description</label><input id="we_desc" class="input" placeholder="${type === 'credit' ? 'e.g. Bursary grant, Overpayment refund' : 'e.g. Miscellaneous charge, Lost textbook'}"></div>
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
+             <button class="btn ${type === 'credit' ? 'btn-primary' : 'btn-danger'}" onclick="adm_saveWalletEntry('${studentId}','${type}')">${type === 'credit' ? 'Add Credit' : 'Record Debit'}</button>`
+  });
+}
+
+function adm_saveWalletEntry(studentId, type) {
+  const amount = parseInt(document.getElementById('we_amount')?.value) || 0;
+  const desc   = (document.getElementById('we_desc')?.value || '').trim();
+  if (!amount || amount <= 0) { toast('Enter a valid amount', 'danger'); return; }
+  if (!desc) { toast('Enter a description', 'danger'); return; }
+  const s = DB.find('students', studentId);
+  DB.insert('walletLedger', { id: uid('wl'), schoolId: s ? s.schoolId : currentSchoolId(), studentId, type, amount, description: desc, createdBy: AUTH.current.id, createdAt: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: s ? s.schoolId : currentSchoolId(), actor: AUTH.current.id, action: type === 'credit' ? 'wallet_credit' : 'wallet_debit', target: `${s ? s.name : studentId} — ${money(amount)}`, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  toast(`${type === 'credit' ? 'Credit' : 'Debit'} of ${money(amount)} recorded`, 'success');
+  APP.render();
 }

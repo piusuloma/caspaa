@@ -2946,6 +2946,7 @@ function _storeView() {
         </td>
         <td class="text-right text-slate-500">${sold}</td>
         <td class="text-right">${it.stock}</td>
+        <td class="text-right font-semibold text-rose-700">${money(it.stock * it.costPrice)}</td>
         <td>
           <button class="btn btn-ghost !p-1.5" title="Edit" onclick="editStoreItem('${it.id}')">${icon('edit','w-3.5 h-3.5')}</button>
           <button class="btn btn-ghost !p-1.5 text-rose-600" title="Remove" onclick="removeStoreItem('${it.id}')">${icon('x','w-3.5 h-3.5')}</button>
@@ -2967,6 +2968,7 @@ function _storeView() {
             <th class="text-right p-3 font-semibold">Margin %</th>
             <th class="text-right p-3 font-semibold">Sold</th>
             <th class="text-right p-3 font-semibold">Stock</th>
+            <th class="text-right p-3 font-semibold">Stock Value</th>
             <th class="p-3"></th>
           </tr></thead>
           <tbody class="divide-y divide-slate-100">${rows}</tbody>

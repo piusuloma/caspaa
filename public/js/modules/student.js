@@ -376,13 +376,14 @@ function view_stu_assignments() {
                 <div class="text-xs text-slate-400 mt-2">Due ${fdate(a.dueDate, { long: true })} · ${teacherName(a.teacherId)}</div>
                 ${graded && sub.feedback ? `<div class="mt-2 bg-emerald-50 rounded-lg p-2 text-xs text-emerald-800"><strong>Teacher feedback:</strong> ${sub.feedback}</div>` : ''}
               </div>
-              <div class="flex-shrink-0">
+              <div class="flex-shrink-0 flex flex-col items-end gap-2">
                 ${sub ? (graded
                   ? `<div class="text-center"><div class="text-2xl font-extrabold text-emerald-700">${sub.grade}</div><div class="text-xs text-slate-400">/100</div></div>`
                   : `<span class="text-xs text-slate-400">Awaiting grade</span>`)
                   : (a.dueDate && new Date(a.dueDate) < new Date()) || a.overdue === true
                     ? `<span class="badge badge-danger">Submission closed</span>`
                     : `<button class="btn btn-primary text-sm" onclick="stu_submitAssignmentModal('${a.id}')">${icon('upload','w-4 h-4')} Submit</button>`}
+                ${sub && sub.resubmissionRequested ? `<button class="btn btn-warn text-xs" onclick="stu_resubmitModal('${a.id}')">${icon('refresh','w-3.5 h-3.5')} Resubmit</button>` : ''}
               </div>
             </div>
           </div>`;
@@ -405,10 +406,11 @@ function stu_submitAssignmentModal(assignmentId) {
         </div>
         <div><label class="input-label">Your answer / notes</label><textarea id="stu_sub_text" rows="5" class="input" placeholder="Type your answer, or describe the work you are attaching…"></textarea></div>
         <div>
-          <label class="input-label">Attach file (optional)</label>
-          <input type="file" id="stu_sub_file" class="hidden" onchange="stu_onSubFile(event)" />
-          <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('stu_sub_file').click()">
-            ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}<div class="text-xs text-slate-500">Click to attach your work (max 2MB)</div>
+          <label class="input-label">Attach file or photo (optional)</label>
+          <input type="file" id="stu_sub_file" class="hidden" accept="image/*,application/pdf,.doc,.docx" onchange="stu_onSubFile(event)" />
+          <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('stu_sub_file').click()">
+            ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}
+            <div class="text-xs text-slate-500">Click to attach — photo, PDF, or document (max 5MB)</div>
           </div>
           <div id="stu_sub_preview" class="mt-2"></div>
         </div>
@@ -424,14 +426,82 @@ function stu_onSubFile(ev) {
   _stuSubFile = null;
   const file = ev.target.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { toast('File too large (max 2MB)', 'danger'); return; }
+  if (file.size > 5 * 1024 * 1024) { toast('File too large (max 5MB)', 'danger'); return; }
   const reader = new FileReader();
   reader.onload = e => {
     _stuSubFile = { name: file.name, type: file.type, size: Math.round(file.size / 1024) + ' KB', data: e.target.result };
     const p = document.getElementById('stu_sub_preview');
-    if (p) p.innerHTML = `<div class="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="flex-1 truncate font-semibold text-emerald-900">${file.name}</span><span class="text-xs text-emerald-700">${_stuSubFile.size}</span></div>`;
+    if (!p) return;
+    const isImage = file.type.startsWith('image/');
+    p.innerHTML = isImage
+      ? `<div class="mt-2"><img src="${e.target.result}" class="max-h-48 rounded-xl border border-slate-200 object-contain w-full" alt="Preview"><div class="text-xs text-slate-500 mt-1 text-center">${file.name} · ${_stuSubFile.size}</div></div>`
+      : `<div class="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="flex-1 truncate font-semibold text-emerald-900">${file.name}</span><span class="text-xs text-emerald-700">${_stuSubFile.size}</span></div>`;
   };
   reader.readAsDataURL(file);
+}
+
+function stu_resubmitModal(assignmentId) {
+  const a = DB.find('assignments', assignmentId);
+  if (!a) return;
+  const s = me();
+  const sub = a.submissions.find(x => x.studentId === s.id);
+  modal({
+    title: 'Resubmit Assignment',
+    body: `
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3 text-sm text-amber-800">
+        ${icon('refresh','w-4 h-4 inline mr-1')} Your teacher has requested a resubmission. Review the feedback below and re-upload your work.
+        ${sub && sub.feedback ? `<div class="mt-1 font-semibold">"${sub.feedback}"</div>` : ''}
+      </div>
+      <div class="space-y-3">
+        <div><label class="input-label">Updated answer / notes</label><textarea id="stu_resub_text" rows="4" class="input" placeholder="Explain your corrections…">${sub ? sub.text || '' : ''}</textarea></div>
+        <div>
+          <label class="input-label">Attach updated file or photo</label>
+          <input type="file" id="stu_resub_file" class="hidden" accept="image/*,application/pdf,.doc,.docx" onchange="stu_onResubFile(event)" />
+          <div class="border-2 border-dashed border-amber-300 rounded-xl p-4 text-center hover:border-amber-400 cursor-pointer" onclick="document.getElementById('stu_resub_file').click()">
+            ${icon('upload','w-5 h-5 mx-auto text-amber-400 mb-1')}
+            <div class="text-xs text-slate-500">Upload your corrected work (max 5MB)</div>
+          </div>
+          <div id="stu_resub_preview" class="mt-2"></div>
+        </div>
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="stu_submitResubmission('${assignmentId}')">${icon('check','w-4 h-4')} Submit Resubmission</button>`
+  });
+}
+
+let _stuResubFile = null;
+function stu_onResubFile(ev) {
+  _stuResubFile = null;
+  const file = ev.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast('File too large (max 5MB)', 'danger'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    _stuResubFile = { name: file.name, type: file.type, size: Math.round(file.size / 1024) + ' KB', data: e.target.result };
+    const p = document.getElementById('stu_resub_preview');
+    if (!p) return;
+    const isImage = file.type.startsWith('image/');
+    p.innerHTML = isImage
+      ? `<img src="${e.target.result}" class="max-h-40 rounded-xl border border-slate-200 object-contain w-full mt-1" alt="Preview">`
+      : `<div class="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-amber-600')}<span class="font-semibold text-amber-900">${file.name}</span><span class="text-xs text-amber-700">${_stuResubFile.size}</span></div>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function stu_submitResubmission(assignmentId) {
+  const s = me();
+  const a = DB.find('assignments', assignmentId);
+  if (!a) return;
+  const text = (document.getElementById('stu_resub_text')?.value || '').trim();
+  if (!text && !_stuResubFile) { toast('Add your updated work before submitting', 'danger'); return; }
+  const subs = a.submissions.filter(x => x.studentId !== s.id);
+  subs.push({ studentId: s.id, submittedAt: now(), text, file: _stuResubFile || null, grade: null, feedback: null, resubmissionRequested: false, resubmittedAt: now() });
+  DB.update('assignments', assignmentId, { submissions: subs });
+  _stuResubFile = null;
+  DB.insert('notifications', { id: uid('not'), userId: a.teacherId, title: 'Resubmission Received', body: `${s.name} has resubmitted "${a.title}".`, type: 'success', read: false, timestamp: now(), link: { view: 'tch_assignments' } });
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast('Resubmission sent to your teacher', 'success');
 }
 
 function stu_submitAssignment(assignmentId) {
@@ -834,5 +904,91 @@ function view_stu_timetable() {
         </table></div>
       </div>
     `}
+  `;
+}
+
+/* ============================================================
+   STUDENT WALLET / LEDGER
+   ============================================================ */
+function view_stu_wallet() {
+  const s = me();
+  if (!s) return emptyState({ title: 'Not found', icon: 'user', body: 'Please sign in again.' });
+  return renderStudentWallet(s.id, s.schoolId);
+}
+
+function renderStudentWallet(studentId, schoolId) {
+  const s = DB.find('students', studentId);
+  if (!s) return '';
+
+  // Build unified ledger from invoices (debits) + transactions (credits) + manual wallet entries
+  const entries = [];
+
+  // Fees charged (debits from invoices)
+  DB.query('invoices', i => i.studentId === studentId && i.schoolId === schoolId).forEach(inv => {
+    entries.push({ date: inv.createdAt, type: 'debit', amount: inv.total, description: `School fees — ${inv.term}`, ref: inv.id, source: 'invoice' });
+  });
+
+  // Payments made (credits from transactions)
+  DB.query('transactions', t => t.studentId === studentId && t.schoolId === schoolId && t.status === 'successful').forEach(txn => {
+    entries.push({ date: txn.timestamp, type: 'credit', amount: txn.amount, description: `Payment via ${txn.method || txn.gateway || 'bank'} · ${txn.reference}`, ref: txn.id, source: 'payment' });
+  });
+
+  // Manual wallet entries (credits/debits added by admin)
+  DB.query('walletLedger', e => e.studentId === studentId).forEach(e => {
+    entries.push({ date: e.createdAt, type: e.type, amount: e.amount, description: e.description, ref: e.id, source: 'manual' });
+  });
+
+  // Sort by date ascending to compute running balance
+  entries.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  let running = 0;
+  entries.forEach(e => { running += e.type === 'credit' ? e.amount : -e.amount; e.balance = running; });
+  const finalBalance = running;
+
+  const creditTotal = entries.filter(e => e.type === 'credit').reduce((s, e) => s + e.amount, 0);
+  const debitTotal  = entries.filter(e => e.type === 'debit').reduce((s, e) => s + e.amount, 0);
+
+  const inv = COMPUTE.studentInvoice(studentId);
+  const outstanding = inv ? inv.balance : 0;
+
+  const rows = [...entries].reverse().map(e => `
+    <div class="flex items-center gap-3 py-3 border-b border-slate-100 last:border-0">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${e.type === 'credit' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
+        ${icon(e.type === 'credit' ? 'arrow_left' : 'arrow_left', e.type === 'credit' ? 'w-4 h-4 rotate-90' : 'w-4 h-4 -rotate-90')}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-medium text-slate-800 truncate">${e.description}</div>
+        <div class="text-xs text-slate-400">${fdate(e.date, { short: true })}</div>
+      </div>
+      <div class="text-right flex-shrink-0">
+        <div class="font-bold ${e.type === 'credit' ? 'text-emerald-700' : 'text-red-700'}">${e.type === 'credit' ? '+' : '-'}${money(e.amount)}</div>
+        <div class="text-xs text-slate-400">Bal: ${money(e.balance)}</div>
+      </div>
+    </div>`).join('');
+
+  return `
+    ${pageHeader ? pageHeader({ title: 'My Wallet', subtitle: 'School fees, payments, and account balance' }) : '<h2 class="text-xl font-bold mb-4">My Wallet</h2>'}
+    <div class="grid grid-cols-3 gap-3 mb-4">
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-extrabold text-emerald-700">${money(creditTotal)}</div>
+        <div class="text-xs text-slate-500 mt-1">Total Paid</div>
+      </div>
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-extrabold text-rose-700">${money(debitTotal)}</div>
+        <div class="text-xs text-slate-500 mt-1">Total Billed</div>
+      </div>
+      <div class="card p-4 text-center ${finalBalance >= 0 ? 'bg-emerald-50' : 'bg-rose-50'}">
+        <div class="text-2xl font-extrabold ${finalBalance >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${money(Math.abs(finalBalance))}</div>
+        <div class="text-xs text-slate-500 mt-1">${finalBalance >= 0 ? 'Credit Balance' : 'Amount Owed'}</div>
+      </div>
+    </div>
+    <div class="card p-0">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <span class="text-sm font-semibold text-slate-700">Transaction Ledger</span>
+        ${outstanding > 0 ? `<span class="text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-1 rounded-full">${money(outstanding)} outstanding</span>` : '<span class="badge badge-success text-xs">All paid up</span>'}
+      </div>
+      <div class="px-4">
+        ${rows || '<div class="py-8 text-center text-slate-400 text-sm">No transactions yet.</div>'}
+      </div>
+    </div>
   `;
 }

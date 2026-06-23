@@ -34,7 +34,7 @@ const APP = {
         { key: 'adm_operations',    label: 'Operations',        icon: 'package' },
         { key: 'adm_comms',         label: 'Communications',    icon: 'chat' },
         { key: 'cal_main',          label: 'Calendar',          icon: 'calendar' },
-        { key: 'adm_houses',        label: 'House Points',      icon: 'check' },
+        { key: 'adm_houses',        label: 'Inter House Points',      icon: 'check' },
         { key: 'adm_transport',     label: 'Transport',         icon: 'package' },
         { key: 'adm_feedback',      label: 'Surveys',           icon: 'check' },
         { key: 'adm_health',        label: 'Sickbay',           icon: 'reports' },
@@ -51,7 +51,7 @@ const APP = {
         { key: 'adm_operations', label: 'Operations',     icon: 'package' },
         { key: 'adm_comms',      label: 'Communications', icon: 'chat' },
         { key: 'cal_main',       label: 'Calendar',       icon: 'calendar' },
-        { key: 'adm_houses',     label: 'House Points',   icon: 'check' },
+        { key: 'adm_houses',     label: 'Inter House Points',   icon: 'check' },
         { key: 'adm_transport',  label: 'Transport',      icon: 'package' },
         { key: 'adm_feedback',   label: 'Surveys',        icon: 'check' },
         { key: 'adm_health',     label: 'Sickbay',        icon: 'reports' },
@@ -79,7 +79,7 @@ const APP = {
         { key: 'tch_payslip',    label: 'My Payslip',         icon: 'fees' },
         { key: 'cal_main',       label: 'Calendar',           icon: 'calendar' },
         { key: 'tch_timetable',  label: 'My Schedule',        icon: 'calendar' },
-        { key: 'tch_houses',     label: 'House Points',        icon: 'check' },
+        { key: 'tch_houses',     label: 'Inter House Points',        icon: 'check' },
         { key: 'tch_diary',      label: 'Diary',              icon: 'book-open' },
         { key: 'tch_messages',   label: 'Messages',           icon: 'chat' },
         { key: 'tch_appraisal',  label: 'My Appraisal',       icon: 'reports' }
@@ -89,11 +89,12 @@ const APP = {
         { key: 'par_children',   label: 'My Children',     icon: 'students' },
         { key: 'par_results',    label: 'Results',         icon: 'results' },
         { key: 'par_fees',       label: 'Fees & Payment',  icon: 'fees' },
+        { key: 'par_wallet',     label: 'Wallet & Ledger', icon: 'fees' },
         { key: 'par_timetable',  label: 'Timetable',       icon: 'calendar' },
         { key: 'par_loans',      label: 'Loans',           icon: 'loan' },
         { key: 'par_consent',    label: 'Consent',         icon: 'check' },
         { key: 'par_comms',      label: 'Communications',  icon: 'chat' },
-        { key: 'par_houses',     label: 'House Points',    icon: 'check' },
+        { key: 'par_houses',     label: 'Inter House Points', icon: 'check' },
         { key: 'par_transport',  label: 'Transport',       icon: 'package' },
         { key: 'par_health',     label: 'Health',          icon: 'reports' },
         { key: 'par_feedback',   label: 'Surveys',         icon: 'check' }
@@ -106,7 +107,8 @@ const APP = {
         { key: 'stu_behaviour',  label: 'Behaviour',       icon: 'check' },
         { key: 'stu_timetable',  label: 'Timetable',       icon: 'calendar' },
         { key: 'cal_main',       label: 'Calendar',        icon: 'calendar' },
-        { key: 'stu_houses',     label: 'House Points',    icon: 'check' }
+        { key: 'stu_houses',     label: 'Inter House Points', icon: 'check' },
+        { key: 'stu_wallet',     label: 'My Wallet',       icon: 'fees' }
       ]
     };
     return menus[role] || [];

@@ -73,6 +73,47 @@ function adm_renderRoutesTab(routes, schoolId) {
     ...DB.query('staff',    s => s.schoolId === schoolId)
   ];
 
+  const chartRows = routes.map((r, i) => {
+    const count = DB.query('busAssignments', a => a.routeId === r.id && a.schoolId === schoolId).length;
+    return { name: r.name, count, color: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316'][i % 8] };
+  }).filter(d => d.count > 0);
+
+  const totalAssigned = chartRows.reduce((s, d) => s + d.count, 0);
+
+  const chartSection = chartRows.length ? `
+    <div class="card p-5 mt-4">
+      <h3 class="font-bold text-slate-900 mb-4">Student Distribution by Route</h3>
+      <div class="flex flex-col sm:flex-row items-center gap-8">
+        <div style="width:200px;height:200px;flex-shrink:0"><canvas id="routeDistChart"></canvas></div>
+        <div class="space-y-2 flex-1">
+          ${chartRows.map(d => `
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full flex-shrink-0" style="background:${d.color}"></div>
+              <span class="text-sm flex-1">${d.name}</span>
+              <span class="text-sm font-bold">${d.count}</span>
+              <span class="text-xs text-slate-400">${Math.round(d.count/totalAssigned*100)}%</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <script>
+      (function() {
+        setTimeout(function() {
+          const el = document.getElementById('routeDistChart');
+          if (!el || !window.Chart) return;
+          if (el._chartInstance) el._chartInstance.destroy();
+          el._chartInstance = new Chart(el, {
+            type: 'pie',
+            data: {
+              labels: [${chartRows.map(d => `'${d.name}'`).join(',')}],
+              datasets: [{ data: [${chartRows.map(d => d.count).join(',')}], backgroundColor: [${chartRows.map(d => `'${d.color}'`).join(',')}], borderWidth: 2, borderColor: '#fff' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+          });
+        }, 80);
+      })();
+    </script>` : '';
+
   return `
     <div class="mb-4 flex justify-end">
       <button class="btn btn-primary" onclick="adm_addRouteModal()">${icon('plus','w-4 h-4')} Add Route</button>
@@ -117,6 +158,7 @@ function adm_renderRoutesTab(routes, schoolId) {
         `;
       }).join('')}
     </div>
+    ${chartSection}
   `;
 }
 

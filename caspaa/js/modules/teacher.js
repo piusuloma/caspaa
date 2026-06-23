@@ -997,7 +997,10 @@ function openAssignment(assignmentId) {
                   </div>
                 </div>` : ''}
                 ${graded ? `<div class="mt-2 pl-11 space-y-1">
-                  ${sub.markStatus ? `<span class="text-xs font-semibold ${sub.markStatus === 'excellent' ? 'text-emerald-600' : sub.markStatus === 'satisfactory' ? 'text-blue-600' : 'text-amber-600'}">${sub.markStatus === 'excellent' ? '⭐ Excellent' : sub.markStatus === 'needs_revision' ? '🔄 Needs Revision' : '✓ Satisfactory'}</span>` : ''}
+                  <div class="flex items-center gap-2 flex-wrap">
+                    ${sub.markStatus ? `<span class="text-xs font-semibold ${sub.markStatus === 'excellent' ? 'text-emerald-600' : sub.markStatus === 'satisfactory' ? 'text-blue-600' : 'text-amber-600'}">${sub.markStatus === 'excellent' ? '⭐ Excellent' : sub.markStatus === 'needs_revision' ? '🔄 Needs Revision' : '✓ Satisfactory'}</span>` : ''}
+                    ${sub.resubmissionRequested ? `<span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">${icon('refresh','w-3 h-3')} Awaiting resubmission</span>` : ''}
+                  </div>
                   ${sub.feedback ? `<div class="text-xs text-slate-700 bg-white rounded-lg p-2 border border-slate-200"><strong class="text-slate-500">Teacher comments:</strong> ${sub.feedback}</div>` : ''}
                   ${sub.returned ? `<div class="text-xs text-brand-700 font-semibold">${icon('check','w-3 h-3 inline')} Returned to student ${fdate(sub.returnedAt, { relative: true })}</div>` : `<button class="btn btn-ghost !py-0.5 !px-2 text-xs text-slate-500" onclick="tch_returnToStudent('${a.id}', '${s.id}')">Mark as returned</button>`}
                 </div>` : ''}
@@ -1027,15 +1030,19 @@ function gradeSubmission(assignmentId, studentId) {
   const markStatus = mkEl ? mkEl.value : '';
   const idx = a.submissions.findIndex(s => s.studentId === studentId);
   if (idx === -1) return;
+  const resubmissionRequested = markStatus === 'needs_revision';
   a.submissions[idx].grade = grade;
   a.submissions[idx].feedback = feedback;
   a.submissions[idx].markStatus = markStatus;
   a.submissions[idx].gradedAt = now();
+  a.submissions[idx].resubmissionRequested = resubmissionRequested;
   DB.update('assignments', assignmentId, { submissions: a.submissions });
   const student = DB.find('students', studentId);
   const statusLabel = markStatus === 'excellent' ? ' · ⭐ Excellent' : markStatus === 'needs_revision' ? ' · 🔄 Needs Revision' : markStatus === 'satisfactory' ? ' · ✓ Satisfactory' : '';
   // Notify the student directly
   if (student) DB.insert('notifications', { id: uid('not'), userId: student.id, title: 'Assignment Graded', body: `${a.title}: ${grade}/100${statusLabel}${feedback ? ' — ' + feedback : ''}`, type: 'success', read: false, timestamp: now(), link: { view: 'stu_assignments' } });
+  // Send a resubmission request notification if needed
+  if (student && resubmissionRequested) DB.insert('notifications', { id: uid('not'), userId: student.id, title: 'Resubmission Requested', body: `Your teacher has requested a resubmission for "${a.title}". Please review the feedback and resubmit.`, type: 'warn', read: false, timestamp: now(), link: { view: 'stu_assignments' } });
   // And keep the parent informed
   if (student) DB.insert('notifications', { id: uid('not'), userId: student.parentId, title: 'Assignment Graded', body: `${student.name}: ${a.title} — ${grade}/100${statusLabel}`, type: 'info', read: false, timestamp: now(), link: { view: 'par_dashboard' } });
   toast(`${student ? student.name : 'Student'} graded ${grade}/100`, 'success');
@@ -1150,7 +1157,10 @@ function view_tch_lessons(params) {
                   <span class="badge badge-neutral">${sub ? sub.name : ''}</span>
                   <span class="badge badge-success">${l.week}</span>
                 </div>
-                <span class="text-xs text-slate-400">${fdate(l.createdAt, { short: true })}</span>
+                <div class="flex items-center gap-1">
+                  <span class="text-xs text-slate-400">${fdate(l.createdAt, { short: true })}</span>
+                  <button class="btn btn-ghost !p-1.5" onclick="editLessonModal('${l.id}')" title="Edit lesson plan">${icon('edit','w-3.5 h-3.5')}</button>
+                </div>
               </div>
               <h3 class="font-bold text-slate-900">${l.topic}</h3>
               <div class="grid sm:grid-cols-3 gap-3 mt-3 text-sm">
@@ -1414,17 +1424,20 @@ function tch_returnToStudent(assignmentId, studentId) {
   if (isNaN(grade) || grade < 0 || grade > 100) { toast('Enter a grade 0–100 before returning', 'danger'); return; }
   const feedback = (document.getElementById('fb_' + studentId) || {}).value || a.submissions[idx].feedback || '';
   const markStatus = (document.getElementById('mk_' + studentId) || {}).value || a.submissions[idx].markStatus || 'satisfactory';
+  const resubmissionRequested = markStatus === 'needs_revision';
   a.submissions[idx].grade = grade;
   a.submissions[idx].feedback = (typeof feedback === 'string' ? feedback.trim() : feedback);
   a.submissions[idx].markStatus = markStatus;
   a.submissions[idx].gradedAt = a.submissions[idx].gradedAt || now();
   a.submissions[idx].returned = true;
   a.submissions[idx].returnedAt = now();
+  a.submissions[idx].resubmissionRequested = resubmissionRequested;
   DB.update('assignments', assignmentId, { submissions: a.submissions });
   const student = DB.find('students', studentId);
   const statusLabel = markStatus === 'excellent' ? '⭐ Excellent' : markStatus === 'needs_revision' ? '🔄 Needs Revision' : '✓ Satisfactory';
   if (student) {
     DB.insert('notifications', { id: uid('not'), userId: student.id, title: `Work Returned — ${a.title}`, body: `Your work has been marked and returned: ${grade}/100 (${statusLabel}).${feedback ? ' Comments: ' + feedback : ''}`, type: 'success', read: false, timestamp: now(), link: { view: 'stu_assignments' } });
+    if (resubmissionRequested) DB.insert('notifications', { id: uid('not'), userId: student.id, title: 'Resubmission Requested', body: `Your teacher has requested a resubmission for "${a.title}". Please review the feedback and resubmit.`, type: 'warn', read: false, timestamp: now(), link: { view: 'stu_assignments' } });
     if (student.parentId) DB.insert('notifications', { id: uid('not'), userId: student.parentId, title: `Assignment returned: ${a.title}`, body: `${student.name}'s work was marked: ${grade}/100 (${statusLabel}).`, type: 'info', read: false, timestamp: now(), link: { view: 'par_dashboard' } });
   }
   toast(`Returned to ${student ? student.name : 'student'} · ${grade}/100`, 'success');
@@ -1711,6 +1724,69 @@ function saveLesson() {
   document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Lesson plan saved' + (schemeRef ? ' · scheme week marked covered' : '') + (lp.file ? ' · attachment uploaded' : ''), 'success');
+}
+
+function editLessonModal(planId) {
+  const plan = DB.find('lessonPlans', planId);
+  if (!plan) { toast('Lesson plan not found', 'danger'); return; }
+  _lessonFileBuffer = plan.file || null;
+  const classes = teacherClasses();
+  const subjects = DB.get('subjects');
+  document.getElementById('modalBackdrop')?.click();
+  setTimeout(() => modal({
+    title: 'Edit Lesson Plan',
+    body: `
+      <div class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Class</label>
+            <select id="lp_class" class="input" onchange="refreshLessonSchemes()">${classes.map(c => `<option value="${c.id}" ${c.id === plan.classId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>
+          </div>
+          <div><label class="input-label">Subject</label>
+            <select id="lp_subject" class="input" onchange="refreshLessonSchemes()">${subjects.map(s => `<option value="${s.id}" ${s.id === plan.subjectId ? 'selected' : ''}>${s.name}</option>`).join('')}</select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Week</label><input id="lp_week" class="input" placeholder="e.g. Week 7" value="${(plan.week || '').replace(/"/g, '&quot;')}" /></div>
+          <div><label class="input-label">Topic</label><input id="lp_topic" class="input" placeholder="e.g. Quadratic Equations" value="${(plan.topic || '').replace(/"/g, '&quot;')}" /></div>
+        </div>
+        <div><label class="input-label">Objectives</label><textarea id="lp_obj" rows="2" class="input" placeholder="e.g. Students will be able to solve quadratic equations using the factorisation method">${plan.objectives || ''}</textarea></div>
+        <div><label class="input-label">Activities</label><textarea id="lp_act" rows="2" class="input" placeholder="e.g. Group work, think-pair-share, guided practice on the board">${plan.activities || ''}</textarea></div>
+        <div><label class="input-label">Resources / Materials</label><input id="lp_res" class="input" placeholder="e.g. Textbook p.55, graph paper, coloured markers" value="${(plan.resources || '').replace(/"/g, '&quot;')}" /></div>
+        <div>
+          <label class="input-label">Attach Lesson Plan File (PDF / Word / Image — optional)</label>
+          <input type="file" id="lp_fileInput" accept="application/pdf,.doc,.docx,image/*" class="hidden" onchange="onLessonFilePick(event)" />
+          <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('lp_fileInput').click()">
+            ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}
+            <div class="text-xs text-slate-500">${plan.file ? `Current: ${plan.file.name} — click to replace` : 'Click to upload — your prepared lesson plan'}</div>
+          </div>
+          <div id="lp_filePreview" class="mt-2">${plan.file ? `<div class="inline-flex items-center gap-2 text-xs text-slate-600 bg-slate-100 rounded-lg px-3 py-1.5">${icon('paperclip','w-3.5 h-3.5')} ${plan.file.name} <span class="text-slate-400">${plan.file.size}</span></div>` : ''}</div>
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="updateLesson('${planId}')">Save Changes</button>`
+  }), 50);
+}
+
+function updateLesson(planId) {
+  const week = document.getElementById('lp_week').value.trim();
+  const topic = document.getElementById('lp_topic').value.trim();
+  if (!topic || !week) { toast('Week and topic required', 'danger'); return; }
+  DB.update('lessonPlans', planId, {
+    classId: document.getElementById('lp_class').value,
+    subjectId: document.getElementById('lp_subject').value,
+    week,
+    topic,
+    objectives: document.getElementById('lp_obj').value.trim(),
+    activities: document.getElementById('lp_act').value.trim(),
+    resources: document.getElementById('lp_res').value.trim(),
+    file: _lessonFileBuffer,
+    updatedAt: now()
+  });
+  _lessonFileBuffer = null;
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast('Lesson plan updated', 'success');
 }
 
 // Wire scheme dropdown when modal opens

@@ -65,7 +65,7 @@ function view_adm_houses(params) {
   // ── Leaderboard ──
   if (tab === 'leaderboard') {
     return `
-      ${pageHeader({ title: 'House Points', subtitle: 'Inter-house competition standings',
+      ${pageHeader({ title: 'Inter House Points', subtitle: 'Inter-house competition standings',
         actions: `<button class="btn btn-primary" onclick="hp_awardModal(null,'admin')">${icon('plus', 'w-4 h-4')} Award / Deduct Points</button>` })}
       ${tabBar}
       ${renderLeaderboard(totals, schoolId, true)}
@@ -399,7 +399,7 @@ function hp_awardModal(studentId, context) {
   }
 
   modal({
-    title: 'Award or Deduct House Points',
+    title: 'Award or Deduct Inter House Points',
     body: `<div class="space-y-4">
       ${!studentId
         ? `<div><label class="input-label">Student <span class="text-rose-500">*</span></label>
@@ -483,7 +483,7 @@ function hp_savePoints() {
   const house = DB.find('houses', s.houseId);
   DB.insert('notifications', {
     id: uid('not'), userId: studentId,
-    title: pts > 0 ? 'House Points Awarded! 🎉' : 'House Points Deducted',
+    title: pts > 0 ? 'Inter House Points Awarded! 🎉' : 'Inter House Points Deducted',
     body: pts > 0
       ? `You earned ${pts} point${pts > 1 ? 's' : ''} for ${house ? house.name : 'your house'}! Reason: ${reason}`
       : `${Math.abs(pts)} point${Math.abs(pts) > 1 ? 's' : ''} were deducted from ${house ? house.name : 'your house'}. Reason: ${reason}`,
@@ -622,7 +622,7 @@ function view_tch_houses() {
   myClasses.forEach(c => COMPUTE.studentsByClass(c.id).forEach(s => myStudents.push(s)));
 
   return `
-    ${pageHeader({ title: 'House Points', subtitle: 'Award points and see standings',
+    ${pageHeader({ title: 'Inter House Points', subtitle: 'Award points and see standings',
       actions: `<button class="btn btn-primary" onclick="hp_awardModal(null,'teacher')">${icon('plus', 'w-4 h-4')} Award / Deduct Points</button>` })}
 
     ${renderLeaderboard(totals, schoolId, false)}
@@ -662,7 +662,7 @@ function view_stu_houses() {
   const events       = DB.query('houseEvents', e => e.schoolId === schoolId).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
 
   return `
-    ${pageHeader({ title: 'House Points', subtitle: 'Your house, standings and competition results' })}
+    ${pageHeader({ title: 'Inter House Points', subtitle: 'Your house, standings and competition results' })}
 
     ${myHouse ? `<div class="card p-5 mb-5" style="border-left: 4px solid ${myHouse.color}">
       <div class="flex items-center gap-4 flex-wrap">
@@ -737,7 +737,7 @@ function view_par_houses() {
   const events   = DB.query('houseEvents', e => e.schoolId === schoolId).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
 
   return `
-    ${pageHeader({ title: 'House Points', subtitle: "Your children's house standing and competition results" })}
+    ${pageHeader({ title: 'Inter House Points', subtitle: "Your children's house standing and competition results" })}
 
     ${children.map(child => {
       const myHouse  = child.houseId ? DB.find('houses', child.houseId) : null;

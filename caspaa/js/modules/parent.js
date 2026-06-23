@@ -2152,3 +2152,28 @@ function _recordConsent(formId, studentId, agreed, signature) {
     DB.insert('notifications', { id: uid('not'), userId: form.schoolId, title: 'Consent Response', body: `${signature} ${agreed ? 'approved' : 'declined'} "${form.title}".`, type: agreed ? 'success' : 'warn', read: false, timestamp: now(), link: { view: 'adm_comms', params: { commsTab: 'consent' } } });
   }
 }
+
+/* ============================================================
+   PARENT WALLET / LEDGER
+   ============================================================ */
+function view_par_wallet() {
+  const parent = DB.find('parents', AUTH.current.id);
+  if (!parent) return emptyState({ title: 'Not found', icon: 'user', body: '' });
+  const children = DB.query('students', s => s.parentId === AUTH.current.id && s.status === 'active');
+  const selId = APP.params.walletChild || (children[0] ? children[0].id : null);
+  const selChild = children.find(c => c.id === selId);
+
+  const childTabs = children.length > 1 ? `
+    <div class="flex gap-2 mb-4 flex-wrap">
+      ${children.map(c => `<button class="chip ${selId === c.id ? 'active' : ''}" onclick="APP.params.walletChild='${c.id}';APP.render()">${c.name.split(' ')[0]}</button>`).join('')}
+    </div>` : '';
+
+  if (!selChild) return `${pageHeader({ title: 'Wallet & Ledger', subtitle: 'Account balance and transaction history for each child' })}${emptyState({ title: 'No children found', icon: 'students', body: '' })}`;
+
+  const walletHtml = renderStudentWallet(selId, selChild.schoolId);
+  return `
+    ${pageHeader({ title: 'Wallet & Ledger', subtitle: `Account ledger for ${selChild.name}` })}
+    ${childTabs}
+    ${walletHtml}
+  `;
+}
