@@ -399,8 +399,15 @@ function confirmBulkGenerateInvoices() {
     if (!fs) { skipped++; return; }
     const extraLines = (fs.extraItems || []).filter(i => i.name && i.amount > 0).map(i => ({ name: i.name, amount: i.amount }));
     const total = fs.tuition + fs.books + fs.uniform + fs.pta + extraLines.reduce((s, l) => s + l.amount, 0);
+    const creditRec = DB.query('studentCredits', c => c.studentId === s.id)[0];
+    const creditAvail = creditRec ? creditRec.balance : 0;
+    const autoApply = Math.min(creditAvail, total);
+    const initPaid    = autoApply;
+    const initBalance = total - autoApply;
+    const initStatus  = initBalance === 0 ? 'paid' : autoApply > 0 ? 'partial' : 'outstanding';
+    const invId = uid('inv');
     DB.insert('invoices', {
-      id: uid('inv'), schoolId, studentId: s.id, term: currentTerm,
+      id: invId, schoolId, studentId: s.id, term: currentTerm,
       lineItems: [
         { name: 'Tuition Fee', amount: fs.tuition },
         { name: 'Books & Materials', amount: fs.books },
@@ -408,10 +415,16 @@ function confirmBulkGenerateInvoices() {
         { name: 'PTA Levy', amount: fs.pta },
         ...extraLines
       ],
-      total, paid: 0, balance: total, status: 'outstanding', dueDate: fs.dueDate, createdAt: now()
+      total, paid: initPaid, balance: initBalance, status: initStatus, dueDate: fs.dueDate, createdAt: now()
     });
+    if (autoApply > 0 && creditRec) {
+      DB.update('studentCredits', creditRec.id, { balance: creditAvail - autoApply, updatedAt: now() });
+    }
     // Notify parent
-    if (s.parentId) DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'New Invoice', body: `${s.name}'s invoice for ${currentTerm} is ready. Total: ${money(total)}.`, type: 'info', read: false, timestamp: now(), link: { view: 'par_fees' } });
+    if (s.parentId) {
+      const creditNote = autoApply > 0 ? ` ${money(autoApply)} credit automatically applied — ${initBalance > 0 ? `balance due: ${money(initBalance)}` : 'fully covered by credit!'}.` : '';
+      DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'New Invoice', body: `${s.name}'s invoice for ${currentTerm} is ready. Total: ${money(total)}.${creditNote}`, type: 'info', read: false, timestamp: now(), link: { view: 'par_fees' } });
+    }
     created++;
   });
   DB.insert('auditLog', { id: uid('aud'), schoolId, actor: AUTH.current.id, action: 'bulk_invoiced', target: `${created} students · ${currentTerm}`, timestamp: now() });
@@ -996,6 +1009,214 @@ function sendReceiptToParent(invoiceId) {
   }
   DB.insert('auditLog', { id: uid('aud'), schoolId: 'sch_brightlights', actor: AUTH.current.id, action: 'sent_receipt', target: `${s.name} · ${money(inv.paid)}`, timestamp: now() });
   toast(`Receipt for ${s.name} generated & sent to parent via WhatsApp + email`, 'success');
+}
+
+/* ---------- Fee Ledger ---------- */
+function view_fin_ledger() {
+  const schoolId = currentSchoolId();
+  const allInvoices = DB.query('invoices', i => i.schoolId === schoolId);
+  const classes = DB.get('classes').filter(c => c.schoolId === schoolId);
+  const filterClass  = APP.params.ledgerClass  || 'all';
+  const filterStatus = APP.params.ledgerStatus || 'all';
+  const q = (APP.params.ledgerQ || '').toLowerCase();
+
+  let rows = allInvoices.map(inv => {
+    const s = DB.find('students', inv.studentId);
+    if (!s || s.status !== 'active') return null;
+    const cls = DB.find('classes', s.classId);
+    return { inv, s, cls };
+  }).filter(Boolean);
+
+  if (filterClass  !== 'all') rows = rows.filter(r => r.s.classId === filterClass);
+  if (filterStatus !== 'all') rows = rows.filter(r => r.inv.status === filterStatus);
+  if (q) rows = rows.filter(r => r.s.name.toLowerCase().includes(q) || (r.s.admissionNo || '').toLowerCase().includes(q));
+  rows.sort((a, b) => (a.cls?.name || '').localeCompare(b.cls?.name || '') || a.s.name.localeCompare(b.s.name));
+
+  const totalBilled      = rows.reduce((s, r) => s + r.inv.total,   0);
+  const totalCollected   = rows.reduce((s, r) => s + r.inv.paid,    0);
+  const totalOutstanding = rows.reduce((s, r) => s + r.inv.balance, 0);
+
+  const statusCounts = { all: rows.length };
+  rows.forEach(r => { statusCounts[r.inv.status] = (statusCounts[r.inv.status] || 0) + 1; });
+
+  return `
+    ${pageHeader({
+      title: 'Fee Ledger',
+      subtitle: `${DB.settings().currentTerm} · ${rows.length} student${rows.length !== 1 ? 's' : ''}`,
+      actions: `
+        <button class="btn btn-secondary" onclick="exportLedgerCSV()">${icon('download','w-4 h-4')} Export CSV</button>
+        <button class="btn btn-primary" onclick="recordCashPaymentModal()">${icon('fees','w-4 h-4')} Record Payment</button>
+      `
+    })}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      ${statCard({ label: 'Students', value: rows.length, icon: 'students', color: 'blue' })}
+      ${statCard({ label: 'Total Billed', value: money(totalBilled), icon: 'fees', color: 'slate' })}
+      ${statCard({ label: 'Collected', value: money(totalCollected), icon: 'check', color: 'green' })}
+      ${statCard({ label: 'Outstanding', value: money(totalOutstanding), icon: 'alert', color: 'red' })}
+    </div>
+    <div class="card overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex flex-wrap gap-2 items-center">
+        <select class="input !w-auto text-sm" onchange="APP.go('fin_ledger',{...APP.params, ledgerClass: this.value})">
+          <option value="all" ${filterClass==='all'?'selected':''}>All Classes</option>
+          ${classes.sort((a,b)=>a.name.localeCompare(b.name)).map(c => `<option value="${c.id}" ${filterClass===c.id?'selected':''}>${c.name}</option>`).join('')}
+        </select>
+        <div class="flex gap-1 flex-wrap">
+          ${['all','paid','partial','outstanding'].map(st => `<button class="chip ${filterStatus===st?'active':''}" onclick="APP.go('fin_ledger',{...APP.params, ledgerStatus:'${st}'})">${st==='all'?`All (${statusCounts.all||0})`:st[0].toUpperCase()+st.slice(1)+` (${statusCounts[st]||0})`}</button>`).join('')}
+        </div>
+        <input type="search" class="input !w-44 ml-auto text-sm" placeholder="Name or Adm. No…" value="${APP.params.ledgerQ||''}" oninput="APP.go('fin_ledger',{...APP.params, ledgerQ: this.value})">
+      </div>
+      ${rows.length === 0 ? emptyState({ icon: 'fees', title: 'No records', sub: 'Try adjusting the filters above' }) : `
+      <div class="overflow-x-auto">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Adm. No</th>
+              <th>Student Name</th>
+              <th>Class</th>
+              <th class="text-right">Fee Amount</th>
+              <th class="text-right">Received</th>
+              <th class="text-right">Outstanding</th>
+              <th class="text-right">Credit</th>
+              <th>Status</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(({ inv, s, cls }) => {
+              const credit = (DB.query('studentCredits', c => c.studentId === s.id)[0] || { balance: 0 }).balance;
+              return `<tr>
+                <td class="font-mono text-xs text-slate-500">${s.admissionNo || s.id.slice(-6).toUpperCase()}</td>
+                <td><div class="flex items-center gap-2">${avatar(s.name, 'sm')}<span class="font-medium">${s.name}</span></div></td>
+                <td class="text-sm text-slate-600">${cls ? cls.name : '—'}</td>
+                <td class="text-right font-mono">${money(inv.total)}</td>
+                <td class="text-right font-mono text-emerald-700">${money(inv.paid)}</td>
+                <td class="text-right font-mono font-semibold ${inv.balance > 0 ? 'text-rose-700' : 'text-slate-400'}">${money(inv.balance)}</td>
+                <td class="text-right font-mono ${credit > 0 ? 'text-blue-700 font-semibold' : 'text-slate-300'}">${credit > 0 ? money(credit) : '—'}</td>
+                <td>${statusBadge(inv.status)}</td>
+                <td class="text-right whitespace-nowrap">
+                  ${inv.balance > 0 ? `<button class="btn btn-primary !py-1 !px-2.5 text-xs mr-1" onclick="ledgerQuickPay('${inv.id}')">${icon('fees','w-3.5 h-3.5')} Pay</button>` : ''}
+                  ${credit > 0 && inv.balance > 0 ? `<button class="btn btn-ghost !p-1.5 text-blue-600" title="Apply credit to invoice" onclick="ledgerApplyCredit('${inv.id}')">${icon('check','w-4 h-4')}</button>` : ''}
+                  ${inv.paid > 0 ? `<button class="btn btn-ghost !p-1.5 text-emerald-700" title="Print receipt" onclick="sendReceiptToParent('${inv.id}')">${icon('download','w-4 h-4')}</button>` : ''}
+                  ${inv.balance > 0 ? `<button class="btn btn-ghost !p-1.5 text-amber-600" title="Send reminder to parent" onclick="sendManualReminder('${inv.id}')">${icon('bell','w-4 h-4')}</button>` : ''}
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+          <tfoot>
+            <tr class="bg-slate-50 border-t-2 border-slate-200">
+              <td colspan="3" class="font-bold text-slate-700 px-4 py-3">Totals — ${rows.length} student${rows.length !== 1 ? 's' : ''}</td>
+              <td class="text-right font-mono font-bold px-4 py-3">${money(totalBilled)}</td>
+              <td class="text-right font-mono font-bold text-emerald-700 px-4 py-3">${money(totalCollected)}</td>
+              <td class="text-right font-mono font-bold text-rose-700 px-4 py-3">${money(totalOutstanding)}</td>
+              <td colspan="3"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>`}
+    </div>
+  `;
+}
+
+function ledgerQuickPay(invoiceId) {
+  const inv = DB.find('invoices', invoiceId);
+  if (!inv) return;
+  const s = DB.find('students', inv.studentId);
+  const cls = s ? DB.find('classes', s.classId) : null;
+  modal({
+    title: 'Record Payment',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+          <div class="font-semibold text-slate-900">${s ? s.name : '—'}</div>
+          <div class="text-xs text-slate-500">${s ? (s.admissionNo || s.id.slice(-6).toUpperCase()) : ''} · ${cls ? cls.name : ''}</div>
+          <div class="mt-1 text-sm">Balance due: <span class="font-bold text-rose-700">${money(inv.balance)}</span></div>
+        </div>
+        <div><label class="input-label">Amount (₦)</label><input type="number" id="qpay_amount" class="input" value="${inv.balance}" /></div>
+        <div><label class="input-label">Date</label><input type="date" id="qpay_date" class="input" value="${today()}" /></div>
+        <div><label class="input-label">Note</label><input type="text" id="qpay_note" class="input" placeholder="School fees — ${DB.settings().currentTerm}" /></div>
+      </div>
+    `,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+      <button class="btn btn-primary" onclick="ledgerSaveQuickPay('${invoiceId}')">${icon('check','w-4 h-4')} Record Payment</button>
+    `
+  });
+}
+
+function ledgerSaveQuickPay(invoiceId) {
+  const inv = DB.find('invoices', invoiceId);
+  if (!inv) return;
+  const amount = parseFloat(document.getElementById('qpay_amount').value);
+  const date   = document.getElementById('qpay_date').value;
+  const note   = document.getElementById('qpay_note').value.trim();
+  if (!amount || amount <= 0) { toast('Enter a valid amount', 'danger'); return; }
+  const applyToInvoice = Math.min(amount, inv.balance);
+  const creditToAdd    = amount - applyToInvoice;
+  const newPaid    = inv.paid + applyToInvoice;
+  const newBalance = inv.balance - applyToInvoice;
+  DB.insert('transactions', {
+    id: uid('txn'), schoolId: inv.schoolId, studentId: inv.studentId, invoiceId: inv.id,
+    amount, method: 'cash', status: 'successful',
+    reference: `CASH-${Date.now().toString(36).toUpperCase()}`,
+    narration: note || `School fees — ${DB.settings().currentTerm}`, timestamp: date + 'T00:00:00.000Z', reconciled: true
+  });
+  DB.update('invoices', inv.id, { paid: newPaid, balance: newBalance, status: newBalance === 0 ? 'paid' : 'partial' });
+  if (creditToAdd > 0) {
+    const creditRec = DB.query('studentCredits', c => c.studentId === inv.studentId)[0];
+    if (creditRec) {
+      DB.update('studentCredits', creditRec.id, { balance: creditRec.balance + creditToAdd, updatedAt: now() });
+    } else {
+      DB.insert('studentCredits', { id: uid('cred'), schoolId: inv.schoolId, studentId: inv.studentId, balance: creditToAdd, updatedAt: now() });
+    }
+  }
+  const s = DB.find('students', inv.studentId);
+  if (s && s.parentId) {
+    let body = `${money(amount)} received for ${s.name}. ${newBalance > 0 ? `Balance: ${money(newBalance)}.` : 'Account fully settled — thank you!'}`;
+    if (creditToAdd > 0) body += ` ${money(creditToAdd)} saved as advance credit.`;
+    DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Payment Received', body, type: 'success', read: false, timestamp: now(), link: { view: 'par_fees' } });
+  }
+  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'fee_payment_recorded', target: `${s ? s.name : inv.studentId} · ${money(amount)}${creditToAdd > 0 ? ` · ${money(creditToAdd)} to credit` : ''}`, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  toast(`${money(amount)} recorded${creditToAdd > 0 ? ` · ${money(creditToAdd)} added as credit` : ''}`, 'success');
+  APP.render();
+}
+
+function ledgerApplyCredit(invoiceId) {
+  const inv = DB.find('invoices', invoiceId);
+  if (!inv) return;
+  const creditRec = DB.query('studentCredits', c => c.studentId === inv.studentId)[0];
+  if (!creditRec || creditRec.balance <= 0) { toast('No credit balance to apply', 'info'); return; }
+  const apply = Math.min(creditRec.balance, inv.balance);
+  const newPaid    = inv.paid + apply;
+  const newBalance = inv.balance - apply;
+  DB.update('invoices', inv.id, { paid: newPaid, balance: newBalance, status: newBalance === 0 ? 'paid' : 'partial' });
+  DB.update('studentCredits', creditRec.id, { balance: creditRec.balance - apply, updatedAt: now() });
+  const s = DB.find('students', inv.studentId);
+  if (s && s.parentId) {
+    DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Credit Applied', body: `${money(apply)} credit balance applied to ${s.name}'s fees. ${newBalance > 0 ? `Remaining balance: ${money(newBalance)}.` : 'Account fully settled!'}`, type: 'success', read: false, timestamp: now(), link: { view: 'par_fees' } });
+  }
+  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'credit_applied', target: `${money(apply)} to ${s ? s.name : inv.studentId}`, timestamp: now() });
+  toast(`${money(apply)} credit applied to ${s ? s.name : 'student'}`, 'success');
+  APP.render();
+}
+
+function exportLedgerCSV() {
+  const schoolId = currentSchoolId();
+  const invoices = DB.query('invoices', i => i.schoolId === schoolId);
+  const rows = invoices.map(inv => {
+    const s = DB.find('students', inv.studentId);
+    if (!s || s.status !== 'active') return null;
+    const cls = DB.find('classes', s.classId);
+    return [s.admissionNo || '', cls ? cls.name : '', s.name, inv.total, inv.paid, inv.balance, inv.status, inv.term || ''];
+  }).filter(Boolean);
+  rows.sort((a, b) => a[1].localeCompare(b[1]) || a[2].localeCompare(b[2]));
+  const headers = ['Admission No', 'Class', 'Student Name', 'Fee Amount', 'Total Received', 'Outstanding', 'Status', 'Term'];
+  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `fee_ledger_${today()}.csv`; a.click();
+  URL.revokeObjectURL(url);
 }
 
 /* ---------- Payments ---------- */

@@ -60,6 +60,7 @@ const APP = {
       finance: [
         { key: 'fin_dashboard',  label: 'Dashboard',       icon: 'dashboard' },
         { key: 'fin_fees',       label: 'Fee Structure',   icon: 'fees' },
+        { key: 'fin_ledger',     label: 'Fee Ledger',      icon: 'students' },
         { key: 'fin_invoices',   label: 'Invoices',        icon: 'results' },
         { key: 'fin_payments',   label: 'Payments',        icon: 'fees' },
         { key: 'fin_recon',      label: 'Reconciliation',  icon: 'check' },
