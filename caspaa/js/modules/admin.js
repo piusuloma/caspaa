@@ -2033,6 +2033,7 @@ function view_adm_finance_hub() {
   return buildHub('Finance', 'Fees, invoices, expenses, payroll, reports', [
     { key: 'overview',  label: 'Overview',      view: 'view_fin_cost_center' },
     { key: 'fees',      label: 'Fee Structure', view: 'view_fin_fees' },
+    { key: 'ledger',    label: 'Fee Ledger',    view: 'view_fin_ledger' },
     { key: 'invoices',  label: 'Invoices',      view: 'view_fin_invoices' },
     { key: 'payments',  label: 'Payments',      view: 'view_fin_payments' },
     { key: 'expenses',  label: 'Expenses',      view: 'view_fin_expenses' },
