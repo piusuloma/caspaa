@@ -575,7 +575,7 @@ function renderActivitiesTab() {
                     : `<span class="text-slate-400">0</span>`}
                 </td>
                 <td class="px-5 py-4 text-right font-mono font-semibold ${revenue > 0 ? 'text-brand-700' : 'text-slate-400'}">${money(revenue)}</td>
-                <td class="px-5 py-4 text-right whitespace-nowrap opacity-0 group-hover:opacity-100 transition">
+                <td class="px-5 py-4 text-right whitespace-nowrap">
                   <button class="btn btn-ghost !p-1.5 hover:bg-slate-100 rounded-lg" title="Edit" onclick="editActivityModal('${a.id}')">${icon('edit','w-4 h-4 text-slate-500')}</button>
                   <button class="btn btn-ghost !p-1.5 hover:bg-rose-50 rounded-lg" title="Delete" onclick="deleteActivity('${a.id}')">${icon('trash','w-4 h-4 text-rose-400')}</button>
                 </td>
@@ -1096,7 +1096,7 @@ function view_fin_ledger() {
                 <td class="text-right font-mono ${credit > 0 ? 'text-blue-700 font-semibold' : 'text-slate-300'}">${credit > 0 ? money(credit) : '—'}</td>
                 <td>${statusBadge(inv.status)}</td>
                 <td class="text-right pr-2">
-                  <button class="btn btn-ghost !p-1.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" title="Actions" onclick="openLedgerMenu(this,'${inv.id}',${inv.balance > 0},${inv.paid > 0},${credit > 0 && inv.balance > 0})">${icon('more','w-4 h-4')}</button>
+                  <button class="btn btn-ghost !p-1.5 text-slate-400 hover:text-slate-700" title="Actions" onclick="openLedgerMenu(this,'${inv.id}',${inv.balance > 0},${inv.paid > 0},${credit > 0 && inv.balance > 0})">${icon('more','w-4 h-4')}</button>
                 </td>
               </tr>`;
             }).join('')}
