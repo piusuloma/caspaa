@@ -1178,7 +1178,7 @@ function tch_openMarkingView(assignmentId, studentId) {
             <div class="flex items-center justify-between mb-1.5">
               <label class="input-label !mb-0">Inline Comments</label>
               ${hasImage
-                ? `<span class="text-xs text-slate-400">📍 tool to place</span>`
+                ? `<span class="text-xs text-slate-400">Click image to pin</span>`
                 : `<button class="btn btn-secondary !py-0.5 !px-2 text-xs" onclick="mkvAddDocComment()">${icon('plus','w-3 h-3')} Add</button>`}
             </div>
             <div id="mkv_comments_list" class="space-y-2 max-h-44 overflow-y-auto scroll-area"></div>
@@ -1212,7 +1212,7 @@ function tch_openMarkingView(assignmentId, studentId) {
   });
 
   if (hasImage) setTimeout(() => mkvInitCanvas(imgSrc, sub.annotation), 80);
-  setTimeout(() => mkvRenderPins(), 130);
+  setTimeout(() => { mkvRenderPins(); if (_mkv._hasImage) mkvSetTool('pin'); }, 130);
 }
 
 function mkvInitCanvas(imgSrc, existingAnnotation) {
