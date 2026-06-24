@@ -1045,6 +1045,8 @@ function view_fin_ledger() {
       subtitle: `${DB.settings().currentTerm} · ${rows.length} student${rows.length !== 1 ? 's' : ''}`,
       actions: `
         <button class="btn btn-secondary" onclick="exportLedgerCSV()">${icon('download','w-4 h-4')} Export CSV</button>
+        <button class="btn btn-secondary" onclick="sendBulkReminders()">${icon('bell','w-4 h-4')} Remind Overdue</button>
+        <button class="btn btn-secondary" onclick="bulkGenerateInvoicesModal()">${icon('plus','w-4 h-4')} Generate Invoices</button>
         <button class="btn btn-primary" onclick="recordCashPaymentModal()">${icon('fees','w-4 h-4')} Record Payment</button>
       `
     })}
@@ -1096,8 +1098,10 @@ function view_fin_ledger() {
                 <td class="text-right whitespace-nowrap">
                   ${inv.balance > 0 ? `<button class="btn btn-primary !py-1 !px-2.5 text-xs mr-1" onclick="ledgerQuickPay('${inv.id}')">${icon('fees','w-3.5 h-3.5')} Pay</button>` : ''}
                   ${credit > 0 && inv.balance > 0 ? `<button class="btn btn-ghost !p-1.5 text-blue-600" title="Apply advance payment to invoice" onclick="ledgerApplyCredit('${inv.id}')">${icon('check','w-4 h-4')}</button>` : ''}
-                  ${inv.paid > 0 ? `<button class="btn btn-ghost !p-1.5 text-emerald-700" title="Print receipt" onclick="sendReceiptToParent('${inv.id}')">${icon('download','w-4 h-4')}</button>` : ''}
-                  ${inv.balance > 0 ? `<button class="btn btn-ghost !p-1.5 text-amber-600" title="Send reminder to parent" onclick="sendManualReminder('${inv.id}')">${icon('bell','w-4 h-4')}</button>` : ''}
+                  <button class="btn btn-ghost !p-1.5 text-brand-700" title="Send invoice to parent" onclick="sendInvoiceToParent('${inv.id}')">${icon('send','w-4 h-4')}</button>
+                  ${inv.paid > 0 ? `<button class="btn btn-ghost !p-1.5 text-emerald-700" title="Send receipt to parent" onclick="sendReceiptToParent('${inv.id}')">${icon('download','w-4 h-4')}</button>` : ''}
+                  ${inv.balance > 0 ? `<button class="btn btn-ghost !p-1.5 text-amber-600" title="Send payment reminder" onclick="sendManualReminder('${inv.id}')">${icon('bell','w-4 h-4')}</button>` : ''}
+                  <button class="btn btn-ghost !p-1.5 text-slate-500" title="View invoice details" onclick="viewInvoice('${inv.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
                 </td>
               </tr>`;
             }).join('')}
