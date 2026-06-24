@@ -1059,11 +1059,12 @@ function tch_openMarkingView(assignmentId, studentId) {
   const allSubmitted = a.submissions.filter(s => s.text || s.file || s.imageData);
   const idx = allSubmitted.findIndex(s => s.studentId === studentId);
 
-  _mkv = { assignmentId, studentId, tool: 'pen', color: '#ef4444', size: 3, drawing: false, status: sub.markStatus || null };
-
   const isImage = sub.file && sub.file.type && sub.file.type.startsWith('image/');
   const hasImage = isImage || sub.imageData;
   const imgSrc = sub.imageData || (isImage ? sub.file.data : null);
+  const hasPdf = !hasImage && sub.file && (sub.file.type === 'application/pdf' || (sub.file.name || '').endsWith('.pdf'));
+
+  _mkv = { assignmentId, studentId, tool: 'pen', color: '#ef4444', size: 3, drawing: false, status: sub.markStatus || null, pins: (sub.marginalComments || []).map(p => ({...p})), _hasImage: !!hasImage };
 
   const navPrev = idx > 0 ? allSubmitted[idx - 1].studentId : null;
   const navNext = idx < allSubmitted.length - 1 ? allSubmitted[idx + 1].studentId : null;
@@ -1074,13 +1075,16 @@ function tch_openMarkingView(assignmentId, studentId) {
   const submissionArea = hasImage ? `
     <div class="relative bg-slate-900 rounded-xl overflow-hidden select-none" id="mkv_wrap" style="min-height:320px">
       <img id="mkv_img" src="${imgSrc}" class="w-full block rounded-xl" style="opacity:0.97" draggable="false" />
-      <canvas id="mkv_canvas" class="absolute inset-0 w-full h-full rounded-xl cursor-crosshair" style="touch-action:none"></canvas>
+      <canvas id="mkv_canvas" class="absolute inset-0 w-full h-full rounded-xl cursor-crosshair" style="touch-action:none;z-index:5"></canvas>
+      <div id="mkv_pin_layer" class="absolute inset-0" style="z-index:6;pointer-events:none;cursor:crosshair" onclick="mkvPlacePin(event)"></div>
+      <div id="mkv_pin_markers" class="absolute inset-0" style="z-index:7;pointer-events:none"></div>
     </div>
     <div class="flex items-center gap-2 mt-2 flex-wrap">
       <span class="text-xs text-slate-500 font-semibold">Tool:</span>
       <button id="mkv_pen" class="btn btn-secondary !py-1 !px-3 text-xs active-tool" onclick="mkvSetTool('pen')">✏️ Pen</button>
       <button id="mkv_highlight" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('highlight')">🖊 Highlight</button>
       <button id="mkv_eraser" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('eraser')">⬜ Eraser</button>
+      <button id="mkv_pin" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('pin')" title="Click on image to place a comment pin">📍 Comment</button>
       <span class="text-xs text-slate-500 font-semibold ml-2">Colour:</span>
       ${['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#000000'].map(c =>
         `<button class="w-6 h-6 rounded-full border-2 ${c === '#ef4444' ? 'border-slate-700 scale-110' : 'border-transparent'} transition-all" style="background:${c}" onclick="mkvSetColor('${c}',this)"></button>`
@@ -1088,7 +1092,11 @@ function tch_openMarkingView(assignmentId, studentId) {
       <span class="text-xs text-slate-500 font-semibold ml-2">Size:</span>
       <input type="range" min="1" max="12" value="3" id="mkv_size" class="w-24" oninput="mkvSetSize(this.value)">
       <button class="btn btn-secondary !py-1 !px-3 text-xs ml-auto text-rose-600" onclick="mkvClear()">🗑 Clear</button>
-    </div>` : sub.text ? `
+    </div>` : hasPdf ? `
+    <div class="rounded-xl overflow-hidden border border-slate-200 bg-slate-50" style="height:420px">
+      <embed src="${sub.file.data}" type="application/pdf" class="w-full h-full" />
+    </div>
+    <div class="text-xs text-slate-400 mt-1.5 text-center">PDF viewer — use the 📍 Add Comment button on the right to leave notes</div>` : sub.text ? `
     <div class="bg-slate-50 rounded-xl p-4 text-sm text-slate-800 leading-relaxed min-h-48 whitespace-pre-wrap border border-slate-200">${sub.text}</div>` : sub.file ? `
     <div class="flex flex-col items-center justify-center bg-slate-50 rounded-xl p-8 min-h-48 border border-slate-200">
       ${icon('paperclip','w-10 h-10 text-brand-400 mb-3')}
@@ -1165,10 +1173,21 @@ function tch_openMarkingView(assignmentId, studentId) {
             </div>
           </div>
 
-          <!-- Comments -->
+          <!-- Inline Comments -->
           <div>
-            <label class="input-label">Comments for student</label>
-            <textarea id="mkv_feedback" rows="4" class="input text-sm" placeholder="Write your feedback, corrections, and suggestions here...">${graded && sub.feedback ? sub.feedback : ''}</textarea>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="input-label !mb-0">Inline Comments</label>
+              ${hasImage
+                ? `<span class="text-xs text-slate-400">📍 tool to place</span>`
+                : `<button class="btn btn-secondary !py-0.5 !px-2 text-xs" onclick="mkvAddDocComment()">${icon('plus','w-3 h-3')} Add</button>`}
+            </div>
+            <div id="mkv_comments_list" class="space-y-2 max-h-44 overflow-y-auto scroll-area"></div>
+          </div>
+
+          <!-- General Feedback -->
+          <div>
+            <label class="input-label">General Feedback</label>
+            <textarea id="mkv_feedback" rows="3" class="input text-sm" placeholder="Overall feedback, corrections, suggestions…">${graded && sub.feedback ? sub.feedback : ''}</textarea>
           </div>
 
           <!-- Quick comment chips -->
@@ -1193,6 +1212,7 @@ function tch_openMarkingView(assignmentId, studentId) {
   });
 
   if (hasImage) setTimeout(() => mkvInitCanvas(imgSrc, sub.annotation), 80);
+  setTimeout(() => mkvRenderPins(), 130);
 }
 
 function mkvInitCanvas(imgSrc, existingAnnotation) {
@@ -1257,10 +1277,14 @@ function mkvInitCanvas(imgSrc, existingAnnotation) {
 
 function mkvSetTool(t) {
   _mkv.tool = t;
-  ['pen','highlight','eraser'].forEach(k => {
+  ['pen','highlight','eraser','pin'].forEach(k => {
     const b = document.getElementById('mkv_' + k);
     if (b) b.classList.toggle('active-tool', k === t);
   });
+  const canvas   = document.getElementById('mkv_canvas');
+  const pinLayer = document.getElementById('mkv_pin_layer');
+  if (canvas)   canvas.style.pointerEvents   = t === 'pin' ? 'none' : 'auto';
+  if (pinLayer) pinLayer.style.pointerEvents = t === 'pin' ? 'auto' : 'none';
 }
 function mkvSetColor(c, btn) {
   _mkv.color = c;
@@ -1291,6 +1315,73 @@ function mkvSetStatus(val) {
   });
 }
 
+function mkvRenderPins() {
+  const markerEl = document.getElementById('mkv_pin_markers');
+  const listEl   = document.getElementById('mkv_comments_list');
+  if (!listEl) return;
+  const pins = _mkv.pins || [];
+  if (markerEl) {
+    markerEl.innerHTML = pins.map((p, i) => {
+      if (p.x == null || p.y == null) return '';
+      return `<div class="absolute flex items-center justify-center w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] font-bold shadow cursor-pointer ring-2 ring-white"
+        style="left:${p.x}%;top:${p.y}%;transform:translate(-50%,-50%);pointer-events:auto;z-index:8"
+        onclick="mkvFocusPin('${p.id}')" title="Comment ${i+1}">${i+1}</div>`;
+    }).join('');
+  }
+  listEl.innerHTML = pins.length === 0
+    ? `<p class="text-xs text-slate-400 italic">${_mkv._hasImage ? 'Select 📍 then click on the image to add a comment.' : 'Click "Add" to add a comment.'}</p>`
+    : pins.map((p, i) => `
+      <div id="mkv_pin_${p.id}" class="border border-slate-200 rounded-lg p-2 bg-white shadow-sm">
+        <div class="flex items-center gap-1.5 mb-1">
+          ${p.x != null ? `<span class="w-4 h-4 rounded-full bg-brand-600 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">${i+1}</span>` : `<span class="w-4 h-4 rounded-full bg-slate-400 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">✎</span>`}
+          <span class="text-xs text-slate-500 flex-1">${p.x != null ? `Pin ${i+1}` : 'Comment'}</span>
+          <button class="text-slate-300 hover:text-red-500 text-xs" onclick="mkvDeletePin('${p.id}')" title="Delete">✕</button>
+        </div>
+        <textarea rows="2" class="input text-xs !py-1" placeholder="Type comment…" onchange="mkvUpdatePinText('${p.id}',this.value)" oninput="mkvUpdatePinText('${p.id}',this.value)">${p.text || ''}</textarea>
+      </div>`).join('');
+}
+
+function mkvPlacePin(event) {
+  if (_mkv.tool !== 'pin') return;
+  const layer = document.getElementById('mkv_pin_layer');
+  if (!layer) return;
+  const rect = layer.getBoundingClientRect();
+  const x = ((event.clientX - rect.left) / rect.width)  * 100;
+  const y = ((event.clientY - rect.top)  / rect.height) * 100;
+  const pin = { id: uid('pin'), x: parseFloat(x.toFixed(2)), y: parseFloat(y.toFixed(2)), text: '', createdAt: now() };
+  (_mkv.pins = _mkv.pins || []).push(pin);
+  mkvRenderPins();
+  setTimeout(() => {
+    const el = document.getElementById('mkv_pin_' + pin.id);
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); el.querySelector('textarea')?.focus(); }
+  }, 50);
+}
+
+function mkvAddDocComment() {
+  const pin = { id: uid('pin'), x: null, y: null, text: '', createdAt: now() };
+  (_mkv.pins = _mkv.pins || []).push(pin);
+  mkvRenderPins();
+  setTimeout(() => {
+    const el = document.getElementById('mkv_pin_' + pin.id);
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); el.querySelector('textarea')?.focus(); }
+  }, 50);
+}
+
+function mkvUpdatePinText(id, text) {
+  const pin = (_mkv.pins || []).find(p => p.id === id);
+  if (pin) pin.text = text;
+}
+
+function mkvDeletePin(id) {
+  _mkv.pins = (_mkv.pins || []).filter(p => p.id !== id);
+  mkvRenderPins();
+}
+
+function mkvFocusPin(id) {
+  const el = document.getElementById('mkv_pin_' + id);
+  if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); el.querySelector('textarea')?.focus(); }
+}
+
 function tch_saveMarking(assignmentId, studentId, nextStudentId) {
   const a = DB.find('assignments', assignmentId);
   const gradeVal = document.getElementById('mkv_grade');
@@ -1308,13 +1399,15 @@ function tch_saveMarking(assignmentId, studentId, nextStudentId) {
   const idx = a.submissions.findIndex(s => s.studentId === studentId);
   if (idx === -1) return;
   const resubmissionRequested = markStatus === 'needs_revision';
+  const marginalComments = (_mkv.pins || []).filter(p => p.text && p.text.trim());
   Object.assign(a.submissions[idx], {
     ...(grade !== null ? { grade, gradedAt: now() } : {}),
     feedback: feedback || a.submissions[idx].feedback,
     markStatus: markStatus || a.submissions[idx].markStatus,
     resubmissionRequested,
     ...(annotation ? { annotation } : {}),
-    ...(rubricScores ? { rubricScores } : {})
+    ...(rubricScores ? { rubricScores } : {}),
+    marginalComments
   });
   DB.update('assignments', assignmentId, { submissions: a.submissions });
   const student = DB.find('students', studentId);
@@ -1352,13 +1445,15 @@ function tch_saveMarkingAndReturn(assignmentId, studentId) {
     return [c.id, inp && inp.value !== '' ? parseFloat(inp.value) || 0 : 0];
   })) : null;
   const resubmissionRequested = markStatus === 'needs_revision';
+  const marginalComments = (_mkv.pins || []).filter(p => p.text && p.text.trim());
   const idx = a.submissions.findIndex(s => s.studentId === studentId);
   if (idx === -1) return;
   Object.assign(a.submissions[idx], {
     grade, gradedAt: now(), feedback, markStatus, resubmissionRequested,
     returned: true, returnedAt: now(),
     ...(annotation ? { annotation } : {}),
-    ...(rubricScores ? { rubricScores } : {})
+    ...(rubricScores ? { rubricScores } : {}),
+    marginalComments
   });
   DB.update('assignments', assignmentId, { submissions: a.submissions });
   const student = DB.find('students', studentId);
