@@ -1080,13 +1080,13 @@ function view_fin_ledger() {
               <th class="text-right">Outstanding</th>
               <th class="text-right">Advance Paid</th>
               <th>Status</th>
-              <th class="text-right">Actions</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             ${rows.map(({ inv, s, cls }) => {
               const credit = (DB.query('studentCredits', c => c.studentId === s.id)[0] || { balance: 0 }).balance;
-              return `<tr>
+              return `<tr class="group">
                 <td class="font-mono text-xs text-slate-500">${s.admissionNo || s.id.slice(-6).toUpperCase()}</td>
                 <td><div class="flex items-center gap-2">${avatar(s.name, 'sm')}<span class="font-medium">${s.name}</span></div></td>
                 <td class="text-sm text-slate-600">${cls ? cls.name : '—'}</td>
@@ -1095,13 +1095,8 @@ function view_fin_ledger() {
                 <td class="text-right font-mono font-semibold ${inv.balance > 0 ? 'text-rose-700' : 'text-slate-400'}">${money(inv.balance)}</td>
                 <td class="text-right font-mono ${credit > 0 ? 'text-blue-700 font-semibold' : 'text-slate-300'}">${credit > 0 ? money(credit) : '—'}</td>
                 <td>${statusBadge(inv.status)}</td>
-                <td class="text-right whitespace-nowrap">
-                  ${inv.balance > 0 ? `<button class="btn btn-primary !py-1 !px-2.5 text-xs mr-1" onclick="ledgerQuickPay('${inv.id}')">${icon('fees','w-3.5 h-3.5')} Pay</button>` : ''}
-                  ${credit > 0 && inv.balance > 0 ? `<button class="btn btn-ghost !p-1.5 text-blue-600" title="Apply advance payment to invoice" onclick="ledgerApplyCredit('${inv.id}')">${icon('check','w-4 h-4')}</button>` : ''}
-                  <button class="btn btn-ghost !p-1.5 text-brand-700" title="Send invoice to parent" onclick="sendInvoiceToParent('${inv.id}')">${icon('send','w-4 h-4')}</button>
-                  ${inv.paid > 0 ? `<button class="btn btn-ghost !p-1.5 text-emerald-700" title="Send receipt to parent" onclick="sendReceiptToParent('${inv.id}')">${icon('download','w-4 h-4')}</button>` : ''}
-                  ${inv.balance > 0 ? `<button class="btn btn-ghost !p-1.5 text-amber-600" title="Send payment reminder" onclick="sendManualReminder('${inv.id}')">${icon('bell','w-4 h-4')}</button>` : ''}
-                  <button class="btn btn-ghost !p-1.5 text-slate-500" title="View invoice details" onclick="viewInvoice('${inv.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
+                <td class="text-right pr-2">
+                  <button class="btn btn-ghost !p-1.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" title="Actions" onclick="openLedgerMenu(this,'${inv.id}',${inv.balance > 0},${inv.paid > 0},${credit > 0 && inv.balance > 0})">${icon('more','w-4 h-4')}</button>
                 </td>
               </tr>`;
             }).join('')}
@@ -1202,6 +1197,27 @@ function ledgerApplyCredit(invoiceId) {
   DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'advance_applied', target: `${money(apply)} to ${s ? s.name : inv.studentId}`, timestamp: now() });
   toast(`${money(apply)} advance payment applied to ${s ? s.name : 'student'}`, 'success');
   APP.render();
+}
+
+function openLedgerMenu(btn, invoiceId, hasBalance, hasPaid, hasCredit) {
+  document.getElementById('_ledgerMenu')?.remove();
+  const rect = btn.getBoundingClientRect();
+  const items = [
+    hasBalance ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 font-medium text-brand-700" onclick="document.getElementById('_ledgerMenu')?.remove();ledgerQuickPay('${invoiceId}')">Record Payment</button>` : '',
+    hasCredit  ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-blue-600" onclick="document.getElementById('_ledgerMenu')?.remove();ledgerApplyCredit('${invoiceId}')">Apply Advance Payment</button>` : '',
+    `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50" onclick="document.getElementById('_ledgerMenu')?.remove();sendInvoiceToParent('${invoiceId}')">Send Invoice</button>`,
+    hasPaid    ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-emerald-600" onclick="document.getElementById('_ledgerMenu')?.remove();sendReceiptToParent('${invoiceId}')">Send Receipt</button>` : '',
+    hasBalance ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-amber-600" onclick="document.getElementById('_ledgerMenu')?.remove();sendManualReminder('${invoiceId}')">Send Reminder</button>` : '',
+    `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-slate-500" onclick="document.getElementById('_ledgerMenu')?.remove();viewInvoice('${invoiceId}')">View Invoice</button>`
+  ].filter(Boolean).join('');
+  const menu = document.createElement('div');
+  menu.id = '_ledgerMenu';
+  menu.className = 'fixed z-[9999] bg-white shadow-xl rounded-xl border border-slate-100 py-1 min-w-[180px]';
+  menu.style.top  = `${rect.bottom + 4}px`;
+  menu.style.right = `${window.innerWidth - rect.right}px`;
+  menu.innerHTML = items;
+  document.body.appendChild(menu);
+  setTimeout(() => document.addEventListener('click', () => document.getElementById('_ledgerMenu')?.remove(), { once: true }), 0);
 }
 
 function exportLedgerCSV() {

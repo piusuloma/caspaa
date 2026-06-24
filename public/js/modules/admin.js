@@ -36,7 +36,7 @@ function view_adm_people() {
     { key: 'returning',      label: 'Returning',       view: 'view_adm_returning_students' },
     { key: 'admissions',     label: 'Admissions',      view: 'view_adm_admissions', badge: () => DB.query('admissionApplications', a => a.schoolId === currentSchoolId() && a.status !== 'accepted' && a.status !== 'rejected').length || null },
     { key: 'suspensions',    label: 'Suspensions',     view: 'view_adm_student_suspensions', badge: () => DB.query('studentSuspensions', s => s.schoolId === currentSchoolId() && !s.reinstatedAt).length || null },
-    { key: 'alumni',         label: 'Alumni & Transfers', view: 'view_adm_alumni' },
+    { key: 'alumni',         label: 'Alumni',             view: 'view_adm_alumni' },
     { key: 'analytics',      label: 'Analytics',       view: 'view_adm_enrollment_analytics' }
   ], 'students', 'peopleTab');
 }
@@ -3532,6 +3532,13 @@ function addStudentModal(editingId) {
           <select id="sf_blood" class="input">${bloodGroups.map(b => `<option ${existing && existing.bloodGroup === b ? 'selected':''}>${b}</option>`).join('')}</select>
         </div>
         <div>
+          <label class="input-label">House</label>
+          <select id="sf_house" class="input">
+            <option value="">— Auto-assign —</option>
+            ${DB.query('houses', h => h.schoolId === currentSchoolId()).map(h => `<option value="${h.id}" ${existing && existing.houseId === h.id ? 'selected':''}>${h.name}</option>`).join('')}
+          </select>
+        </div>
+        <div>
           <label class="input-label">Allergies / Medical Notes</label>
           <input id="sf_allergies" class="input" placeholder="e.g. Peanut allergy, asthma — or 'None'" value="${existing ? (existing.allergies || '') : ''}" />
         </div>
@@ -3738,7 +3745,8 @@ function saveStudent(editingId) {
     armId: (document.getElementById('sf_arm') || {}).value || null,
     sessionId: (document.getElementById('sf_session') || {}).value || null,
     allergies: (document.getElementById('sf_allergies') || {}).value?.trim() || '',
-    feeCategory: (document.getElementById('sf_feeCat') || {}).value || 'standard'
+    feeCategory: (document.getElementById('sf_feeCat') || {}).value || 'standard',
+    houseId: (document.getElementById('sf_house') || {}).value || null
   };
   if (editingId) {
     DB.update('students', editingId, {
