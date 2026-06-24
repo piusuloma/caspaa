@@ -1059,7 +1059,7 @@ function tch_openMarkingView(assignmentId, studentId) {
   const allSubmitted = a.submissions.filter(s => s.text || s.file || s.imageData);
   const idx = allSubmitted.findIndex(s => s.studentId === studentId);
 
-  _mkv = { assignmentId, studentId, tool: 'pen', color: '#ef4444', size: 3, drawing: false };
+  _mkv = { assignmentId, studentId, tool: 'pen', color: '#ef4444', size: 3, drawing: false, status: sub.markStatus || null };
 
   const isImage = sub.file && sub.file.type && sub.file.type.startsWith('image/');
   const hasImage = isImage || sub.imageData;
@@ -1126,11 +1126,33 @@ function tch_openMarkingView(assignmentId, studentId) {
         <div class="w-full lg:w-72 flex-shrink-0 flex flex-col gap-3">
           <div class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">${a.title}</div>
 
-          <!-- Score -->
+          <!-- Score / Rubric -->
+          ${a.rubric && a.rubric.length ? `
+          <div>
+            <label class="input-label">Rubric Scoring</label>
+            <div class="space-y-2">
+              ${a.rubric.map(c => {
+                const earned = sub.rubricScores && sub.rubricScores[c.id] !== undefined ? sub.rubricScores[c.id] : '';
+                return `<div class="flex items-center gap-2 text-sm">
+                  <span class="flex-1 text-slate-600">${c.criterion}</span>
+                  <input type="number" id="mkv_rub_${c.id}" min="0" max="${c.maxPoints||10}" class="input w-16 !py-1 text-center text-sm" value="${earned}" placeholder="0" oninput="mkvUpdateRubricTotal()" />
+                  <span class="text-xs text-slate-400 whitespace-nowrap">/ ${c.maxPoints||10}</span>
+                </div>`;
+              }).join('')}
+              <div class="border-t border-slate-100 pt-1.5 flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-600">Total Score</span>
+                <div class="flex items-baseline gap-1">
+                  <span id="mkv_rubric_total" class="text-2xl font-extrabold text-brand-700">${graded ? sub.grade : '—'}</span>
+                  <span class="text-xs text-slate-400">/ 100</span>
+                </div>
+              </div>
+            </div>
+            <input id="mkv_grade" type="hidden" value="${graded ? sub.grade : ''}" />
+          </div>` : `
           <div>
             <label class="input-label">Score / 100</label>
             <input id="mkv_grade" type="number" min="0" max="100" class="input !text-2xl !font-extrabold !text-brand-700 text-center" placeholder="—" value="${graded ? sub.grade : ''}" />
-          </div>
+          </div>`}
 
           <!-- Status -->
           <div>
@@ -1158,9 +1180,12 @@ function tch_openMarkingView(assignmentId, studentId) {
           </div>
 
           <!-- Save -->
-          <div class="mt-auto pt-3 border-t border-slate-100 flex gap-2">
-            <button class="btn btn-primary flex-1" onclick="tch_saveMarking('${assignmentId}','${studentId}')">${icon('check','w-4 h-4')} Save &amp; Grade</button>
-            ${navNext ? `<button class="btn btn-secondary text-sm" onclick="tch_saveMarkingAndNext('${assignmentId}','${studentId}','${navNext}')">${icon('arrow_left','w-4 h-4 rotate-180')} Save &amp; Next</button>` : ''}
+          <div class="mt-auto pt-3 border-t border-slate-100 space-y-2">
+            <div class="flex gap-2">
+              <button class="btn btn-primary flex-1" onclick="tch_saveMarking('${assignmentId}','${studentId}')">${icon('check','w-4 h-4')} Save &amp; Grade</button>
+              ${navNext ? `<button class="btn btn-secondary text-sm" onclick="tch_saveMarkingAndNext('${assignmentId}','${studentId}','${navNext}')">${icon('arrow_left','w-4 h-4 rotate-180')} Next</button>` : ''}
+            </div>
+            <button class="btn w-full !bg-emerald-600 !text-white hover:!bg-emerald-700 border-0" onclick="tch_saveMarkingAndReturn('${assignmentId}','${studentId}')">${icon('send','w-4 h-4')} Return to Student</button>
           </div>
         </div>
       </div>`,
@@ -1275,6 +1300,11 @@ function tch_saveMarking(assignmentId, studentId, nextStudentId) {
   const markStatus = _mkv.status || null;
   const canvas = document.getElementById('mkv_canvas');
   const annotation = canvas && canvas.width > 0 ? canvas.toDataURL('image/png') : null;
+  const hasRubric = a.rubric && a.rubric.length > 0;
+  const rubricScores = hasRubric ? Object.fromEntries(
+    a.rubric.map(c => { const inp = document.getElementById('mkv_rub_' + c.id); return [c.id, inp && inp.value !== '' ? parseFloat(inp.value) || 0 : undefined]; })
+            .filter(([, v]) => v !== undefined)
+  ) : null;
   const idx = a.submissions.findIndex(s => s.studentId === studentId);
   if (idx === -1) return;
   const resubmissionRequested = markStatus === 'needs_revision';
@@ -1283,7 +1313,8 @@ function tch_saveMarking(assignmentId, studentId, nextStudentId) {
     feedback: feedback || a.submissions[idx].feedback,
     markStatus: markStatus || a.submissions[idx].markStatus,
     resubmissionRequested,
-    ...(annotation ? { annotation } : {})
+    ...(annotation ? { annotation } : {}),
+    ...(rubricScores ? { rubricScores } : {})
   });
   DB.update('assignments', assignmentId, { submissions: a.submissions });
   const student = DB.find('students', studentId);
@@ -1305,6 +1336,92 @@ function tch_saveMarkingAndNext(assignmentId, studentId, nextStudentId) {
   tch_saveMarking(assignmentId, studentId, nextStudentId);
 }
 
+function tch_saveMarkingAndReturn(assignmentId, studentId) {
+  const a = DB.find('assignments', assignmentId);
+  const gradeVal = document.getElementById('mkv_grade');
+  const grade = gradeVal && gradeVal.value !== '' ? parseInt(gradeVal.value) : null;
+  if (grade === null) { toast('Enter a score before returning to student', 'danger'); return; }
+  if (isNaN(grade) || grade < 0 || grade > 100) { toast('Enter a valid score 0–100', 'danger'); return; }
+  const feedback = (document.getElementById('mkv_feedback') || {}).value?.trim() || '';
+  const markStatus = _mkv.status || 'satisfactory';
+  const canvas = document.getElementById('mkv_canvas');
+  const annotation = canvas && canvas.width > 0 ? canvas.toDataURL('image/png') : null;
+  const hasRubric = a.rubric && a.rubric.length > 0;
+  const rubricScores = hasRubric ? Object.fromEntries(a.rubric.map(c => {
+    const inp = document.getElementById('mkv_rub_' + c.id);
+    return [c.id, inp && inp.value !== '' ? parseFloat(inp.value) || 0 : 0];
+  })) : null;
+  const resubmissionRequested = markStatus === 'needs_revision';
+  const idx = a.submissions.findIndex(s => s.studentId === studentId);
+  if (idx === -1) return;
+  Object.assign(a.submissions[idx], {
+    grade, gradedAt: now(), feedback, markStatus, resubmissionRequested,
+    returned: true, returnedAt: now(),
+    ...(annotation ? { annotation } : {}),
+    ...(rubricScores ? { rubricScores } : {})
+  });
+  DB.update('assignments', assignmentId, { submissions: a.submissions });
+  const student = DB.find('students', studentId);
+  const statusLabel = markStatus === 'excellent' ? '⭐ Excellent' : markStatus === 'needs_revision' ? '🔄 Needs Revision' : '✓ Satisfactory';
+  if (student) {
+    DB.insert('notifications', { id: uid('not'), userId: student.id, title: `Work Returned — ${a.title}`, body: `Your work has been marked and returned: ${grade}/100 (${statusLabel}).${feedback ? ' Comments: ' + feedback : ''}`, type: 'success', read: false, timestamp: now(), link: { view: 'stu_assignments' } });
+    if (resubmissionRequested) DB.insert('notifications', { id: uid('not'), userId: student.id, title: 'Resubmission Requested', body: `Your teacher has requested a resubmission for "${a.title}". Please review the feedback and resubmit.`, type: 'warn', read: false, timestamp: now(), link: { view: 'stu_assignments' } });
+    if (student.parentId) DB.insert('notifications', { id: uid('not'), userId: student.parentId, title: `Assignment returned: ${a.title}`, body: `${student.name}'s work was marked: ${grade}/100 (${statusLabel}).`, type: 'info', read: false, timestamp: now(), link: { view: 'par_dashboard' } });
+  }
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast(`Returned to ${student ? student.name : 'student'} · ${grade}/100 (${statusLabel})`, 'success');
+}
+
+function mkvUpdateRubricTotal() {
+  const a = DB.find('assignments', _mkv.assignmentId);
+  if (!a || !a.rubric || !a.rubric.length) return;
+  const totalMax = a.rubric.reduce((s, c) => s + (c.maxPoints || 10), 0);
+  let totalEarned = 0, allFilled = true;
+  a.rubric.forEach(c => {
+    const inp = document.getElementById('mkv_rub_' + c.id);
+    const v = inp ? parseFloat(inp.value) : NaN;
+    if (isNaN(v) || !inp || inp.value === '') { allFilled = false; } else { totalEarned += Math.min(v, c.maxPoints || 10); }
+  });
+  const pct = allFilled ? Math.round(totalEarned / totalMax * 100) : null;
+  const totalEl = document.getElementById('mkv_rubric_total');
+  if (totalEl) totalEl.textContent = pct !== null ? pct : '—';
+  const gradeEl = document.getElementById('mkv_grade');
+  if (gradeEl && pct !== null) gradeEl.value = pct;
+}
+
+let _asnRubric = [];
+
+function rubricAddCriterion() {
+  _asnRubric.push({ id: uid('rub'), criterion: '', maxPoints: 10 });
+  rubricRenderCriteria();
+}
+
+function rubricRemoveCriterion(id) {
+  _asnRubric = _asnRubric.filter(c => c.id !== id);
+  rubricRenderCriteria();
+}
+
+function rubricRenderCriteria() {
+  const el = document.getElementById('rubric_criteria');
+  const emptyEl = document.getElementById('rubric_empty');
+  if (!el) return;
+  if (!_asnRubric.length) {
+    el.innerHTML = '';
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    return;
+  }
+  if (emptyEl) emptyEl.classList.add('hidden');
+  el.innerHTML = _asnRubric.map(c => `
+    <div class="flex items-center gap-2">
+      <input class="input flex-1 !py-1.5 text-sm" placeholder="Criterion (e.g. Accuracy, Presentation)" value="${c.criterion.replace(/"/g,'&quot;')}" oninput="_asnRubric.find(r=>r.id==='${c.id}').criterion=this.value" />
+      <input type="number" class="input w-20 !py-1.5 text-sm text-center" min="1" max="100" value="${c.maxPoints}" oninput="_asnRubric.find(r=>r.id==='${c.id}').maxPoints=+this.value||10" />
+      <span class="text-xs text-slate-400 whitespace-nowrap">pts</span>
+      <button onclick="rubricRemoveCriterion('${c.id}')" class="text-rose-400 hover:text-rose-600 p-1 flex-shrink-0">✕</button>
+    </div>
+  `).join('');
+}
+
 function editAssignmentModal(assignmentId) {
   // Close any existing modal first
   const root = document.getElementById('modalBackdrop'); if (root) root.click();
@@ -1316,6 +1433,7 @@ function createAssignmentModal(editingId) {
   const subjects = DB.get('subjects');
   const existing = editingId ? DB.find('assignments', editingId) : null;
   const isEdit = !!existing;
+  _asnRubric = existing && existing.rubric ? existing.rubric.map(c => ({ ...c })) : [];
 
   modal({
     title: isEdit ? 'Edit Assignment' : 'Create Assignment',
@@ -1332,6 +1450,14 @@ function createAssignmentModal(editingId) {
         </div>
         <div><label class="input-label">Description / Instructions</label><textarea id="as_desc" rows="4" class="input" placeholder="What students need to do…">${existing ? existing.description : ''}</textarea></div>
         <div><label class="input-label">Due Date</label><input id="as_due" type="date" class="input" value="${existing ? existing.dueDate : daysAhead(7)}" /></div>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="input-label !mb-0">Rubric Criteria <span class="text-slate-400 font-normal text-xs">(optional)</span></label>
+            <button type="button" class="btn btn-secondary !py-1 !px-2.5 text-xs" onclick="rubricAddCriterion()">${icon('plus','w-3 h-3')} Add Criterion</button>
+          </div>
+          <div id="rubric_criteria" class="space-y-2 mb-2"></div>
+          <div id="rubric_empty" class="text-xs text-slate-400 text-center py-2.5 border border-dashed border-slate-200 rounded-xl">Leave empty to grade on a 0–100 score</div>
+        </div>
         <div class="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center text-sm text-slate-500">
           ${icon('paperclip','w-4 h-4 inline mr-1')} Attach files (simulated)
         </div>
@@ -1340,6 +1466,7 @@ function createAssignmentModal(editingId) {
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveAssignment(${isEdit ? "'" + editingId + "'" : 'null'})">${isEdit ? icon('check','w-4 h-4') + ' Save Changes' : 'Post Assignment'}</button>`
   });
+  setTimeout(rubricRenderCriteria, 50);
 }
 
 function saveAssignment(editingId) {
@@ -1349,9 +1476,10 @@ function saveAssignment(editingId) {
   const description = document.getElementById('as_desc').value.trim();
   const dueDate = document.getElementById('as_due').value;
   if (!title || !description) { toast('Title and description required', 'danger'); return; }
+  const rubric = _asnRubric.filter(c => c.criterion.trim()).map(c => ({ ...c, maxPoints: +c.maxPoints || 10 }));
 
   if (editingId) {
-    DB.update('assignments', editingId, { title, classId, subjectId, description, dueDate, updatedAt: now() });
+    DB.update('assignments', editingId, { title, classId, subjectId, description, dueDate, rubric, updatedAt: now() });
     document.getElementById('modalBackdrop')?.click();
     APP.render();
     toast('Assignment updated', 'success');
@@ -1360,7 +1488,7 @@ function saveAssignment(editingId) {
 
   DB.insert('assignments', {
     id: uid('asn'), schoolId: AUTH.current.schoolId || 'sch_brightlights', classId, subjectId, teacherId: AUTH.current.id,
-    title, description, dueDate, createdAt: now(), submissions: []
+    title, description, dueDate, rubric, createdAt: now(), submissions: []
   });
   // Notify all parents in the class
   const parents = COMPUTE.studentsByClass(classId).map(s => s.parentId);
