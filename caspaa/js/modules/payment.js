@@ -14,7 +14,7 @@ function processPayment(invoiceId) {
   const method = methodEl.value;
   const inv = DB.find('invoices', invoiceId);
   if (!inv) { toast('Invoice not found', 'danger'); return; }
-  if (!amount || amount <= 0 || amount > inv.balance) { toast('Enter a valid amount', 'danger'); return; }
+  if (!amount || amount <= 0) { toast('Enter a valid amount', 'danger'); return; }
 
   // Show processing state on button
   const btn = document.getElementById('proceedPay');
