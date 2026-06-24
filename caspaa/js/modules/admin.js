@@ -911,14 +911,17 @@ function decideSalaryAdvance(id, decision) {
 
 function view_adm_academic() {
   return buildHub('Academic', 'Classes, curriculum, timetable, attendance, results, discipline, assessment setup', [
-    { key: 'classes',    label: 'Classes',          view: 'view_adm_classes' },
-    { key: 'curriculum', label: 'Curriculum',        view: 'view_adm_curriculum' },
-    { key: 'timetable',  label: 'Timetable',         view: 'view_adm_timetable' },
-    { key: 'attendance', label: 'Attendance',        view: 'view_adm_attendance' },
-    { key: 'results',    label: 'Results',           view: 'view_adm_results' },
-    { key: 'discipline', label: 'Discipline',        view: 'view_adm_discipline' },
+    { key: 'classes',      label: 'Classes',          view: 'view_adm_classes' },
+    { key: 'curriculum',   label: 'Curriculum',       view: 'view_adm_curriculum' },
+    { key: 'timetable',    label: 'Timetable',        view: 'view_adm_timetable' },
+    { key: 'attendance',   label: 'Attendance',       view: 'view_adm_attendance' },
+    { key: 'results',      label: 'Results',          view: 'view_adm_results' },
+    { key: 'discipline',   label: 'Discipline',       view: 'view_adm_discipline' },
     { key: 'assessment',   label: 'Assessment Setup', view: 'view_adm_exam_structure' },
-    { key: 'lesson_plans', label: 'Lesson Plans',     view: 'view_adm_lesson_plans'   }
+    { key: 'lesson_plans', label: 'Lesson Plans',     view: 'view_adm_lesson_plans' },
+    { key: 'assignments',  label: 'Assignments',      view: 'view_adm_assignments',  badge: () => { const sid = currentSchoolId(); return DB.query('assignments', a => a.schoolId === sid && a.submissions.some(s => s.grade == null && (s.text || s.file || s.imageData))).length || null; } },
+    { key: 'cbt',          label: 'CBT',              view: 'view_adm_cbt',          badge: () => { const sid = currentSchoolId(); return DB.query('cbtExams', e => e.schoolId === sid && e.status === 'published').length || null; } },
+    { key: 'materials',    label: 'Materials',        view: 'view_adm_materials' }
   ], 'classes', 'academicTab');
 }
 
@@ -992,6 +995,269 @@ function view_adm_lesson_plans() {
           }).join('')}
         </div>`
     }
+  `;
+}
+
+/* ---------- Admin Assignments Oversight ---------- */
+function view_adm_assignments() {
+  const sid = currentSchoolId();
+  const filterTeacher = APP.params.asgTeacher || '';
+  const filterClass   = APP.params.asgClass   || '';
+  const teachers  = DB.query('teachers', t => t.schoolId === sid);
+  const classes   = DB.query('classes',  c => c.schoolId === sid);
+  const subjects  = DB.get('subjects');
+  let assignments = DB.query('assignments', a => a.schoolId === sid).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  if (filterTeacher) assignments = assignments.filter(a => a.teacherId === filterTeacher);
+  if (filterClass)   assignments = assignments.filter(a => a.classId   === filterClass);
+  const totalSubs     = assignments.reduce((s, a) => s + a.submissions.length, 0);
+  const totalGraded   = assignments.reduce((s, a) => s + a.submissions.filter(sub => sub.grade != null).length, 0);
+  const totalReturned = assignments.reduce((s, a) => s + a.submissions.filter(sub => sub.returned).length, 0);
+  return `
+    ${pageHeader({ title: 'Assignments', subtitle: 'All teacher-posted assignments across the school' })}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+      ${statCard({ label: 'Assignments', value: assignments.length, icon: 'book', color: 'brand' })}
+      ${statCard({ label: 'Submissions', value: totalSubs, icon: 'students', color: 'blue' })}
+      ${statCard({ label: 'Graded', value: totalGraded, icon: 'check', color: 'gold' })}
+      ${statCard({ label: 'Returned', value: totalReturned, icon: 'send', color: 'brand' })}
+    </div>
+    <div class="flex flex-wrap gap-3 mb-4">
+      <select class="input w-auto" onchange="APP.params.asgTeacher=this.value;APP.render()">
+        <option value="">All Teachers</option>${teachers.map(t => `<option value="${t.id}" ${filterTeacher===t.id?'selected':''}>${t.name}</option>`).join('')}
+      </select>
+      <select class="input w-auto" onchange="APP.params.asgClass=this.value;APP.render()">
+        <option value="">All Classes</option>${classes.map(c => `<option value="${c.id}" ${filterClass===c.id?'selected':''}>${c.name}</option>`).join('')}
+      </select>
+    </div>
+    ${assignments.length === 0 ? emptyState({ icon: 'book', title: 'No assignments yet', body: 'Assignments posted by teachers will appear here.' }) : `
+    <div class="card overflow-x-auto">
+      <table class="tbl">
+        <thead><tr><th>Assignment</th><th>Teacher</th><th>Class · Subject</th><th>Due</th><th class="text-center">Submitted</th><th class="text-center">Graded</th><th class="text-center">Returned</th><th></th></tr></thead>
+        <tbody>
+          ${assignments.map(a => {
+            const teacher  = teachers.find(t => t.id === a.teacherId);
+            const cls      = classes.find(c  => c.id === a.classId);
+            const sub      = subjects.find(s => s.id === a.subjectId);
+            const clsSize  = cls ? COMPUTE.studentsByClass(a.classId).length : 0;
+            const graded   = a.submissions.filter(s => s.grade != null).length;
+            const returned = a.submissions.filter(s => s.returned).length;
+            const overdue  = a.dueDate < today() && a.submissions.length < clsSize;
+            return `<tr class="group">
+              <td><div class="font-medium text-slate-800">${a.title}</div>${overdue ? `<span class="text-xs text-rose-500 font-semibold">Overdue</span>` : ''}</td>
+              <td class="text-sm text-slate-600">${teacher ? teacher.name : '—'}</td>
+              <td class="text-sm text-slate-500">${cls ? cls.name : '—'}${sub ? ' · ' + sub.name : ''}</td>
+              <td class="text-sm text-slate-500">${fdate(a.dueDate, { short: true })}</td>
+              <td class="text-center text-sm font-mono">${a.submissions.length}${clsSize ? ' / ' + clsSize : ''}</td>
+              <td class="text-center text-sm font-mono ${graded < a.submissions.length && a.submissions.length > 0 ? 'text-amber-600' : 'text-emerald-600'}">${graded}</td>
+              <td class="text-center text-sm font-mono">${returned}</td>
+              <td class="pr-2 text-right"><button class="btn btn-ghost !py-1 !px-2.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity" onclick="admViewAssignment('${a.id}')">View</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`}
+  `;
+}
+function admViewAssignment(assignmentId) {
+  const a = DB.find('assignments', assignmentId); if (!a) return;
+  const subjects = DB.get('subjects');
+  const teacher  = DB.find('teachers', a.teacherId);
+  const cls      = DB.find('classes', a.classId);
+  const sub      = subjects.find(s => s.id === a.subjectId);
+  const students = COMPUTE.studentsByClass(a.classId);
+  modal({
+    title: a.title, size: 'lg',
+    body: `
+      <div class="flex flex-wrap gap-3 mb-3 text-sm text-slate-600">
+        ${teacher ? `<span>${icon('teacher','w-4 h-4 inline')} ${teacher.name}</span>` : ''}
+        ${cls ? `<span>${icon('classes','w-4 h-4 inline')} ${cls.name}${sub ? ' · ' + sub.name : ''}</span>` : ''}
+        <span>${icon('calendar','w-4 h-4 inline')} Due ${fdate(a.dueDate, { short: true })}</span>
+      </div>
+      <div class="bg-slate-50 rounded-xl p-3 text-sm text-slate-700 mb-4 leading-relaxed">${a.description}</div>
+      <div class="text-sm font-semibold text-slate-600 mb-3">${a.submissions.length} / ${students.length} submitted</div>
+      <div class="space-y-2 max-h-[50vh] overflow-y-auto scroll-area">
+        ${students.map(s => {
+          const sub2 = a.submissions.find(sub => sub.studentId === s.id);
+          if (!sub2) return `<div class="flex items-center justify-between p-3 rounded-xl border border-slate-100 text-sm text-slate-400">
+            <div class="flex items-center gap-2">${avatar(s.name,'sm')}<span>${s.name}</span></div><span class="text-xs">Not submitted</span></div>`;
+          return `<div class="flex items-center justify-between p-3 rounded-xl border border-slate-100">
+            <div class="flex items-center gap-2">${avatar(s.name,'sm')}<div>
+              <div class="text-sm font-medium">${s.name}</div>
+              <div class="text-xs text-slate-400">Submitted ${fdate(sub2.submittedAt, { relative: true })}</div>
+            </div></div>
+            <div class="flex items-center gap-3 text-sm">
+              ${sub2.grade != null ? `<span class="font-bold text-brand-700">${sub2.grade}/100</span>` : '<span class="text-slate-400 text-xs">Ungraded</span>'}
+              ${sub2.markStatus ? statusBadge(sub2.markStatus) : ''}
+              ${sub2.returned ? `<span class="text-xs text-emerald-600 font-semibold">Returned</span>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
+  });
+}
+
+/* ---------- Admin CBT Oversight ---------- */
+function view_adm_cbt() {
+  const sid = currentSchoolId();
+  const filterTeacher = APP.params.cbtTeacher || '';
+  const filterClass   = APP.params.cbtClass   || '';
+  const filterStatus  = APP.params.cbtStatus  || '';
+  const teachers = DB.query('teachers', t => t.schoolId === sid);
+  const classes  = DB.query('classes',  c => c.schoolId === sid);
+  const subjects = DB.get('subjects');
+  let exams = DB.query('cbtExams', e => e.schoolId === sid).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  if (filterTeacher) exams = exams.filter(e => e.teacherId === filterTeacher);
+  if (filterClass)   exams = exams.filter(e => e.classId   === filterClass);
+  if (filterStatus)  exams = exams.filter(e => e.status    === filterStatus);
+  const examIds = new Set(exams.map(e => e.id));
+  const totalAttempts = DB.query('cbtSubmissions', s => examIds.has(s.examId)).length;
+  return `
+    ${pageHeader({ title: 'CBT Exams', subtitle: 'All computer-based tests set by teachers' })}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+      ${statCard({ label: 'Total Exams', value: exams.length, icon: 'book', color: 'brand' })}
+      ${statCard({ label: 'Published', value: exams.filter(e => e.status === 'published').length, icon: 'check', color: 'blue' })}
+      ${statCard({ label: 'Drafts', value: exams.filter(e => e.status === 'draft').length, icon: 'edit', color: 'gold' })}
+      ${statCard({ label: 'Total Attempts', value: totalAttempts, icon: 'results', color: 'brand' })}
+    </div>
+    <div class="flex flex-wrap gap-3 mb-4">
+      <select class="input w-auto" onchange="APP.params.cbtTeacher=this.value;APP.render()">
+        <option value="">All Teachers</option>${teachers.map(t => `<option value="${t.id}" ${filterTeacher===t.id?'selected':''}>${t.name}</option>`).join('')}
+      </select>
+      <select class="input w-auto" onchange="APP.params.cbtClass=this.value;APP.render()">
+        <option value="">All Classes</option>${classes.map(c => `<option value="${c.id}" ${filterClass===c.id?'selected':''}>${c.name}</option>`).join('')}
+      </select>
+      <select class="input w-auto" onchange="APP.params.cbtStatus=this.value;APP.render()">
+        <option value="">All Status</option>
+        <option value="published" ${filterStatus==='published'?'selected':''}>Published</option>
+        <option value="draft" ${filterStatus==='draft'?'selected':''}>Draft</option>
+      </select>
+    </div>
+    ${exams.length === 0 ? emptyState({ icon: 'results', title: 'No CBT exams yet', body: 'CBT exams created by teachers will appear here.' }) : `
+    <div class="card overflow-x-auto">
+      <table class="tbl">
+        <thead><tr><th>Exam</th><th>Teacher</th><th>Class · Subject</th><th class="text-center">Qs</th><th class="text-center">Duration</th><th>Due</th><th>Status</th><th class="text-center">Attempts</th><th class="text-center">Avg</th><th></th></tr></thead>
+        <tbody>
+          ${exams.map(e => {
+            const teacher = teachers.find(t => t.id === e.teacherId);
+            const cls     = classes.find(c  => c.id === e.classId);
+            const sub     = subjects.find(s => s.id === e.subjectId);
+            const subs    = DB.query('cbtSubmissions', s => s.examId === e.id);
+            const graded  = subs.filter(s => s.totalScore != null);
+            const avg     = graded.length ? Math.round(graded.reduce((a, s) => a + (s.totalScore / s.maxScore * 100), 0) / graded.length) : null;
+            return `<tr class="group">
+              <td class="font-medium">${e.title}</td>
+              <td class="text-sm text-slate-600">${teacher ? teacher.name : '—'}</td>
+              <td class="text-sm text-slate-500">${cls ? cls.name : '—'}${sub ? ' · ' + sub.name : ''}</td>
+              <td class="text-center text-sm font-mono">${(e.questions||[]).length}</td>
+              <td class="text-center text-sm">${e.durationMins}m</td>
+              <td class="text-sm text-slate-500">${fdate(e.dueDate, { short: true })}</td>
+              <td>${statusBadge(e.status)}</td>
+              <td class="text-center text-sm font-mono">${subs.length}</td>
+              <td class="text-center text-sm font-bold ${avg != null ? (avg >= 70 ? 'text-emerald-600' : avg >= 50 ? 'text-amber-600' : 'text-rose-600') : 'text-slate-400'}">${avg != null ? avg + '%' : '—'}</td>
+              <td class="pr-2 text-right"><button class="btn btn-ghost !py-1 !px-2.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity" onclick="admViewCbt('${e.id}')">Results</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`}
+  `;
+}
+function admViewCbt(examId) {
+  const e = DB.find('cbtExams', examId); if (!e) return;
+  const subjects  = DB.get('subjects');
+  const teacher   = DB.find('teachers', e.teacherId);
+  const cls       = DB.find('classes', e.classId);
+  const sub       = subjects.find(s => s.id === e.subjectId);
+  const subs      = DB.query('cbtSubmissions', s => s.examId === examId);
+  const students  = COMPUTE.studentsByClass(e.classId);
+  modal({
+    title: e.title, size: 'lg',
+    body: `
+      <div class="flex flex-wrap gap-3 mb-3 text-sm text-slate-600">
+        ${teacher ? `<span>${icon('teacher','w-4 h-4 inline')} ${teacher.name}</span>` : ''}
+        ${cls ? `<span>${icon('classes','w-4 h-4 inline')} ${cls.name}${sub ? ' · ' + sub.name : ''}</span>` : ''}
+        <span>${icon('calendar','w-4 h-4 inline')} ${e.durationMins} mins · ${(e.questions||[]).length} questions</span>
+        ${statusBadge(e.status)}
+      </div>
+      <div class="text-sm font-semibold text-slate-600 mb-3">${subs.length} / ${students.length} attempted</div>
+      <div class="space-y-2 max-h-[50vh] overflow-y-auto scroll-area">
+        ${students.map(s => {
+          const attempt = subs.find(sub => sub.studentId === s.id);
+          if (!attempt) return `<div class="flex items-center justify-between p-3 rounded-xl border border-slate-100 text-sm text-slate-400">
+            <div class="flex items-center gap-2">${avatar(s.name,'sm')}<span>${s.name}</span></div><span class="text-xs">No attempt</span></div>`;
+          const pct = attempt.maxScore ? Math.round(attempt.totalScore / attempt.maxScore * 100) : null;
+          return `<div class="flex items-center justify-between p-3 rounded-xl border border-slate-100">
+            <div class="flex items-center gap-2">${avatar(s.name,'sm')}<div>
+              <div class="text-sm font-medium">${s.name}</div>
+              <div class="text-xs text-slate-400">${fdate(attempt.submittedAt, { relative: true })}</div>
+            </div></div>
+            <div class="flex items-center gap-2">
+              ${pct != null ? `<span class="font-bold text-lg ${pct >= 70 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-rose-600'}">${pct}%</span><span class="text-xs text-slate-400">${attempt.totalScore}/${attempt.maxScore}</span>` : statusBadge(attempt.status)}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
+  });
+}
+
+/* ---------- Admin Materials Oversight ---------- */
+function view_adm_materials() {
+  const sid = currentSchoolId();
+  const filterTeacher = APP.params.matTeacher || '';
+  const filterClass   = APP.params.matClass   || '';
+  const filterType    = APP.params.matType    || '';
+  const teachers = DB.query('teachers', t => t.schoolId === sid);
+  const classes  = DB.query('classes',  c => c.schoolId === sid);
+  const subjects = DB.get('subjects');
+  let materials = DB.query('learningMaterials', m => m.schoolId === sid).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  if (filterTeacher) materials = materials.filter(m => m.teacherId === filterTeacher);
+  if (filterClass)   materials = materials.filter(m => m.classId   === filterClass);
+  if (filterType)    materials = materials.filter(m => m.type      === filterType);
+  return `
+    ${pageHeader({ title: 'Learning Materials', subtitle: 'Notes, videos and files shared by teachers with students' })}
+    <div class="flex flex-wrap gap-3 mb-5">
+      <select class="input w-auto" onchange="APP.params.matTeacher=this.value;APP.render()">
+        <option value="">All Teachers</option>${teachers.map(t => `<option value="${t.id}" ${filterTeacher===t.id?'selected':''}>${t.name}</option>`).join('')}
+      </select>
+      <select class="input w-auto" onchange="APP.params.matClass=this.value;APP.render()">
+        <option value="">All Classes</option>${classes.map(c => `<option value="${c.id}" ${filterClass===c.id?'selected':''}>${c.name}</option>`).join('')}
+      </select>
+      <select class="input w-auto" onchange="APP.params.matType=this.value;APP.render()">
+        <option value="">All Types</option>
+        <option value="note" ${filterType==='note'?'selected':''}>Notes</option>
+        <option value="video" ${filterType==='video'?'selected':''}>Videos</option>
+      </select>
+      <span class="text-sm text-slate-400 self-center">${materials.length} material${materials.length!==1?'s':''}</span>
+    </div>
+    ${materials.length === 0 ? emptyState({ icon: 'book', title: 'No materials yet', body: 'Notes and videos shared by teachers will appear here.' }) : `
+    <div class="space-y-3">
+      ${materials.map(m => {
+        const teacher = teachers.find(t => t.id === m.teacherId);
+        const cls     = classes.find(c  => c.id === m.classId);
+        const sub     = subjects.find(s => s.id === m.subjectId);
+        const isVideo = m.type === 'video';
+        return `<div class="card p-4">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                <span class="badge ${isVideo ? 'badge-info' : 'badge-success'}">${isVideo ? '▶ Video' : '📄 Note'}</span>
+                ${cls ? `<span class="badge badge-neutral">${cls.name}</span>` : ''}
+                ${sub ? `<span class="text-xs text-slate-500">${sub.name}</span>` : ''}
+                ${teacher ? `<span class="text-xs text-slate-400">${icon('teacher','w-3 h-3 inline')} ${teacher.name}</span>` : ''}
+              </div>
+              <div class="font-semibold text-slate-800">${m.title}</div>
+              ${m.description ? `<div class="text-sm text-slate-500 mt-1 line-clamp-2">${m.description}</div>` : ''}
+            </div>
+            <div class="flex-shrink-0 flex flex-col items-end gap-2">
+              <div class="text-xs text-slate-400">${fdate(m.createdAt, { short: true })}</div>
+              ${isVideo && m.url ? `<a href="${m.url}" target="_blank" class="btn btn-ghost !py-1 !px-2.5 text-xs text-brand-600">${icon('arrow_left','w-3 h-3 rotate-180')} Open</a>` : ''}
+              ${!isVideo && m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="btn btn-ghost !py-1 !px-2.5 text-xs text-emerald-600">${icon('download','w-3 h-3')} Download</a>` : ''}
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`}
   `;
 }
 
@@ -2053,10 +2319,95 @@ function view_adm_operations() {
 
 function view_adm_comms() {
   return buildHub('Communications', 'Messages, announcements and digital consent', [
-    { key: 'messages',      label: 'Messages',      view: 'view_adm_messages' },
-    { key: 'bulk_notify',   label: 'Announcements', view: 'view_adm_bulk_notify' },
-    { key: 'consent',       label: 'Digital Consent', view: 'view_adm_consent', badge: () => { const sid = currentSchoolId(); const forms = DB.query('consentForms', f => f.schoolId === sid).length; return forms || null; } }
+    { key: 'messages',    label: 'Messages',      view: 'view_adm_messages' },
+    { key: 'oversight',   label: 'Oversight',     view: 'view_adm_comms_oversight', badge: () => { const sid = currentSchoolId(); return DB.query('conversations', c => c.schoolId === sid && !c.participants.includes(AUTH.current.id)).length || null; } },
+    { key: 'bulk_notify', label: 'Announcements', view: 'view_adm_bulk_notify' },
+    { key: 'consent',     label: 'Digital Consent', view: 'view_adm_consent', badge: () => { const sid = currentSchoolId(); return DB.query('consentForms', f => f.schoolId === sid).length || null; } }
   ], 'messages', 'commsTab');
+}
+
+/* ---------- Communications Oversight ---------- */
+function view_adm_comms_oversight() {
+  const schoolId = currentSchoolId();
+  const resolvePerson = id => {
+    const t = DB.find('teachers', id); if (t) return { ...t, role: 'Teacher' };
+    const p = DB.find('parents', id);  if (p) return { ...p, role: 'Parent' };
+    return { id, name: 'Admin', role: 'Admin' };
+  };
+  const allConvos = DB.query('conversations', c => c.schoolId === schoolId)
+    .sort((a, b) => {
+      const la = a.messages[a.messages.length - 1], lb = b.messages[b.messages.length - 1];
+      return (lb ? lb.timestamp : '').localeCompare(la ? la.timestamp : '');
+    });
+  if (allConvos.length === 0) return `
+    ${pageHeader({ title: 'Conversation Oversight', subtitle: 'Monitor all teacher–parent communications on this platform' })}
+    ${emptyState({ icon: 'chat', title: 'No conversations yet', body: 'Teacher–parent conversations will appear here as they happen.' })}
+  `;
+  return `
+    ${pageHeader({ title: 'Conversation Oversight', subtitle: `${allConvos.length} conversation${allConvos.length !== 1 ? 's' : ''} on this platform — read-only view` })}
+    <div class="card overflow-x-auto">
+      <table class="tbl">
+        <thead><tr><th>Participants</th><th class="hidden sm:table-cell">Last Message</th><th class="text-center">Messages</th><th class="hidden sm:table-cell">Last Active</th><th></th></tr></thead>
+        <tbody>
+          ${allConvos.map(c => {
+            const [pA, pB] = c.participants.map(resolvePerson);
+            const last = c.messages[c.messages.length - 1];
+            return `<tr class="group">
+              <td>
+                <div class="flex items-center gap-3 flex-wrap">
+                  <div class="flex items-center gap-1.5">${avatar(pA.name,'sm')}<div><div class="text-sm font-medium">${pA.name}</div><div class="text-xs text-slate-400">${pA.role}</div></div></div>
+                  <span class="text-slate-300 text-xs">↔</span>
+                  <div class="flex items-center gap-1.5">${avatar(pB.name,'sm')}<div><div class="text-sm font-medium">${pB.name}</div><div class="text-xs text-slate-400">${pB.role}</div></div></div>
+                </div>
+              </td>
+              <td class="hidden sm:table-cell text-sm text-slate-500 max-w-xs"><span class="truncate block">${last ? last.text.slice(0, 80) + (last.text.length > 80 ? '…' : '') : '—'}</span></td>
+              <td class="text-center text-sm font-mono text-slate-600">${c.messages.length}</td>
+              <td class="hidden sm:table-cell text-sm text-slate-400">${last ? fdate(last.timestamp, { relative: true }) : '—'}</td>
+              <td class="pr-2 text-right"><button class="btn btn-ghost !py-1 !px-2.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity" onclick="admViewConvo('${c.id}')">View Thread</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+function admViewConvo(convoId) {
+  const c = DB.find('conversations', convoId); if (!c) return;
+  const resolvePerson = id => {
+    const t = DB.find('teachers', id); if (t) return { ...t, role: 'Teacher' };
+    const p = DB.find('parents', id);  if (p) return { ...p, role: 'Parent' };
+    return { id, name: 'Admin', role: 'Admin' };
+  };
+  const [pA, pB] = c.participants.map(resolvePerson);
+  modal({
+    title: `${pA.name} ↔ ${pB.name}`, size: 'lg',
+    body: `
+      <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-xl mb-4 flex-wrap">
+        <div class="flex items-center gap-2">${avatar(pA.name,'sm')}<div><div class="text-sm font-semibold">${pA.name}</div><div class="text-xs text-slate-400">${pA.role}</div></div></div>
+        <span class="text-slate-400">↔</span>
+        <div class="flex items-center gap-2">${avatar(pB.name,'sm')}<div><div class="text-sm font-semibold">${pB.name}</div><div class="text-xs text-slate-400">${pB.role}</div></div></div>
+        <span class="ml-auto text-xs text-slate-400">${c.messages.length} message${c.messages.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="space-y-3 max-h-[55vh] overflow-y-auto scroll-area pr-1">
+        ${c.messages.length === 0 ? `<p class="text-center text-slate-400 py-8 text-sm">No messages in this conversation</p>` :
+          c.messages.map(m => {
+            const sender = resolvePerson(m.from);
+            return `<div class="flex gap-3">
+              ${avatar(sender.name,'sm')}
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-xs font-semibold text-slate-700">${sender.name}</span>
+                  <span class="text-xs text-slate-400">${sender.role}</span>
+                  <span class="text-xs text-slate-300">${fdate(m.timestamp, { relative: true })}</span>
+                </div>
+                <div class="bg-slate-100 rounded-xl px-3 py-2 text-sm text-slate-800 break-words">${m.text}</div>
+                ${m.attachment ? `<div class="mt-1 flex items-center gap-1 text-xs text-brand-600">${icon('paperclip','w-3 h-3')} ${m.attachment.name}</div>` : ''}
+              </div>
+            </div>`;
+          }).join('')}
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
+  });
 }
 
 /* ---------- Digital Consent (admin) ---------- */
