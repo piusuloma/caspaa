@@ -10656,7 +10656,7 @@ function cal_deleteSettingsEvent(id) {
 
 function saveAcademicTermDates() {
   const termDateKeys = ['staffPDDate','resumptionDate','firstHalfEnd','openDayDate','midtermStart','midtermEnd','secondHalfStart','termEndDate','vacationStart','vacationEnd'];
-  const session = (document.getElementById('atd_session') || {}).value.trim();
+  const session = (document.getElementById('atd_session')?.value || '').trim();
   const terms = [0, 1, 2].map(ti => {
     const names = ['First Term', 'Second Term', 'Third Term'];
     const obj = { name: names[ti] };
@@ -10666,9 +10666,18 @@ function saveAcademicTermDates() {
     });
     return obj;
   });
-  DB.settings({ academicTermDates: { session, terms } });
-  toast('Term dates saved', 'success');
-  APP.render();
+  try {
+    DB.settings({ academicTermDates: { session, terms } });
+    // Update currentSession and currentTerm so the rest of the app reflects the new data
+    const currentTermObj = terms.find(t => t.resumptionDate && t.termEndDate && today() >= t.resumptionDate && today() <= t.termEndDate) || terms.find(t => t.resumptionDate) || terms[0];
+    if (session) DB.settings({ currentSession: session });
+    if (currentTermObj && currentTermObj.name) DB.settings({ currentTerm: `${currentTermObj.name} ${session || ''}`.trim() });
+    toast('Term dates saved', 'success');
+    APP.render();
+  } catch(e) {
+    console.error('saveAcademicTermDates failed:', e);
+    toast('Save failed — ' + e.message, 'danger');
+  }
 }
 
 function renderNotificationSettings() {

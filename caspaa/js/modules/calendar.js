@@ -348,7 +348,10 @@ function cal_renderAcademicYear() {
   const s = DB.settings();
   const atd = s.academicTermDates;
 
-  if (!atd || !atd.terms || !atd.terms.some(t => t.resumptionDate)) {
+  const hasAnyDate = atd && (atd.session || (atd.terms && atd.terms.some(t =>
+    Object.entries(t).some(([k, v]) => k !== 'name' && v)
+  )));
+  if (!hasAnyDate) {
     return `
       <div class="card p-8 text-center">
         <div class="text-4xl mb-3">📅</div>
