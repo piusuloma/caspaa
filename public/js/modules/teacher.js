@@ -1318,27 +1318,52 @@ function mkvSetStatus(val) {
 function mkvRenderPins() {
   const markerEl = document.getElementById('mkv_pin_markers');
   const listEl   = document.getElementById('mkv_comments_list');
-  if (!listEl) return;
   const pins = _mkv.pins || [];
+
+  // Numbered badges anchored to the image
   if (markerEl) {
-    markerEl.innerHTML = pins.map((p, i) => {
-      if (p.x == null || p.y == null) return '';
-      return `<div class="absolute flex items-center justify-center w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] font-bold shadow cursor-pointer ring-2 ring-white"
-        style="left:${p.x}%;top:${p.y}%;transform:translate(-50%,-50%);pointer-events:auto;z-index:8"
-        onclick="mkvFocusPin('${p.id}')" title="Comment ${i+1}">${i+1}</div>`;
+    markerEl.innerHTML = pins.filter(p => p.x != null).map((p, i) => {
+      const hasText = p.text && p.text.trim();
+      const idx = pins.indexOf(p);
+      return `<div style="position:absolute;left:${p.x}%;top:${p.y}%;transform:translate(-50%,-50%);z-index:8;pointer-events:auto">
+        <div onclick="mkvTogglePin('${p.id}',event)"
+          style="width:22px;height:22px;border-radius:50%;background:#2563eb;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(37,99,235,.55);border:2px solid #fff;cursor:pointer">
+          ${idx + 1}
+        </div>
+        <div id="mkv_tip_${p.id}" style="display:none;position:absolute;left:26px;top:-6px;width:190px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.14);padding:10px;z-index:20">
+          <div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Comment ${idx + 1}</div>
+          <div style="font-size:12px;color:#1e293b;white-space:pre-wrap">${hasText ? p.text : '<em style="color:#94a3b8">No text</em>'}</div>
+          <button onclick="mkvDeletePin('${p.id}')" style="margin-top:8px;font-size:11px;color:#ef4444;background:none;border:none;cursor:pointer;padding:0">Remove</button>
+        </div>
+      </div>`;
     }).join('');
   }
-  listEl.innerHTML = pins.length === 0
-    ? `<p class="text-xs text-slate-400 italic">${_mkv._hasImage ? 'Select 📍 then click on the image to add a comment.' : 'Click "Add" to add a comment.'}</p>`
-    : pins.map((p, i) => `
-      <div id="mkv_pin_${p.id}" class="border border-slate-200 rounded-lg p-2 bg-white shadow-sm">
-        <div class="flex items-center gap-1.5 mb-1">
-          ${p.x != null ? `<span class="w-4 h-4 rounded-full bg-brand-600 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">${i+1}</span>` : `<span class="w-4 h-4 rounded-full bg-slate-400 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">✎</span>`}
-          <span class="text-xs text-slate-500 flex-1">${p.x != null ? `Pin ${i+1}` : 'Comment'}</span>
-          <button class="text-slate-300 hover:text-red-500 text-xs" onclick="mkvDeletePin('${p.id}')" title="Delete">✕</button>
-        </div>
-        <textarea rows="2" class="input text-xs !py-1" placeholder="Type comment…" onchange="mkvUpdatePinText('${p.id}',this.value)" oninput="mkvUpdatePinText('${p.id}',this.value)">${p.text || ''}</textarea>
-      </div>`).join('');
+
+  // Compact sidebar list
+  if (listEl) {
+    listEl.innerHTML = pins.length === 0
+      ? `<p style="font-size:11px;color:#94a3b8;font-style:italic">${_mkv._hasImage ? 'Select 📍 then click anywhere on the image.' : 'Click "Add" to add a comment.'}</p>`
+      : pins.map((p, i) => `
+        <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9">
+          <span style="flex-shrink:0;width:18px;height:18px;border-radius:50%;background:${p.x!=null?'#2563eb':'#94a3b8'};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">${p.x!=null?i+1:'✎'}</span>
+          <span style="font-size:12px;color:#334155;flex:1;word-break:break-word">${p.text || '<em style="color:#94a3b8">empty</em>'}</span>
+          <button onclick="mkvDeletePin('${p.id}')" style="color:#cbd5e1;background:none;border:none;cursor:pointer;font-size:13px;flex-shrink:0" title="Delete">✕</button>
+        </div>`).join('');
+  }
+}
+
+function mkvTogglePin(id, event) {
+  event && event.stopPropagation();
+  const tip = document.getElementById('mkv_tip_' + id);
+  if (!tip) return;
+  const isOpen = tip.style.display === 'block';
+  document.querySelectorAll('[id^="mkv_tip_"]').forEach(t => t.style.display = 'none');
+  tip.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    document.addEventListener('click', function close(e) {
+      if (!tip.contains(e.target)) { tip.style.display = 'none'; document.removeEventListener('click', close); }
+    });
+  }
 }
 
 function mkvPlacePin(event) {
@@ -1346,40 +1371,71 @@ function mkvPlacePin(event) {
   const layer = document.getElementById('mkv_pin_layer');
   if (!layer) return;
   const rect = layer.getBoundingClientRect();
-  const x = ((event.clientX - rect.left) / rect.width)  * 100;
-  const y = ((event.clientY - rect.top)  / rect.height) * 100;
-  const pin = { id: uid('pin'), x: parseFloat(x.toFixed(2)), y: parseFloat(y.toFixed(2)), text: '', createdAt: now() };
+  const x = parseFloat(((event.clientX - rect.left) / rect.width  * 100).toFixed(2));
+  const y = parseFloat(((event.clientY - rect.top)  / rect.height * 100).toFixed(2));
+  const pin = { id: uid('pin'), x, y, text: '', createdAt: now() };
   (_mkv.pins = _mkv.pins || []).push(pin);
   mkvRenderPins();
-  setTimeout(() => {
-    const el = document.getElementById('mkv_pin_' + pin.id);
-    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); el.querySelector('textarea')?.focus(); }
-  }, 50);
+  mkvShowBubble(pin.id, event.clientX, event.clientY);
 }
 
 function mkvAddDocComment() {
   const pin = { id: uid('pin'), x: null, y: null, text: '', createdAt: now() };
   (_mkv.pins = _mkv.pins || []).push(pin);
-  mkvRenderPins();
-  setTimeout(() => {
-    const el = document.getElementById('mkv_pin_' + pin.id);
-    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); el.querySelector('textarea')?.focus(); }
-  }, 50);
+  const listEl = document.getElementById('mkv_comments_list');
+  if (listEl) {
+    const rect = listEl.getBoundingClientRect();
+    mkvShowBubble(pin.id, rect.left, rect.top + 30, true);
+  } else {
+    mkvRenderPins();
+  }
 }
 
-function mkvUpdatePinText(id, text) {
-  const pin = (_mkv.pins || []).find(p => p.id === id);
-  if (pin) pin.text = text;
+function mkvShowBubble(pinId, cx, cy, below) {
+  document.getElementById('mkv_bubble')?.remove();
+  const bw = 224;
+  let left = cx + 14;
+  if (left + bw > window.innerWidth - 8) left = cx - bw - 14;
+  let top = below ? cy + 8 : Math.max(8, cy - 12);
+  if (top + 150 > window.innerHeight) top = window.innerHeight - 158;
+  const div = document.createElement('div');
+  div.id = 'mkv_bubble';
+  div.style.cssText = `position:fixed;left:${left}px;top:${top}px;width:${bw}px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.16);padding:12px;z-index:10000`;
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <span style="font-size:14px">📍</span>
+      <span style="font-size:12px;font-weight:600;color:#475569">Add comment</span>
+      <button onclick="mkvCancelBubble('${pinId}')" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#cbd5e1;font-size:15px;line-height:1">✕</button>
+    </div>
+    <textarea id="mkv_bubble_txt" rows="3" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 8px;font-size:12px;resize:none;box-sizing:border-box;outline:none;font-family:inherit" placeholder="Type your comment…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();mkvSaveBubble('${pinId}')}"></textarea>
+    <div style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end">
+      <button onclick="mkvCancelBubble('${pinId}')" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit">Cancel</button>
+      <button onclick="mkvSaveBubble('${pinId}')" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:4px 14px;font-size:12px;cursor:pointer;font-weight:600;font-family:inherit">Save</button>
+    </div>`;
+  document.body.appendChild(div);
+  setTimeout(() => div.querySelector('textarea')?.focus(), 30);
+}
+
+function mkvSaveBubble(pinId) {
+  const txt = (document.getElementById('mkv_bubble_txt')?.value || '').trim();
+  document.getElementById('mkv_bubble')?.remove();
+  const pin = (_mkv.pins || []).find(p => p.id === pinId);
+  if (pin) pin.text = txt;
+  if (!txt) _mkv.pins = (_mkv.pins || []).filter(p => p.id !== pinId);
+  mkvRenderPins();
+}
+
+function mkvCancelBubble(pinId) {
+  document.getElementById('mkv_bubble')?.remove();
+  const pin = (_mkv.pins || []).find(p => p.id === pinId);
+  if (pin && !pin.text) _mkv.pins = (_mkv.pins || []).filter(p => p.id !== pinId);
+  mkvRenderPins();
 }
 
 function mkvDeletePin(id) {
+  document.getElementById('mkv_bubble')?.remove();
   _mkv.pins = (_mkv.pins || []).filter(p => p.id !== id);
   mkvRenderPins();
-}
-
-function mkvFocusPin(id) {
-  const el = document.getElementById('mkv_pin_' + id);
-  if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); el.querySelector('textarea')?.focus(); }
 }
 
 function tch_saveMarking(assignmentId, studentId, nextStudentId) {
