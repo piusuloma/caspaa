@@ -360,30 +360,39 @@ function view_stu_assignments() {
         ${assignments.map(a => {
           const sub = a.submissions.find(x => x.studentId === s.id);
           const graded = sub && sub.grade != null;
+          const returned = sub && sub.returned;
           const overdue = !sub && new Date(a.dueDate) < new Date();
+          const statusBadge = returned
+            ? `<span class="badge badge-success">Returned · ${sub.grade}/100</span>`
+            : graded ? `<span class="badge badge-success">Graded · ${sub.grade}/100</span>`
+            : sub ? `<span class="badge badge-info">Submitted</span>`
+            : overdue ? `<span class="badge badge-danger">Overdue</span>`
+            : `<span class="badge badge-warn">To do</span>`;
           return `<div class="card p-4">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2 mb-1 flex-wrap">
                   <span class="badge badge-neutral">${subjName(a.subjectId)}</span>
-                  ${graded ? `<span class="badge badge-success">Graded · ${sub.grade}/100</span>`
-                    : sub ? `<span class="badge badge-info">Submitted</span>`
-                    : overdue ? `<span class="badge badge-danger">Overdue</span>`
-                    : `<span class="badge badge-warn">To do</span>`}
+                  ${statusBadge}
+                  ${returned && sub.resubmissionRequested ? `<span class="badge badge-warn">Revision requested</span>` : ''}
                 </div>
                 <h3 class="font-bold text-slate-900">${a.title}</h3>
                 <p class="text-sm text-slate-500 mt-1">${a.description}</p>
                 <div class="text-xs text-slate-400 mt-2">Due ${fdate(a.dueDate, { long: true })} · ${teacherName(a.teacherId)}</div>
-                ${graded && sub.feedback ? `<div class="mt-2 bg-emerald-50 rounded-lg p-2 text-xs text-emerald-800"><strong>Teacher feedback:</strong> ${sub.feedback}</div>` : ''}
+                ${returned && sub.feedback ? `<div class="mt-2 bg-emerald-50 rounded-lg p-2 text-xs text-emerald-800"><strong>Teacher feedback:</strong> ${sub.feedback}</div>` : ''}
               </div>
               <div class="flex-shrink-0 flex flex-col items-end gap-2">
-                ${sub ? (graded
-                  ? `<div class="text-center"><div class="text-2xl font-extrabold text-emerald-700">${sub.grade}</div><div class="text-xs text-slate-400">/100</div></div>`
-                  : `<span class="text-xs text-slate-400">Awaiting grade</span>`)
+                ${returned
+                  ? `<div class="text-center mb-1"><div class="text-2xl font-extrabold text-emerald-700">${sub.grade}</div><div class="text-xs text-slate-400">/100</div></div>
+                     <button class="btn btn-secondary text-xs" onclick="stu_viewReturnedWork('${a.id}')">${icon('results','w-3.5 h-3.5')} View Feedback</button>
+                     <button class="btn btn-primary text-xs" onclick="stu_resubmitModal('${a.id}')">${icon('upload','w-3.5 h-3.5')} Resubmit</button>`
+                  : sub ? (graded
+                    ? `<div class="text-center"><div class="text-2xl font-extrabold text-emerald-700">${sub.grade}</div><div class="text-xs text-slate-400">/100</div></div>`
+                    : `<span class="text-xs text-slate-400">Awaiting grade</span>`)
                   : (a.dueDate && new Date(a.dueDate) < new Date()) || a.overdue === true
                     ? `<span class="badge badge-danger">Submission closed</span>`
                     : `<button class="btn btn-primary text-sm" onclick="stu_submitAssignmentModal('${a.id}')">${icon('upload','w-4 h-4')} Submit</button>`}
-                ${sub && sub.resubmissionRequested ? `<button class="btn btn-warn text-xs" onclick="stu_resubmitModal('${a.id}')">${icon('refresh','w-3.5 h-3.5')} Resubmit</button>` : ''}
+                ${!returned && sub && sub.resubmissionRequested ? `<button class="btn btn-warn text-xs" onclick="stu_resubmitModal('${a.id}')">${icon('refresh','w-3.5 h-3.5')} Resubmit</button>` : ''}
               </div>
             </div>
           </div>`;
@@ -445,11 +454,12 @@ function stu_resubmitModal(assignmentId) {
   if (!a) return;
   const s = me();
   const sub = a.submissions.find(x => x.studentId === s.id);
+  const isReturned = sub && sub.returned;
   modal({
     title: 'Resubmit Assignment',
     body: `
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3 text-sm text-amber-800">
-        ${icon('refresh','w-4 h-4 inline mr-1')} Your teacher has requested a resubmission. Review the feedback below and re-upload your work.
+      <div class="${isReturned && sub.resubmissionRequested ? 'bg-amber-50 border border-amber-200' : 'bg-blue-50 border border-blue-200'} rounded-xl p-3 mb-3 text-sm ${isReturned && sub.resubmissionRequested ? 'text-amber-800' : 'text-blue-800'}">
+        ${icon('refresh','w-4 h-4 inline mr-1')} ${isReturned && sub.resubmissionRequested ? 'Your teacher has requested a revision. Review the feedback and re-upload your corrected work.' : 'Upload a new version of your work to send back to your teacher.'}
         ${sub && sub.feedback ? `<div class="mt-1 font-semibold">"${sub.feedback}"</div>` : ''}
       </div>
       <div class="space-y-3">
@@ -466,6 +476,64 @@ function stu_resubmitModal(assignmentId) {
       </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="stu_submitResubmission('${assignmentId}')">${icon('check','w-4 h-4')} Submit Resubmission</button>`
+  });
+}
+
+function stu_viewReturnedWork(assignmentId) {
+  const a = DB.find('assignments', assignmentId);
+  if (!a) return;
+  const s = me();
+  const sub = a.submissions.find(x => x.studentId === s.id);
+  if (!sub) return;
+  const statusLabel = sub.markStatus === 'excellent' ? '⭐ Excellent' : sub.markStatus === 'needs_revision' ? '🔄 Revision Requested' : '✓ Satisfactory';
+  const statusCls   = sub.markStatus === 'excellent' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : sub.markStatus === 'needs_revision' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-blue-50 border-blue-200 text-blue-800';
+  const comments = sub.marginalComments || [];
+  modal({
+    title: 'Returned Work — ' + a.title,
+    size: 'max-w-lg',
+    body: `
+      <div class="space-y-4">
+        <!-- Grade row -->
+        <div class="flex items-center gap-3">
+          <div class="text-center bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-3">
+            <div class="text-3xl font-extrabold text-emerald-700">${sub.grade}</div>
+            <div class="text-xs text-slateald-500">/100</div>
+          </div>
+          <span class="border rounded-xl px-3 py-1.5 text-sm font-semibold ${statusCls}">${statusLabel}</span>
+          <div class="text-xs text-slate-400 ml-auto">Returned ${fdate(sub.returnedAt || sub.gradedAt, { long: true })}</div>
+        </div>
+        <!-- General feedback -->
+        ${sub.feedback ? `
+          <div class="bg-slate-50 rounded-xl p-3 text-sm text-slate-700">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Teacher Feedback</div>
+            ${sub.feedback}
+          </div>` : ''}
+        <!-- Marginal / inline comments -->
+        ${comments.length > 0 ? `
+          <div>
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Inline Comments</div>
+            <div class="space-y-2 max-h-52 overflow-y-auto scroll-area">
+              ${comments.map((c, i) => `
+                <div class="flex gap-2 items-start">
+                  <span class="w-5 h-5 rounded-full ${c.x != null ? 'bg-brand-600' : 'bg-slate-400'} text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">${c.x != null ? (i+1) : '✎'}</span>
+                  <span class="text-sm text-slate-700">${c.text}</span>
+                </div>`).join('')}
+            </div>
+          </div>` : ''}
+        <!-- Submission content preview -->
+        ${sub.file && sub.file.type && sub.file.type.startsWith('image/') ? `
+          <div>
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Your Submission</div>
+            <img src="${sub.file.data}" class="max-h-48 rounded-xl border border-slate-200 object-contain w-full" alt="submission" />
+          </div>` : ''}
+        ${sub.resubmissionRequested ? `
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+            ${icon('refresh','w-4 h-4 inline mr-1')} Your teacher is asking you to revise and resubmit this work.
+          </div>` : ''}
+      </div>`,
+    footer: `
+      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
+      <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); stu_resubmitModal('${assignmentId}')">${icon('upload','w-4 h-4')} Resubmit</button>`
   });
 }
 
