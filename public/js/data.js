@@ -225,9 +225,51 @@ function seedDatabase() {
   const _asnSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 820"><defs><pattern id="nb" patternUnits="userSpaceOnUse" width="600" height="27"><line x1="0" y1="26.5" x2="600" y2="26.5" stroke="#bfdbfe" stroke-width="1"/></pattern></defs><rect width="600" height="820" fill="#fffef7"/><rect width="600" height="820" fill="url(#nb)"/><line x1="72" y1="0" x2="72" y2="820" stroke="#fca5a5" stroke-width="1.5"/><text x="88" y="22" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">Name: Ade Lawal</text><text x="320" y="22" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">Class: JSS 1</text><text x="88" y="49" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">Subject: Mathematics</text><text x="320" y="49" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">Date: 22 June 2026</text><line x1="72" y1="59" x2="572" y2="59" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 2"/><text x="300" y="86" font-family="Arial,sans-serif" font-size="15" font-weight="bold" fill="#0f172a" text-anchor="middle">ALGEBRA PRACTICE — SET 3</text><text x="300" y="107" font-family="Arial,sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Show all working steps</text><line x1="72" y1="116" x2="572" y2="116" stroke="#94a3b8" stroke-width="1"/><text x="88" y="143" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Q1.  Solve for x :  2x + 5 = 13</text><text x="108" y="170" font-family="Arial,sans-serif" font-size="13" fill="#475569">Subtract 5 from both sides:</text><text x="128" y="197" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">2x  =  13 − 5  =  8</text><text x="128" y="224" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">x  =  8 ÷ 2</text><text x="128" y="251" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#047857">∴  x = 4  ✓</text><text x="88" y="294" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Q2.  Solve for y :  3y − 7 = 14</text><text x="108" y="321" font-family="Arial,sans-serif" font-size="13" fill="#475569">Add 7 to both sides:</text><text x="128" y="348" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">3y  =  14 + 7  =  21</text><text x="128" y="375" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">y  =  21 ÷ 3</text><text x="128" y="402" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#047857">∴  y = 7  ✓</text><text x="88" y="445" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Q3.  Solve for a :  5a + 3 = 28</text><text x="108" y="472" font-family="Arial,sans-serif" font-size="13" fill="#475569">Subtract 3 from both sides:</text><text x="128" y="499" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">5a  =  28 − 3  =  25</text><text x="128" y="526" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">a  =  25 ÷ 5</text><text x="128" y="553" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#047857">∴  a = 5  ✓</text><text x="88" y="596" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Q4.  Solve for b :  4(b − 2) = 16</text><text x="108" y="623" font-family="Arial,sans-serif" font-size="13" fill="#475569">Expand brackets:</text><text x="128" y="650" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">4b − 8  =  16</text><text x="128" y="677" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">4b  =  16 + 8  =  24</text><text x="128" y="704" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">b  =  24 ÷ 4</text><text x="128" y="731" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#047857">∴  b = 6  ✓</text><text x="88" y="774" font-family="Arial,sans-serif" font-size="12" fill="#64748b" font-style="italic">All 15 exercises completed on separate pages. See attached.</text></svg>`;
   const _asnImgData = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(_asnSvg)));
 
+  const _asnPdfData = (() => {
+    const stream = [
+      'BT',
+      '/F1 16 Tf',
+      '72 740 Td',
+      '(ESSAY: MY FUTURE CAREER) Tj',
+      '0 -30 Td',
+      '/F1 11 Tf',
+      '(Name: Tobi Okafor          Class: JSS 1          Date: June 2026) Tj',
+      '0 -28 Td',
+      '(I want to become a software engineer when I grow up. Technology) Tj',
+      '0 -20 Td',
+      '(is shaping every part of our lives and I want to be someone who) Tj',
+      '0 -20 Td',
+      '(builds the tools that help people.) Tj',
+      '0 -26 Td',
+      '(My uncle works at a technology company in Lagos and he once showed) Tj',
+      '0 -20 Td',
+      '(me how a few lines of code can create something useful for thousands) Tj',
+      '0 -20 Td',
+      '(of people. I was amazed and I knew that is what I want to do.) Tj',
+      '0 -26 Td',
+      '(Nigeria needs more software engineers to solve local problems.) Tj',
+      '0 -20 Td',
+      '(I will study Mathematics and Further Maths in SS, then read) Tj',
+      '0 -20 Td',
+      '(Computer Science at university. I am committed to this dream.) Tj',
+      'ET'
+    ].join('\n');
+    const h  = '%PDF-1.4\n';
+    const o1 = '1 0 obj\n<</Type /Catalog /Pages 2 0 R>>\nendobj\n';
+    const o2 = '2 0 obj\n<</Type /Pages /Kids [3 0 R] /Count 1>>\nendobj\n';
+    const o3 = '3 0 obj\n<</Type /Page /MediaBox [0 0 612 792] /Parent 2 0 R /Resources <</Font <</F1 4 0 R>>>> /Contents 5 0 R>>\nendobj\n';
+    const o4 = '4 0 obj\n<</Type /Font /Subtype /Type1 /BaseFont /Helvetica>>\nendobj\n';
+    const o5 = '5 0 obj\n<</Length ' + stream.length + '>>\nstream\n' + stream + '\nendstream\nendobj\n';
+    const off1 = h.length, off2 = off1+o1.length, off3 = off2+o2.length, off4 = off3+o3.length, off5 = off4+o4.length;
+    const xOff = off5 + o5.length;
+    const pad  = n => String(n).padStart(10, '0');
+    const xref = 'xref\n0 6\n0000000000 65535 f \n' + pad(off1)+' 00000 n \n'+pad(off2)+' 00000 n \n'+pad(off3)+' 00000 n \n'+pad(off4)+' 00000 n \n'+pad(off5)+' 00000 n \ntrailer\n<</Size 6 /Root 1 0 R>>\nstartxref\n'+xOff+'\n%%EOF';
+    return 'data:application/pdf;base64,' + btoa(h+o1+o2+o3+o4+o5+xref);
+  })();
+
   const assignments = [
     { id: uid('asn'), schoolId, classId: 'cls_jss1', subjectId: 'sub_math', teacherId: 'tch_adamu', title: 'Algebra Practice - Set 3', description: 'Solve exercises 1-15 from page 42 of your textbook. Show all working steps.', dueDate: daysAhead(3), createdAt: daysAgo(2), submissions: [{ studentId: 'stu_009', submittedAt: daysAgo(1), text: 'Please see my working in the attached image.', file: { name: 'algebra_working.svg', type: 'image/svg+xml', data: _asnImgData, size: '14 KB' }, grade: null }] },
-    { id: uid('asn'), schoolId, classId: 'cls_jss1', subjectId: 'sub_eng',  teacherId: 'tch_chioma', title: 'Essay: My Future Career', description: 'Write a 300-word essay on what you want to become and why.', dueDate: daysAhead(5), createdAt: daysAgo(1), submissions: [] },
+    { id: uid('asn'), schoolId, classId: 'cls_jss1', subjectId: 'sub_eng',  teacherId: 'tch_chioma', title: 'Essay: My Future Career', description: 'Write a 300-word essay on what you want to become and why.', dueDate: daysAhead(5), createdAt: daysAgo(1), submissions: [{ studentId: 'stu_002', submittedAt: daysAgo(1), text: 'Please find my essay attached as a PDF document.', file: { name: 'my_future_career_essay.pdf', type: 'application/pdf', data: _asnPdfData, size: '3 KB' }, grade: null }] },
     { id: uid('asn'), schoolId, classId: 'cls_pry3', subjectId: 'sub_math', teacherId: 'tch_adamu', title: 'Multiplication Tables', description: 'Memorize and recite multiplication tables 6-9 by Monday.', dueDate: daysAhead(2), createdAt: daysAgo(3), submissions: [{ studentId: 'stu_001', submittedAt: now(), grade: null }] },
     { id: uid('asn'), schoolId, classId: 'cls_sss1', subjectId: 'sub_civ',  teacherId: 'tch_bola',  title: 'Civic Duties Project', description: 'Research and write about three civic duties of a Nigerian citizen.', dueDate: daysAhead(7), createdAt: daysAgo(1), submissions: [] }
   ];
