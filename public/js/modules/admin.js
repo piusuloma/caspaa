@@ -282,8 +282,8 @@ function exportPermissionsReport() {
   const allPerms = ['students','staff','admissions','classes','curriculum','timetable','attendance','results','assignments','lessonPlans','discipline','fees','invoices','payments','reconciliation','reports','inventory','communications','messaging'];
   const html = `
     <div style="max-width:900px;margin:0 auto;font-family:system-ui;font-size:12px">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #234e70;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#234e70">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:16px">STAFF PERMISSIONS REPORT</h2>
         <p style="margin:0;color:#666">${DB.settings().currentTerm} · Generated ${fdate(today(), { long: true })}</p>
       </div>
@@ -2268,8 +2268,8 @@ function exportSchemePDF(schemeId) {
   const sub = DB.find('subjects', sch.subjectId);
   const html = `
     <div style="max-width:800px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #234e70;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#234e70">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:20px">SCHEME OF WORK</h2>
         <p style="margin:4px 0">${sub.name} · ${cls.name} · ${sch.term}</p>
         <p style="margin:4px 0;color:#666;font-size:13px">${sch.source} aligned</p>
@@ -2599,7 +2599,7 @@ function view_adm_dashboard() {
 
   return `
     <div class="space-y-5">
-      <div class="bg-gradient-to-br from-brand-700 to-brand-800 rounded-2xl p-5 lg:p-6 text-white">
+      <div class="bg-brand-700 rounded-2xl p-5 lg:p-6 text-white">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-brand-200 text-sm">Welcome back,</p>
@@ -3535,7 +3535,7 @@ function printStudentID(studentId) {
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
     body { background: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
     .card { width: 86mm; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
-    .header { background: linear-gradient(135deg, #1e3a5f, #2563eb); color: white; padding: 16px; text-align: center; }
+    .header { background: #234e70; color: white; padding: 16px; text-align: center; }
     .school-name { font-size: 13px; font-weight: bold; letter-spacing: 0.5px; }
     .school-sub { font-size: 9px; opacity: 0.8; margin-top: 2px; text-transform: uppercase; }
     .id-label { font-size: 10px; font-weight: bold; background: rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 8px; margin-top: 8px; display: inline-block; letter-spacing: 1px; }
@@ -3830,7 +3830,7 @@ function addStudentModal(editingId) {
     size: 'lg',
     body: `
       <div class="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
-        <div id="sf_photoPreview" class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-brand-500 to-brand-700 text-white font-bold text-2xl">
+        <div id="sf_photoPreview" class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center bg-brand-600 text-white font-bold text-2xl">
           ${_studentPhotoBuffer ? `<img src="${_studentPhotoBuffer}" class="w-full h-full object-cover" />` : (existing ? initials(existing.name) : '?')}
         </div>
         <div class="flex-1">
@@ -4574,9 +4574,9 @@ function printTransferCertificate(studentId, destSchool, reason) {
   const s = DB.find('students', studentId);
   const cls = DB.find('classes', s.classId);
   const html = `
-    <div style="max-width:780px;margin:0 auto;font-family:system-ui;padding:32px;border:3px solid #047857">
-      <div style="text-align:center;border-bottom:2px solid #047857;padding-bottom:16px;margin-bottom:24px">
-        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
+    <div style="max-width:780px;margin:0 auto;font-family:system-ui;padding:32px;border:3px solid #234e70">
+      <div style="text-align:center;border-bottom:2px solid #234e70;padding-bottom:16px;margin-bottom:24px">
+        <h1 style="margin:0;color:#234e70">BRIGHT LIGHTS ACADEMY</h1>
         <p style="margin:4px 0;color:#666;font-size:13px">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:18px 0 4px;font-size:22px">TRANSFER CERTIFICATE</h2>
         <p style="color:#666">Certificate No: TC-${Date.now().toString(36).toUpperCase()}</p>
@@ -9745,7 +9745,7 @@ function renderBrandingSettings() {
           <div><label class="input-label">Motto</label><input id="br_motto" class="input" value="${branding.motto || ''}" /></div>
           <div class="grid grid-cols-2 gap-2">
             <div><label class="input-label">Primary Color</label>
-              <input id="br_color" type="color" class="input h-12" value="${branding.primaryColor || '#047857'}" />
+              <input id="br_color" type="color" class="input h-12" value="${branding.primaryColor || '#234e70'}" />
             </div>
             <div><label class="input-label">Logo Text (fallback)</label>
               <input id="br_logoText" class="input" maxlength="3" value="${branding.logoText || ''}" />
@@ -9755,7 +9755,7 @@ function renderBrandingSettings() {
             <label class="input-label">School Logo</label>
             <input type="file" id="br_logoFile" accept="image/*" class="hidden" onchange="onLogoPick(event)" />
             <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-              <div class="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-extrabold" id="br_logoPreview" style="background:${branding.primaryColor || '#047857'}">
+              <div class="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-extrabold" id="br_logoPreview" style="background:${branding.primaryColor || '#234e70'}">
                 ${branding.logoImage ? `<img src="${branding.logoImage}" class="w-full h-full object-cover rounded-xl"/>` : (branding.logoText || '?')}
               </div>
               <button type="button" class="btn btn-secondary text-sm" onclick="document.getElementById('br_logoFile').click()">${icon('upload','w-4 h-4')} Choose</button>
@@ -9781,7 +9781,7 @@ function renderBrandingSettings() {
       </div>
       <div class="card p-5">
         <h3 class="font-bold text-slate-900 mb-3">Preview</h3>
-        <div class="rounded-2xl p-5 text-white" style="background: linear-gradient(135deg, ${branding.primaryColor || '#047857'}, ${branding.primaryColor || '#047857'}cc)">
+        <div class="rounded-2xl p-5 text-white" style="background: ${branding.primaryColor || '#234e70'}">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center text-xl font-extrabold backdrop-blur">
               ${branding.logoImage ? `<img src="${branding.logoImage}" class="w-full h-full object-cover rounded-xl"/>` : (branding.logoText || school.name.charAt(0))}
@@ -10734,7 +10734,7 @@ function view_adm_admissions() {
                <button class="btn btn-primary" onclick="newApplicationModal()">${icon('plus','w-4 h-4')} New Application</button>`
     })}
 
-    <div class="card bg-gradient-to-br from-brand-700 to-brand-800 text-white p-4 mb-4">
+    <div class="card bg-brand-700 text-white p-4 mb-4">
       <div class="text-xs text-brand-200 uppercase font-semibold">Your public admission link</div>
       <div class="flex items-center gap-3 mt-1">
         <code class="bg-white/20 px-3 py-1.5 rounded-lg text-sm font-mono flex-1">${publicLink}</code>
@@ -11979,8 +11979,8 @@ function _rptHead(title, subtitle) {
   const term = DB.settings().currentTerm || '';
   const date = new Date().toLocaleDateString('en-NG', { day:'numeric', month:'long', year:'numeric' });
   return `
-    <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:28px">
-      <h1 style="margin:0 0 4px;font-size:22px;color:#047857;letter-spacing:.5px">${(sc.name||'School').toUpperCase()}</h1>
+    <div style="text-align:center;border-bottom:3px solid #234e70;padding-bottom:16px;margin-bottom:28px">
+      <h1 style="margin:0 0 4px;font-size:22px;color:#234e70;letter-spacing:.5px">${(sc.name||'School').toUpperCase()}</h1>
       ${sc.address ? `<p style="margin:2px 0;color:#555;font-size:12px">${sc.address}</p>` : ''}
       ${sc.phone ? `<p style="margin:2px 0;color:#555;font-size:12px">Tel: ${sc.phone}</p>` : ''}
       <h2 style="margin:16px 0 4px;font-size:18px;font-weight:700">${title}</h2>

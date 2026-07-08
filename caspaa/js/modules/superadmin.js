@@ -46,7 +46,7 @@ function view_sa_dashboard() {
           datasets: [{
             label: 'MRR',
             data: [1500000, 1800000, 2100000, 2500000, 2900000, mrr],
-            borderColor: '#047857', backgroundColor: 'rgba(16,185,129,0.12)',
+            borderColor: '#234e70', backgroundColor: 'rgba(16,185,129,0.12)',
             tension: 0.35, fill: true, borderWidth: 3
           }]
         },
@@ -102,7 +102,7 @@ function view_sa_dashboard() {
   return `
     <div class="space-y-5">
       <!-- HERO: single big metric, everything else secondary -->
-      <div class="bg-gradient-to-br from-slate-900 to-brand-900 rounded-2xl p-6 lg:p-8 text-white">
+      <div class="bg-brand-900 rounded-2xl p-6 lg:p-8 text-white">
         <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
             <p class="text-brand-200 text-sm">Welcome back, ${AUTH.current.name.split(' ')[0]}</p>
@@ -319,7 +319,7 @@ function viewSchoolDetail(schoolId) {
 
   const subscriptionTab = `
     <div class="space-y-4">
-      <div class="bg-gradient-to-br from-brand-700 to-brand-800 text-white rounded-2xl p-4">
+      <div class="bg-brand-700 text-white rounded-2xl p-4">
         <div class="flex items-center justify-between">
           <div>
             <div class="text-xs text-brand-200 uppercase font-semibold">Current Plan</div>
@@ -756,8 +756,8 @@ function downloadSchoolInvoice(invoiceId) {
   const s = DB.find('schools', inv.schoolId);
   const html = `
     <div style="max-width:680px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#047857">CASPAA</h1>
+      <div style="text-align:center;border-bottom:3px solid #234e70;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#234e70">CASPAA</h1>
         <p style="margin:4px 0;color:#666;font-size:13px">School Operating System · Lagos, Nigeria</p>
         <h2 style="margin:14px 0 4px;font-size:18px">SUBSCRIPTION INVOICE</h2>
       </div>
@@ -997,7 +997,7 @@ function renderLoanAnalyticsTab() {
     const c1 = document.getElementById('loanAnaChart1');
     if (c1) new Chart(c1, {
       type: 'doughnut',
-      data: { labels: Object.keys(buckets), datasets: [{ data: Object.values(buckets), backgroundColor: ['#047857', '#10b981', '#f59e0b', '#dc2626'], borderWidth: 0 }] },
+      data: { labels: Object.keys(buckets), datasets: [{ data: Object.values(buckets), backgroundColor: ['#234e70', '#10b981', '#f59e0b', '#dc2626'], borderWidth: 0 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
     });
     const c2 = document.getElementById('loanAnaChart2');
@@ -1133,7 +1133,7 @@ function renderBusinessTab(dateFrom, dateTo) {
       type: 'bar',
       data: {
         labels: ['Lekki', 'Ikoyi', 'Ikeja', 'VI', 'Magodo', 'Festac'],
-        datasets: [{ label: 'Schools', data: [3, 2, 2, 1, 1, 1], backgroundColor: '#047857', borderRadius: 6 }]
+        datasets: [{ label: 'Schools', data: [3, 2, 2, 1, 1, 1], backgroundColor: '#234e70', borderRadius: 6 }]
       },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
@@ -1231,7 +1231,7 @@ function renderUsageTab(dateFrom, dateTo) {
     const c1 = document.getElementById('usageChart1');
     if (c1) new Chart(c1, {
       type: 'line',
-      data: { labels: days.map(d => fdate(d, { short: true })), datasets: [{ label: 'DAU', data: dauByDay, borderColor: '#047857', backgroundColor: 'rgba(16,185,129,0.15)', tension: 0.35, fill: true, borderWidth: 2 }] },
+      data: { labels: days.map(d => fdate(d, { short: true })), datasets: [{ label: 'DAU', data: dauByDay, borderColor: '#234e70', backgroundColor: 'rgba(16,185,129,0.15)', tension: 0.35, fill: true, borderWidth: 2 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
     const c2 = document.getElementById('usageChart2');

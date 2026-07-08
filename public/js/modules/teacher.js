@@ -256,7 +256,7 @@ function view_tch_dashboard() {
 
   return `
     <div class="space-y-5">
-      <div class="bg-gradient-to-br from-brand-700 to-brand-800 rounded-2xl p-5 lg:p-6 text-white">
+      <div class="bg-brand-700 rounded-2xl p-5 lg:p-6 text-white">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <p class="text-brand-200 text-sm">Welcome,</p>
@@ -3087,7 +3087,7 @@ function tch_acknowledgeModal(aprId) {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-gradient-to-br from-brand-700 to-brand-800 text-white rounded-xl p-5 text-center">
+        <div class="bg-brand-700 text-white rounded-xl p-5 text-center">
           <div class="text-4xl font-extrabold">${apr.finalOverall}%</div>
           <div class="text-brand-200 text-sm mt-1">${cycle?.title || 'Appraisal'}</div>
         </div>

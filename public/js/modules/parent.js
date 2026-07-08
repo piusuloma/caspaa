@@ -38,7 +38,7 @@ function view_par_dashboard() {
   return `
     <div class="space-y-5">
       <!-- Hero greeting -->
-      <div class="bg-gradient-to-br from-brand-700 to-brand-800 rounded-2xl p-5 lg:p-6 text-white">
+      <div class="bg-brand-700 rounded-2xl p-5 lg:p-6 text-white">
         <p class="text-brand-200 text-sm">Hello,</p>
         <h1 class="text-2xl lg:text-3xl font-extrabold">${parent.name.split(' ').slice(-1)}</h1>
         <p class="text-brand-100 text-sm mt-1">${children.length} ${children.length === 1 ? 'child' : 'children'} at ${(DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School'}</p>
@@ -143,7 +143,7 @@ function view_par_dashboard() {
       ${(() => {
         const achievers = children.filter(c => c.awards || c.achievements || c.badges);
         if (!achievers.length) return '';
-        return `<div class="card bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 p-4">
+        return `<div class="card bg-amber-50 border border-amber-200 p-4">
           <div class="flex items-center gap-2 mb-3">
             <span class="w-8 h-8 rounded-lg bg-amber-400 text-white flex items-center justify-center text-base">🏆</span>
             <h3 class="font-bold text-amber-900">Recent Achievements</h3>
@@ -613,8 +613,8 @@ function printTranscript(studentId) {
 
   const html = `
     <div style="max-width:820px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:24px">
-        <h1 style="margin:0;color:#047857">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h1>
+      <div style="text-align:center;border-bottom:3px solid #234e70;padding-bottom:16px;margin-bottom:24px">
+        <h1 style="margin:0;color:#234e70">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h1>
         <p style="margin:4px 0;color:#666">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:12px 0 0;font-size:22px">OFFICIAL ACADEMIC TRANSCRIPT</h2>
       </div>
@@ -627,7 +627,7 @@ function printTranscript(studentId) {
         : termOrder.map(term => {
             const rows = byTerm[term];
             const termAvg = Math.round(rows.reduce((s, r) => s + r.total, 0) / rows.length);
-            return `<h3 style="margin:24px 0 8px;color:#047857;border-bottom:1px solid #ddd;padding-bottom:4px">${term}</h3>
+            return `<h3 style="margin:24px 0 8px;color:#234e70;border-bottom:1px solid #ddd;padding-bottom:4px">${term}</h3>
         <table border="1" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:13px">
           <thead style="background:#f3f4f6">
             <tr><th align="left">Subject</th><th>CA1</th><th>CA2</th><th>Exam</th><th>Total</th><th>Grade</th></tr>
@@ -644,7 +644,7 @@ function printTranscript(studentId) {
       }
       <div style="margin-top:24px;background:#d1fae5;padding:14px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
         <strong style="font-size:16px">CUMULATIVE AVERAGE</strong>
-        <strong style="font-size:20px;color:#047857">${overallAvg}%</strong>
+        <strong style="font-size:20px;color:#234e70">${overallAvg}%</strong>
       </div>
       <div style="margin-top:60px;display:flex;justify-content:space-between">
         <div><strong>Principal</strong><br/><br/>____________________<br/><span style="font-size:11px;color:#666">Signature &amp; Stamp</span></div>
@@ -667,8 +667,8 @@ function printReportCard(studentId) {
   const reportComment = DB.query('reportComments', c => c.studentId === studentId && c.term === DB.settings().currentTerm)[0];
   const html = `
     <div style="max-width:780px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:24px">
-        <h1 style="margin:0;color:#047857">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h1>
+      <div style="text-align:center;border-bottom:3px solid #234e70;padding-bottom:16px;margin-bottom:24px">
+        <h1 style="margin:0;color:#234e70">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h1>
         <p style="margin:4px 0;color:#666">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:12px 0 0;font-size:20px">STUDENT REPORT CARD</h2>
         <p style="margin:4px 0">${DB.settings().currentTerm}</p>
@@ -693,7 +693,7 @@ function printReportCard(studentId) {
         </tfoot>
       </table>
       ${reportComment ? `
-          <div style="margin-top:20px;padding:12px;background:#f0fdf4;border-left:4px solid #047857;border-radius:4px">
+          <div style="margin-top:20px;padding:12px;background:#f0fdf4;border-left:4px solid #234e70;border-radius:4px">
             <strong style="font-size:12px;color:#065f46">CLASS TEACHER'S COMMENT</strong>
             <p style="margin:6px 0 0;font-size:13px;color:#1e293b">${reportComment.comment}</p>
           </div>` : ''}
@@ -744,7 +744,7 @@ function view_par_fees() {
   return `
     ${pageHeader({ title: 'Fees & Payment', subtitle: DB.settings().currentTerm })}
 
-    <div class="card bg-gradient-to-br from-brand-700 to-brand-800 text-white p-5 mb-4">
+    <div class="card bg-brand-700 text-white p-5 mb-4">
       <div class="grid grid-cols-2 gap-4">
         <div>
           <div class="text-brand-200 text-xs uppercase">Total Outstanding</div>
@@ -1431,8 +1431,8 @@ function downloadReceipt(invoiceId) {
   const txns = DB.query('transactions', t => t.invoiceId === invoiceId);
   const html = `
     <div style="max-width:600px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#047857">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h1>
+      <div style="text-align:center;border-bottom:3px solid #234e70;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#234e70">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h1>
         <p style="margin:4px 0;color:#666;font-size:13px">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:14px 0 4px;font-size:18px">OFFICIAL PAYMENT RECEIPT</h2>
       </div>
@@ -1516,15 +1516,15 @@ function view_par_loans() {
   const creditScore = COMPUTE.computeCreditScore(parentId);
   const eligibleAmount = Math.round(creditScore * 1000); // simple mock
   const scoreClass = creditScore >= 700
-    ? { grad: 'from-emerald-500 to-emerald-700', text: 'text-emerald-100', btn: 'text-emerald-700', label: 'Excellent' }
+    ? { grad: 'bg-emerald-600', text: 'text-emerald-100', btn: 'text-emerald-700', label: 'Excellent' }
     : creditScore >= 600
-    ? { grad: 'from-amber-500 to-amber-700', text: 'text-amber-100', btn: 'text-amber-700', label: 'Good' }
-    : { grad: 'from-rose-500 to-rose-700', text: 'text-rose-100', btn: 'text-rose-700', label: 'Fair' };
+    ? { grad: 'bg-amber-500', text: 'text-amber-100', btn: 'text-amber-700', label: 'Good' }
+    : { grad: 'bg-rose-600', text: 'text-rose-100', btn: 'text-rose-700', label: 'Fair' };
 
   return `
     ${pageHeader({ title: 'School Fee Loans', subtitle: 'Spread fee payments. Get a decision in minutes.' })}
 
-    <div class="card p-5 mb-4 bg-gradient-to-br ${scoreClass.grad} text-white">
+    <div class="card p-5 mb-4 ${scoreClass.grad} text-white">
       <div class="flex items-center justify-between">
         <div>
           <div class="${scoreClass.text} text-xs uppercase font-semibold">Your CASPAA Credit Score</div>
@@ -1684,7 +1684,7 @@ function applyLoanModal() {
           </div>
         </div>
 
-        <div class="bg-gradient-to-br from-brand-700 to-brand-800 text-white rounded-2xl p-4">
+        <div class="bg-brand-700 text-white rounded-2xl p-4">
           <div class="text-xs text-brand-200 uppercase font-semibold">Your Monthly Payment</div>
           <div class="text-3xl font-extrabold" id="ln_monthly">${money(43750)}</div>
           <div class="grid grid-cols-3 gap-2 mt-3 text-xs">
@@ -1747,7 +1747,7 @@ function submitLoanApplication() {
     title: 'Reviewing your application…',
     body: `
       <div class="text-center py-6">
-        <div class="spinner mx-auto mb-4" style="width:40px;height:40px;border-color:#047857 transparent transparent transparent;border-width:4px"></div>
+        <div class="spinner mx-auto mb-4" style="width:40px;height:40px;border-color:#234e70 transparent transparent transparent;border-width:4px"></div>
         <p class="font-semibold text-slate-900">Running risk assessment</p>
         <p class="text-sm text-slate-500 mt-1">This usually takes 10-15 seconds</p>
         <div id="riskSteps" class="text-left mt-4 space-y-2 text-sm"></div>

@@ -264,7 +264,7 @@ function hp_createHouseModal() {
       <div><label class="input-label">House Name <span class="text-rose-500">*</span></label><input id="hc_name" class="input" placeholder="e.g. Eagle House, Red House"></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="input-label">Icon / Emoji</label><input id="hc_icon" class="input" placeholder="e.g. 🦅 🔴 ⚡" value="🏠"></div>
-        <div><label class="input-label">Colour</label><input id="hc_color" type="color" class="input h-11" value="#047857"></div>
+        <div><label class="input-label">Colour</label><input id="hc_color" type="color" class="input h-11" value="#234e70"></div>
       </div>
       <div><label class="input-label">Motto</label><input id="hc_motto" class="input" placeholder="e.g. Courage and Integrity"></div>
     </div>`,
@@ -282,7 +282,7 @@ function hp_editHouseModal(houseId) {
       <div><label class="input-label">House Name <span class="text-rose-500">*</span></label><input id="hc_name" class="input" value="${h.name}"></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="input-label">Icon / Emoji</label><input id="hc_icon" class="input" value="${h.icon || '🏠'}"></div>
-        <div><label class="input-label">Colour</label><input id="hc_color" type="color" class="input h-11" value="${h.color || '#047857'}"></div>
+        <div><label class="input-label">Colour</label><input id="hc_color" type="color" class="input h-11" value="${h.color || '#234e70'}"></div>
       </div>
       <div><label class="input-label">Motto</label><input id="hc_motto" class="input" value="${h.motto || ''}"></div>
     </div>`,
@@ -298,7 +298,7 @@ function hp_saveHouse(houseId) {
   const payload = {
     name,
     icon:  (document.getElementById('hc_icon')  || {}).value.trim() || '🏠',
-    color: (document.getElementById('hc_color') || {}).value || '#047857',
+    color: (document.getElementById('hc_color') || {}).value || '#234e70',
     motto: (document.getElementById('hc_motto') || {}).value.trim() || ''
   };
   if (houseId) {

@@ -33,7 +33,7 @@ function view_stu_dashboard() {
   return `
     <div class="space-y-5">
       <!-- Hero + gamification -->
-      <div class="bg-gradient-to-br from-brand-700 to-brand-800 rounded-2xl p-5 lg:p-6 text-white">
+      <div class="bg-brand-700 rounded-2xl p-5 lg:p-6 text-white">
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <p class="text-brand-200 text-sm">Welcome back,</p>
@@ -768,7 +768,7 @@ function stu_viewCbtResult(subId) {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-gradient-to-br from-brand-700 to-brand-800 text-white rounded-xl p-4 text-center">
+        <div class="bg-brand-700 text-white rounded-xl p-4 text-center">
           <div class="text-4xl font-extrabold">${sub.totalScore}<span class="text-xl opacity-70">/${sub.maxScore}</span></div>
           <div class="text-sm text-brand-200 mt-1">${sub.status === 'graded' ? 'Final score' : 'Objective score (theory pending review)'}</div>
         </div>
@@ -892,7 +892,7 @@ function view_stu_behaviour() {
   return `
     ${pageHeader({ title: 'My Behaviour', subtitle: 'Conduct record, commendations and rewards' })}
 
-    <div class="bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-2xl p-5 mb-4">
+    <div class="bg-amber-500 text-white rounded-2xl p-5 mb-4">
       <div class="flex items-center justify-between flex-wrap gap-4">
         <div>
           <div class="text-amber-100 text-sm">Reward Points</div>
