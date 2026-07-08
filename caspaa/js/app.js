@@ -168,12 +168,9 @@ const APP = {
 
         <!-- Sidebar (desktop) -->
         <aside class="hidden lg:flex w-64 bg-slate-900 flex-col fixed h-screen">
-          <div class="px-5 py-5 border-b border-slate-800 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center text-xl font-extrabold text-white">C</div>
-            <div>
-              <div class="text-white font-extrabold tracking-tight">CASPAA</div>
-              <div class="text-xs text-slate-400">${roleLabel(user.role)}</div>
-            </div>
+          <div class="px-5 py-5 border-b border-slate-800">
+            <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-6 w-auto" />
+            <div class="text-xs text-slate-400 mt-2">${roleLabel(user.role)}</div>
           </div>
           <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scroll-area">
             ${nav.map(n => `
@@ -196,12 +193,9 @@ const APP = {
           <div class="lg:hidden fixed inset-0 z-40">
             <div class="absolute inset-0 bg-slate-900/60" onclick="APP.sidebarOpen=false; APP.render()"></div>
             <aside class="absolute left-0 top-0 bottom-0 w-72 bg-slate-900 flex flex-col">
-              <div class="px-5 py-5 border-b border-slate-800 flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center text-xl font-extrabold text-white">C</div>
-                <div>
-                  <div class="text-white font-extrabold tracking-tight">CASPAA</div>
-                  <div class="text-xs text-slate-400">${roleLabel(user.role)}</div>
-                </div>
+              <div class="px-5 py-5 border-b border-slate-800">
+                <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-6 w-auto" />
+                <div class="text-xs text-slate-400 mt-2">${roleLabel(user.role)}</div>
               </div>
               <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scroll-area">
                 ${nav.map(n => `

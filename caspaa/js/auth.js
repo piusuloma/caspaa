@@ -76,12 +76,9 @@ function renderLogin() {
         <!-- Branding panel (coral · 30%) -->
         <div class="login-panel text-white rounded-2xl p-8 lg:p-10 flex flex-col justify-between">
           <div>
-            <div class="flex items-center gap-3 mb-10">
-              <div class="w-12 h-12 rounded-lg bg-white/15 ring-1 ring-white/25 flex items-center justify-center text-xl font-extrabold">C</div>
-              <div>
-                <h1 class="text-2xl font-extrabold tracking-tight">CASPAA</h1>
-                <p class="text-white/75 text-sm">School Operating System</p>
-              </div>
+            <div class="mb-10">
+              <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-9 w-auto mb-3" />
+              <p class="text-white/80 text-sm">School Operating System</p>
             </div>
 
             <h2 class="text-3xl lg:text-4xl font-extrabold leading-tight mb-4">
