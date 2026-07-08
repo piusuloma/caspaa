@@ -62,9 +62,9 @@ function toast(msg, type = 'success') {
   const t = document.createElement('div');
   t.className = `toast ${type}`;
   const iconMap = { success: 'check', danger: 'x', warn: 'bell', info: 'bell' };
-  const colorMap = { success: 'text-brand-600', danger: 'text-red-600', warn: 'text-amber-600', info: 'text-blue-600' };
+  const colorMap = { success: 'text-green-600', danger: 'text-red-600', warn: 'text-amber-600', info: 'text-blue-600' };
   t.innerHTML = `
-    <div class="${colorMap[type] || 'text-brand-600'}">${icon(iconMap[type] || 'check', 'w-5 h-5')}</div>
+    <div class="${colorMap[type] || 'text-green-600'}">${icon(iconMap[type] || 'check', 'w-5 h-5')}</div>
     <div class="flex-1 text-sm font-medium text-slate-800">${msg}</div>
   `;
   root.appendChild(t);
