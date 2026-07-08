@@ -52,119 +52,95 @@ const DEMO_ACCOUNTS = [
 
 /* ---------- Login screen ---------- */
 function renderLogin() {
+  const ROLE_OPTIONS = [
+    { role: 'superadmin',  label: 'CASPAA Super Admin' },
+    { role: 'schooladmin', label: 'School Proprietor' },
+    { role: 'principal',   label: 'Principal' },
+    { role: 'finance',     label: 'Finance Officer' },
+    { role: 'teacher',     label: 'Teacher' },
+    { role: 'parent',      label: 'Parent' },
+    { role: 'student',     label: 'Student' }
+  ];
+  const FEATURES = [
+    { icon: 'wifi_off', title: 'Works Offline',   desc: 'Mark attendance with no signal' },
+    { icon: 'wallet',   title: 'Payments',        desc: 'Parents pay in 30 seconds' },
+    { icon: 'naira',    title: 'Fee Financing',   desc: 'Loans approved in 24 hours' },
+    { icon: 'sparkles', title: 'AI Assistant',    desc: 'Write report comments instantly' },
+    { icon: 'monitor',  title: 'CBT & Learning',  desc: 'Run digital tests & exams' },
+    { icon: 'shield',   title: 'Digital Consent', desc: 'Approve activities online' }
+  ];
   return `
-    <div class="login-bg min-h-screen flex items-center justify-center p-4">
-      <div class="w-full max-w-5xl grid lg:grid-cols-2 gap-8 items-center">
+    <div class="login-bg min-h-screen flex items-center justify-center p-4 sm:p-6">
+      <div class="w-full max-w-5xl grid lg:grid-cols-2 gap-6 items-stretch">
 
-        <!-- Branding side -->
-        <div class="text-white">
-          <div class="flex items-center gap-3 mb-8">
-            <div class="w-14 h-14 rounded-2xl bg-brand-500 flex items-center justify-center text-2xl font-extrabold shadow-lg">C</div>
-            <div>
-              <h1 class="text-3xl font-extrabold tracking-tight">CASPAA</h1>
-              <p class="text-brand-200 text-sm">School Operating System</p>
+        <!-- Branding panel (coral · 30%) -->
+        <div class="login-panel text-white rounded-2xl p-8 lg:p-10 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-3 mb-10">
+              <div class="w-12 h-12 rounded-lg bg-white/15 ring-1 ring-white/25 flex items-center justify-center text-xl font-extrabold">C</div>
+              <div>
+                <h1 class="text-2xl font-extrabold tracking-tight">CASPAA</h1>
+                <p class="text-white/75 text-sm">School Operating System</p>
+              </div>
             </div>
+
+            <h2 class="text-3xl lg:text-4xl font-extrabold leading-tight mb-4">
+              One platform for <span class="text-gold-500">every part</span> of your school.
+            </h2>
+            <p class="text-white/85 text-base mb-8 max-w-md leading-relaxed">
+              School operations, payments, financing, attendance, learning and engagement — CASPAA unifies the many tools your school uses today into one.
+            </p>
           </div>
 
-          <h2 class="text-4xl lg:text-5xl font-extrabold leading-tight mb-4">
-            One platform for <span class="text-brand-300">every part</span> of your school.
-          </h2>
-          <p class="text-slate-200 text-lg mb-8 max-w-md">
-            From School Operations, Payment, Financing, Attendance, Learning, CBT and Engagement Infrastructure — CASPAA is a unified solution that replaces the several different tools your school is using right now.
-          </p>
-
-          <div class="grid grid-cols-2 gap-4 max-w-md">
-            <div class="flex gap-3 items-start">
-              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('attendance', 'w-5 h-5')}</div>
-              <div>
-                <div class="font-semibold text-sm">Works Offline</div>
-                <div class="text-xs text-slate-300">Mark attendance with no signal</div>
+          <div class="grid grid-cols-2 gap-4">
+            ${FEATURES.map(f => `
+              <div class="flex gap-3 items-start">
+                <div class="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">${icon(f.icon, 'w-5 h-5')}</div>
+                <div>
+                  <div class="font-semibold text-sm">${f.title}</div>
+                  <div class="text-xs text-white/70">${f.desc}</div>
+                </div>
               </div>
-            </div>
-            <div class="flex gap-3 items-start">
-              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('fees', 'w-5 h-5')}</div>
-              <div>
-                <div class="font-semibold text-sm">Payment</div>
-                <div class="text-xs text-slate-300">Parents pay in 30 seconds</div>
-              </div>
-            </div>
-            <div class="flex gap-3 items-start">
-              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('loan', 'w-5 h-5')}</div>
-              <div>
-                <div class="font-semibold text-sm">Fee Financing</div>
-                <div class="text-xs text-slate-300">Loans approved in 24 hours</div>
-              </div>
-            </div>
-            <div class="flex gap-3 items-start">
-              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('ai', 'w-5 h-5')}</div>
-              <div>
-                <div class="font-semibold text-sm">AI Assistant</div>
-                <div class="text-xs text-slate-300">Write report comments instantly</div>
-              </div>
-            </div>
-            <div class="flex gap-3 items-start">
-              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('results', 'w-5 h-5')}</div>
-              <div>
-                <div class="font-semibold text-sm">CBT Learnings</div>
-                <div class="text-xs text-slate-300">Run digital tests & exams</div>
-              </div>
-            </div>
-            <div class="flex gap-3 items-start">
-              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('check', 'w-5 h-5')}</div>
-              <div>
-                <div class="font-semibold text-sm">Digital Consent</div>
-                <div class="text-xs text-slate-300">Approve activities online</div>
-              </div>
-            </div>
+            `).join('')}
           </div>
         </div>
 
-        <!-- Login card -->
-        <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8">
+        <!-- Sign-in card (neutral · 60%) -->
+        <div class="login-card bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-6 sm:p-8 flex flex-col justify-center">
           <h3 class="text-xl font-bold text-slate-900 mb-1">Sign in to your dashboard</h3>
-          <p class="text-sm text-slate-500 mb-6">Choose your role to continue</p>
+          <p class="text-sm text-slate-500 mb-6">Enter your credentials to continue</p>
 
-          <!-- Quick demo logins (the killer UX feature) -->
-          <div class="space-y-2 mb-5">
-            ${DEMO_ACCOUNTS.map(a => `
-              <button data-account="${a.id}" class="demo-login w-full flex items-center gap-3 p-3 rounded-xl border-2 border-slate-100 hover:border-brand-500 hover:bg-brand-50 transition text-left group">
-                ${avatar(a.name, 'md')}
-                <div class="flex-1 min-w-0">
-                  <div class="font-semibold text-slate-900 text-sm truncate">${a.title}</div>
-                  <div class="text-xs text-slate-500 truncate">${a.subtitle}</div>
-                </div>
-                <div class="text-brand-600 opacity-0 group-hover:opacity-100 transition">${icon('arrow_left', 'w-4 h-4 rotate-180')}</div>
-              </button>
-            `).join('')}
-          </div>
-
-          <div class="text-center">
-            <button id="emailLoginToggle" class="text-sm text-brand-700 hover:text-brand-800 font-semibold">Or sign in with email →</button>
-          </div>
-
-          <div id="emailLoginForm" class="hidden mt-5 pt-5 border-t border-slate-100 space-y-3">
+          <form id="signinForm" class="space-y-4" autocomplete="on">
             <div>
-              <label class="input-label">Email</label>
-              <input type="email" class="input" id="loginEmail" placeholder="you@school.ng" />
+              <label class="input-label" for="loginRole">Role</label>
+              <select id="loginRole" class="input">
+                <option value="">Select your role…</option>
+                ${ROLE_OPTIONS.map(r => `<option value="${r.role}">${r.label}</option>`).join('')}
+              </select>
             </div>
             <div>
-              <label class="input-label">Password</label>
+              <label class="input-label" for="loginEmail">Email address</label>
+              <input type="email" class="input" id="loginEmail" placeholder="you@school.ng" autocomplete="username" />
+            </div>
+            <div>
+              <label class="input-label" for="loginPassword">Password</label>
               <div class="relative">
-                <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" value="demo1234" />
-                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" tabindex="-1">
+                <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" value="demo1234" autocomplete="current-password" />
+                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" tabindex="-1" aria-label="Show password">
                   <svg id="loginEyeIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                 </button>
               </div>
-              <p class="text-xs text-slate-400 mt-1">Use password <strong>demo1234</strong> for any demo email</p>
             </div>
-            <button class="btn btn-primary w-full" id="emailLoginBtn">Sign in</button>
+            <button type="submit" class="btn btn-accent w-full" id="signinBtn">Sign in</button>
+          </form>
+
+          <p class="text-xs text-slate-400 mt-3 text-center">Demo access — pick a role to autofill its email. Password: <strong>demo1234</strong></p>
+
+          <div class="text-center mt-4">
+            <button type="button" id="studentLoginToggle" class="text-sm text-coral-600 hover:text-coral-700 font-semibold">Student? Sign in with admission number →</button>
           </div>
 
-          <div class="text-center mt-2">
-            <button id="studentLoginToggle" class="text-sm text-brand-700 hover:text-brand-800 font-semibold">Student login (Admission No.) →</button>
-          </div>
-
-          <div id="studentLoginForm" class="hidden mt-5 pt-5 border-t border-slate-100 space-y-3">
+          <div id="studentLoginForm" class="hidden mt-4 pt-4 border-t border-slate-100 space-y-3">
             <p class="text-xs text-slate-500">Enter your admission number and date of birth exactly as registered by the school.</p>
             <div>
               <label class="input-label">Admission Number</label>
@@ -174,7 +150,7 @@ function renderLogin() {
               <label class="input-label">Date of Birth</label>
               <input type="date" class="input" id="studentDob" />
             </div>
-            <button class="btn btn-primary w-full" id="studentLoginBtn">Sign in as Student</button>
+            <button type="button" class="btn btn-accent w-full" id="studentLoginBtn">Sign in as Student</button>
           </div>
 
           <div class="mt-6 pt-5 border-t border-slate-100 text-center">
@@ -188,34 +164,46 @@ function renderLogin() {
 }
 
 function bindLoginHandlers() {
-  document.querySelectorAll('.demo-login').forEach(btn => {
-    btn.onclick = () => {
-      const id = btn.dataset.account;
-      const acc = DEMO_ACCOUNTS.find(a => a.id === id);
-      if (!acc) return;
-      // Sensitive roles get OTP step
-      if (acc.role === 'superadmin' || acc.role === 'finance') {
-        showOTPModal(acc);
-      } else {
-        AUTH.login(acc);
-        toast(`Welcome back, ${acc.name.split(' ')[0]}!`, 'success');
-        APP.render();
-        if (acc.firstLogin) promptFirstLoginPasswordChange(acc);
-      }
-    };
-  });
+  const form     = document.getElementById('signinForm');
+  const roleSel  = document.getElementById('loginRole');
+  const emailInp = document.getElementById('loginEmail');
 
-  document.getElementById('emailLoginToggle').onclick = () => {
-    document.getElementById('studentLoginForm').classList.add('hidden');
-    document.getElementById('emailLoginForm').classList.toggle('hidden');
+  // Autofill the demo email for the selected role until the user edits it
+  if (roleSel) roleSel.onchange = () => {
+    const acc = DEMO_ACCOUNTS.find(a => a.role === roleSel.value);
+    if (acc && emailInp && !emailInp.dataset.touched) emailInp.value = acc.email;
+  };
+  if (emailInp) emailInp.oninput = () => { emailInp.dataset.touched = '1'; };
+
+  if (form) form.onsubmit = (e) => {
+    e.preventDefault();
+    const role  = roleSel.value;
+    const email = emailInp.value.trim().toLowerCase();
+    const pwd   = document.getElementById('loginPassword').value;
+    if (!role)  { toast('Please select your role', 'danger'); return; }
+    if (!email) { toast('Please enter your email address', 'danger'); return; }
+    if (pwd !== 'demo1234') { toast('Incorrect password', 'danger'); return; }
+    let acc = DEMO_ACCOUNTS.find(a => a.email.toLowerCase() === email);
+    if (!acc) acc = DEMO_ACCOUNTS.find(a => a.role === role);
+    if (!acc) { toast('No account found with that email', 'danger'); return; }
+    if (acc.role !== role) { toast('This email does not match the selected role', 'danger'); return; }
+    if (acc.role === 'superadmin' || acc.role === 'finance') {
+      showOTPModal(acc);
+    } else {
+      AUTH.login(acc);
+      toast(`Welcome back, ${acc.name.split(' ')[0]}!`, 'success');
+      APP.render();
+      if (acc.firstLogin) promptFirstLoginPasswordChange(acc);
+    }
   };
 
-  document.getElementById('studentLoginToggle').onclick = () => {
-    document.getElementById('emailLoginForm').classList.add('hidden');
+  const studentToggle = document.getElementById('studentLoginToggle');
+  if (studentToggle) studentToggle.onclick = () => {
     document.getElementById('studentLoginForm').classList.toggle('hidden');
   };
 
-  document.getElementById('studentLoginBtn').onclick = () => {
+  const studentBtn = document.getElementById('studentLoginBtn');
+  if (studentBtn) studentBtn.onclick = () => {
     const admNo = document.getElementById('studentAdmNo').value.trim().toUpperCase();
     const dob   = document.getElementById('studentDob').value;
     if (!admNo || !dob) { toast('Please enter your admission number and date of birth', 'danger'); return; }
@@ -246,20 +234,6 @@ function bindLoginHandlers() {
     toast(`Welcome, ${student.name.split(' ')[0]}!`, 'success');
     APP.render();
     if (sessionUser.firstLogin) promptFirstLoginPasswordChange(sessionUser);
-  };
-
-  document.getElementById('emailLoginBtn').onclick = () => {
-    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-    const pwd = document.getElementById('loginPassword').value;
-    if (pwd !== 'demo1234') { toast('Incorrect password', 'danger'); return; }
-    const acc = DEMO_ACCOUNTS.find(a => a.email.toLowerCase() === email);
-    if (!acc) { toast('No account found with that email', 'danger'); return; }
-    if (acc.role === 'superadmin' || acc.role === 'finance') {
-      showOTPModal(acc);
-    } else {
-      AUTH.login(acc); APP.render(); toast(`Welcome back, ${acc.name.split(' ')[0]}!`);
-      if (acc.firstLogin) promptFirstLoginPasswordChange(acc);
-    }
   };
 }
 

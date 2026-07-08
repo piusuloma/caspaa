@@ -1,10 +1,10 @@
 /* ============================================================
    CASPAA Design System
-   - Typeface: Raleway
+   - Typeface: Figtree
    - Primary (Scholar Blue): #234E70  · Accent (Coral): #FD5F54
    - No gradients · 8pt spacing grid (4 / 8 / 16 / 24 / 32 / 40)
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap');
 
 :root {
   /* Brand — Scholar Blue (navy) */
@@ -31,12 +31,12 @@
   --line-soft: #f1f5f9;
   /* 8pt spacing tokens */
   --s-1: 4px; --s-2: 8px; --s-3: 16px; --s-4: 24px; --s-5: 32px; --s-6: 40px;
-  /* Radii (4px grid) */
-  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-pill: 999px;
+  /* Radii — standard 7px */
+  --r-sm: 7px; --r-md: 7px; --r-lg: 7px; --r-pill: 999px;
 }
 
 * { -webkit-tap-highlight-color: transparent; }
-html, body { font-family: 'Raleway', system-ui, sans-serif; }
+html, body { font-family: 'Figtree', system-ui, sans-serif; }
 body { min-height: 100vh; }
 
 /* Smooth scrolling regions */
@@ -151,8 +151,10 @@ body { min-height: 100vh; }
 .progress { height: var(--s-2); background: var(--line); border-radius: var(--r-pill); overflow: hidden; }
 .progress-bar { height: 100%; background: var(--brand-600); border-radius: var(--r-pill); transition: width 0.4s ease; }
 
-/* Login screen — solid (no gradient) */
-.login-bg { background: var(--brand-800); }
+/* Login screen — 60:30:10 (neutral base 60 / coral panel 30 / gold accent 10) */
+.login-bg { background: #f4f2ee; }
+.login-panel { background: var(--coral-500); }
+.login-card .input:focus { border-color: var(--coral-500); box-shadow: 0 0 0 3px rgba(253, 95, 84, 0.16); }
 
 /* Spinner */
 .spinner { width: 20px; height: 20px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
