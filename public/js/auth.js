@@ -65,7 +65,7 @@ function renderLogin() {
     <div class="login-bg min-h-screen flex">
 
       <!-- Hero image panel (left) -->
-      <div class="login-hero hidden lg:block lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0">
+      <div class="login-hero hidden lg:block lg:w-[52%] xl:w-[48%] relative overflow-hidden shrink-0">
         <img src="logo/login-hero.png" alt="CASPAA" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
       </div>
 
