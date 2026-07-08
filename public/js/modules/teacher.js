@@ -146,7 +146,7 @@ function renderMyLeaveWidget(staffId) {
         : `<div class="grid grid-cols-3 gap-2 mb-3 text-center text-sm">
             <div class="bg-amber-50 rounded-lg p-2"><div class="text-xs text-amber-700">Pending</div><div class="font-bold text-amber-900">${pending}</div></div>
             <div class="bg-emerald-50 rounded-lg p-2"><div class="text-xs text-emerald-700">Upcoming</div><div class="font-bold text-emerald-900">${upcoming}</div></div>
-            <div class="bg-blue-50 rounded-lg p-2"><div class="text-xs text-blue-700">Total this year</div><div class="font-bold text-blue-900">${myLeaves.length}</div></div>
+            <div class="bg-brand-50 rounded-lg p-2"><div class="text-xs text-brand-700">Total this year</div><div class="font-bold text-brand-900">${myLeaves.length}</div></div>
           </div>
           <div class="space-y-1.5">
             ${myLeaves.slice(0, 4).map(l => {
@@ -169,7 +169,7 @@ function requestLeaveModal() {
     title: 'Request Leave',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Your request goes to the proprietor / HR for approval. They'll typically respond within 24 hours. You'll be notified on the bell icon.
         </div>
         <div>
@@ -307,7 +307,7 @@ function view_tch_dashboard() {
           ${ungradedSubs.slice(0, 4).map(({ a, sb }) => {
             const stu = DB.find('students', sb.studentId);
             return `<div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl">
-              <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">${icon('results','w-5 h-5')}</span>
+              <span class="w-9 h-9 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0">${icon('results','w-5 h-5')}</span>
               <div class="flex-1 min-w-0">
                 <div class="font-semibold text-sm truncate">${stu ? stu.name : 'Student'} · ${a.title}</div>
                 <div class="text-xs text-slate-500">Assignment · submitted ${fdate(sb.submittedAt, { relative: true })}</div>
@@ -825,7 +825,7 @@ function tch_renderMaterials() {
   const t = AUTH.current;
   const materials = DB.query('learningMaterials', m => m.teacherId === t.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   return `
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900 mb-4">
+    <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900 mb-4">
       ${icon('info','w-4 h-4 inline mr-1')} Notes and videos you upload here appear instantly on your students' <strong>Learning</strong> portal.
     </div>
     ${materials.length === 0 ? emptyState({ title: 'No materials yet', body: 'Upload notes or share a video link for your students.', icon: 'book' }) : `
@@ -985,7 +985,7 @@ function openAssignment(assignmentId) {
                 </div>` : ''}
                 ${graded ? `<div class="mt-2 pl-11 space-y-1">
                   <div class="flex items-center gap-2 flex-wrap">
-                    ${sub.markStatus ? `<span class="text-xs font-semibold ${sub.markStatus === 'excellent' ? 'text-emerald-600' : sub.markStatus === 'satisfactory' ? 'text-blue-600' : 'text-amber-600'}">${sub.markStatus === 'excellent' ? '⭐ Excellent' : sub.markStatus === 'needs_revision' ? '🔄 Needs Revision' : '✓ Satisfactory'}</span>` : ''}
+                    ${sub.markStatus ? `<span class="text-xs font-semibold ${sub.markStatus === 'excellent' ? 'text-emerald-600' : sub.markStatus === 'satisfactory' ? 'text-brand-600' : 'text-amber-600'}">${sub.markStatus === 'excellent' ? '⭐ Excellent' : sub.markStatus === 'needs_revision' ? '🔄 Needs Revision' : '✓ Satisfactory'}</span>` : ''}
                     ${sub.resubmissionRequested ? `<span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">${icon('refresh','w-3 h-3')} Awaiting resubmission</span>` : ''}
                     <button class="btn btn-ghost !py-0.5 !px-2 text-xs text-slate-500" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>tch_openMarkingView('${a.id}','${s.id}'),120)">${icon('edit','w-3 h-3')} View / Re-mark</button>
                   </div>
@@ -1086,7 +1086,7 @@ function tch_openMarkingView(assignmentId, studentId) {
       <button id="mkv_eraser" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('eraser')">⬜ Eraser</button>
       <button id="mkv_pin" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('pin')" title="Click on image to place a comment pin">📍 Comment</button>
       <span class="text-xs text-slate-500 font-semibold ml-2">Colour:</span>
-      ${['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#000000'].map(c =>
+      ${['#ef4444','#fd7d71','#10b981','#f59e0b','#fd7d71','#000000'].map(c =>
         `<button class="w-6 h-6 rounded-full border-2 ${c === '#ef4444' ? 'border-slate-700 scale-110' : 'border-transparent'} transition-all" style="background:${c}" onclick="mkvSetColor('${c}',this)"></button>`
       ).join('')}
       <span class="text-xs text-slate-500 font-semibold ml-2">Size:</span>
@@ -1166,7 +1166,7 @@ function tch_openMarkingView(assignmentId, studentId) {
           <div>
             <label class="input-label">Mark Status</label>
             <div class="grid grid-cols-3 gap-1.5">
-              ${[['excellent','⭐','bg-emerald-50 border-emerald-300 text-emerald-800'],['satisfactory','✓','bg-blue-50 border-blue-300 text-blue-800'],['needs_revision','🔄','bg-amber-50 border-amber-300 text-amber-800']].map(([val,emoji,cls]) =>
+              ${[['excellent','⭐','bg-emerald-50 border-emerald-300 text-emerald-800'],['satisfactory','✓','bg-brand-50 border-brand-300 text-brand-800'],['needs_revision','🔄','bg-amber-50 border-amber-300 text-amber-800']].map(([val,emoji,cls]) =>
                 `<button id="mkvst_${val}" onclick="mkvSetStatus('${val}')" class="border rounded-xl py-2 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all ${sub.markStatus===val ? cls + ' ring-2 ring-offset-1' : 'border-slate-200 hover:bg-slate-50'}">
                   <span class="text-base">${emoji}</span>${val.replace('_',' ')}
                 </button>`).join('')}
@@ -1308,7 +1308,7 @@ function mkvSetStatus(val) {
   ['excellent','satisfactory','needs_revision'].forEach(k => {
     const b = document.getElementById('mkvst_' + k);
     if (!b) return;
-    const cls = k==='excellent'?'bg-emerald-50 border-emerald-300 text-emerald-800 ring-2 ring-emerald-400 ring-offset-1':k==='satisfactory'?'bg-blue-50 border-blue-300 text-blue-800 ring-2 ring-blue-400 ring-offset-1':'bg-amber-50 border-amber-300 text-amber-800 ring-2 ring-amber-400 ring-offset-1';
+    const cls = k==='excellent'?'bg-emerald-50 border-emerald-300 text-emerald-800 ring-2 ring-emerald-400 ring-offset-1':k==='satisfactory'?'bg-brand-50 border-brand-300 text-brand-800 ring-2 ring-brand-400 ring-offset-1':'bg-amber-50 border-amber-300 text-amber-800 ring-2 ring-amber-400 ring-offset-1';
     b.className = b.className.replace(/bg-\S+|border-\S+|text-\S+|ring\S*/g,'').trim();
     if (k === _mkv.status) b.className += ' ' + cls;
     else b.className += ' border-slate-200 hover:bg-slate-50';
@@ -1327,7 +1327,7 @@ function mkvRenderPins() {
       const idx = pins.indexOf(p);
       return `<div style="position:absolute;left:${p.x}%;top:${p.y}%;transform:translate(-50%,-50%);z-index:8;pointer-events:auto">
         <div onclick="mkvTogglePin('${p.id}',event)"
-          style="width:22px;height:22px;border-radius:50%;background:#2563eb;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(37,99,235,.55);border:2px solid #fff;cursor:pointer">
+          style="width:22px;height:22px;border-radius:50%;background:#fd5f54;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(37,99,235,.55);border:2px solid #fff;cursor:pointer">
           ${idx + 1}
         </div>
         <div id="mkv_tip_${p.id}" style="display:none;position:absolute;left:26px;top:-6px;width:190px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.14);padding:10px;z-index:20">
@@ -1345,7 +1345,7 @@ function mkvRenderPins() {
       ? `<p style="font-size:11px;color:#94a3b8;font-style:italic">${_mkv._hasImage ? 'Select 📍 then click anywhere on the image.' : 'Click "Add" to add a comment.'}</p>`
       : pins.map((p, i) => `
         <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9">
-          <span style="flex-shrink:0;width:18px;height:18px;border-radius:50%;background:${p.x!=null?'#2563eb':'#94a3b8'};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">${p.x!=null?i+1:'✎'}</span>
+          <span style="flex-shrink:0;width:18px;height:18px;border-radius:50%;background:${p.x!=null?'#fd5f54':'#94a3b8'};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">${p.x!=null?i+1:'✎'}</span>
           <span style="font-size:12px;color:#334155;flex:1;word-break:break-word">${p.text || '<em style="color:#94a3b8">empty</em>'}</span>
           <button onclick="mkvDeletePin('${p.id}')" style="color:#cbd5e1;background:none;border:none;cursor:pointer;font-size:13px;flex-shrink:0" title="Delete">✕</button>
         </div>`).join('');
@@ -1410,7 +1410,7 @@ function mkvShowBubble(pinId, cx, cy, below) {
     <textarea id="mkv_bubble_txt" rows="3" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 8px;font-size:12px;resize:none;box-sizing:border-box;outline:none;font-family:inherit" placeholder="Type your comment…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();mkvSaveBubble('${pinId}')}"></textarea>
     <div style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end">
       <button onclick="mkvCancelBubble('${pinId}')" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit">Cancel</button>
-      <button onclick="mkvSaveBubble('${pinId}')" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:4px 14px;font-size:12px;cursor:pointer;font-weight:600;font-family:inherit">Save</button>
+      <button onclick="mkvSaveBubble('${pinId}')" style="background:#fd5f54;color:#fff;border:none;border-radius:8px;padding:4px 14px;font-size:12px;cursor:pointer;font-weight:600;font-family:inherit">Save</button>
     </div>`;
   document.body.appendChild(div);
   setTimeout(() => div.querySelector('textarea')?.focus(), 30);
@@ -1755,8 +1755,8 @@ function view_tch_lessons(params) {
                   <h3 class="font-bold text-slate-900">${m.title}</h3>
                   ${m.description ? `<p class="text-sm text-slate-500 mt-1 line-clamp-2">${m.description}</p>` : ''}
                   ${m.content ? `<div class="mt-2 p-3 bg-slate-50 rounded-lg text-sm text-slate-700 max-h-24 overflow-y-auto whitespace-pre-wrap">${m.content}</div>` : ''}
-                  ${m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs hover:bg-blue-100">
-                    ${icon('paperclip','w-3.5 h-3.5 text-blue-600')}<span class="font-semibold text-blue-900">${m.file.name}</span>${icon('download','w-3 h-3 text-blue-600')}
+                  ${m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-50 border border-brand-200 rounded-lg text-xs hover:bg-brand-100">
+                    ${icon('paperclip','w-3.5 h-3.5 text-brand-600')}<span class="font-semibold text-brand-900">${m.file.name}</span>${icon('download','w-3 h-3 text-brand-600')}
                   </a>` : ''}
                 </div>
                 <div class="text-right flex-shrink-0">
@@ -1865,7 +1865,7 @@ function onNoteFilePick(ev) {
   reader.onload = e => {
     _noteFileBuffer = { name: file.name, type: file.type, size: Math.round(file.size/1024) + ' KB', data: e.target.result };
     const p = document.getElementById('cn_filePreview');
-    if (p) p.innerHTML = `<div class="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-blue-600')}<span class="flex-1 truncate font-semibold text-blue-900">${file.name}</span><span class="text-xs text-blue-700">${_noteFileBuffer.size}</span><button class="text-red-500 text-xs" onclick="_noteFileBuffer=null;document.getElementById('cn_filePreview').innerHTML=''">Remove</button></div>`;
+    if (p) p.innerHTML = `<div class="flex items-center gap-2 p-2 bg-brand-50 border border-brand-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-brand-600')}<span class="flex-1 truncate font-semibold text-brand-900">${file.name}</span><span class="text-xs text-brand-700">${_noteFileBuffer.size}</span><button class="text-red-500 text-xs" onclick="_noteFileBuffer=null;document.getElementById('cn_filePreview').innerHTML=''">Remove</button></div>`;
   };
   reader.readAsDataURL(file);
 }
@@ -1994,7 +1994,7 @@ function tch_pushToResultsModal(assignmentId) {
     title: 'Push Grades to Academic Results',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Sync ${gradedSubs.length} graded submission${gradedSubs.length > 1 ? 's' : ''} into academic records as CA scores (scaled to 20 marks). Existing scores for the chosen slot will be overwritten.
         </div>
         ${(() => {
@@ -2524,7 +2524,7 @@ function renderTeacherWeekView() {
               const entries = days.map(d => tt.find(x => x.day === d && x.period === p));
               const rows = [];
               if (p === break1After + 1) rows.push('<tr class="bg-amber-50"><td colspan="6" class="text-center text-xs text-amber-800 font-semibold py-1.5">' + break1Label + '</td></tr>');
-              else if (p === break2After + 1) rows.push('<tr class="bg-sky-50"><td colspan="6" class="text-center text-xs text-sky-800 font-semibold py-1.5">' + break2Label + '</td></tr>');
+              else if (p === break2After + 1) rows.push('<tr class="bg-brand-50"><td colspan="6" class="text-center text-xs text-brand-800 font-semibold py-1.5">' + break2Label + '</td></tr>');
               if (entries.every(e => !e)) return rows.join('');
               rows.push('<tr>'
                 + '<td><strong>P' + p + '</strong><br><span class="text-xs text-slate-500">' + (periodTimes[p] || '') + '</span></td>'
@@ -2946,7 +2946,7 @@ function view_tch_appraisal() {
             </div>` : ''}
 
             <!-- Outcome box -->
-            ${apr.outcome ? `<div class="rounded-xl p-3 ${apr.outcome.type === 'pip' ? 'bg-rose-50 border border-rose-200' : apr.outcome.type === 'increment' ? 'bg-emerald-50 border border-emerald-200' : 'bg-blue-50 border border-blue-200'}">
+            ${apr.outcome ? `<div class="rounded-xl p-3 ${apr.outcome.type === 'pip' ? 'bg-rose-50 border border-rose-200' : apr.outcome.type === 'increment' ? 'bg-emerald-50 border border-emerald-200' : 'bg-brand-50 border border-brand-200'}">
               <div class="font-semibold text-sm mb-1">${_tch_outcomeLabel(apr.outcome)} ${apr.outcome.incrementPct ? `(+${apr.outcome.incrementPct}%)` : ''}</div>
               <div class="text-xs text-slate-600">${apr.outcome.note}</div>
             </div>` : ''}
@@ -2997,7 +2997,7 @@ function tch_selfAssessmentModal(aprId) {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           <strong>${cycle?.title}</strong><br/>
           Rate yourself honestly on each area. Your manager will review these scores independently.
         </div>

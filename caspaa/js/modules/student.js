@@ -245,7 +245,7 @@ function view_stu_learning(params) {
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       ${filtered.map(sim => `<div class="card p-4 hover:shadow-md transition-shadow">
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl ${{Physics:'bg-blue-50',Chemistry:'bg-amber-50',Biology:'bg-green-50',Mathematics:'bg-purple-50'}[sim.subject]||'bg-slate-50'}">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl ${{Physics:'bg-brand-50',Chemistry:'bg-amber-50',Biology:'bg-green-50',Mathematics:'bg-brand-50'}[sim.subject]||'bg-slate-50'}">
             ${{Physics:'⚡',Chemistry:'🧪',Biology:'🌿',Mathematics:'📐'}[sim.subject]||'🔬'}
           </div>
           <div>
@@ -281,8 +281,8 @@ function stu_openNote(id) {
       </div>
       ${m.content ? `<div class="bg-slate-50 rounded-xl p-4 text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">${m.content}</div>` : ''}
       ${m.description && !m.content ? `<p class="text-sm text-slate-700">${m.description}</p>` : ''}
-      ${m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-xl text-sm hover:bg-blue-100 font-semibold text-blue-900">
-        ${icon('download','w-4 h-4 text-blue-600')} Download Attachment — ${m.file.name} (${m.file.size})
+      ${m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="inline-flex items-center gap-2 px-4 py-2 bg-brand-50 border border-brand-200 rounded-xl text-sm hover:bg-brand-100 font-semibold text-brand-900">
+        ${icon('download','w-4 h-4 text-brand-600')} Download Attachment — ${m.file.name} (${m.file.size})
       </a>` : ''}
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
@@ -458,7 +458,7 @@ function stu_resubmitModal(assignmentId) {
   modal({
     title: 'Resubmit Assignment',
     body: `
-      <div class="${isReturned && sub.resubmissionRequested ? 'bg-amber-50 border border-amber-200' : 'bg-blue-50 border border-blue-200'} rounded-xl p-3 mb-3 text-sm ${isReturned && sub.resubmissionRequested ? 'text-amber-800' : 'text-blue-800'}">
+      <div class="${isReturned && sub.resubmissionRequested ? 'bg-amber-50 border border-amber-200' : 'bg-brand-50 border border-brand-200'} rounded-xl p-3 mb-3 text-sm ${isReturned && sub.resubmissionRequested ? 'text-amber-800' : 'text-brand-800'}">
         ${icon('refresh','w-4 h-4 inline mr-1')} ${isReturned && sub.resubmissionRequested ? 'Your teacher has requested a revision. Review the feedback and re-upload your corrected work.' : 'Upload a new version of your work to send back to your teacher.'}
         ${sub && sub.feedback ? `<div class="mt-1 font-semibold">"${sub.feedback}"</div>` : ''}
       </div>
@@ -486,7 +486,7 @@ function stu_viewReturnedWork(assignmentId) {
   const sub = a.submissions.find(x => x.studentId === s.id);
   if (!sub) return;
   const statusLabel = sub.markStatus === 'excellent' ? '⭐ Excellent' : sub.markStatus === 'needs_revision' ? '🔄 Revision Requested' : '✓ Satisfactory';
-  const statusCls   = sub.markStatus === 'excellent' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : sub.markStatus === 'needs_revision' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-blue-50 border-blue-200 text-blue-800';
+  const statusCls   = sub.markStatus === 'excellent' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : sub.markStatus === 'needs_revision' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-brand-50 border-brand-200 text-brand-800';
   const comments = sub.marginalComments || [];
   modal({
     title: 'Returned Work — ' + a.title,
@@ -956,7 +956,7 @@ function view_stu_timetable() {
             ${periods.map(p => {
               const rows = [];
               if (p === break1After + 1) rows.push('<tr class="bg-amber-50"><td colspan="6" class="text-center text-xs text-amber-800 font-semibold py-1.5">' + break1Label + '</td></tr>');
-              else if (p === break2After + 1) rows.push('<tr class="bg-sky-50"><td colspan="6" class="text-center text-xs text-sky-800 font-semibold py-1.5">' + break2Label + '</td></tr>');
+              else if (p === break2After + 1) rows.push('<tr class="bg-brand-50"><td colspan="6" class="text-center text-xs text-brand-800 font-semibold py-1.5">' + break2Label + '</td></tr>');
               rows.push('<tr>'
                 + '<td><strong class="text-slate-900">P' + p + '</strong><br><span class="text-xs text-slate-500">' + (periodTimes[p] || '') + '</span></td>'
                 + days.map(d => {

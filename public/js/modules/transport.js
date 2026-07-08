@@ -75,7 +75,7 @@ function adm_renderRoutesTab(routes, schoolId) {
 
   const chartRows = routes.map((r, i) => {
     const count = DB.query('busAssignments', a => a.routeId === r.id && a.schoolId === schoolId).length;
-    return { name: r.name, count, color: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316'][i % 8] };
+    return { name: r.name, count, color: ['#fd7d71','#10b981','#f59e0b','#ef4444','#fd7d71','#ec4899','#fd5f54','#f97316'][i % 8] };
   }).filter(d => d.count > 0);
 
   const totalAssigned = chartRows.reduce((s, d) => s + d.count, 0);
@@ -335,7 +335,7 @@ function adm_editRouteModal(routeId) {
     title: existing ? 'Edit Bus Route' : 'Add Bus Route',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           This system uses <strong>house-to-house pickup</strong>. After creating a route, assign students to it and set each student's pickup order (1st house, 2nd house, etc.).
         </div>
         <div>
@@ -1030,7 +1030,7 @@ function par_addPickupModal(studentId) {
     title: `Add Authorized Pickup Person${student ? ' — ' + student.name : ''}`,
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           ${icon('bell','w-4 h-4 inline mr-1')}
           Your request will be reviewed by the school admin before the person is authorized.
         </div>
@@ -1147,7 +1147,7 @@ function adm_renderDismissalTab(schoolId, todayDismissals, activeStudents) {
     <div class="space-y-4">
       <!-- Config banner -->
       <div class="flex items-start gap-3 flex-wrap">
-        <div class="flex-1 ${isLatePickupTime ? 'bg-amber-50 border border-amber-200' : isDuringSchool ? 'bg-blue-50 border border-blue-200' : 'bg-emerald-50 border border-emerald-200'} rounded-xl p-3">
+        <div class="flex-1 ${isLatePickupTime ? 'bg-amber-50 border border-amber-200' : isDuringSchool ? 'bg-brand-50 border border-brand-200' : 'bg-emerald-50 border border-emerald-200'} rounded-xl p-3">
           <div class="flex items-center gap-2 mb-1">
             ${icon('bell','w-4 h-4 text-current')}
             <span class="font-semibold text-sm">${
@@ -1275,7 +1275,7 @@ function adm_dismissalConfigModal() {
     title: 'Dismissal Time Configuration',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           <strong>Time-bound model:</strong> During school hours, teachers handle student release from class. After the late pickup threshold, the system flags remaining students for parent/admin action and sends parent notifications.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -1337,7 +1337,7 @@ function printRouteSheet(routeId) {
 
   const stopRows = manifest.map((m, i) => `
     <tr style="${i % 2 === 0 ? '' : 'background:#f1f5f9'}">
-      <td style="padding:7px 10px;font-size:13px;font-weight:700;color:#1e3a8a;text-align:center">${m.pickupOrder === 999 ? '—' : m.pickupOrder}</td>
+      <td style="padding:7px 10px;font-size:13px;font-weight:700;color:#9e2a22;text-align:center">${m.pickupOrder === 999 ? '—' : m.pickupOrder}</td>
       <td style="padding:7px 10px;font-size:12px;font-weight:600">${m.name}</td>
       <td style="padding:7px 10px;font-size:12px;color:#475569">${m.className}</td>
       <td style="padding:7px 10px;font-size:12px;color:#0f172a">${m.parentPhone || '—'}</td>

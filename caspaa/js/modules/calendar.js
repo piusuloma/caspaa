@@ -7,8 +7,8 @@
 
 const CAL_TYPES = {
   holiday:   { label: 'Holiday',      color: 'bg-red-100 text-red-700 border-red-200',      dot: 'bg-red-500' },
-  meeting:   { label: 'Meeting',      color: 'bg-blue-100 text-blue-700 border-blue-200',    dot: 'bg-blue-500' },
-  event:     { label: 'Event',        color: 'bg-purple-100 text-purple-700 border-purple-200', dot: 'bg-purple-500' },
+  meeting:   { label: 'Meeting',      color: 'bg-brand-100 text-brand-700 border-brand-200',    dot: 'bg-brand-500' },
+  event:     { label: 'Event',        color: 'bg-brand-100 text-brand-700 border-brand-200', dot: 'bg-brand-500' },
   exam:      { label: 'Exam',         color: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
   milestone: { label: 'Milestone',    color: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   other:     { label: 'Other',        color: 'bg-slate-100 text-slate-700 border-slate-200', dot: 'bg-slate-400' }
@@ -136,13 +136,13 @@ function view_cal_main(params) {
   const activeTab = (APP.params && APP.params.calTab) || 'calendar';
 
   const tabBar = `<div class="flex gap-2 mb-4 border-b border-slate-200 pb-1">
-    <button onclick="APP.params.calTab='calendar'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'calendar' ? 'bg-white border border-b-white border-slate-200 text-sky-600' : 'text-slate-500 hover:text-slate-700'}">
+    <button onclick="APP.params.calTab='calendar'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'calendar' ? 'bg-white border border-b-white border-slate-200 text-brand-600' : 'text-slate-500 hover:text-slate-700'}">
       <i class="ph ph-calendar mr-1"></i>Calendar
     </button>
-    <button onclick="APP.params.calTab='academic_year'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'academic_year' ? 'bg-white border border-b-white border-slate-200 text-sky-600' : 'text-slate-500 hover:text-slate-700'}">
+    <button onclick="APP.params.calTab='academic_year'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'academic_year' ? 'bg-white border border-b-white border-slate-200 text-brand-600' : 'text-slate-500 hover:text-slate-700'}">
       <i class="ph ph-graduation-cap mr-1"></i>Academic Year
     </button>
-    <button onclick="APP.params.calTab='noticeboard'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'noticeboard' ? 'bg-white border border-b-white border-slate-200 text-sky-600' : 'text-slate-500 hover:text-slate-700'}">
+    <button onclick="APP.params.calTab='noticeboard'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'noticeboard' ? 'bg-white border border-b-white border-slate-200 text-brand-600' : 'text-slate-500 hover:text-slate-700'}">
       <i class="ph ph-note mr-1"></i>Notice Board
     </button>
   </div>`;
@@ -367,7 +367,7 @@ function cal_renderAcademicYear() {
   const holidayDates = holidays.filter(h => h.type === 'holiday').map(h => h.startDate);
 
   const termColors = [
-    { bg: 'bg-blue-50', border: 'border-blue-300', header: 'bg-blue-600', text: 'text-blue-900', label: 'text-blue-700' },
+    { bg: 'bg-brand-50', border: 'border-brand-300', header: 'bg-brand-600', text: 'text-brand-900', label: 'text-brand-700' },
     { bg: 'bg-emerald-50', border: 'border-emerald-300', header: 'bg-emerald-600', text: 'text-emerald-900', label: 'text-emerald-700' },
     { bg: 'bg-amber-50', border: 'border-amber-300', header: 'bg-amber-600', text: 'text-amber-900', label: 'text-amber-700' }
   ];
@@ -419,12 +419,12 @@ function cal_renderAcademicYear() {
             ${(term.midtermStart && term.midtermEnd) ? `<tr class="bg-red-50"><td class="px-4 py-2.5 text-sm font-semibold text-red-700">Mid-Term Break</td><td class="px-4 py-2.5 text-sm text-red-800">${fmtRange(term.midtermStart, term.midtermEnd)}</td><td class="px-4 py-2.5 text-xs text-right text-red-600 font-bold">${midtermDays} days</td></tr>` : ''}
             ${(term.secondHalfStart && term.termEndDate) ? `<tr class="bg-white"><td class="px-4 py-2.5 text-sm font-semibold text-slate-700">Second Half</td><td class="px-4 py-2.5 text-sm text-slate-800">${fmtRange(term.secondHalfStart, term.termEndDate)}</td><td class="px-4 py-2.5 text-xs text-right ${c.label} font-bold">${secondHalfDays} days</td></tr>` : ''}
             ${termHolidays.length ? `
-              <tr class="bg-purple-50">
-                <td class="px-4 py-2.5 text-sm font-semibold text-purple-700 align-top">School Events</td>
+              <tr class="bg-brand-50">
+                <td class="px-4 py-2.5 text-sm font-semibold text-brand-700 align-top">School Events</td>
                 <td class="px-4 py-2.5 text-sm text-slate-800" colspan="2">
                   <div class="space-y-1.5">
                     ${termHolidays.map(h => {
-                      const typeColor = h.type==='exam'?'bg-red-100 text-red-700':h.type==='holiday'?'bg-blue-100 text-blue-700':h.type==='meeting'?'bg-amber-100 text-amber-700':h.type==='milestone'?'bg-emerald-100 text-emerald-700':'bg-purple-100 text-purple-700';
+                      const typeColor = h.type==='exam'?'bg-red-100 text-red-700':h.type==='holiday'?'bg-brand-100 text-brand-700':h.type==='meeting'?'bg-amber-100 text-amber-700':h.type==='milestone'?'bg-emerald-100 text-emerald-700':'bg-brand-100 text-brand-700';
                       const dateStr = h.endDate && h.endDate !== h.startDate ? `${fdate(h.startDate,{long:true})} – ${fdate(h.endDate,{long:true})}` : fdate(h.startDate,{long:true});
                       return `<div class="flex items-center gap-2"><span class="text-xs px-2 py-0.5 rounded-full font-semibold ${typeColor}">${h.type}</span><span>${h.title}</span><span class="text-slate-400 text-xs">— ${dateStr}</span></div>`;
                     }).join('')}
@@ -489,7 +489,7 @@ function cal_renderNoticeBoard() {
          <p>No notices posted yet.</p>
        </div>`
     : notices.map(n => `
-      <div class="card p-4 border-l-4 border-sky-400">
+      <div class="card p-4 border-l-4 border-brand-400">
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
             <div class="flex items-center gap-2 mb-1">

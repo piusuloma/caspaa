@@ -332,7 +332,7 @@ function showNotifications() {
     body: notifs.length === 0
       ? emptyState({ title: 'All caught up', body: 'No notifications to show.', icon: 'bell' })
       : `<div class="space-y-2">${notifs.map(n => {
-          const toneClass = n.type === 'warn' ? 'bg-amber-100 text-amber-700' : n.type === 'danger' ? 'bg-rose-100 text-rose-700' : n.type === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700';
+          const toneClass = n.type === 'warn' ? 'bg-amber-100 text-amber-700' : n.type === 'danger' ? 'bg-rose-100 text-rose-700' : n.type === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-100 text-brand-700';
           const linkAttr = n.link && n.link.view ? `onclick="openNotification('${n.id}')" style="cursor:pointer"` : '';
           return `<div class="p-3 rounded-xl ${n.read ? 'bg-slate-50' : 'bg-brand-50 border border-brand-100'}" ${linkAttr}>
             <div class="flex items-start gap-3">
@@ -439,9 +439,9 @@ function showLoginSessions() {
             <div class="text-xs text-brand-700 font-semibold uppercase">Active sessions</div>
             <div class="text-2xl font-bold text-brand-900">${current.length}</div>
           </div>
-          <div class="p-3 bg-blue-50 rounded-xl">
-            <div class="text-xs text-blue-700 font-semibold uppercase">Devices</div>
-            <div class="text-2xl font-bold text-blue-900">${[...new Set(all.map(s => s.device))].length}</div>
+          <div class="p-3 bg-brand-50 rounded-xl">
+            <div class="text-xs text-brand-700 font-semibold uppercase">Devices</div>
+            <div class="text-2xl font-bold text-brand-900">${[...new Set(all.map(s => s.device))].length}</div>
           </div>
           <div class="p-3 bg-emerald-50 rounded-xl">
             <div class="text-xs text-emerald-700 font-semibold uppercase">2FA-verified</div>

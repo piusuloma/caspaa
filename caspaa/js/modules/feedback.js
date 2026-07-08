@@ -305,7 +305,7 @@ function adm_createSurveyModal() {
           </div>
         </div>
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">
           ${icon('info', 'w-4 h-4 inline mr-1')} Choose: <strong>Star</strong> (1–5 rating), <strong>Yes / No</strong> (binary), or <strong>Text</strong> (open response).
         </div>
       </div>

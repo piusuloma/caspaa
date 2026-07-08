@@ -77,7 +77,7 @@ function toast(msg, type = 'success') {
   const t = document.createElement('div');
   t.className = `toast ${type}`;
   const iconMap = { success: 'check', danger: 'x', warn: 'bell', info: 'bell' };
-  const colorMap = { success: 'text-green-600', danger: 'text-red-600', warn: 'text-amber-600', info: 'text-blue-600' };
+  const colorMap = { success: 'text-green-600', danger: 'text-red-600', warn: 'text-amber-600', info: 'text-brand-600' };
   t.innerHTML = `
     <div class="${colorMap[type] || 'text-green-600'}">${icon(iconMap[type] || 'check', 'w-5 h-5')}</div>
     <div class="flex-1 text-sm font-medium text-slate-800">${msg}</div>
@@ -206,9 +206,9 @@ function statCard({ label, value, trend, icon: iconName, color = 'brand', toolti
   const colorMap = {
     brand: 'bg-brand-50 text-brand-700',
     gold: 'bg-amber-50 text-amber-700',
-    blue: 'bg-blue-50 text-blue-700',
+    blue: 'bg-brand-50 text-brand-700',
     rose: 'bg-rose-50 text-rose-700',
-    purple: 'bg-purple-50 text-purple-700'
+    purple: 'bg-brand-50 text-brand-700'
   };
   const tooltipId = tooltip ? 'tip_' + Math.random().toString(36).slice(2, 8) : null;
   if (tooltipId) {
@@ -317,8 +317,8 @@ function setOffline(state) {
     const pending = DB.settings().pendingSync;
     if (pending > 0) {
       el.classList.remove('hidden');
-      el.querySelector('div').className = 'px-3 py-1.5 rounded-full text-xs font-medium shadow-lg flex items-center gap-2 bg-blue-100 text-blue-800';
-      el.querySelector('span.w-2').className = 'w-2 h-2 rounded-full bg-blue-500 animate-pulse';
+      el.querySelector('div').className = 'px-3 py-1.5 rounded-full text-xs font-medium shadow-lg flex items-center gap-2 bg-brand-100 text-brand-800';
+      el.querySelector('span.w-2').className = 'w-2 h-2 rounded-full bg-brand-500 animate-pulse';
       el.querySelector('.text-label').textContent = `Syncing ${pending} item${pending > 1 ? 's' : ''}…`;
       setTimeout(() => {
         DB.settings({ pendingSync: 0 });

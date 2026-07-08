@@ -492,7 +492,7 @@ function onboardSchoolModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Required: school name, proprietor details, CAC registration, accreditation. School starts on a 14-day free trial.
         </div>
 
@@ -920,7 +920,7 @@ function initiateDisbursement(loanId) {
     title: 'Verify & Disburse',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Confirm the recipient and amount. Funds move via NIBSS transfer to the school's verified account. This action is logged in the audit trail.
         </div>
         <div class="bg-slate-50 rounded-xl p-3 space-y-1.5 text-sm">
@@ -1345,7 +1345,7 @@ function renderSystemTab() {
       <div class="space-y-2">
         ${logs.map(l => {
           const tone = l.level === 'error' ? 'rose' : l.level === 'warning' ? 'amber' : 'blue';
-          const toneClasses = { rose: 'bg-rose-50 text-rose-900 border-rose-200', amber: 'bg-amber-50 text-amber-900 border-amber-200', blue: 'bg-blue-50 text-blue-900 border-blue-200' };
+          const toneClasses = { rose: 'bg-rose-50 text-rose-900 border-rose-200', amber: 'bg-amber-50 text-amber-900 border-amber-200', blue: 'bg-brand-50 text-brand-900 border-brand-200' };
           return `<div class="flex items-start gap-3 p-3 rounded-xl border ${toneClasses[tone]}">
             <span class="badge badge-${tone === 'rose' ? 'danger' : tone === 'amber' ? 'warn' : 'info'} uppercase text-xs">${l.level}</span>
             <div class="flex-1 min-w-0">
@@ -1752,7 +1752,7 @@ function addTeamMemberModal() {
             <option>BI / Analytics</option>
           </select>
         </div>
-        <div class="text-sm text-slate-600 bg-blue-50 border border-blue-200 rounded-xl p-3">
+        <div class="text-sm text-slate-600 bg-brand-50 border border-brand-200 rounded-xl p-3">
           Default permissions will be assigned based on role. You can fine-tune them after creation.
         </div>
       </div>

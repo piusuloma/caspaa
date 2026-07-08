@@ -267,7 +267,7 @@ function view_adm_permissions() {
         </table>
       </div>
     </div>
-    <div class="mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+    <div class="mt-3 bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">
       ${icon('info','w-4 h-4 inline mr-1')} To change a staff member's permissions, open their profile in <strong>Staff Directory</strong> and edit their role/permission toggles.
     </div>
   `;
@@ -490,7 +490,7 @@ function openAppraisalCycleModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Opening a cycle sends a notification to all selected staff asking them to complete their <strong>self-assessment</strong> by the deadline.
         </div>
         <div><label class="input-label">Cycle Title</label><input id="cyc_title" class="input" value="${DB.settings().currentTerm} — Staff Performance Review" /></div>
@@ -663,8 +663,8 @@ function aprPrincipalModal(aprId) {
           </div>`).join('')}
         </div>
         <!-- Manager comment -->
-        <div class="bg-blue-50 rounded-xl p-3">
-          <div class="text-xs font-semibold text-blue-700 mb-1">Manager's Comment</div>
+        <div class="bg-brand-50 rounded-xl p-3">
+          <div class="text-xs font-semibold text-brand-700 mb-1">Manager's Comment</div>
           <div class="text-sm text-slate-700">${apr.managerComment}</div>
         </div>
         <!-- Principal comment -->
@@ -717,7 +717,7 @@ function aprOutcomeModal(aprId) {
       <div class="space-y-4">
         <div class="grid grid-cols-4 gap-2 text-center text-xs mb-2">
           <div class="bg-emerald-50 rounded-lg p-2"><div class="font-bold text-emerald-700">80–100</div><div class="text-slate-500">Salary Increment</div></div>
-          <div class="bg-blue-50 rounded-lg p-2"><div class="font-bold text-blue-700">60–79</div><div class="text-slate-500">Commendation</div></div>
+          <div class="bg-brand-50 rounded-lg p-2"><div class="font-bold text-brand-700">60–79</div><div class="text-slate-500">Commendation</div></div>
           <div class="bg-amber-50 rounded-lg p-2"><div class="font-bold text-amber-700">45–59</div><div class="text-slate-500">Training</div></div>
           <div class="bg-rose-50 rounded-lg p-2"><div class="font-bold text-rose-700">0–44</div><div class="text-slate-500">PIP</div></div>
         </div>
@@ -787,7 +787,7 @@ function aprViewTimeline(aprId) {
   const cycle = DB.find('appraisalCycles', apr.cycleId);
   const timeline = [];
   if (cycle) timeline.push({ icon: '📋', label: 'Cycle opened', note: cycle.title, date: cycle.createdAt, color: 'bg-slate-100' });
-  if (apr.selfSubmittedAt) timeline.push({ icon: '✍️', label: 'Self-assessment submitted', note: `Score: ${_aprOverall(apr.selfScores)}%`, date: apr.selfSubmittedAt, color: 'bg-blue-50' });
+  if (apr.selfSubmittedAt) timeline.push({ icon: '✍️', label: 'Self-assessment submitted', note: `Score: ${_aprOverall(apr.selfScores)}%`, date: apr.selfSubmittedAt, color: 'bg-brand-50' });
   if (apr.managerSubmittedAt) timeline.push({ icon: '👨‍💼', label: 'Manager review submitted', note: `Score: ${_aprOverall(apr.managerScores)}%`, date: apr.managerSubmittedAt, color: 'bg-brand-50' });
   if (apr.principalAt) timeline.push({ icon: '✅', label: 'Principal approved', note: apr.principalComment, date: apr.principalAt, color: 'bg-emerald-50' });
   if (apr.outcome) {
@@ -1473,15 +1473,15 @@ function adm_bulkUploadClassModal(classId) {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           <div class="font-semibold mb-1">CSV format — one row per week per subject:</div>
-          <div class="font-mono text-xs bg-white rounded p-2 border border-blue-100 text-slate-700">
+          <div class="font-mono text-xs bg-white rounded p-2 border border-brand-100 text-slate-700">
             Subject,Week,Topic,Objectives,Activities,Resources<br>
             Mathematics,1,Number Bases,Understand base 10 and 2,Group work,Textbook<br>
             Mathematics,2,Fractions,Convert between types,Practice drill,Textbook<br>
             English Language,1,Reading Comprehension,Skim and scan,Group reading,Textbook
           </div>
-          <a href="#" class="inline-flex items-center gap-1 mt-2 text-blue-700 underline font-semibold text-xs" onclick="adm_downloadClassSchemeTemplate('${classId}'); return false;">${icon('download','w-3 h-3')} Download blank template for ${cls.name}</a>
+          <a href="#" class="inline-flex items-center gap-1 mt-2 text-brand-700 underline font-semibold text-xs" onclick="adm_downloadClassSchemeTemplate('${classId}'); return false;">${icon('download','w-3 h-3')} Download blank template for ${cls.name}</a>
         </div>
         <div>
           <label class="input-label">Term</label>
@@ -1838,8 +1838,8 @@ function newSchemeModal(prefilledClassId) {
         </div>
 
         <!-- Template info (shown by default) -->
-        <div id="nsch_template_info" class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900 space-y-1">
-          <div class="font-semibold">${icon('check','w-4 h-4 inline mr-1 text-blue-600')} What happens when you click Create:</div>
+        <div id="nsch_template_info" class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900 space-y-1">
+          <div class="font-semibold">${icon('check','w-4 h-4 inline mr-1 text-brand-600')} What happens when you click Create:</div>
           <ul class="list-disc pl-5 text-xs space-y-0.5">
             <li>12 weeks of topics are generated automatically based on the subject</li>
             <li>UBEC structure is used for Nursery/Primary; NERDC for JSS/SS</li>
@@ -2007,7 +2007,7 @@ function importExcelCurriculumModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Upload one Excel file per class. Each sheet should represent one subject, with columns: <strong>Week, Topic, Objectives, Activities, Resources</strong>.
         </div>
         <div>
@@ -2110,9 +2110,9 @@ function importFullSchoolCurriculumModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Upload one CSV file covering <strong>all classes and subjects</strong> for the school. Each row = one week of a subject.
-          <div class="mt-2 font-mono text-xs bg-white rounded p-2 border border-blue-100 text-slate-700">
+          <div class="mt-2 font-mono text-xs bg-white rounded p-2 border border-brand-100 text-slate-700">
             Class,Subject,Week,Topic,Objectives,Activities,Resources<br>
             JSS 1,Mathematics,1,Number Bases,Understand base 10 and 2,Group work,Textbook<br>
             JSS 1,Mathematics,2,Algebraic Expressions,…,…,…
@@ -2200,7 +2200,7 @@ function importNERDCTemplateModal() {
     title: 'Import NERDC / UBEC Template',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           CASPAA ships with pre-built scheme templates aligned to the <strong>NERDC</strong> (junior secondary) and <strong>UBEC</strong> (primary) national curricula. Pick a class and subject to import the standard 12-week plan.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -2478,7 +2478,7 @@ function createConsentModal() {
         </div>
         <div><label class="input-label">Details / Terms</label><textarea id="cf_desc" rows="4" class="input" placeholder="Explain what parents are approving…"></textarea></div>
         <div><label class="input-label">Response deadline</label><input id="cf_due" type="date" class="input" value="${daysAhead(7)}" /></div>
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">${icon('info','w-4 h-4 inline mr-1')} Parents will be notified instantly and can approve with a one-tap e-signature. Every response is timestamped for your records.</div>
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">${icon('info','w-4 h-4 inline mr-1')} Parents will be notified instantly and can approve with a one-tap e-signature. Every response is timestamped for your records.</div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -2578,7 +2578,7 @@ function view_adm_dashboard() {
           labels: ['Boys', 'Girls'],
           datasets: [{
             data: [maleCount, femaleCount],
-            backgroundColor: ['#2563eb', '#db2777'],
+            backgroundColor: ['#fd5f54', '#db2777'],
             borderColor: ['#ffffff', '#ffffff'],
             borderWidth: 3,
             hoverOffset: 6
@@ -2700,10 +2700,10 @@ function view_adm_dashboard() {
           <h3 class="font-bold text-slate-900 mb-1">Enrolment by Gender</h3>
           <p class="text-xs text-slate-500 mb-3">Helps plan uniforms, facilities and supplies.</p>
           <div class="grid grid-cols-2 gap-3 mb-3">
-            <div class="rounded-xl bg-blue-50 p-4 text-center">
-              <div class="text-3xl font-extrabold text-blue-900">${maleCount}</div>
-              <div class="text-xs uppercase tracking-wide text-blue-700 font-semibold mt-1">Boys</div>
-              <div class="text-xs text-blue-600">${students.length ? Math.round(maleCount / students.length * 100) : 0}%</div>
+            <div class="rounded-xl bg-brand-50 p-4 text-center">
+              <div class="text-3xl font-extrabold text-brand-900">${maleCount}</div>
+              <div class="text-xs uppercase tracking-wide text-brand-700 font-semibold mt-1">Boys</div>
+              <div class="text-xs text-brand-600">${students.length ? Math.round(maleCount / students.length * 100) : 0}%</div>
             </div>
             <div class="rounded-xl bg-pink-50 p-4 text-center">
               <div class="text-3xl font-extrabold text-pink-900">${femaleCount}</div>
@@ -2712,7 +2712,7 @@ function view_adm_dashboard() {
             </div>
           </div>
           <div class="h-3 rounded-full overflow-hidden bg-pink-200">
-            <div class="h-full rounded-full bg-blue-500 transition-all" style="width: ${students.length ? Math.round(maleCount / students.length * 100) : 50}%"></div>
+            <div class="h-full rounded-full bg-brand-500 transition-all" style="width: ${students.length ? Math.round(maleCount / students.length * 100) : 50}%"></div>
           </div>
           <div class="flex justify-between text-xs text-slate-500 mt-1"><span>Boys</span><span>Girls</span></div>
         </div>
@@ -2873,10 +2873,10 @@ function revenueAnalyticsParamsModal() {
             </div>
           </div>
           <input id="ra_teacher_r" type="range" min="0" max="80" value="${cfg.targetTeacherRatio || 40}"
-            class="w-full accent-blue-600 cursor-pointer"
+            class="w-full accent-brand-600 cursor-pointer"
             oninput="document.getElementById('ra_teacher').value=this.value" />
           <div class="flex justify-between text-[10px] text-slate-400 mt-1">
-            <span>0%</span><span class="text-blue-600 font-medium">Typical: 35–50%</span><span>80%</span>
+            <span>0%</span><span class="text-brand-600 font-medium">Typical: 35–50%</span><span>80%</span>
           </div>
         </div>
 
@@ -3002,12 +3002,12 @@ function view_adm_students() {
         <div class="flex items-center justify-between mb-2">
           <h3 class="font-semibold text-slate-900 text-sm">Gender Split</h3>
           <div class="flex items-center gap-4 text-sm">
-            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span><strong class="text-blue-900">${boys}</strong> <span class="text-slate-500">boys (${boysPct}%)</span></span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-brand-500 inline-block"></span><strong class="text-brand-900">${boys}</strong> <span class="text-slate-500">boys (${boysPct}%)</span></span>
             <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-pink-500 inline-block"></span><strong class="text-pink-900">${girls}</strong> <span class="text-slate-500">girls (${girlsPct}%)</span></span>
           </div>
         </div>
         <div class="h-3 rounded-full overflow-hidden bg-pink-200 flex">
-          <div class="h-full bg-blue-500 transition-all" style="width:${boysPct}%"></div>
+          <div class="h-full bg-brand-500 transition-all" style="width:${boysPct}%"></div>
         </div>
       </div>`;
     })()}
@@ -3037,10 +3037,10 @@ function view_adm_students() {
     </div>
     ${genderF!=='all'||payF!=='all'||attF!=='all'||statusF!=='all'||scholarF!=='all' || filter!=='all' ? `<div class="flex items-center gap-2 flex-wrap mb-3 text-xs">
       <span class="text-slate-500">Active filters:</span>
-      ${filter!=='all' ? `<button class="badge badge-info hover:bg-blue-200 cursor-pointer" onclick="APP.params.classFilter='all'; APP.render()">${classes.find(c=>c.id===filter)?.name} ✕</button>` : ''}
-      ${genderF!=='all' ? `<button class="badge badge-info hover:bg-blue-200 cursor-pointer" onclick="APP.params.gender='all'; APP.render()">${genderF==='M'?'Boys':'Girls'} ✕</button>` : ''}
-      ${payF!=='all' ? `<button class="badge badge-info hover:bg-blue-200 cursor-pointer" onclick="APP.params.payment='all'; APP.render()">${payF} ✕</button>` : ''}
-      ${attF!=='all' ? `<button class="badge badge-info hover:bg-blue-200 cursor-pointer" onclick="APP.params.attendance='all'; APP.render()">Attendance: ${attF} ✕</button>` : ''}
+      ${filter!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.classFilter='all'; APP.render()">${classes.find(c=>c.id===filter)?.name} ✕</button>` : ''}
+      ${genderF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.gender='all'; APP.render()">${genderF==='M'?'Boys':'Girls'} ✕</button>` : ''}
+      ${payF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.payment='all'; APP.render()">${payF} ✕</button>` : ''}
+      ${attF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.attendance='all'; APP.render()">Attendance: ${attF} ✕</button>` : ''}
       <button class="text-rose-600 font-semibold underline ml-1" onclick="APP.params.classFilter=APP.params.gender=APP.params.payment=APP.params.attendance=APP.params.studentStatus=APP.params.scholarship=APP.params.search='all'; APP.render()">Clear all</button>
     </div>` : ''}
 
@@ -3085,7 +3085,7 @@ function view_adm_students() {
                     </td>
                     <td class="text-right whitespace-nowrap" onclick="event.stopPropagation()">
                       <button class="btn btn-ghost !p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg" title="Promote to next class" onclick="event.stopPropagation(); promoteStudentModal('${s.id}')">${icon('trending_up','w-4 h-4')}</button>
-                      <button class="btn btn-ghost !p-1.5 text-blue-700 hover:bg-blue-50 rounded-lg" title="Transfer to another school" onclick="event.stopPropagation(); transferStudentModal('${s.id}')">${icon('arrow_left','w-4 h-4')}</button>
+                      <button class="btn btn-ghost !p-1.5 text-brand-700 hover:bg-brand-50 rounded-lg" title="Transfer to another school" onclick="event.stopPropagation(); transferStudentModal('${s.id}')">${icon('arrow_left','w-4 h-4')}</button>
                       <button class="btn btn-ghost !p-1.5 text-amber-700 hover:bg-amber-50 rounded-lg" title="Suspend student" onclick="event.stopPropagation(); suspendStudentModal('${s.id}')">${icon('bell','w-4 h-4')}</button>
                       <button class="btn btn-ghost !p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" title="Withdraw student" onclick="event.stopPropagation(); withdrawStudentModal('${s.id}')">${icon('logout','w-4 h-4')}</button>
                       <button class="btn btn-ghost !p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg" title="Edit student details" onclick="event.stopPropagation(); editStudent('${s.id}')">${icon('edit','w-4 h-4')}</button>
@@ -3182,7 +3182,7 @@ function viewStudent(id, activeTab) {
         <div class="text-xs text-slate-400 mb-1">Att.</div>
         <div class="text-2xl font-extrabold ${attRate >= 85 ? 'text-brand-700' : 'text-rose-600'}">${attRate}%</div>
         <div class="text-xs text-slate-400 mt-2">Avg</div>
-        <div class="text-2xl font-extrabold text-blue-700">${avg}%</div>
+        <div class="text-2xl font-extrabold text-brand-700">${avg}%</div>
       </div>
     </div>`;
 
@@ -3228,8 +3228,8 @@ function viewStudent(id, activeTab) {
         <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Admission Date</div><div>${fdate(s.admissionDate, { long: true })}</div></div>
         <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Admission Type</div><div>${s.admissionType === 'transfer' ? 'Transfer-in' : 'New Admission'}</div></div>
         ${s.admissionType === 'transfer' && s.transferFromSchool ? `
-        <div class="col-span-2 bg-blue-50 border border-blue-200 rounded-xl p-3">
-          <div class="text-xs text-blue-700 font-semibold uppercase mb-1">Transfer Origin</div>
+        <div class="col-span-2 bg-brand-50 border border-brand-200 rounded-xl p-3">
+          <div class="text-xs text-brand-700 font-semibold uppercase mb-1">Transfer Origin</div>
           <div class="font-semibold text-slate-900">${s.transferFromSchool}</div>
           ${s.transferFromClass ? `<div class="text-xs text-slate-500">Last class: ${s.transferFromClass}</div>` : ''}
           ${s.transferInDate ? `<div class="text-xs text-slate-500">Transfer date: ${fdate(s.transferInDate, { long: true })}</div>` : ''}
@@ -3459,9 +3459,9 @@ function viewStudent(id, activeTab) {
       issued_refund: 'Refund issued'
     };
     const ACTION_COLOR = {
-      student_login: 'bg-blue-100 text-blue-700', added_student: 'bg-emerald-100 text-emerald-700',
-      updated_student: 'bg-sky-100 text-sky-700', promoted_student: 'bg-violet-100 text-violet-700',
-      bulk_promoted: 'bg-violet-100 text-violet-700', bulk_graduated: 'bg-amber-100 text-amber-700',
+      student_login: 'bg-brand-100 text-brand-700', added_student: 'bg-emerald-100 text-emerald-700',
+      updated_student: 'bg-brand-100 text-brand-700', promoted_student: 'bg-brand-100 text-brand-700',
+      bulk_promoted: 'bg-brand-100 text-brand-700', bulk_graduated: 'bg-amber-100 text-amber-700',
       graduated_student: 'bg-amber-100 text-amber-700', transferred_student: 'bg-orange-100 text-orange-700',
       withdrew_student: 'bg-red-100 text-red-700', suspended_student: 'bg-red-100 text-red-700',
       changed_status: 'bg-slate-100 text-slate-600', deferred_promotion: 'bg-orange-100 text-orange-700',
@@ -3540,7 +3540,7 @@ function printStudentID(studentId) {
     .school-sub { font-size: 9px; opacity: 0.8; margin-top: 2px; text-transform: uppercase; }
     .id-label { font-size: 10px; font-weight: bold; background: rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 8px; margin-top: 8px; display: inline-block; letter-spacing: 1px; }
     .body { padding: 16px; }
-    .avatar { width: 64px; height: 64px; border-radius: 50%; background: #dbeafe; color: #1d4ed8; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 12px; border: 3px solid #2563eb; }
+    .avatar { width: 64px; height: 64px; border-radius: 50%; background: #ffdedb; color: #e8483d; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 12px; border: 3px solid #fd5f54; }
     .name { font-size: 16px; font-weight: bold; color: #0f172a; text-align: center; }
     .class { font-size: 11px; color: #64748b; text-align: center; margin-top: 2px; }
     .adm { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px; font-family: 'Figtree', system-ui, sans-serif; }
@@ -3732,7 +3732,7 @@ function newActivityModal() {
         <div><label class="input-label">Student Fee (₦)</label><input id="act_price" type="number" class="input" placeholder="0" min="0" /></div>
         <div><label class="input-label">Instructor Cost per Student (₦)</label><input id="act_cost" type="number" class="input" placeholder="0" min="0" /></div>
       </div>
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
+      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-800">
         ${icon('info','w-3.5 h-3.5 inline mr-1')} Net income per student = Fee − Instructor Cost. This drives the revenue report above.
       </div>
     </div>`,
@@ -3918,14 +3918,14 @@ function addStudentModal(editingId) {
             <option value="transfer">Transfer from another school</option>
           </select>
         </div>
-        <div id="sf_transferFields" class="sm:col-span-2 hidden space-y-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+        <div id="sf_transferFields" class="sm:col-span-2 hidden space-y-2 p-3 bg-brand-50 border border-brand-200 rounded-xl">
           <div><label class="input-label">Previous School Name *</label><input id="sf_transferFrom" class="input" placeholder="e.g. Holy Trinity Primary School, Ikeja" /></div>
           <div class="grid grid-cols-2 gap-2">
             <div><label class="input-label">Last Class at Previous School</label><input id="sf_transferFromClass" class="input" placeholder="e.g. Primary 3" /></div>
             <div><label class="input-label">Transfer Date</label><input id="sf_transferInDate" type="date" class="input" value="${today()}" /></div>
           </div>
           <div><label class="input-label">Reason for Transfer</label><input id="sf_transferInReason" class="input" placeholder="e.g. Family relocated to this area" /></div>
-          <div class="text-xs text-blue-700">${icon('info','w-3.5 h-3.5 inline mr-1')} A transfer record is created automatically. Upload the student's previous school result/leaving certificate in Documents below.</div>
+          <div class="text-xs text-brand-700">${icon('info','w-3.5 h-3.5 inline mr-1')} A transfer record is created automatically. Upload the student's previous school result/leaving certificate in Documents below.</div>
         </div>` : ''}
         ${isEdit ? `<div class="sm:col-span-2">
           <label class="input-label">Status</label>
@@ -4260,7 +4260,7 @@ function showParentCredentialsModal(parent, student, invoice) {
           </div>
         </div>
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">
           <strong>Demo helper:</strong> Click below to instantly switch to ${parent.name.split(' ').slice(-1)}'s account and see the first-login experience.
         </div>
       </div>
@@ -4319,12 +4319,12 @@ function studentLifecycleModal(studentId) {
             </div>
           </button>
 
-          <button class="w-full p-3 bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-xl text-left transition" onclick="transferStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-brand-50 hover:bg-brand-100 border-2 border-brand-200 rounded-xl text-left transition" onclick="transferStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-blue-200 text-blue-700 flex items-center justify-center">${icon('arrow_left','w-5 h-5')}</div>
+              <div class="w-10 h-10 rounded-xl bg-brand-200 text-brand-700 flex items-center justify-center">${icon('arrow_left','w-5 h-5')}</div>
               <div class="flex-1">
-                <div class="font-bold text-blue-900">Transfer to another school</div>
-                <div class="text-xs text-blue-700">Issue a transfer certificate and archive locally</div>
+                <div class="font-bold text-brand-900">Transfer to another school</div>
+                <div class="text-xs text-brand-700">Issue a transfer certificate and archive locally</div>
               </div>
             </div>
           </button>
@@ -4362,12 +4362,12 @@ function studentLifecycleModal(studentId) {
             </div>
           </button>
 
-          <button class="w-full p-3 bg-purple-50 hover:bg-purple-100 border-2 border-purple-200 rounded-xl text-left transition" onclick="graduateStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-brand-50 hover:bg-brand-100 border-2 border-brand-200 rounded-xl text-left transition" onclick="graduateStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-purple-200 text-purple-700 flex items-center justify-center">${icon('check','w-5 h-5')}</div>
+              <div class="w-10 h-10 rounded-xl bg-brand-200 text-brand-700 flex items-center justify-center">${icon('check','w-5 h-5')}</div>
               <div class="flex-1">
-                <div class="font-bold text-purple-900">Graduate to Alumni</div>
-                <div class="text-xs text-purple-700">Mark as graduated, keep records accessible</div>
+                <div class="font-bold text-brand-900">Graduate to Alumni</div>
+                <div class="text-xs text-brand-700">Mark as graduated, keep records accessible</div>
               </div>
             </div>
           </button>
@@ -4385,7 +4385,7 @@ function bulkPromoteModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           <strong>End-of-term promotion.</strong> Move every active student in a class to the next class in one click. The final class graduates students to alumni.
         </div>
         <div>
@@ -4497,7 +4497,7 @@ function promoteStudentModal(studentId) {
           <label class="input-label">Reason / Note (optional)</label>
           <input id="promote_reason" class="input" placeholder="e.g. End of 2024/25 session · satisfactory performance" />
         </div>
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Academic history is preserved. Fee structure for the new class applies from the next invoice cycle. Parent will be notified.
         </div>
       </div>
@@ -4653,7 +4653,7 @@ function offerRefundModal(studentId, suggested, totalPaid, usedPct) {
     title: 'Refund Eligible',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           ${s.name} has been withdrawn but their parent paid <strong>${money(totalPaid)}</strong> this term. Approximately <strong>${usedPct}%</strong> of the term has elapsed, so a pro-rata refund may be due.
         </div>
         <div class="bg-slate-50 rounded-xl p-3 space-y-2">
@@ -4721,7 +4721,7 @@ function graduateStudentModal(studentId) {
     title: 'Graduate ' + s.name + ' to Alumni',
     body: `
       <div class="space-y-3">
-        <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 text-sm text-purple-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           ${s.name} will be marked as Alumni. Their complete academic record is preserved and accessible from the Alumni page.
         </div>
         <div><label class="input-label">Graduation Year</label><input id="gr_year" type="number" class="input" value="${new Date().getFullYear()}" /></div>
@@ -4944,9 +4944,9 @@ function view_adm_alumni() {
       icon: 'students'
     }) : `
       <div class="flex gap-3 mb-4 flex-wrap">
-        <div class="bg-purple-50 border border-purple-200 rounded-xl px-4 py-2 text-sm text-purple-900 font-semibold">${icon('students','w-4 h-4 inline-block mr-1')} ${totalAlumni} Total Alumni</div>
+        <div class="bg-brand-50 border border-brand-200 rounded-xl px-4 py-2 text-sm text-brand-900 font-semibold">${icon('students','w-4 h-4 inline-block mr-1')} ${totalAlumni} Total Alumni</div>
         <div class="bg-green-50 border border-green-200 rounded-xl px-4 py-2 text-sm text-green-900 font-semibold">${icon('check','w-4 h-4 inline-block mr-1')} ${thisYearGrads} Graduated ${thisYear}</div>
-        <div class="bg-sky-50 border border-sky-200 rounded-xl px-4 py-2 text-sm text-sky-900 font-semibold">${icon('edit','w-4 h-4 inline-block mr-1')} ${withPostInfo} With Post-Grad Info</div>
+        <div class="bg-brand-50 border border-brand-200 rounded-xl px-4 py-2 text-sm text-brand-900 font-semibold">${icon('edit','w-4 h-4 inline-block mr-1')} ${withPostInfo} With Post-Grad Info</div>
       </div>
       <input id="alumni_search" class="input mb-3" placeholder="Search by name or admission number..."
         oninput="APP.params.alumniSearch = this.value; APP.render()"
@@ -4962,8 +4962,8 @@ function view_adm_alumni() {
           const hasPostInfo = a.currentInstitution || a.alumniEmail || a.alumniPhone;
           const postInfoHtml = hasPostInfo
             ? '<div class="mt-2 space-y-1 text-xs text-slate-700">'
-              + (a.currentInstitution ? `<div>${icon('students','w-3 h-3 inline-block mr-1 text-purple-500')} ${a.currentInstitution}${a.currentCourse ? ' — ' + a.currentCourse : ''}</div>` : '')
-              + (a.alumniEmail ? `<div>${icon('edit','w-3 h-3 inline-block mr-1 text-sky-500')} ${a.alumniEmail}</div>` : '')
+              + (a.currentInstitution ? `<div>${icon('students','w-3 h-3 inline-block mr-1 text-brand-500')} ${a.currentInstitution}${a.currentCourse ? ' — ' + a.currentCourse : ''}</div>` : '')
+              + (a.alumniEmail ? `<div>${icon('edit','w-3 h-3 inline-block mr-1 text-brand-500')} ${a.alumniEmail}</div>` : '')
               + (a.alumniPhone ? `<div>${icon('phone','w-3 h-3 inline-block mr-1 text-green-500')} ${a.alumniPhone}</div>` : '')
               + '</div>'
             : '<div class="mt-2 text-xs text-slate-400 italic">No post-graduation info</div>';
@@ -4978,7 +4978,7 @@ function view_adm_alumni() {
             + '<div><span class="text-slate-500">Final class:</span> <strong>' + resolvedClass + '</strong></div>'
             + '<div><span class="text-slate-500">Admission:</span> <code class="text-xs">' + a.admissionNo + '</code></div>'
             + (a.examType ? '<div><span class="text-slate-500">Exam:</span> <strong>' + a.examType + '</strong>' + (a.examIndex ? ' · <code class="text-xs">' + a.examIndex + '</code>' : '') + (examRecs.length ? ` <span class="badge badge-info ml-1">${examRecs.length} result${examRecs.length > 1 ? 's' : ''}</span>` : '') + '</div>' : '')
-            + (a.awards ? '<div class="bg-purple-50 rounded-lg p-2 text-xs text-purple-900 mt-2"><strong>Awards:</strong> ' + a.awards + '</div>' : '')
+            + (a.awards ? '<div class="bg-brand-50 rounded-lg p-2 text-xs text-brand-900 mt-2"><strong>Awards:</strong> ' + a.awards + '</div>' : '')
             + postInfoHtml
             + '</div>'
             + '<div class="flex flex-wrap gap-2 mt-3">'
@@ -5131,7 +5131,7 @@ function viewAlumniRecord(alumniId, activeTab) {
           + '</div>'
           + '<div class="card overflow-hidden"><table class="tbl text-sm"><thead><tr><th>Subject</th><th class="text-center">Grade</th><th class="text-center">Remark</th></tr></thead><tbody>'
           + (rec.results || []).map(r => {
-              const gradeColor = ['A1','B2','B3'].includes(r.grade) ? 'text-emerald-700' : ['C4','C5','C6'].includes(r.grade) ? 'text-blue-700' : 'text-red-700';
+              const gradeColor = ['A1','B2','B3'].includes(r.grade) ? 'text-emerald-700' : ['C4','C5','C6'].includes(r.grade) ? 'text-brand-700' : 'text-red-700';
               const remark = ['A1'].includes(r.grade) ? 'Excellent' : ['B2','B3'].includes(r.grade) ? 'Very Good' : ['C4','C5','C6'].includes(r.grade) ? 'Credit' : ['D7'].includes(r.grade) ? 'Pass' : 'Fail';
               return '<tr><td class="font-medium">' + r.subject + '</td>'
                 + '<td class="text-center font-bold ' + gradeColor + '">' + r.grade + '</td>'
@@ -5164,7 +5164,7 @@ function viewAlumniRecord(alumniId, activeTab) {
           <div class="font-bold text-xl text-slate-900">${a.name}</div>
           <div class="text-sm text-slate-500">Class of ${a.graduationYear || '—'} · ${resolvedFinalClass}</div>
           <div class="text-xs text-slate-400 mt-0.5">Adm No: ${a.admissionNo}${a.examType ? ' · ' + a.examType + (a.examIndex ? ' ' + a.examIndex : '') : ''}</div>
-          ${a.awards ? '<div class="mt-1 inline-block bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded-full font-medium">' + a.awards + '</div>' : ''}
+          ${a.awards ? '<div class="mt-1 inline-block bg-brand-100 text-brand-800 text-xs px-2 py-0.5 rounded-full font-medium">' + a.awards + '</div>' : ''}
         </div>
         <button class="btn btn-secondary text-xs flex-shrink-0" onclick="adm_printTranscript('${a.id}')">🖨️ Print Transcript</button>
       </div>
@@ -5269,7 +5269,7 @@ function adm_printTranscript(alumniId) {
     const exL  = _esTypes.length > 2 ? _esTypes[_esTypes.length - 1].label : 'Exam';
     const rows = termResults.map(r => {
       const sub = subjects.find(s => s.id === r.subjectId);
-      const gc  = r.grade === 'A' ? '#059669' : r.grade === 'F' ? '#dc2626' : '#1d4ed8';
+      const gc  = r.grade === 'A' ? '#059669' : r.grade === 'F' ? '#dc2626' : '#e8483d';
       return '<tr>'
         + '<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6">' + (sub ? sub.name : '—') + '</td>'
         + '<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:center">' + (r.ca1 ?? '—') + '</td>'
@@ -5280,7 +5280,7 @@ function adm_printTranscript(alumniId) {
         + '</tr>';
     }).join('');
     return '<div style="margin-bottom:20px">'
-      + '<div style="background:#f3f4f6;padding:6px 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #4f46e5;margin-bottom:4px">'
+      + '<div style="background:#f3f4f6;padding:6px 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #e8483d;margin-bottom:4px">'
       + term + ' &nbsp;—&nbsp; Class Average: ' + avg + '%</div>'
       + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
       + '<thead><tr style="background:#f9fafb">'
@@ -5294,7 +5294,7 @@ function adm_printTranscript(alumniId) {
   }).join('');
 
   const html = '<!DOCTYPE html><html><head><title>Transcript — ' + a.name + '</title>'
-    + '<style>body{font-family:Georgia,serif;margin:40px;color:#1a1a1a}h1{text-align:center;font-size:22px;margin-bottom:4px}.sub{text-align:center;color:#555;font-size:13px;margin-bottom:4px}.doc-title{text-align:center;font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:20px;color:#3730a3}.info{border:1px solid #ddd;border-radius:6px;padding:14px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px}.lbl{color:#777;font-size:11px;text-transform:uppercase;letter-spacing:.05em}.footer{margin-top:40px;border-top:1px solid #ddd;padding-top:14px;font-size:11px;color:#999;text-align:center}@media print{body{margin:20px}}</style>'
+    + '<style>body{font-family:Georgia,serif;margin:40px;color:#1a1a1a}h1{text-align:center;font-size:22px;margin-bottom:4px}.sub{text-align:center;color:#555;font-size:13px;margin-bottom:4px}.doc-title{text-align:center;font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:20px;color:#c2352b}.info{border:1px solid #ddd;border-radius:6px;padding:14px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px}.lbl{color:#777;font-size:11px;text-transform:uppercase;letter-spacing:.05em}.footer{margin-top:40px;border-top:1px solid #ddd;padding-top:14px;font-size:11px;color:#999;text-align:center}@media print{body{margin:20px}}</style>'
     + '</head><body>'
     + '<h1>' + (school ? school.name : 'School') + '</h1>'
     + (school && school.address ? '<div class="sub">' + school.address + '</div>' : '')
@@ -5369,7 +5369,7 @@ function view_adm_enrollment_analytics() {
         data: {
           labels: classLabels,
           datasets: [{ label: 'Students', data: classData,
-            backgroundColor: '#3b82f6', borderRadius: 6 }]
+            backgroundColor: '#fd7d71', borderRadius: 6 }]
         },
         options: { responsive: true, plugins: { legend: { display: false } },
           scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
@@ -5382,7 +5382,7 @@ function view_adm_enrollment_analytics() {
         data: {
           labels: ['Male', 'Female', 'Other'],
           datasets: [{ data: [maleCount, femaleCount, otherCount],
-            backgroundColor: ['#3b82f6', '#f472b6', '#94a3b8'] }]
+            backgroundColor: ['#fd7d71', '#f472b6', '#94a3b8'] }]
         },
         options: { responsive: true, cutout: '65%',
           plugins: { legend: { position: 'bottom' } } }
@@ -5482,7 +5482,7 @@ function adm_updateAlumniModal(alumniId) {
     title: 'Update Alumni Information — ' + a.name,
     size: 'md',
     body: `<div class="space-y-3">
-      <div class="bg-sky-50 border border-sky-200 rounded-xl p-3 text-sm text-sky-900">
+      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
         Keep this record up to date to maintain a strong alumni network.
       </div>
       <div>
@@ -5592,7 +5592,7 @@ function bulkUploadModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-800">
           <strong>How it works:</strong> Download the template, fill it with your student data, then upload it back. The system will create student records and parents automatically.
         </div>
 
@@ -5831,9 +5831,9 @@ function view_adm_staff() {
         <div class="text-3xl font-extrabold text-brand-700">${academic.length}</div>
         <div class="text-xs text-slate-500 mt-1">Teachers &amp; subject leads</div>
       </div>
-      <div class="card p-4 border-l-4 border-blue-400">
-        <div class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Non-Academic</div>
-        <div class="text-3xl font-extrabold text-blue-700">${nonAcademic.length}</div>
+      <div class="card p-4 border-l-4 border-brand-400">
+        <div class="text-xs font-semibold text-brand-600 uppercase tracking-wider mb-1">Non-Academic</div>
+        <div class="text-3xl font-extrabold text-brand-700">${nonAcademic.length}</div>
         <div class="text-xs text-slate-500 mt-1">${Object.entries(nonAcadGroups).map(([k,v]) => `${v} ${k}`).join(' · ') || 'Admin, Operations, etc.'}</div>
       </div>
       <div class="card p-4 border-l-4 border-amber-400">
@@ -5862,12 +5862,12 @@ function view_adm_staff() {
 
     <!-- Non-Academic Staff (grouped by type) -->
     <div class="card overflow-hidden">
-      <div class="px-5 py-3 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
+      <div class="px-5 py-3 bg-brand-50 border-b border-brand-100 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-blue-200 text-blue-800 flex items-center justify-center">${icon('user','w-4 h-4')}</div>
-          <h3 class="font-bold text-blue-900">Non-Academic Staff <span class="text-sm font-normal text-blue-700">· ${nonAcademic.length}</span></h3>
+          <div class="w-8 h-8 rounded-lg bg-brand-200 text-brand-800 flex items-center justify-center">${icon('user','w-4 h-4')}</div>
+          <h3 class="font-bold text-brand-900">Non-Academic Staff <span class="text-sm font-normal text-brand-700">· ${nonAcademic.length}</span></h3>
         </div>
-        <span class="text-xs text-blue-700">Bursar · Admin · Operations · ICT · Transport</span>
+        <span class="text-xs text-brand-700">Bursar · Admin · Operations · ICT · Transport</span>
       </div>
       ${nonAcademic.length === 0
         ? '<div class="p-6 text-center text-slate-500 text-sm">No non-academic staff. <button class="text-brand-700 font-semibold" onclick="addStaffModal()">Add</button></div>'
@@ -6039,7 +6039,7 @@ function viewStaff(id, activeTab) {
       <div class="text-right flex-shrink-0">
         <div class="text-xs text-slate-400 mb-0.5">Attendance</div>
         <div class="text-2xl font-extrabold ${myAttRate >= 85 ? 'text-brand-700' : 'text-rose-600'}">${myAttRate}%</div>
-        ${t.staffType === 'Academic' ? `<div class="text-xs text-slate-400 mt-1.5">Avg Score</div><div class="text-xl font-extrabold text-blue-700">${avgScore}%</div>` : ''}
+        ${t.staffType === 'Academic' ? `<div class="text-xs text-slate-400 mt-1.5">Avg Score</div><div class="text-xl font-extrabold text-brand-700">${avgScore}%</div>` : ''}
       </div>
     </div>`;
 
@@ -6056,7 +6056,7 @@ function viewStaff(id, activeTab) {
         <div class="bg-brand-50 rounded-xl p-3 text-center"><div class="text-xs text-brand-700 font-semibold">AVG SCORE</div><div class="text-xl font-bold text-brand-900 mt-1">${avgScore}%</div></div>
         <div class="bg-emerald-50 rounded-xl p-3 text-center"><div class="text-xs text-emerald-700 font-semibold">PASS RATE</div><div class="text-xl font-bold text-emerald-900 mt-1">${passRate}%</div></div>
         <div class="bg-amber-50 rounded-xl p-3 text-center"><div class="text-xs text-amber-700 font-semibold">PUNCTUALITY</div><div class="text-xl font-bold text-amber-900 mt-1">${myAttRate}%</div></div>
-        <div class="bg-blue-50 rounded-xl p-3 text-center"><div class="text-xs text-blue-700 font-semibold">ASSIGNMENTS</div><div class="text-xl font-bold text-blue-900 mt-1">${myAssignments.length}</div></div>
+        <div class="bg-brand-50 rounded-xl p-3 text-center"><div class="text-xs text-brand-700 font-semibold">ASSIGNMENTS</div><div class="text-xl font-bold text-brand-900 mt-1">${myAssignments.length}</div></div>
       </div>` : ''}
       <div class="grid grid-cols-2 gap-3 text-sm">
         <div><div class="text-xs uppercase text-slate-500 font-semibold mb-0.5">Date of Birth</div><div>${t.dob ? fdate(t.dob, { long: true }) : '—'}</div></div>
@@ -6550,7 +6550,7 @@ function addStaffModal() {
           </div>
         </details>
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           <div class="font-semibold mb-1">${icon('check','w-4 h-4 inline')} Login credentials will be auto-generated</div>
           <div class="text-xs">Once saved, an invitation email + WhatsApp message is sent with the username (their email) and a temporary password they'll be asked to change on first login.</div>
         </div>
@@ -6767,7 +6767,7 @@ function view_adm_timetable() {
         ${classes.map(c => `<option value="${c.id}" ${classId===c.id?'selected':''}>${c.name}</option>`).join('')}
       </select>
     </div>
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3 text-sm text-blue-900">
+    <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 mb-3 text-sm text-brand-900">
       ${icon('check','w-4 h-4 inline')} <strong>Tip:</strong> Click any dashed (empty) cell to add a period. Click a filled cell to edit or remove it. Use <strong>Build Week</strong> to fill the whole grid in one go, or <strong>Bulk Upload</strong> for many classes from CSV.
     </div>
     <div class="card overflow-hidden">
@@ -6785,7 +6785,7 @@ function view_adm_timetable() {
               if (p === break1After + 1) {
                 rows.push(`<tr class="bg-amber-50"><td colspan="${days.length + 1}" class="text-center text-xs text-amber-800 font-semibold py-1.5">${icon('sun','w-3.5 h-3.5 inline mr-1')} ${break1Label}</td></tr>`);
               } else if (p === break2After + 1) {
-                rows.push(`<tr class="bg-sky-50"><td colspan="${days.length + 1}" class="text-center text-xs text-sky-800 font-semibold py-1.5">${icon('food','w-3.5 h-3.5 inline mr-1')} ${break2Label}</td></tr>`);
+                rows.push(`<tr class="bg-brand-50"><td colspan="${days.length + 1}" class="text-center text-xs text-brand-800 font-semibold py-1.5">${icon('food','w-3.5 h-3.5 inline mr-1')} ${break2Label}</td></tr>`);
               }
               rows.push(`<tr>
                 <td><strong class="text-slate-900">P${p}</strong><br><span class="text-xs text-slate-500">${timeLabel}</span></td>
@@ -6945,7 +6945,7 @@ function bulkTimetableUploadModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Upload a CSV with the entire weekly schedule. Rows are periods. Existing periods for the same class/day/period will be replaced.
         </div>
 
@@ -7119,7 +7119,7 @@ function quickBuildTimetableModal(classId) {
     size: 'xl',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Fill each cell with a subject and teacher. Empty cells stay empty. <strong>Showing periods 1-4</strong> — add more after saving these.
         </div>
         <div class="overflow-x-auto">
@@ -7903,7 +7903,7 @@ function renderAIInsights(schoolId) {
   const levelCfg = {
     critical: { cls: 'bg-red-50 border-red-200 text-red-900', dot: 'bg-red-500', icon: '🔴' },
     warn:     { cls: 'bg-amber-50 border-amber-200 text-amber-900', dot: 'bg-amber-400', icon: '🟡' },
-    info:     { cls: 'bg-blue-50 border-blue-200 text-blue-900', dot: 'bg-blue-400', icon: '🔵' },
+    info:     { cls: 'bg-brand-50 border-brand-200 text-brand-900', dot: 'bg-brand-400', icon: '🔵' },
     ok:       { cls: 'bg-emerald-50 border-emerald-200 text-emerald-900', dot: 'bg-emerald-500', icon: '🟢' }
   };
   return `
@@ -8005,19 +8005,19 @@ function renderEnrollmentReport(schoolId) {
             ${byClass.map(({ cls, count, male, female }) => `<tr>
               <td class="font-medium">${cls.name}</td>
               <td class="text-center font-semibold">${count}</td>
-              <td class="text-center text-blue-700">${male}</td>
+              <td class="text-center text-brand-700">${male}</td>
               <td class="text-center text-rose-600">${female}</td>
             </tr>`).join('')}
-            <tr class="font-bold bg-slate-50"><td>Total</td><td class="text-center">${students.length}</td><td class="text-center text-blue-700">${students.filter(s=>s.gender==='M').length}</td><td class="text-center text-rose-600">${students.filter(s=>s.gender!=='M').length}</td></tr>
+            <tr class="font-bold bg-slate-50"><td>Total</td><td class="text-center">${students.length}</td><td class="text-center text-brand-700">${students.filter(s=>s.gender==='M').length}</td><td class="text-center text-rose-600">${students.filter(s=>s.gender!=='M').length}</td></tr>
           </tbody>
         </table>
       </div>
       <div class="card p-5">
         <h3 class="font-bold text-slate-900 mb-3">New vs Returning (${currentSession})</h3>
         <div class="space-y-3">
-          <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
-            <div><div class="font-semibold text-blue-900">New Enrollment</div><div class="text-xs text-blue-700">First time joining this session</div></div>
-            <div class="text-2xl font-extrabold text-blue-700">${newEnrolled.length}</div>
+          <div class="p-3 bg-brand-50 border border-brand-200 rounded-xl flex items-center justify-between">
+            <div><div class="font-semibold text-brand-900">New Enrollment</div><div class="text-xs text-brand-700">First time joining this session</div></div>
+            <div class="text-2xl font-extrabold text-brand-700">${newEnrolled.length}</div>
           </div>
           <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
             <div><div class="font-semibold text-emerald-900">Returning Students</div><div class="text-xs text-emerald-700">Enrolled from previous sessions</div></div>
@@ -8687,12 +8687,12 @@ function renderHRPayrollPanel() {
 
   const stageLabel = { pending_approval: 'Awaiting Accounting approval', approved: 'Approved — disbursement in progress' }[activeRun.stage] || activeRun.stage;
   return `
-    <div class="card p-5 bg-blue-50 border border-blue-200">
+    <div class="card p-5 bg-brand-50 border border-brand-200">
       <div class="flex items-start gap-3">
-        <div class="w-10 h-10 rounded-lg bg-blue-200 text-blue-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
+        <div class="w-10 h-10 rounded-lg bg-brand-200 text-brand-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
         <div class="flex-1">
-          <div class="font-bold text-blue-900">${activeRun.period} Payroll — ${stageLabel}</div>
-          <p class="text-sm text-blue-800 mt-1">Submitted to Accounting on ${fdate(activeRun.submittedAt, { long: true })}. The accountant will confirm funds and authorize disbursement.</p>
+          <div class="font-bold text-brand-900">${activeRun.period} Payroll — ${stageLabel}</div>
+          <p class="text-sm text-brand-800 mt-1">Submitted to Accounting on ${fdate(activeRun.submittedAt, { long: true })}. The accountant will confirm funds and authorize disbursement.</p>
           <button class="btn btn-secondary text-sm mt-3" onclick="APP.go('adm_finance_hub', { financeTab: 'payroll' })">${icon('fees','w-3.5 h-3.5')} View in Finance →</button>
         </div>
       </div>
@@ -9030,7 +9030,7 @@ function suggestSubstituteCoverageModal(leaveId) {
     title: 'Assign Substitute Coverage',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           <strong>${staffOnLeave.name}</strong> is on ${l.type.toLowerCase()} leave from ${fdate(l.from, { short: true })} to ${fdate(l.to, { short: true })}. We've ranked available substitutes by subject overlap.
         </div>
         <div>
@@ -9182,7 +9182,7 @@ function renderHRAttendance() {
       </div>
     </div>
 
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm text-blue-900">
+    <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 mb-4 text-sm text-brand-900">
       <strong>How it works:</strong> Staff clock themselves in/out from their dashboard. As an admin, you can also manually record attendance from the gate sign-in book using <em>Mark Attendance</em>.
     </div>
 
@@ -9267,7 +9267,7 @@ function adminMarkStaffAttendanceModal(date) {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Enter staff attendance from the sign-in book. Non-academic staff (security, cleaners, drivers, etc.) are marked manually by admin. Academic staff can also be overridden here. Anything after <strong>08:00</strong> is marked late by default.
         </div>
         <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
@@ -9444,7 +9444,7 @@ function roleEditorModal(roleId) {
     { group: 'Communications', perms: [['communications','Announcements'],['messaging','Direct Messaging']] },
     { group: 'Parent-only', perms: [['own_children','View Own Children'],['own_fees','View Own Fees']] }
   ];
-  const colors = ['#7c3aed','#0ea5e9','#06b6d4','#f59e0b','#10b981','#22c55e','#a855f7','#ef4444','#6b7280','#0891b2','#ec4899','#84cc16'];
+  const colors = ['#e8483d','#fd5f54','#fd5f54','#f59e0b','#10b981','#22c55e','#a855f7','#ef4444','#6b7280','#e8483d','#ec4899','#84cc16'];
   const has = (k) => existing ? existing.permissions.includes(k) : false;
 
   modal({
@@ -9642,7 +9642,7 @@ function reconnectPaystackModal() {
     title: 'Reconnect Paystack',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Get your API keys from the Paystack dashboard under <strong>Settings › API Keys & Webhooks</strong>.
         </div>
         <div><label class="input-label">Public Key</label><input id="ps_pk" class="input font-mono text-sm" placeholder="pk_live_…" /></div>
@@ -9873,7 +9873,7 @@ function termClosingWizard() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           <strong>End-of-term close-out.</strong> This guided flow walks you through five steps to formally end the current term and prepare for the next.
         </div>
 
@@ -10021,7 +10021,7 @@ function renderExamStructureSettings() {
   const assessmentCats = _getAssessmentCategories();
   return `
     <div class="space-y-4">
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} Define the assessment types and their weighting for each term. Categories are managed in the section above.
       </div>
       ${examStructure.terms.map((term, ti) => `
@@ -10101,7 +10101,7 @@ function renderAppraisalSettings() {
   };
   return `
     <div class="space-y-4">
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} Define how teacher appraisals are scored. Weights must total 100%. These parameters appear on appraisal forms for principals and department heads.
       </div>
       <div class="card p-5">
@@ -10173,7 +10173,7 @@ function renderBudgetCategoriesSettings() {
   const budgetCats = s.budgetCategories || ['Salaries','Utilities','Maintenance','Supplies','Internet','Transport','Events','Other'];
   return `
     <div class="space-y-4">
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} These categories appear in the Expenses and Budget sections. Edit, reorder, or add your own categories to match your school's accounting structure.
       </div>
       <div class="card p-5">
@@ -10244,7 +10244,7 @@ function renderCustomListsSettings() {
   const s = DB.settings();
   return `
     <div class="space-y-4">
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} Every dropdown below is used across the system. Add, rename, or remove items to match your school's terminology. Changes take effect immediately on new entries.
       </div>
       <div class="grid lg:grid-cols-2 gap-4">
@@ -10810,7 +10810,7 @@ function newApplicationModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline')} Use this for walk-in enquiries or phone calls. For online self-service, share your <strong>public admission link</strong>.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -10956,7 +10956,7 @@ function viewApplication(appId) {
           <div class="font-semibold mb-0.5">${icon('bell','w-3.5 h-3.5 inline mr-1')} Next step: Review the application</div>
           Click <strong>Review</strong> to log notes and mark it as actively considered. Once reviewing, you can <strong>Schedule a Visit</strong> or go straight to <strong>Accept &amp; Enrol</strong> if the family walked in.
         </div>` : ''}
-        ${a.status === 'reviewing' ? `<div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        ${a.status === 'reviewing' ? `<div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           <div class="font-semibold mb-0.5">${icon('calendar','w-3.5 h-3.5 inline mr-1')} Next step: Schedule a school visit</div>
           Use <strong>Schedule Visit</strong> to pick a date and notify the parent. After the family visits, click <strong>Mark Visit Done</strong> — this unlocks the fee preview in the parent portal. You can also <strong>Accept &amp; Enrol</strong> directly without a visit.
         </div>` : ''}
@@ -10979,10 +10979,10 @@ function viewApplication(appId) {
           <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Home Address</div><div>${a.location || a.address || '—'}</div></div>
         </div>
 
-        ${a.reviewNotes ? `<div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
-          <div class="text-xs uppercase text-blue-600 font-semibold mb-1">Review Notes</div>
-          <div class="text-sm text-blue-900">${a.reviewNotes}</div>
-          ${a.reviewedAt ? `<div class="text-xs text-blue-500 mt-1">Noted ${fdate(a.reviewedAt, { relative: true })}</div>` : ''}
+        ${a.reviewNotes ? `<div class="bg-brand-50 border border-brand-200 rounded-xl p-3">
+          <div class="text-xs uppercase text-brand-600 font-semibold mb-1">Review Notes</div>
+          <div class="text-sm text-brand-900">${a.reviewNotes}</div>
+          ${a.reviewedAt ? `<div class="text-xs text-brand-500 mt-1">Noted ${fdate(a.reviewedAt, { relative: true })}</div>` : ''}
         </div>` : ''}
         ${a.status === 'rejected' && a.rejectionReason ? `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3">
           <div class="text-xs uppercase text-rose-600 font-semibold mb-1">Rejection Reason</div>
@@ -11086,7 +11086,7 @@ function previewAdmissionDoc(appId, docKey) {
           <span class="badge ${a.status === 'pending' ? 'badge-warn' : 'badge-info'}">${a.status}</span>
         </div>
         ${placeholder}
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           <strong>${icon('check','w-3 h-3 inline')} Verified at submission</strong> — uploaded by ${a.parentName} on ${fdate(a.appliedAt, { long: true })}. File checksum on record.
         </div>
       </div>
@@ -11103,7 +11103,7 @@ function reviewApplicationModal(appId) {
     title: 'Review Application — ' + a.applicantName,
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Mark this application as under review and record notes. The application remains visible to your team but is clearly flagged as being actively reviewed.
         </div>
         <div>
@@ -11272,7 +11272,7 @@ function markVisitCompleteModal(appId) {
           <label class="input-label">Visit Notes (optional)</label>
           <textarea id="vc_notes" rows="2" class="input" placeholder="e.g. Child participated well in assessment. Parent asked questions about transport..."></textarea>
         </div>
-        <div class="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+        <div class="flex items-start gap-2 bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">
           ${icon('bell','w-4 h-4 flex-shrink-0 mt-0.5')}
           <span>If the parent has no portal account yet, one will be created and login credentials sent to them so they can view fees.</span>
         </div>
@@ -11724,7 +11724,7 @@ function issueBookModal(bookId) {
         <select id="iss_student" class="input">${students.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
       </div>
       <div><label class="input-label">Due Date</label><input id="iss_due" type="date" class="input" value="${daysAhead(14)}" /></div>
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">${book.copiesAvailable} of ${book.copiesTotal} copies available · ${book.location}</div>
+      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">${book.copiesAvailable} of ${book.copiesTotal} copies available · ${book.location}</div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="issueBook('${bookId}')">Issue Book</button>`
@@ -11859,7 +11859,7 @@ function raiseTicketModal() {
         <div><label class="input-label">Subject</label><input id="tk_subject" class="input" placeholder="Briefly, what do you need help with?" /></div>
         <div><label class="input-label">Details</label><textarea id="tk_desc" rows="4" class="input" placeholder="Describe the issue…"></textarea></div>
         <div><label class="input-label">Priority</label><select id="tk_priority" class="input"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">${icon('info','w-4 h-4 inline mr-1')} Our team responds within the SLA based on priority (High: 4h, Medium: 24h, Low: 48h).</div>
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">${icon('info','w-4 h-4 inline mr-1')} Our team responds within the SLA based on priority (High: 4h, Medium: 24h, Low: 48h).</div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -11942,7 +11942,7 @@ function _renderPrintCenter() {
     </div>`;
 
   return `
-    <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-900 mb-5 flex items-start gap-3">
+    <div class="bg-brand-50 border border-brand-200 rounded-xl px-4 py-3 text-sm text-brand-900 mb-5 flex items-start gap-3">
       ${icon('reports','w-5 h-5 flex-shrink-0 mt-0.5')}
       <span>Click <strong>Print / Save as PDF</strong> on any report to open a formatted, ready-to-print document you can save, share or file. <strong>Download Spreadsheet</strong> gives you an Excel-compatible file for those who want to work with the numbers.</span>
     </div>
@@ -12472,11 +12472,11 @@ function view_adm_audit() {
   };
 
   const ACTION_META = {
-    student_login:             { label: 'Student login',          color: 'bg-blue-100 text-blue-700' },
+    student_login:             { label: 'Student login',          color: 'bg-brand-100 text-brand-700' },
     added_student:             { label: 'Student added',          color: 'bg-emerald-100 text-emerald-700' },
-    updated_student:           { label: 'Student updated',        color: 'bg-sky-100 text-sky-700' },
-    promoted_student:          { label: 'Student promoted',       color: 'bg-violet-100 text-violet-700' },
-    bulk_promoted:             { label: 'Bulk promotion',         color: 'bg-violet-100 text-violet-700' },
+    updated_student:           { label: 'Student updated',        color: 'bg-brand-100 text-brand-700' },
+    promoted_student:          { label: 'Student promoted',       color: 'bg-brand-100 text-brand-700' },
+    bulk_promoted:             { label: 'Bulk promotion',         color: 'bg-brand-100 text-brand-700' },
     bulk_graduated:            { label: 'Bulk graduation',        color: 'bg-amber-100 text-amber-700' },
     graduated_student:         { label: 'Graduated',              color: 'bg-amber-100 text-amber-700' },
     transferred_student:       { label: 'Transfer out',           color: 'bg-orange-100 text-orange-700' },
@@ -12487,16 +12487,16 @@ function view_adm_audit() {
     issued_refund:             { label: 'Refund issued',          color: 'bg-pink-100 text-pink-700' },
     staff_hired:               { label: 'Staff hired',            color: 'bg-emerald-100 text-emerald-700' },
     staff_terminated:          { label: 'Staff terminated',       color: 'bg-red-100 text-red-700' },
-    staff_updated:             { label: 'Staff updated',          color: 'bg-sky-100 text-sky-700' },
-    payroll_draft_created:     { label: 'Payroll started',        color: 'bg-blue-100 text-blue-700' },
+    staff_updated:             { label: 'Staff updated',          color: 'bg-brand-100 text-brand-700' },
+    payroll_draft_created:     { label: 'Payroll started',        color: 'bg-brand-100 text-brand-700' },
     payroll_submitted:         { label: 'Payroll submitted',      color: 'bg-amber-100 text-amber-700' },
     payroll_approved:          { label: 'Payroll approved',       color: 'bg-emerald-100 text-emerald-700' },
     payroll_paid:              { label: 'Payroll disbursed',      color: 'bg-emerald-100 text-emerald-700' },
-    lesson_plan_note_added:    { label: 'Plan note added',        color: 'bg-indigo-100 text-indigo-700' },
-    lesson_plan_note_updated:  { label: 'Plan note updated',      color: 'bg-indigo-100 text-indigo-700' },
+    lesson_plan_note_added:    { label: 'Plan note added',        color: 'bg-brand-100 text-brand-700' },
+    lesson_plan_note_updated:  { label: 'Plan note updated',      color: 'bg-brand-100 text-brand-700' },
     lesson_plan_note_deleted:  { label: 'Plan note removed',      color: 'bg-slate-100 text-slate-600' },
-    opened_appraisal_cycle:    { label: 'Appraisal opened',       color: 'bg-violet-100 text-violet-700' },
-    appraisal_outcome_set:     { label: 'Appraisal outcome set',  color: 'bg-violet-100 text-violet-700' }
+    opened_appraisal_cycle:    { label: 'Appraisal opened',       color: 'bg-brand-100 text-brand-700' },
+    appraisal_outcome_set:     { label: 'Appraisal outcome set',  color: 'bg-brand-100 text-brand-700' }
   };
 
   const nowTs  = Date.parse(now());

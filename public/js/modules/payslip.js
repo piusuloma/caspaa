@@ -335,7 +335,7 @@ function adm_generatePayslipModal() {
           </div>
         </div>
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">
           ${icon('info', 'w-4 h-4 inline mr-1')} Deductions are computed automatically: PAYE uses a simplified progressive formula, Pension is 8% of gross, NHF is 2.5% of basic.
         </div>
       </div>

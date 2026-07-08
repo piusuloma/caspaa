@@ -65,12 +65,12 @@ function view_fin_dashboard() {
                            .sort((a, b) => b.computedAt.localeCompare(a.computedAt))[0];
         if (!activeRun || activeRun.stage === 'draft') return '';
         if (activeRun.stage === 'pending_approval') {
-          return `<div class="card bg-blue-50 border border-blue-200 p-4 flex items-center justify-between gap-4">
+          return `<div class="card bg-brand-50 border border-brand-200 p-4 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center flex-shrink-0">${icon('bell','w-5 h-5')}</div>
+              <div class="w-10 h-10 rounded-full bg-brand-200 text-brand-800 flex items-center justify-center flex-shrink-0">${icon('bell','w-5 h-5')}</div>
               <div>
-                <div class="font-bold text-blue-900">Payroll awaiting your authorization — ${activeRun.period}</div>
-                <div class="text-sm text-blue-800 mt-0.5">HR has submitted the payroll run. ${activeRun.staffCount} staff · Net ${money(activeRun.netTotal)}. Confirm fund availability and authorize disbursement.</div>
+                <div class="font-bold text-brand-900">Payroll awaiting your authorization — ${activeRun.period}</div>
+                <div class="text-sm text-brand-800 mt-0.5">HR has submitted the payroll run. ${activeRun.staffCount} staff · Net ${money(activeRun.netTotal)}. Confirm fund availability and authorize disbursement.</div>
               </div>
             </div>
             <button class="btn btn-primary flex-shrink-0" onclick="APP.go('fin_payroll')">${icon('check','w-4 h-4')} Review &amp; Authorize →</button>
@@ -341,7 +341,7 @@ function bulkGenerateInvoicesModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Generate invoices for all returning students who don't yet have one for <strong>${currentTerm}</strong>. New enrollments are excluded — their invoices are created during student registration.
         </div>
         <div class="grid grid-cols-3 gap-3 text-center">
@@ -508,8 +508,8 @@ function renderFeeStructuresTab() {
         </tbody>
       </table>
     </div>
-    <div class="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-      ${icon('info','w-3.5 h-3.5 flex-shrink-0 text-blue-500')}
+    <div class="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">
+      ${icon('info','w-3.5 h-3.5 flex-shrink-0 text-brand-500')}
       <span>Extracurricular fees (swimming, ballet, music, etc.) are charged <strong>per student</strong> — manage them under the <button class="text-brand-700 font-semibold underline" onclick="APP.params.feeTab='activities'; APP.render()">Activities tab</button> and assign from each student's profile.</span>
     </div>
   `;
@@ -789,7 +789,7 @@ function feeStructureModal(editingId) {
           </div>
           ${!(existing && existing.extraItems && existing.extraItems.length) ? '<p id="fs_extra_hint" class="text-xs text-slate-400 mt-1">No additional fees — add rows for items like Lab Fee, ICT Levy, etc.</p>' : ''}
         </div>
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Extracurricular fees (swimming, ballet, music, etc.) are <strong>per student</strong> — set them under the <strong>Activities tab</strong> and assign to each student from their profile.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -1093,7 +1093,7 @@ function view_fin_ledger() {
                 <td class="text-right font-mono">${money(inv.total)}</td>
                 <td class="text-right font-mono text-emerald-700">${money(inv.paid)}</td>
                 <td class="text-right font-mono font-semibold ${inv.balance > 0 ? 'text-rose-700' : 'text-slate-400'}">${money(inv.balance)}</td>
-                <td class="text-right font-mono ${credit > 0 ? 'text-blue-700 font-semibold' : 'text-slate-300'}">${credit > 0 ? money(credit) : '—'}</td>
+                <td class="text-right font-mono ${credit > 0 ? 'text-brand-700 font-semibold' : 'text-slate-300'}">${credit > 0 ? money(credit) : '—'}</td>
                 <td>${statusBadge(inv.status)}</td>
                 <td class="text-right pr-2">
                   <button class="btn btn-ghost !p-1.5 text-slate-400 hover:text-slate-700" title="Actions" onclick="openLedgerMenu(this,'${inv.id}',${inv.balance > 0},${inv.paid > 0},${credit > 0 && inv.balance > 0})">${icon('more','w-4 h-4')}</button>
@@ -1204,7 +1204,7 @@ function openLedgerMenu(btn, invoiceId, hasBalance, hasPaid, hasCredit) {
   const rect = btn.getBoundingClientRect();
   const items = [
     hasBalance ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 font-medium text-brand-700" onclick="document.getElementById('_ledgerMenu')?.remove();ledgerQuickPay('${invoiceId}')">Record Payment</button>` : '',
-    hasCredit  ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-blue-600" onclick="document.getElementById('_ledgerMenu')?.remove();ledgerApplyCredit('${invoiceId}')">Apply Advance Payment</button>` : '',
+    hasCredit  ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-brand-600" onclick="document.getElementById('_ledgerMenu')?.remove();ledgerApplyCredit('${invoiceId}')">Apply Advance Payment</button>` : '',
     `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50" onclick="document.getElementById('_ledgerMenu')?.remove();sendInvoiceToParent('${invoiceId}')">Send Invoice</button>`,
     hasPaid    ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-emerald-600" onclick="document.getElementById('_ledgerMenu')?.remove();sendReceiptToParent('${invoiceId}')">Send Receipt</button>` : '',
     hasBalance ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-amber-600" onclick="document.getElementById('_ledgerMenu')?.remove();sendManualReminder('${invoiceId}')">Send Reminder</button>` : '',
@@ -1292,7 +1292,7 @@ function manualPaymentModal() {
     title: 'Record Manual Payment',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Use for <strong>cash</strong>, <strong>cheque</strong>, or <strong>bank transfer</strong> payments received at the school. These post directly to the student's invoice with no Paystack involved.
         </div>
         <div>
@@ -1338,7 +1338,7 @@ function updateManualPaymentBalance() {
   const amount = document.getElementById('mp_amount');
   if (balance > 0) {
     hint.classList.remove('hidden');
-    hint.innerHTML = `Outstanding balance: <strong>${money(balance)}</strong>. <button class="text-blue-700 underline" onclick="document.getElementById('mp_amount').value=${balance}">Pay in full</button>`;
+    hint.innerHTML = `Outstanding balance: <strong>${money(balance)}</strong>. <button class="text-brand-700 underline" onclick="document.getElementById('mp_amount').value=${balance}">Pay in full</button>`;
     amount.placeholder = `up to ${money(balance)}`;
   } else {
     hint.classList.add('hidden');
@@ -1425,7 +1425,7 @@ function view_fin_recon() {
         <button class="btn btn-secondary" onclick="autoMatchAllTransactions()">${icon('ai','w-4 h-4')} Auto-Match All</button>
       `
     })}
-    <div class="card bg-blue-50 border border-blue-200 p-3 mb-4 text-sm text-blue-900">
+    <div class="card bg-brand-50 border border-brand-200 p-3 mb-4 text-sm text-brand-900">
       ${icon('info','w-4 h-4 inline mr-1')} <strong>${unreconciled.length}</strong> payment${unreconciled.length!==1?'s':''} need${unreconciled.length===1?'s':''} matching. Primary match: <strong>Student ID</strong> in payment narration or reference. Fallback: name-based matching. You can also enter the Student ID manually.
     </div>
     <div class="card overflow-hidden">
@@ -2075,12 +2075,12 @@ function renderPayrollStageAction(run) {
     const cashOnHand = txns.reduce((s, t) => s + t.amount, 0) - (DB.query('expenses', e => e.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).reduce((s, e) => s + e.amount, 0));
     const sufficient = cashOnHand >= run.netTotal;
     return `
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+      <div class="bg-brand-50 border border-brand-200 rounded-xl p-4">
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-lg bg-blue-200 text-blue-800 flex items-center justify-center flex-shrink-0">${icon('check','w-5 h-5')}</div>
+          <div class="w-10 h-10 rounded-lg bg-brand-200 text-brand-800 flex items-center justify-center flex-shrink-0">${icon('check','w-5 h-5')}</div>
           <div class="flex-1">
-            <div class="font-bold text-blue-900">Accountant — Confirm Funds &amp; Authorize Disbursement</div>
-            <p class="text-sm text-blue-800 mt-1">HR submitted this payroll on ${fdate(run.submittedAt, { long: true })}. As Accountant, your role is to confirm fund availability and authorize the payment. HR cannot disburse without your authorization.</p>
+            <div class="font-bold text-brand-900">Accountant — Confirm Funds &amp; Authorize Disbursement</div>
+            <p class="text-sm text-brand-800 mt-1">HR submitted this payroll on ${fdate(run.submittedAt, { long: true })}. As Accountant, your role is to confirm fund availability and authorize the payment. HR cannot disburse without your authorization.</p>
             <div class="bg-white rounded-lg p-3 mt-2 grid grid-cols-3 gap-3 text-sm">
               <div><div class="text-xs text-slate-500">Amount Required</div><div class="font-mono font-bold">${money(run.netTotal)}</div></div>
               <div><div class="text-xs text-slate-500">Available Balance</div><div class="font-mono font-bold ${sufficient ? 'text-emerald-700' : 'text-rose-700'}">${money(Math.max(0, cashOnHand))}</div></div>
@@ -2322,7 +2322,7 @@ function manageAdjustmentsModal(runId) {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Add bonuses, overtime, fines or leave deductions for this run. They apply on top of base salary.
         </div>
         <div class="space-y-1.5">
@@ -2446,7 +2446,7 @@ function view_fin_cost_center() {
   const byType = {};
   teachers.forEach(t => { const k = t.staffType || 'Other'; byType[k] = (byType[k]||0) + (t.salary||0); });
   const totalStaffCost = Object.values(byType).reduce((s,v) => s+v, 0);
-  const colors = ['bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-purple-500'];
+  const colors = ['bg-brand-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-brand-500'];
 
   const revenueView = APP.params.revenueView || 'termly';
 
@@ -2601,7 +2601,7 @@ function renderFinanceActivityLog() {
   const sid = AUTH.current.schoolId || 'sch_brightlights';
   const FIN_ACTIONS = ['payroll_draft_created','payroll_submitted','payroll_approved','payroll_paid','issued_refund'];
   const ACTION_META = {
-    payroll_draft_created: { label: 'Payroll started',    color: 'bg-blue-100 text-blue-700' },
+    payroll_draft_created: { label: 'Payroll started',    color: 'bg-brand-100 text-brand-700' },
     payroll_submitted:     { label: 'Payroll submitted',  color: 'bg-amber-100 text-amber-700' },
     payroll_approved:      { label: 'Payroll approved',   color: 'bg-emerald-100 text-emerald-700' },
     payroll_paid:          { label: 'Payroll disbursed',  color: 'bg-emerald-100 text-emerald-700' },

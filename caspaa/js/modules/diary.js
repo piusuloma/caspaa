@@ -72,7 +72,7 @@ function diary_viewStudent(studentId, classId) {
   const entriesHtml = entries.length === 0
     ? `<div class="text-center text-sm text-slate-400 py-6">No diary entries yet for ${s ? s.name : 'this student'}.</div>`
     : entries.map(e => {
-        const catColors = { Homework: 'bg-blue-50 text-blue-700 border-blue-200', Behaviour: 'bg-amber-50 text-amber-700 border-amber-200', Academic: 'bg-emerald-50 text-emerald-700 border-emerald-200', Health: 'bg-red-50 text-red-700 border-red-200', General: 'bg-slate-50 text-slate-700 border-slate-200' };
+        const catColors = { Homework: 'bg-brand-50 text-brand-700 border-brand-200', Behaviour: 'bg-amber-50 text-amber-700 border-amber-200', Academic: 'bg-emerald-50 text-emerald-700 border-emerald-200', Health: 'bg-red-50 text-red-700 border-red-200', General: 'bg-slate-50 text-slate-700 border-slate-200' };
         const cc = catColors[e.category] || catColors.General;
         return `<div class="border border-slate-200 rounded-xl p-4 space-y-3">
           <div class="flex items-center justify-between gap-2 flex-wrap">
@@ -168,8 +168,8 @@ function view_par_diary(params) {
     DB.update('diaryEntries', e.id, { parentRead: true, parentReadAt: now() });
   });
 
-  const catColors = { Homework: 'border-blue-400', Behaviour: 'border-amber-400', Academic: 'border-emerald-400', Health: 'border-red-400', General: 'border-slate-300' };
-  const catBadge  = { Homework: 'bg-blue-50 text-blue-700 border-blue-200', Behaviour: 'bg-amber-50 text-amber-700 border-amber-200', Academic: 'bg-emerald-50 text-emerald-700 border-emerald-200', Health: 'bg-red-50 text-red-700 border-red-200', General: 'bg-slate-100 text-slate-600 border-slate-200' };
+  const catColors = { Homework: 'border-brand-400', Behaviour: 'border-amber-400', Academic: 'border-emerald-400', Health: 'border-red-400', General: 'border-slate-300' };
+  const catBadge  = { Homework: 'bg-brand-50 text-brand-700 border-brand-200', Behaviour: 'bg-amber-50 text-amber-700 border-amber-200', Academic: 'bg-emerald-50 text-emerald-700 border-emerald-200', Health: 'bg-red-50 text-red-700 border-red-200', General: 'bg-slate-100 text-slate-600 border-slate-200' };
 
   return `
     ${pageHeader({ title: 'Diary', subtitle: 'Structured notes from your child\'s teachers' })}
