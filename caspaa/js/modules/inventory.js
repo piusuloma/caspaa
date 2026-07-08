@@ -61,7 +61,7 @@ function view_adm_inventory() {
     </div>
 
     ${lowStockItems.length ? `
-      <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+      <div class="flex items-start gap-3 bg-amber-50 rounded-xl p-4 mb-5">
         ${icon('bell','w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5')}
         <div class="flex-1 min-w-0">
           <div class="font-semibold text-amber-900 mb-0.5">Low Stock — ${lowStockItems.length} item${lowStockItems.length > 1 ? 's' : ''} below minimum</div>
@@ -190,7 +190,7 @@ function inv_writeOffModal(itemId) {
     title: 'Write Off — ' + item.name,
     size: 'md',
     body: `
-      <div class="flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2.5 text-sm text-rose-900 mb-4">
+      <div class="flex items-start gap-3 bg-rose-50 rounded-xl px-3 py-2.5 text-sm text-rose-900 mb-4">
         ${icon('alert_triangle','w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5')}
         <span><strong>Warning:</strong> Write-offs permanently reduce stock. This action is logged and cannot be undone.</span>
       </div>

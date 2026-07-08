@@ -97,7 +97,7 @@ function diary_viewStudent(studentId, classId) {
     size: 'lg',
     body: `
       <!-- Write new entry -->
-      <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-5">
+      <div class="bg-emerald-50 rounded-xl p-4 mb-5">
         <div class="font-semibold text-emerald-800 mb-3 text-sm">Write New Entry</div>
         <div class="grid grid-cols-2 gap-3 mb-3">
           <div><label class="input-label text-xs">Category</label>
@@ -178,7 +178,7 @@ function view_par_diary(params) {
       ${children.map(c => `<button onclick="APP.go('par_diary',{studentId:'${c.id}'})" class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
     </div>` : ''}
 
-    ${unread > 0 ? `<div class="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800 font-medium">
+    ${unread > 0 ? `<div class="mb-4 bg-amber-50 rounded-xl p-3 text-sm text-amber-800 font-medium">
       ${icon('bell','w-4 h-4 inline mr-1')} ${unread} new ${unread === 1 ? 'entry' : 'entries'} since your last visit — now marked as read.
     </div>` : ''}
 
@@ -199,7 +199,7 @@ function view_par_diary(params) {
               </div>
               <p class="text-sm text-slate-800 leading-relaxed mb-3">${e.note}</p>
               ${e.parentReply
-                ? `<div class="bg-brand-50 rounded-xl p-3 border border-brand-200">
+                ? `<div class="bg-brand-50 rounded-xl p-3">
                     <div class="text-xs font-semibold text-brand-700 mb-1">Your reply · ${fdate(e.parentRepliedAt, {relative:true})}</div>
                     <p class="text-sm text-slate-700">${e.parentReply}</p>
                    </div>`

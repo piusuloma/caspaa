@@ -682,7 +682,7 @@ function view_stu_houses() {
           <div class="text-xs text-slate-400">your personal pts</div>
         </div>
       </div>
-    </div>` : `<div class="card p-4 mb-5 bg-amber-50 border border-amber-200 text-sm text-amber-800">You haven't been assigned to a house yet. Ask your class teacher.</div>`}
+    </div>` : `<div class="card p-4 mb-5 bg-amber-50 text-sm text-amber-800">You haven't been assigned to a house yet. Ask your class teacher.</div>`}
 
     ${renderLeaderboard(totals, schoolId, false)}
 

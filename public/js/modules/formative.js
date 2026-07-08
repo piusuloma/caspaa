@@ -687,7 +687,7 @@ function stu_startTest(testId) {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="flex items-start gap-3 bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           ${icon('bell', 'w-4 h-4 flex-shrink-0 mt-0.5')}
           <span>Once you submit your answers, you cannot change them. Read each question carefully before submitting.</span>
         </div>
@@ -868,7 +868,7 @@ function stu_viewMyResult(testId) {
           <div class="pl-2 space-y-1 text-sm">
             <div class="text-xs text-slate-500 font-semibold uppercase">Your Answer</div>
             <div class="bg-slate-50 rounded-lg p-2 text-slate-800 min-h-[2rem]">${hasAnswer ? studentAns : '<span class="text-slate-400 italic">(not answered)</span>'}</div>
-            <div class="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-1">
+            <div class="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mt-1">
               ${icon('bell', 'w-3.5 h-3.5')} Reviewed by teacher &middot; 1/1 (pending review)
             </div>
           </div>

@@ -74,7 +74,7 @@ function notify_composeEmailTab() {
           </div>
 
           <!-- Recipient count banner -->
-          <div id="email_count_banner" class="mb-3 text-sm font-semibold text-brand-700 bg-brand-50 border border-brand-200 rounded-xl px-3 py-2 hidden"></div>
+          <div id="email_count_banner" class="mb-3 text-sm font-semibold text-brand-700 bg-brand-50 rounded-xl px-3 py-2 hidden"></div>
 
           <!-- Subject -->
           <div class="mb-3">

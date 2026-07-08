@@ -217,7 +217,7 @@ const APP = {
         <div class="flex-1 lg:ml-64 flex flex-col min-h-screen">
 
           ${isImpersonating() ? `
-            <div class="bg-amber-100 border-b border-amber-300 px-4 py-2 flex items-center justify-between gap-3 text-sm">
+            <div class="bg-amber-100 px-4 py-2 flex items-center justify-between gap-3 text-sm">
               <div class="flex items-center gap-2 text-amber-900">
                 ${icon('user', 'w-4 h-4')}
                 <span>You are viewing as <strong>${user.name}</strong> (admin preview)</span>
@@ -334,7 +334,7 @@ function showNotifications() {
       : `<div class="space-y-2">${notifs.map(n => {
           const toneClass = n.type === 'warn' ? 'bg-amber-100 text-amber-700' : n.type === 'danger' ? 'bg-rose-100 text-rose-700' : n.type === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-100 text-brand-700';
           const linkAttr = n.link && n.link.view ? `onclick="openNotification('${n.id}')" style="cursor:pointer"` : '';
-          return `<div class="p-3 rounded-xl ${n.read ? 'bg-slate-50' : 'bg-brand-50 border border-brand-100'}" ${linkAttr}>
+          return `<div class="p-3 rounded-xl ${n.read ? 'bg-slate-50' : 'bg-brand-50'}" ${linkAttr}>
             <div class="flex items-start gap-3">
               <div class="w-8 h-8 rounded-lg ${toneClass} flex items-center justify-center flex-shrink-0">${icon('bell', 'w-4 h-4')}</div>
               <div class="flex-1 min-w-0">
@@ -417,7 +417,7 @@ function showLoginSessions() {
   const other = all.filter(s => !s.current);
 
   const renderSession = (s, isCurrent) => `
-    <div class="flex items-start gap-3 p-3 ${isCurrent ? 'bg-emerald-50 border border-emerald-200' : 'bg-slate-50'} rounded-xl">
+    <div class="flex items-start gap-3 p-3 ${isCurrent ? 'bg-emerald-50' : 'bg-slate-50'} rounded-xl">
       <div class="w-10 h-10 rounded-lg ${isCurrent ? 'bg-emerald-200 text-emerald-700' : 'bg-slate-200 text-slate-600'} flex items-center justify-center flex-shrink-0">${icon('user','w-5 h-5')}</div>
       <div class="flex-1 min-w-0">
         <div class="font-semibold text-sm">${s.device}${isCurrent ? ' <span class="badge badge-success ml-1">This device</span>' : ''}</div>
@@ -459,7 +459,7 @@ function showLoginSessions() {
             ${other.map(s => renderSession(s, false)).join('')}
           </div>
         </div>` : ''}
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           <strong>Recognize all of these?</strong> If anything looks unfamiliar, revoke the session and change your password immediately.
         </div>
       </div>

@@ -169,7 +169,7 @@ function requestLeaveModal() {
     title: 'Request Leave',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Your request goes to the proprietor / HR for approval. They'll typically respond within 24 hours. You'll be notified on the bell icon.
         </div>
         <div>
@@ -280,7 +280,7 @@ function view_tch_dashboard() {
         ${statCard({ label: 'Results Pending', value: pendingResults, icon: 'results', color: pendingResults ? 'rose' : 'brand', tooltip: 'Results you have submitted that await admin approval' })}
       </div>
 
-      ${selfPendingApr ? `<button class="w-full flex items-center gap-3 bg-amber-50 border-2 border-amber-200 rounded-xl p-4 text-left hover:bg-amber-100 transition" onclick="APP.go('tch_appraisal')">
+      ${selfPendingApr ? `<button class="w-full flex items-center gap-3 bg-amber-50 rounded-xl p-4 text-left hover:bg-amber-100 transition" onclick="APP.go('tch_appraisal')">
         <span class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0 text-xl">✍️</span>
         <div class="flex-1 min-w-0">
           <div class="font-bold text-amber-900">Self-Assessment Due</div>
@@ -289,7 +289,7 @@ function view_tch_dashboard() {
         <span class="badge badge-warn">Action needed</span>
       </button>` : ''}
 
-      ${ackPendingApr ? `<button class="w-full flex items-center gap-3 bg-brand-50 border-2 border-brand-200 rounded-xl p-4 text-left hover:bg-brand-100 transition" onclick="APP.go('tch_appraisal')">
+      ${ackPendingApr ? `<button class="w-full flex items-center gap-3 bg-brand-50 rounded-xl p-4 text-left hover:bg-brand-100 transition" onclick="APP.go('tch_appraisal')">
         <span class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 text-xl">🏆</span>
         <div class="flex-1 min-w-0">
           <div class="font-bold text-brand-900">Appraisal Result Ready — Please Acknowledge</div>
@@ -825,7 +825,7 @@ function tch_renderMaterials() {
   const t = AUTH.current;
   const materials = DB.query('learningMaterials', m => m.teacherId === t.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   return `
-    <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900 mb-4">
+    <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900 mb-4">
       ${icon('info','w-4 h-4 inline mr-1')} Notes and videos you upload here appear instantly on your students' <strong>Learning</strong> portal.
     </div>
     ${materials.length === 0 ? emptyState({ title: 'No materials yet', body: 'Upload notes or share a video link for your students.', icon: 'book' }) : `
@@ -860,7 +860,7 @@ function onMaterialFile(ev) {
   reader.onload = e => {
     _materialFile = { name: file.name, type: file.type, size: Math.round(file.size / 1024) + ' KB', data: e.target.result };
     const p = document.getElementById('mat_preview');
-    if (p) p.innerHTML = `<div class="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="flex-1 truncate font-semibold text-emerald-900">${file.name}</span><span class="text-xs text-emerald-700">${_materialFile.size}</span></div>`;
+    if (p) p.innerHTML = `<div class="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="flex-1 truncate font-semibold text-emerald-900">${file.name}</span><span class="text-xs text-emerald-700">${_materialFile.size}</span></div>`;
   };
   reader.readAsDataURL(file);
 }
@@ -986,7 +986,7 @@ function openAssignment(assignmentId) {
                 ${graded ? `<div class="mt-2 pl-11 space-y-1">
                   <div class="flex items-center gap-2 flex-wrap">
                     ${sub.markStatus ? `<span class="text-xs font-semibold ${sub.markStatus === 'excellent' ? 'text-emerald-600' : sub.markStatus === 'satisfactory' ? 'text-brand-600' : 'text-amber-600'}">${sub.markStatus === 'excellent' ? '⭐ Excellent' : sub.markStatus === 'needs_revision' ? '🔄 Needs Revision' : '✓ Satisfactory'}</span>` : ''}
-                    ${sub.resubmissionRequested ? `<span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">${icon('refresh','w-3 h-3')} Awaiting resubmission</span>` : ''}
+                    ${sub.resubmissionRequested ? `<span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 rounded-full px-2 py-0.5">${icon('refresh','w-3 h-3')} Awaiting resubmission</span>` : ''}
                     <button class="btn btn-ghost !py-0.5 !px-2 text-xs text-slate-500" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>tch_openMarkingView('${a.id}','${s.id}'),120)">${icon('edit','w-3 h-3')} View / Re-mark</button>
                   </div>
                   ${sub.feedback ? `<div class="text-xs text-slate-700 bg-white rounded-lg p-2 border border-slate-200"><strong class="text-slate-500">Teacher comments:</strong> ${sub.feedback}</div>` : ''}
@@ -1705,7 +1705,7 @@ function view_tch_lessons(params) {
                 <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Activities</div><div>${l.activities}</div></div>
                 <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Resources</div><div>${l.resources}</div></div>
               </div>
-              ${l.file ? `<a href="${l.file.data}" download="${l.file.name}" class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-sm hover:bg-emerald-100">
+              ${l.file ? `<a href="${l.file.data}" download="${l.file.name}" class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg text-sm hover:bg-emerald-100">
                 ${icon('paperclip','w-4 h-4 text-emerald-600')}
                 <span class="font-semibold text-emerald-900">${l.file.name}</span>
                 <span class="text-xs text-emerald-700">${l.file.size}</span>
@@ -1755,7 +1755,7 @@ function view_tch_lessons(params) {
                   <h3 class="font-bold text-slate-900">${m.title}</h3>
                   ${m.description ? `<p class="text-sm text-slate-500 mt-1 line-clamp-2">${m.description}</p>` : ''}
                   ${m.content ? `<div class="mt-2 p-3 bg-slate-50 rounded-lg text-sm text-slate-700 max-h-24 overflow-y-auto whitespace-pre-wrap">${m.content}</div>` : ''}
-                  ${m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-50 border border-brand-200 rounded-lg text-xs hover:bg-brand-100">
+                  ${m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-50 rounded-lg text-xs hover:bg-brand-100">
                     ${icon('paperclip','w-3.5 h-3.5 text-brand-600')}<span class="font-semibold text-brand-900">${m.file.name}</span>${icon('download','w-3 h-3 text-brand-600')}
                   </a>` : ''}
                 </div>
@@ -1865,7 +1865,7 @@ function onNoteFilePick(ev) {
   reader.onload = e => {
     _noteFileBuffer = { name: file.name, type: file.type, size: Math.round(file.size/1024) + ' KB', data: e.target.result };
     const p = document.getElementById('cn_filePreview');
-    if (p) p.innerHTML = `<div class="flex items-center gap-2 p-2 bg-brand-50 border border-brand-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-brand-600')}<span class="flex-1 truncate font-semibold text-brand-900">${file.name}</span><span class="text-xs text-brand-700">${_noteFileBuffer.size}</span><button class="text-red-500 text-xs" onclick="_noteFileBuffer=null;document.getElementById('cn_filePreview').innerHTML=''">Remove</button></div>`;
+    if (p) p.innerHTML = `<div class="flex items-center gap-2 p-2 bg-brand-50 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-brand-600')}<span class="flex-1 truncate font-semibold text-brand-900">${file.name}</span><span class="text-xs text-brand-700">${_noteFileBuffer.size}</span><button class="text-red-500 text-xs" onclick="_noteFileBuffer=null;document.getElementById('cn_filePreview').innerHTML=''">Remove</button></div>`;
   };
   reader.readAsDataURL(file);
 }
@@ -1994,7 +1994,7 @@ function tch_pushToResultsModal(assignmentId) {
     title: 'Push Grades to Academic Results',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Sync ${gradedSubs.length} graded submission${gradedSubs.length > 1 ? 's' : ''} into academic records as CA scores (scaled to 20 marks). Existing scores for the chosen slot will be overwritten.
         </div>
         ${(() => {
@@ -2153,7 +2153,7 @@ function onLessonFilePick(ev) {
   reader.onload = e => {
     _lessonFileBuffer = { name: file.name, type: file.type, size: Math.round(file.size / 1024) + ' KB', data: e.target.result, uploadedAt: now() };
     const preview = document.getElementById('lp_filePreview');
-    if (preview) preview.innerHTML = `<div class="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="flex-1 truncate font-semibold text-emerald-900">${file.name}</span><span class="text-xs text-emerald-700">${_lessonFileBuffer.size}</span><button class="text-rose-600 text-xs" onclick="_lessonFileBuffer=null; document.getElementById('lp_filePreview').innerHTML=''">Remove</button></div>`;
+    if (preview) preview.innerHTML = `<div class="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="flex-1 truncate font-semibold text-emerald-900">${file.name}</span><span class="text-xs text-emerald-700">${_lessonFileBuffer.size}</span><button class="text-rose-600 text-xs" onclick="_lessonFileBuffer=null; document.getElementById('lp_filePreview').innerHTML=''">Remove</button></div>`;
   };
   reader.readAsDataURL(file);
 }
@@ -2614,7 +2614,7 @@ function renderTeacherMonthView() {
         ${cells.map(c => {
           if (!c) return '<div></div>';
           const count = c.isWeekend ? 0 : c.periods.length;
-          return `<div class="min-h-[64px] p-1.5 rounded-lg ${c.isToday ? 'bg-brand-100 border-2 border-brand-500' : c.isWeekend ? 'bg-slate-50' : 'bg-white border border-slate-200'}">
+          return `<div class="min-h-[64px] p-1.5 rounded-lg ${c.isToday ? 'bg-brand-100' : c.isWeekend ? 'bg-slate-50' : 'bg-white border border-slate-200'}">
             <div class="text-xs font-bold ${c.isToday ? 'text-brand-700' : 'text-slate-700'}">${c.day}</div>
             ${count > 0 ? `<div class="text-xs mt-1 text-brand-700 font-semibold">${count} class${count !== 1 ? 'es' : ''}</div>` : ''}
             ${count > 0 ? c.periods.slice(0, 2).map(p => {
@@ -2880,7 +2880,7 @@ function view_tch_appraisal() {
   return `
     ${pageHeader({ title: 'My Appraisal', subtitle: 'Self-assessment, progress and results' })}
 
-    ${pending ? `<div class="card p-5 mb-4 border-2 border-amber-300 bg-amber-50">
+    ${pending ? `<div class="card p-5 mb-4 bg-amber-50">
       <div class="flex items-start gap-3">
         <span class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0 text-xl">✍️</span>
         <div class="flex-1 min-w-0">
@@ -2892,7 +2892,7 @@ function view_tch_appraisal() {
       </div>
     </div>` : ''}
 
-    ${ackPending ? `<div class="card p-5 mb-4 border-2 border-brand-300 bg-brand-50">
+    ${ackPending ? `<div class="card p-5 mb-4 bg-brand-50">
       <div class="flex items-start gap-3">
         <span class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 text-xl">🏆</span>
         <div class="flex-1 min-w-0">
@@ -2946,7 +2946,7 @@ function view_tch_appraisal() {
             </div>` : ''}
 
             <!-- Outcome box -->
-            ${apr.outcome ? `<div class="rounded-xl p-3 ${apr.outcome.type === 'pip' ? 'bg-rose-50 border border-rose-200' : apr.outcome.type === 'increment' ? 'bg-emerald-50 border border-emerald-200' : 'bg-brand-50 border border-brand-200'}">
+            ${apr.outcome ? `<div class="rounded-xl p-3 ${apr.outcome.type === 'pip' ? 'bg-rose-50' : apr.outcome.type === 'increment' ? 'bg-emerald-50' : 'bg-brand-50'}">
               <div class="font-semibold text-sm mb-1">${_tch_outcomeLabel(apr.outcome)} ${apr.outcome.incrementPct ? `(+${apr.outcome.incrementPct}%)` : ''}</div>
               <div class="text-xs text-slate-600">${apr.outcome.note}</div>
             </div>` : ''}
@@ -2997,7 +2997,7 @@ function tch_selfAssessmentModal(aprId) {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <strong>${cycle?.title}</strong><br/>
           Rate yourself honestly on each area. Your manager will review these scores independently.
         </div>
@@ -3097,7 +3097,7 @@ function tch_acknowledgeModal(aprId) {
             ${_aprScoreBar(apr.finalScores?.[m.key]||0)}
           </div>`).join('')}
         </div>
-        ${apr.outcome ? `<div class="rounded-xl p-3 ${apr.outcome.type==='pip'?'bg-rose-50 border border-rose-200':'bg-emerald-50 border border-emerald-200'}">
+        ${apr.outcome ? `<div class="rounded-xl p-3 ${apr.outcome.type==='pip'?'bg-rose-50':'bg-emerald-50'}">
           <div class="font-semibold text-sm">${_tch_outcomeLabel(apr.outcome)}${apr.outcome.incrementPct ? ` (+${apr.outcome.incrementPct}%)` : ''}</div>
           <div class="text-xs mt-1">${apr.outcome.note}</div>
         </div>` : ''}
@@ -3105,7 +3105,7 @@ function tch_acknowledgeModal(aprId) {
         <div><label class="input-label">Your Response <span class="text-slate-400 font-normal">(optional)</span></label>
           <textarea id="ack_response" rows="3" class="input" placeholder="Any comments, queries or concerns about this appraisal…"></textarea>
         </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
           ${icon('info','w-4 h-4 inline mr-1')} By acknowledging you confirm you have read and understood this appraisal. This does not mean you necessarily agree with every part.
         </div>
       </div>

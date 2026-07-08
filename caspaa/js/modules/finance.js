@@ -52,7 +52,7 @@ function view_fin_dashboard() {
         ${statCard({ label: 'Net Cashflow', value: money(netCash), icon: 'trending_up', color: 'brand' })}
       </div>
 
-      ${unreconciled ? `<div class="card bg-amber-50 border border-amber-200 p-3 flex items-center justify-between">
+      ${unreconciled ? `<div class="card bg-amber-50 p-3 flex items-center justify-between">
         <div class="flex items-center gap-3"><div class="text-amber-700">${icon('bell','w-5 h-5')}</div>
           <div><div class="font-semibold text-amber-900">${unreconciled} transaction${unreconciled>1?'s':''} unreconciled</div>
           <div class="text-sm text-amber-800">Review and confirm to update student balances.</div></div>
@@ -65,7 +65,7 @@ function view_fin_dashboard() {
                            .sort((a, b) => b.computedAt.localeCompare(a.computedAt))[0];
         if (!activeRun || activeRun.stage === 'draft') return '';
         if (activeRun.stage === 'pending_approval') {
-          return `<div class="card bg-brand-50 border border-brand-200 p-4 flex items-center justify-between gap-4">
+          return `<div class="card bg-brand-50 p-4 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-brand-200 text-brand-800 flex items-center justify-center flex-shrink-0">${icon('bell','w-5 h-5')}</div>
               <div>
@@ -77,7 +77,7 @@ function view_fin_dashboard() {
           </div>`;
         }
         if (activeRun.stage === 'approved') {
-          return `<div class="card bg-emerald-50 border border-emerald-200 p-4 flex items-center justify-between gap-4">
+          return `<div class="card bg-emerald-50 p-4 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-emerald-200 text-emerald-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
               <div>
@@ -220,7 +220,7 @@ function sendBulkReminders() {
     title: 'Send Bulk Reminders',
     body: `
       <div class="space-y-3">
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           ${icon('bell','w-4 h-4 inline')} This will send a payment reminder to <strong>${invoices.length} parent(s)</strong> with outstanding balances. Each reminder includes the student's unique ID for reference.
         </div>
         <div>
@@ -262,7 +262,7 @@ function invoiceReminderSettingsModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           ${icon('info','w-4 h-4 inline')} These settings are saved for reference. Automated sending requires a server-side scheduler — use the <strong>Manual Reminder Trigger</strong> below to send reminders now.
         </div>
         <div class="card p-4 space-y-3">
@@ -341,7 +341,7 @@ function bulkGenerateInvoicesModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Generate invoices for all returning students who don't yet have one for <strong>${currentTerm}</strong>. New enrollments are excluded — their invoices are created during student registration.
         </div>
         <div class="grid grid-cols-3 gap-3 text-center">
@@ -358,7 +358,7 @@ function bulkGenerateInvoicesModal() {
             <div class="text-xs text-emerald-600">Will be invoiced</div>
           </div>
         </div>
-        ${noInvoiceYet.length === 0 ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">All returning students already have invoices for this term. Nothing to generate.</div>` : `
+        ${noInvoiceYet.length === 0 ? `<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">All returning students already have invoices for this term. Nothing to generate.</div>` : `
         <div class="bg-slate-50 rounded-xl p-3 text-sm space-y-1 max-h-48 overflow-y-auto">
           <div class="font-semibold text-slate-700 mb-2">Students to be invoiced:</div>
           ${noInvoiceYet.map(s => {
@@ -371,7 +371,7 @@ function bulkGenerateInvoicesModal() {
             </div>`;
           }).join('')}
         </div>
-        <div class="text-xs text-slate-500 bg-amber-50 border border-amber-200 rounded-xl p-3">
+        <div class="text-xs text-slate-500 bg-amber-50 rounded-xl p-3">
           Students without a matching fee structure for ${currentTerm} will be skipped. Set up fee structures under <strong>Fee Structure → New Structure</strong>.
         </div>`}
       </div>
@@ -508,7 +508,7 @@ function renderFeeStructuresTab() {
         </tbody>
       </table>
     </div>
-    <div class="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">
+    <div class="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-brand-50 rounded-xl px-4 py-3">
       ${icon('info','w-3.5 h-3.5 flex-shrink-0 text-brand-500')}
       <span>Extracurricular fees (swimming, ballet, music, etc.) are charged <strong>per student</strong> — manage them under the <button class="text-brand-700 font-semibold underline" onclick="APP.params.feeTab='activities'; APP.render()">Activities tab</button> and assign from each student's profile.</span>
     </div>
@@ -655,7 +655,7 @@ function editActivityModal(actId) {
           <label class="input-label">Fee per term (₦) *</label>
           <input id="act_price" type="number" class="input" placeholder="e.g. 15000" value="${existing ? existing.price : ''}" />
         </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
           ${icon('info','w-4 h-4 inline mr-1')} This fee is charged <strong>per student</strong> who enrolls. Enroll students from their profile (Students → open student → Activities tab).
         </div>
       </div>
@@ -789,7 +789,7 @@ function feeStructureModal(editingId) {
           </div>
           ${!(existing && existing.extraItems && existing.extraItems.length) ? '<p id="fs_extra_hint" class="text-xs text-slate-400 mt-1">No additional fees — add rows for items like Lab Fee, ICT Levy, etc.</p>' : ''}
         </div>
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Extracurricular fees (swimming, ballet, music, etc.) are <strong>per student</strong> — set them under the <strong>Activities tab</strong> and assign to each student from their profile.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -835,7 +835,7 @@ function feeStructureModal(editingId) {
             </div>
           </div>
         </div>
-        ${isEdit ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+        ${isEdit ? `<div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
           <strong>Note:</strong> Editing this structure does not retroactively change existing invoices. New invoices generated from this point will use the updated amounts.
         </div>` : ''}
       </div>
@@ -1292,7 +1292,7 @@ function manualPaymentModal() {
     title: 'Record Manual Payment',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Use for <strong>cash</strong>, <strong>cheque</strong>, or <strong>bank transfer</strong> payments received at the school. These post directly to the student's invoice with no Paystack involved.
         </div>
         <div>
@@ -1305,7 +1305,7 @@ function manualPaymentModal() {
             }).join('')}
           </select>
         </div>
-        <div id="mp_balanceHint" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-900"></div>
+        <div id="mp_balanceHint" class="hidden bg-amber-50 rounded-xl p-2.5 text-xs text-amber-900"></div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label">Amount (NGN)</label><input id="mp_amount" type="number" class="input" /></div>
           <div><label class="input-label">Method</label>
@@ -1425,7 +1425,7 @@ function view_fin_recon() {
         <button class="btn btn-secondary" onclick="autoMatchAllTransactions()">${icon('ai','w-4 h-4')} Auto-Match All</button>
       `
     })}
-    <div class="card bg-brand-50 border border-brand-200 p-3 mb-4 text-sm text-brand-900">
+    <div class="card bg-brand-50 p-3 mb-4 text-sm text-brand-900">
       ${icon('info','w-4 h-4 inline mr-1')} <strong>${unreconciled.length}</strong> payment${unreconciled.length!==1?'s':''} need${unreconciled.length===1?'s':''} matching. Primary match: <strong>Student ID</strong> in payment narration or reference. Fallback: name-based matching. You can also enter the Student ID manually.
     </div>
     <div class="card overflow-hidden">
@@ -1529,7 +1529,7 @@ function recordCashPaymentModal() {
     title: 'Record Cash Payment',
     body: `
       <div class="space-y-3">
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        <div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           ${icon('check','w-4 h-4 inline')} Use the student's unique ID to ensure accurate payment matching.
         </div>
         <div>
@@ -1695,7 +1695,7 @@ function view_fin_lending() {
       </table>
     </div>
 
-    ${pending.length ? `<div class="card p-4 mt-4 bg-amber-50 border border-amber-200">
+    ${pending.length ? `<div class="card p-4 mt-4 bg-amber-50">
       <h4 class="font-semibold text-amber-900 mb-3">${pending.length} pending application${pending.length>1?'s':''} — review before deciding</h4>
       <div class="space-y-2">
         ${pending.map(l => {
@@ -2055,7 +2055,7 @@ function renderPayrollStepper(run) {
 function renderPayrollStageAction(run) {
   if (run.stage === 'draft') {
     return `
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+      <div class="bg-amber-50 rounded-xl p-4">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-lg bg-amber-200 text-amber-800 flex items-center justify-center flex-shrink-0">${icon('edit','w-5 h-5')}</div>
           <div class="flex-1">
@@ -2075,7 +2075,7 @@ function renderPayrollStageAction(run) {
     const cashOnHand = txns.reduce((s, t) => s + t.amount, 0) - (DB.query('expenses', e => e.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).reduce((s, e) => s + e.amount, 0));
     const sufficient = cashOnHand >= run.netTotal;
     return `
-      <div class="bg-brand-50 border border-brand-200 rounded-xl p-4">
+      <div class="bg-brand-50 rounded-xl p-4">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-lg bg-brand-200 text-brand-800 flex items-center justify-center flex-shrink-0">${icon('check','w-5 h-5')}</div>
           <div class="flex-1">
@@ -2086,7 +2086,7 @@ function renderPayrollStageAction(run) {
               <div><div class="text-xs text-slate-500">Available Balance</div><div class="font-mono font-bold ${sufficient ? 'text-emerald-700' : 'text-rose-700'}">${money(Math.max(0, cashOnHand))}</div></div>
               <div><div class="text-xs text-slate-500">Fund Status</div><div class="font-bold ${sufficient ? 'text-emerald-700' : 'text-rose-700'}">${sufficient ? icon('check','w-3 h-3 inline') + ' Sufficient' : icon('x','w-3 h-3 inline') + ' Insufficient'}</div></div>
             </div>
-            ${!sufficient ? `<div class="bg-rose-50 border border-rose-200 rounded-lg p-2 mt-2 text-xs text-rose-900">${icon('bell','w-3.5 h-3.5 inline')} Available funds may be insufficient. Review expenses and collections before authorizing.</div>` : ''}
+            ${!sufficient ? `<div class="bg-rose-50 rounded-lg p-2 mt-2 text-xs text-rose-900">${icon('bell','w-3.5 h-3.5 inline')} Available funds may be insufficient. Review expenses and collections before authorizing.</div>` : ''}
             <div class="flex gap-2 mt-3 flex-wrap">
               <button class="btn btn-secondary text-sm" onclick="sendBackPayroll('${run.id}')">${icon('arrow_left','w-3.5 h-3.5')} Return to HR</button>
               <button class="btn btn-primary ${!sufficient ? '!bg-amber-600' : ''}" onclick="approvePayrollRun('${run.id}')">${icon('check','w-4 h-4')} ${sufficient ? 'Authorize Disbursement →' : 'Authorize Anyway →'}</button>
@@ -2098,7 +2098,7 @@ function renderPayrollStageAction(run) {
   }
   if (run.stage === 'approved') {
     return `
-      <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+      <div class="bg-emerald-50 rounded-xl p-4">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-lg bg-emerald-200 text-emerald-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
           <div class="flex-1">
@@ -2203,7 +2203,7 @@ function postPayrollModal(runId) {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        <div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           ${run.staffCount} staff paid ${money(run.netTotal)} via NIBSS. Now handle the regulatory side.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -2279,7 +2279,7 @@ function viewPayrollRun(runId) {
             }).join('')}
           </div>
         </div>` : ''}
-        ${run.stage === 'paid' ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">${icon('check','w-4 h-4 inline')} Payslips have been issued to all staff via in-app + email.</div>` : ''}
+        ${run.stage === 'paid' ? `<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">${icon('check','w-4 h-4 inline')} Payslips have been issued to all staff via in-app + email.</div>` : ''}
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
@@ -2322,7 +2322,7 @@ function manageAdjustmentsModal(runId) {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Add bonuses, overtime, fines or leave deductions for this run. They apply on top of base salary.
         </div>
         <div class="space-y-1.5">

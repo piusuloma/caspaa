@@ -267,7 +267,7 @@ function view_adm_permissions() {
         </table>
       </div>
     </div>
-    <div class="mt-3 bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">
+    <div class="mt-3 bg-brand-50 rounded-xl p-3 text-xs text-brand-900">
       ${icon('info','w-4 h-4 inline mr-1')} To change a staff member's permissions, open their profile in <strong>Staff Directory</strong> and edit their role/permission toggles.
     </div>
   `;
@@ -490,7 +490,7 @@ function openAppraisalCycleModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Opening a cycle sends a notification to all selected staff asking them to complete their <strong>self-assessment</strong> by the deadline.
         </div>
         <div><label class="input-label">Cycle Title</label><input id="cyc_title" class="input" value="${DB.settings().currentTerm} — Staff Performance Review" /></div>
@@ -574,7 +574,7 @@ function aprManagerReviewModal(aprId) {
             </div>`).join('')}
           </div>
           ${apr.selfComment ? `<div class="mt-3 text-sm text-slate-700 italic">"${apr.selfComment}"</div>` : ''}
-        </details>` : `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">Staff has not yet submitted a self-assessment.</div>`}
+        </details>` : `<div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">Staff has not yet submitted a self-assessment.</div>`}
         <!-- Manager scores -->
         <div>
           <h4 class="font-semibold text-slate-900 mb-3">Your Assessment</h4>
@@ -671,7 +671,7 @@ function aprPrincipalModal(aprId) {
         <div><label class="input-label">Principal's Comment <span class="text-slate-400 font-normal">(required)</span></label>
           <textarea id="prn_comment" rows="3" class="input" placeholder="Add your remarks, endorse or note any adjustments…"></textarea>
         </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
           ${icon('info','w-4 h-4 inline mr-1')} Approving locks in the manager scores as the final score and moves to Outcome setting.
         </div>
       </div>
@@ -973,7 +973,7 @@ function view_adm_lesson_plans() {
                     <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Activities</div><div class="text-slate-700">${l.activities}</div></div>
                     <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Resources</div><div class="text-slate-700">${l.resources}</div></div>
                   </div>
-                  ${l.file ? `<a href="${l.file.data}" download="${l.file.name}" class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-sm hover:bg-emerald-100">
+                  ${l.file ? `<a href="${l.file.data}" download="${l.file.name}" class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg text-sm hover:bg-emerald-100">
                     ${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="font-semibold text-emerald-900">${l.file.name}</span>${icon('download','w-3.5 h-3.5 text-emerald-700')}
                   </a>` : ''}
                 </div>
@@ -1473,9 +1473,9 @@ function adm_bulkUploadClassModal(classId) {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <div class="font-semibold mb-1">CSV format — one row per week per subject:</div>
-          <div class="font-mono text-xs bg-white rounded p-2 border border-brand-100 text-slate-700">
+          <div class="font-mono text-xs bg-white rounded p-2 text-slate-700">
             Subject,Week,Topic,Objectives,Activities,Resources<br>
             Mathematics,1,Number Bases,Understand base 10 and 2,Group work,Textbook<br>
             Mathematics,2,Fractions,Convert between types,Practice drill,Textbook<br>
@@ -1533,7 +1533,7 @@ function adm_previewClassBulkCSV(input, classId) {
     const isHeader = rows[0] && isNaN(parseInt(rows[0][1]));
     const data  = (isHeader ? rows.slice(1) : rows).filter(r => r.length >= 3 && r[0]);
     if (!data.length) {
-      document.getElementById('buc_preview').innerHTML = '<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-800">No valid rows found. Check the file has Subject and Week columns.</div>';
+      document.getElementById('buc_preview').innerHTML = '<div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-800">No valid rows found. Check the file has Subject and Week columns.</div>';
       return;
     }
     const subjectGroups = {};
@@ -1545,9 +1545,9 @@ function adm_previewClassBulkCSV(input, classId) {
     }).map(([name]) => name);
     window._bucCSVData = data;
     document.getElementById('buc_preview').innerHTML =
-      '<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900 space-y-2">'
+      '<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900 space-y-2">'
       + '<div class="font-semibold">' + icon('check','w-4 h-4 inline') + ' ' + data.length + ' rows · ' + subjectList.length + ' subject' + (subjectList.length !== 1 ? 's' : '') + ' detected:</div>'
-      + '<div class="flex flex-wrap gap-1">' + subjectList.map(([name, cnt]) => '<span class="bg-white border border-emerald-300 rounded-full px-2 py-0.5 text-xs">' + name + ' (' + cnt + ' wks)</span>').join('') + '</div>'
+      + '<div class="flex flex-wrap gap-1">' + subjectList.map(([name, cnt]) => '<span class="bg-white rounded-full px-2 py-0.5 text-xs">' + name + ' (' + cnt + ' wks)</span>').join('') + '</div>'
       + (unknownSubs.length ? '<div class="text-amber-700 text-xs mt-1">⚠ Not found in subject list (will be created as new): ' + unknownSubs.join(', ') + '</div>' : '')
       + '</div>';
     document.getElementById('buc_import_btn').classList.remove('hidden');
@@ -1838,7 +1838,7 @@ function newSchemeModal(prefilledClassId) {
         </div>
 
         <!-- Template info (shown by default) -->
-        <div id="nsch_template_info" class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900 space-y-1">
+        <div id="nsch_template_info" class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900 space-y-1">
           <div class="font-semibold">${icon('check','w-4 h-4 inline mr-1 text-brand-600')} What happens when you click Create:</div>
           <ul class="list-disc pl-5 text-xs space-y-0.5">
             <li>12 weeks of topics are generated automatically based on the subject</li>
@@ -1857,7 +1857,7 @@ function newSchemeModal(prefilledClassId) {
 
         <!-- CSV upload row (hidden) -->
         <div id="nsch_csv_row" class="hidden space-y-2">
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 space-y-1">
+          <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900 space-y-1">
             <div class="font-semibold">How to prepare your CSV:</div>
             <ol class="list-decimal pl-4 space-y-0.5">
               <li>Download the template below, or open Excel/Google Sheets</li>
@@ -1906,8 +1906,8 @@ function nschPreviewCSV(input) {
     window._newSchemeCsvData = valid;
     const preview = document.getElementById('nsch_csv_preview');
     if (preview) preview.innerHTML = valid.length
-      ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2 text-xs text-emerald-900">${icon('check','w-3.5 h-3.5 inline')} <strong>${file.name}</strong> — ${valid.length} week${valid.length !== 1 ? 's' : ''} ready to import</div>`
-      : `<div class="bg-rose-50 border border-rose-200 rounded-xl p-2 text-xs text-rose-800">${icon('alert','w-3.5 h-3.5 inline')} No valid rows found. Check the file has Week and Topic columns.</div>`;
+      ? `<div class="bg-emerald-50 rounded-xl p-2 text-xs text-emerald-900">${icon('check','w-3.5 h-3.5 inline')} <strong>${file.name}</strong> — ${valid.length} week${valid.length !== 1 ? 's' : ''} ready to import</div>`
+      : `<div class="bg-rose-50 rounded-xl p-2 text-xs text-rose-800">${icon('alert','w-3.5 h-3.5 inline')} No valid rows found. Check the file has Week and Topic columns.</div>`;
   };
   reader.readAsText(file);
 }
@@ -2007,7 +2007,7 @@ function importExcelCurriculumModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Upload one Excel file per class. Each sheet should represent one subject, with columns: <strong>Week, Topic, Objectives, Activities, Resources</strong>.
         </div>
         <div>
@@ -2032,7 +2032,7 @@ function importExcelCurriculumModal() {
           </div>
         </div>
         <div id="exc_preview" class="hidden">
-          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+          <div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
             ${icon('check','w-4 h-4 inline mr-1')} <span id="exc_preview_text">File loaded</span>. Review below and click <strong>Import</strong> to populate schemes.
           </div>
         </div>
@@ -2110,9 +2110,9 @@ function importFullSchoolCurriculumModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Upload one CSV file covering <strong>all classes and subjects</strong> for the school. Each row = one week of a subject.
-          <div class="mt-2 font-mono text-xs bg-white rounded p-2 border border-brand-100 text-slate-700">
+          <div class="mt-2 font-mono text-xs bg-white rounded p-2 text-slate-700">
             Class,Subject,Week,Topic,Objectives,Activities,Resources<br>
             JSS 1,Mathematics,1,Number Bases,Understand base 10 and 2,Group work,Textbook<br>
             JSS 1,Mathematics,2,Algebraic Expressions,…,…,…
@@ -2200,7 +2200,7 @@ function importNERDCTemplateModal() {
     title: 'Import NERDC / UBEC Template',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           CASPAA ships with pre-built scheme templates aligned to the <strong>NERDC</strong> (junior secondary) and <strong>UBEC</strong> (primary) national curricula. Pick a class and subject to import the standard 12-week plan.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -2478,7 +2478,7 @@ function createConsentModal() {
         </div>
         <div><label class="input-label">Details / Terms</label><textarea id="cf_desc" rows="4" class="input" placeholder="Explain what parents are approving…"></textarea></div>
         <div><label class="input-label">Response deadline</label><input id="cf_due" type="date" class="input" value="${daysAhead(7)}" /></div>
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">${icon('info','w-4 h-4 inline mr-1')} Parents will be notified instantly and can approve with a one-tap e-signature. Every response is timestamped for your records.</div>
+        <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-900">${icon('info','w-4 h-4 inline mr-1')} Parents will be notified instantly and can approve with a one-tap e-signature. Every response is timestamped for your records.</div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -3228,7 +3228,7 @@ function viewStudent(id, activeTab) {
         <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Admission Date</div><div>${fdate(s.admissionDate, { long: true })}</div></div>
         <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Admission Type</div><div>${s.admissionType === 'transfer' ? 'Transfer-in' : 'New Admission'}</div></div>
         ${s.admissionType === 'transfer' && s.transferFromSchool ? `
-        <div class="col-span-2 bg-brand-50 border border-brand-200 rounded-xl p-3">
+        <div class="col-span-2 bg-brand-50 rounded-xl p-3">
           <div class="text-xs text-brand-700 font-semibold uppercase mb-1">Transfer Origin</div>
           <div class="font-semibold text-slate-900">${s.transferFromSchool}</div>
           ${s.transferFromClass ? `<div class="text-xs text-slate-500">Last class: ${s.transferFromClass}</div>` : ''}
@@ -3236,14 +3236,14 @@ function viewStudent(id, activeTab) {
           ${s.transferInReason ? `<div class="text-xs text-slate-500 mt-0.5">Reason: ${s.transferInReason}</div>` : ''}
         </div>` : ''}
         ${s.status === 'transferred' ? `
-        <div class="col-span-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
+        <div class="col-span-2 bg-amber-50 rounded-xl p-3">
           <div class="text-xs text-amber-700 font-semibold uppercase mb-1">Transferred Out</div>
           <div class="font-semibold text-slate-900">${s.transferDest || '—'}</div>
           ${s.transferReason ? `<div class="text-xs text-slate-500">${s.transferReason}</div>` : ''}
           ${s.transferredAt ? `<div class="text-xs text-slate-500">Date: ${fdate(s.transferredAt, { long: true })}</div>` : ''}
         </div>` : ''}
         ${s.status === 'withdrawn' ? `
-        <div class="col-span-2 bg-rose-50 border border-rose-200 rounded-xl p-3">
+        <div class="col-span-2 bg-rose-50 rounded-xl p-3">
           <div class="text-xs text-rose-700 font-semibold uppercase mb-1">Withdrawn</div>
           <div class="font-semibold text-slate-900">${s.withdrawReason || '—'}</div>
           ${s.withdrawnAt ? `<div class="text-xs text-slate-500">Date: ${fdate(s.withdrawnAt, { long: true })}</div>` : ''}
@@ -3396,7 +3396,7 @@ function viewStudent(id, activeTab) {
       ${suspRecs.length ? `<div class="mb-4">
         <div class="font-bold text-slate-900 text-sm mb-2">Suspension History</div>
         <div class="space-y-2">
-          ${suspRecs.map(ss => `<div class="border border-amber-200 bg-amber-50 rounded-xl p-3 text-sm">
+          ${suspRecs.map(ss => `<div class="bg-amber-50 rounded-xl p-3 text-sm">
             <div class="flex items-start justify-between gap-2">
               <div class="font-semibold text-amber-900">${ss.reason}</div>
               <span class="badge ${ss.reinstatedAt ? 'badge-success' : 'badge-warn'} flex-shrink-0">${ss.reinstatedAt ? 'Reinstated' : 'Active'}</span>
@@ -3732,7 +3732,7 @@ function newActivityModal() {
         <div><label class="input-label">Student Fee (₦)</label><input id="act_price" type="number" class="input" placeholder="0" min="0" /></div>
         <div><label class="input-label">Instructor Cost per Student (₦)</label><input id="act_cost" type="number" class="input" placeholder="0" min="0" /></div>
       </div>
-      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-800">
+      <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-800">
         ${icon('info','w-3.5 h-3.5 inline mr-1')} Net income per student = Fee − Instructor Cost. This drives the revenue report above.
       </div>
     </div>`,
@@ -3918,7 +3918,7 @@ function addStudentModal(editingId) {
             <option value="transfer">Transfer from another school</option>
           </select>
         </div>
-        <div id="sf_transferFields" class="sm:col-span-2 hidden space-y-2 p-3 bg-brand-50 border border-brand-200 rounded-xl">
+        <div id="sf_transferFields" class="sm:col-span-2 hidden space-y-2 p-3 bg-brand-50 rounded-xl">
           <div><label class="input-label">Previous School Name *</label><input id="sf_transferFrom" class="input" placeholder="e.g. Holy Trinity Primary School, Ikeja" /></div>
           <div class="grid grid-cols-2 gap-2">
             <div><label class="input-label">Last Class at Previous School</label><input id="sf_transferFromClass" class="input" placeholder="e.g. Primary 3" /></div>
@@ -4235,7 +4235,7 @@ function showParentCredentialsModal(parent, student, invoice) {
           ${invoice ? `<div class="text-right"><div class="text-xs text-slate-500">Outstanding</div><div class="font-mono font-bold text-rose-700">${money(balance)}</div></div>` : ''}
         </div>
 
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+        <div class="bg-amber-50 rounded-xl p-3">
           <div class="text-xs uppercase font-semibold text-amber-800 mb-2">Parent Login Credentials</div>
           <div class="space-y-1 text-sm">
             <div class="flex justify-between"><span class="text-slate-600">Username (phone)</span><code class="font-mono bg-white px-2 py-0.5 rounded">${parent.credentials.username}</code></div>
@@ -4260,7 +4260,7 @@ function showParentCredentialsModal(parent, student, invoice) {
           </div>
         </div>
 
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-900">
           <strong>Demo helper:</strong> Click below to instantly switch to ${parent.name.split(' ').slice(-1)}'s account and see the first-login experience.
         </div>
       </div>
@@ -4309,7 +4309,7 @@ function studentLifecycleModal(studentId) {
             </div>
           </div>
 
-          <button class="w-full p-3 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 rounded-xl text-left transition" onclick="promoteStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-left transition" onclick="promoteStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-emerald-200 text-emerald-700 flex items-center justify-center">${icon('trending_up','w-5 h-5')}</div>
               <div class="flex-1">
@@ -4319,7 +4319,7 @@ function studentLifecycleModal(studentId) {
             </div>
           </button>
 
-          <button class="w-full p-3 bg-brand-50 hover:bg-brand-100 border-2 border-brand-200 rounded-xl text-left transition" onclick="transferStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-brand-50 hover:bg-brand-100 rounded-xl text-left transition" onclick="transferStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-brand-200 text-brand-700 flex items-center justify-center">${icon('arrow_left','w-5 h-5')}</div>
               <div class="flex-1">
@@ -4330,10 +4330,10 @@ function studentLifecycleModal(studentId) {
           </button>
 
           ${s.status === 'suspended' ? `
-          <div class="bg-amber-50 border-2 border-amber-200 rounded-xl p-3 text-sm text-amber-900 mb-1">
+          <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900 mb-1">
             ${icon('bell','w-4 h-4 inline mr-1')} Currently suspended${s.suspensionReason ? ` — <strong>${s.suspensionReason}</strong>` : ''}${s.suspensionResumeDate ? `. Expected return: ${fdate(s.suspensionResumeDate, { long: true })}` : ''}.
           </div>
-          <button class="w-full p-3 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 rounded-xl text-left transition" onclick="reinstateStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-left transition" onclick="reinstateStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-emerald-200 text-emerald-700 flex items-center justify-center">${icon('check','w-5 h-5')}</div>
               <div class="flex-1">
@@ -4342,7 +4342,7 @@ function studentLifecycleModal(studentId) {
               </div>
             </div>
           </button>` : `
-          <button class="w-full p-3 bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-xl text-left transition" onclick="suspendStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-amber-50 hover:bg-amber-100 rounded-xl text-left transition" onclick="suspendStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-amber-200 text-amber-700 flex items-center justify-center">${icon('bell','w-5 h-5')}</div>
               <div class="flex-1">
@@ -4352,7 +4352,7 @@ function studentLifecycleModal(studentId) {
             </div>
           </button>`}
 
-          <button class="w-full p-3 bg-rose-50 hover:bg-rose-100 border-2 border-rose-200 rounded-xl text-left transition" onclick="withdrawStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-rose-50 hover:bg-rose-100 rounded-xl text-left transition" onclick="withdrawStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-rose-200 text-rose-700 flex items-center justify-center">${icon('logout','w-5 h-5')}</div>
               <div class="flex-1">
@@ -4362,7 +4362,7 @@ function studentLifecycleModal(studentId) {
             </div>
           </button>
 
-          <button class="w-full p-3 bg-brand-50 hover:bg-brand-100 border-2 border-brand-200 rounded-xl text-left transition" onclick="graduateStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-brand-50 hover:bg-brand-100 rounded-xl text-left transition" onclick="graduateStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-brand-200 text-brand-700 flex items-center justify-center">${icon('check','w-5 h-5')}</div>
               <div class="flex-1">
@@ -4385,7 +4385,7 @@ function bulkPromoteModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <strong>End-of-term promotion.</strong> Move every active student in a class to the next class in one click. The final class graduates students to alumni.
         </div>
         <div>
@@ -4399,7 +4399,7 @@ function bulkPromoteModal() {
             ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
           </select>
         </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           Students with status other than "active" will be skipped. Students who transferred <em>into</em> this school and are now enrolled (status = active) will be included — this is correct behaviour. You can review who is included on the next step.
         </div>
       </div>
@@ -4497,7 +4497,7 @@ function promoteStudentModal(studentId) {
           <label class="input-label">Reason / Note (optional)</label>
           <input id="promote_reason" class="input" placeholder="e.g. End of 2024/25 session · satisfactory performance" />
         </div>
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Academic history is preserved. Fee structure for the new class applies from the next invoice cycle. Parent will be notified.
         </div>
       </div>
@@ -4546,7 +4546,7 @@ function transferStudentModal(studentId) {
       <div class="space-y-3">
         <div><label class="input-label">Destination School</label><input id="tr_school" class="input" placeholder="e.g. Greenfield International School" /></div>
         <div><label class="input-label">Reason</label><textarea id="tr_reason" rows="3" class="input" placeholder="e.g. Family relocation to Abuja"></textarea></div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           A transfer certificate will be issued. The student's record will be marked Transferred and archived locally.
         </div>
       </div>
@@ -4600,7 +4600,7 @@ function withdrawStudentModal(studentId) {
     title: 'Withdraw ' + s.name,
     body: `
       <div class="space-y-3">
-        <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-900">
+        <div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-900">
           <strong>Warning:</strong> Withdrawal archives the student record. Fees, results, and attendance history are preserved but the student becomes inactive. This action is logged in the audit trail.
         </div>
         <div><label class="input-label">Reason</label>
@@ -4653,7 +4653,7 @@ function offerRefundModal(studentId, suggested, totalPaid, usedPct) {
     title: 'Refund Eligible',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${s.name} has been withdrawn but their parent paid <strong>${money(totalPaid)}</strong> this term. Approximately <strong>${usedPct}%</strong> of the term has elapsed, so a pro-rata refund may be due.
         </div>
         <div class="bg-slate-50 rounded-xl p-3 space-y-2">
@@ -4721,7 +4721,7 @@ function graduateStudentModal(studentId) {
     title: 'Graduate ' + s.name + ' to Alumni',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${s.name} will be marked as Alumni. Their complete academic record is preserved and accessible from the Alumni page.
         </div>
         <div><label class="input-label">Graduation Year</label><input id="gr_year" type="number" class="input" value="${new Date().getFullYear()}" /></div>
@@ -4779,7 +4779,7 @@ function suspendStudentModal(studentId) {
     title: 'Suspend ' + s.name,
     body: `
       <div class="space-y-3">
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           Suspension temporarily removes the student from school. Their records and history are fully preserved. The parent is notified immediately. You can reinstate at any time.
         </div>
         <div>
@@ -4856,7 +4856,7 @@ function reinstateStudentModal(studentId) {
     title: 'Reinstate ' + s.name,
     body: `
       <div class="space-y-3">
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        <div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           ${s.name} is currently suspended${s.suspensionReason ? ` for <strong>${s.suspensionReason}</strong>` : ''}. Reinstating restores their active status and allows them to resume school activities.
         </div>
         <div>
@@ -4944,9 +4944,9 @@ function view_adm_alumni() {
       icon: 'students'
     }) : `
       <div class="flex gap-3 mb-4 flex-wrap">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl px-4 py-2 text-sm text-brand-900 font-semibold">${icon('students','w-4 h-4 inline-block mr-1')} ${totalAlumni} Total Alumni</div>
-        <div class="bg-green-50 border border-green-200 rounded-xl px-4 py-2 text-sm text-green-900 font-semibold">${icon('check','w-4 h-4 inline-block mr-1')} ${thisYearGrads} Graduated ${thisYear}</div>
-        <div class="bg-brand-50 border border-brand-200 rounded-xl px-4 py-2 text-sm text-brand-900 font-semibold">${icon('edit','w-4 h-4 inline-block mr-1')} ${withPostInfo} With Post-Grad Info</div>
+        <div class="bg-brand-50 rounded-xl px-4 py-2 text-sm text-brand-900 font-semibold">${icon('students','w-4 h-4 inline-block mr-1')} ${totalAlumni} Total Alumni</div>
+        <div class="bg-green-50 rounded-xl px-4 py-2 text-sm text-green-900 font-semibold">${icon('check','w-4 h-4 inline-block mr-1')} ${thisYearGrads} Graduated ${thisYear}</div>
+        <div class="bg-brand-50 rounded-xl px-4 py-2 text-sm text-brand-900 font-semibold">${icon('edit','w-4 h-4 inline-block mr-1')} ${withPostInfo} With Post-Grad Info</div>
       </div>
       <input id="alumni_search" class="input mb-3" placeholder="Search by name or admission number..."
         oninput="APP.params.alumniSearch = this.value; APP.render()"
@@ -5482,7 +5482,7 @@ function adm_updateAlumniModal(alumniId) {
     title: 'Update Alumni Information — ' + a.name,
     size: 'md',
     body: `<div class="space-y-3">
-      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+      <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
         Keep this record up to date to maintain a strong alumni network.
       </div>
       <div>
@@ -5592,7 +5592,7 @@ function bulkUploadModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-800">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-800">
           <strong>How it works:</strong> Download the template, fill it with your student data, then upload it back. The system will create student records and parents automatically.
         </div>
 
@@ -5739,8 +5739,8 @@ function parseBulkCSV(csvText, fileName) {
   else if (created.length && errors.length) {
     modal({
       title: `Partial import: ${created.length} ok, ${errors.length} skipped`,
-      body: `<div class="space-y-2"><div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm">${created.length} student${created.length!==1?'s':''} successfully imported.</div>
-      <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm"><strong class="block mb-1">Skipped rows:</strong>${errors.map(e=>`<div>• ${e}</div>`).join('')}</div></div>`,
+      body: `<div class="space-y-2"><div class="bg-emerald-50 rounded-xl p-3 text-sm">${created.length} student${created.length!==1?'s':''} successfully imported.</div>
+      <div class="bg-rose-50 rounded-xl p-3 text-sm"><strong class="block mb-1">Skipped rows:</strong>${errors.map(e=>`<div>• ${e}</div>`).join('')}</div></div>`,
       footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">OK</button>`
     });
   } else toast(`No students imported. ${errors[0] || 'Check the file.'}`, 'danger');
@@ -5968,7 +5968,7 @@ function adm_rehireStaffModal(staffId) {
     title: 'Re-hire — ' + t.name,
     size: 'sm',
     body: `
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900 mb-4">
+      <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900 mb-4">
         This will restore ${t.name} as an active staff member. Their full history and records are preserved.
       </div>
       <div><label class="input-label">Re-hire Notes</label>
@@ -6169,7 +6169,7 @@ function viewStaff(id, activeTab) {
     const warnings = discRecs.filter(d => d.type === 'warning');
     const commendations = discRecs.filter(d => d.type === 'commendation');
     return `
-      ${termRec ? `<div class="border border-rose-300 bg-rose-50 rounded-xl p-4 mb-4">
+      ${termRec ? `<div class="bg-rose-50 rounded-xl p-4 mb-4">
         <div class="flex items-start gap-3">
           ${icon('x_circle','w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5')}
           <div>
@@ -6185,7 +6185,7 @@ function viewStaff(id, activeTab) {
       ${suspRecs.length ? `<div class="mb-4">
         <div class="font-bold text-slate-900 text-sm mb-2">Suspension History <span class="text-slate-400 font-normal">(${suspRecs.length})</span></div>
         <div class="space-y-2">
-          ${suspRecs.map(d => `<div class="border border-amber-200 bg-amber-50 rounded-xl p-3 text-sm">
+          ${suspRecs.map(d => `<div class="bg-amber-50 rounded-xl p-3 text-sm">
             <div class="flex items-start justify-between gap-2">
               <div class="font-semibold text-amber-900">${d.reason}</div>
               <span class="badge ${d.reinstatedAt ? 'badge-success' : 'badge-warn'} flex-shrink-0">${d.reinstatedAt ? 'Reinstated' : 'Active'}</span>
@@ -6211,7 +6211,7 @@ function viewStaff(id, activeTab) {
       ${commendations.length ? `<div class="mb-4">
         <div class="font-bold text-slate-900 text-sm mb-2">Commendations</div>
         <div class="space-y-2">
-          ${commendations.map(d => `<div class="border border-emerald-200 bg-emerald-50 rounded-xl p-3 text-sm">
+          ${commendations.map(d => `<div class="bg-emerald-50 rounded-xl p-3 text-sm">
             <div class="font-semibold text-emerald-900">${d.reason}</div>
             <div class="text-xs text-emerald-600 mt-0.5">${fdate(d.date, { long: true })}</div>
           </div>`).join('')}
@@ -6263,7 +6263,7 @@ function suspendStaffModal(id) {
     title: `Suspend — ${t.name}`,
     size: 'md',
     body: `
-      <div class="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+      <div class="flex items-center gap-3 bg-amber-50 rounded-xl p-3 mb-4">
         ${icon('alert_triangle','w-5 h-5 text-amber-600 flex-shrink-0')}
         <div class="text-sm text-amber-800">The staff member will be suspended and access may be restricted until reinstated.</div>
       </div>
@@ -6317,7 +6317,7 @@ function reinstateStaffModal(id) {
     title: `Reinstate — ${t.name}`,
     size: 'sm',
     body: `
-      <div class="flex items-center gap-3 bg-brand-50 border border-brand-200 rounded-xl p-3 mb-4">
+      <div class="flex items-center gap-3 bg-brand-50 rounded-xl p-3 mb-4">
         ${icon('check_circle','w-5 h-5 text-brand-600 flex-shrink-0')}
         <div class="text-sm text-brand-800">${t.name} will be reinstated and their status set back to active.</div>
       </div>
@@ -6550,7 +6550,7 @@ function addStaffModal() {
           </div>
         </details>
 
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <div class="font-semibold mb-1">${icon('check','w-4 h-4 inline')} Login credentials will be auto-generated</div>
           <div class="text-xs">Once saved, an invitation email + WhatsApp message is sent with the username (their email) and a temporary password they'll be asked to change on first login.</div>
         </div>
@@ -6767,7 +6767,7 @@ function view_adm_timetable() {
         ${classes.map(c => `<option value="${c.id}" ${classId===c.id?'selected':''}>${c.name}</option>`).join('')}
       </select>
     </div>
-    <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 mb-3 text-sm text-brand-900">
+    <div class="bg-brand-50 rounded-xl p-3 mb-3 text-sm text-brand-900">
       ${icon('check','w-4 h-4 inline')} <strong>Tip:</strong> Click any dashed (empty) cell to add a period. Click a filled cell to edit or remove it. Use <strong>Build Week</strong> to fill the whole grid in one go, or <strong>Bulk Upload</strong> for many classes from CSV.
     </div>
     <div class="card overflow-hidden">
@@ -6945,7 +6945,7 @@ function bulkTimetableUploadModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Upload a CSV with the entire weekly schedule. Rows are periods. Existing periods for the same class/day/period will be replaced.
         </div>
 
@@ -7020,8 +7020,8 @@ function handleBulkTimetable(ev) {
       modal({
         title: `Imported ${added + replaced} periods, ${skipped} skipped`,
         body: `<div class="space-y-2">
-          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm">${added} new · ${replaced} replaced · ${skipped} skipped</div>
-          <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm"><strong>Errors:</strong>${errors.slice(0, 10).map(e => `<div>• ${e}</div>`).join('')}</div>
+          <div class="bg-emerald-50 rounded-xl p-3 text-sm">${added} new · ${replaced} replaced · ${skipped} skipped</div>
+          <div class="bg-rose-50 rounded-xl p-3 text-sm"><strong>Errors:</strong>${errors.slice(0, 10).map(e => `<div>• ${e}</div>`).join('')}</div>
         </div>`,
         footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">OK</button>`
       });
@@ -7119,7 +7119,7 @@ function quickBuildTimetableModal(classId) {
     size: 'xl',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Fill each cell with a subject and teacher. Empty cells stay empty. <strong>Showing periods 1-4</strong> — add more after saving these.
         </div>
         <div class="overflow-x-auto">
@@ -7694,7 +7694,7 @@ function reportCommentModal(studentId, onSave) {
             <div class="text-xs text-slate-500">${DB.settings().currentTerm} · Average: <strong>${avg}%</strong></div>
           </div>
         </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
           ${icon('info','w-4 h-4 inline mr-1')} A class teacher or head teacher comment is <strong>required</strong> before this result can be published and shared with the parent.
         </div>
         <div>
@@ -8015,11 +8015,11 @@ function renderEnrollmentReport(schoolId) {
       <div class="card p-5">
         <h3 class="font-bold text-slate-900 mb-3">New vs Returning (${currentSession})</h3>
         <div class="space-y-3">
-          <div class="p-3 bg-brand-50 border border-brand-200 rounded-xl flex items-center justify-between">
+          <div class="p-3 bg-brand-50 rounded-xl flex items-center justify-between">
             <div><div class="font-semibold text-brand-900">New Enrollment</div><div class="text-xs text-brand-700">First time joining this session</div></div>
             <div class="text-2xl font-extrabold text-brand-700">${newEnrolled.length}</div>
           </div>
-          <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+          <div class="p-3 bg-emerald-50 rounded-xl flex items-center justify-between">
             <div><div class="font-semibold text-emerald-900">Returning Students</div><div class="text-xs text-emerald-700">Enrolled from previous sessions</div></div>
             <div class="text-2xl font-extrabold text-emerald-700">${returning.length}</div>
           </div>
@@ -8304,7 +8304,7 @@ function view_adm_discipline() {
             <h4 class="font-bold text-slate-900 mb-2 text-sm">${icon('check','w-4 h-4 inline')} Admission Portal Link</h4>
             <p class="text-xs text-slate-500 mb-3">Discipline records are synced with this student's admission profile for comprehensive tracking.</p>
             ${admissionRecord ? `
-              <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 mb-2">
+              <div class="bg-emerald-50 rounded-xl p-3 text-xs text-emerald-900 mb-2">
                 ${icon('check','w-3.5 h-3.5 inline')} Admission record found
               </div>
               <div class="text-xs space-y-1">
@@ -8312,7 +8312,7 @@ function view_adm_discipline() {
                 <div><span class="text-slate-500">Admitted:</span> <span class="font-semibold">${fdate(admissionRecord.admittedAt || admissionRecord.createdAt || '', { short: true })}</span></div>
               </div>
             ` : `
-              <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+              <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
                 ${icon('bell','w-3.5 h-3.5 inline')} No separate admission record found. Records are tracked here.
               </div>
             `}
@@ -8475,7 +8475,7 @@ function view_adm_inventory() {
       ${statCard({ label: 'Low Stock', value: lowStock.length, icon: 'bell', color: 'rose' })}
     </div>
 
-    ${lowStock.length ? `<div class="card bg-amber-50 border border-amber-200 p-4 mb-4">
+    ${lowStock.length ? `<div class="card bg-amber-50 p-4 mb-4">
       <div class="flex items-start gap-3">
         <div class="text-amber-700">${icon('bell','w-5 h-5')}</div>
         <div>
@@ -8687,7 +8687,7 @@ function renderHRPayrollPanel() {
 
   const stageLabel = { pending_approval: 'Awaiting Accounting approval', approved: 'Approved — disbursement in progress' }[activeRun.stage] || activeRun.stage;
   return `
-    <div class="card p-5 bg-brand-50 border border-brand-200">
+    <div class="card p-5 bg-brand-50">
       <div class="flex items-start gap-3">
         <div class="w-10 h-10 rounded-lg bg-brand-200 text-brand-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
         <div class="flex-1">
@@ -8975,7 +8975,7 @@ function viewLeaveDetails(leaveId) {
         </div>
 
         ${l.status === 'pending' ? `
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           ${icon('info','w-4 h-4 inline mr-1')} This request is awaiting your decision. Approve to authorise the leave, or reject to decline it (the staff member will be notified either way).
         </div>` : ''}
       </div>
@@ -9030,7 +9030,7 @@ function suggestSubstituteCoverageModal(leaveId) {
     title: 'Assign Substitute Coverage',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <strong>${staffOnLeave.name}</strong> is on ${l.type.toLowerCase()} leave from ${fdate(l.from, { short: true })} to ${fdate(l.to, { short: true })}. We've ranked available substitutes by subject overlap.
         </div>
         <div>
@@ -9182,7 +9182,7 @@ function renderHRAttendance() {
       </div>
     </div>
 
-    <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 mb-4 text-sm text-brand-900">
+    <div class="bg-brand-50 rounded-xl p-3 mb-4 text-sm text-brand-900">
       <strong>How it works:</strong> Staff clock themselves in/out from their dashboard. As an admin, you can also manually record attendance from the gate sign-in book using <em>Mark Attendance</em>.
     </div>
 
@@ -9267,7 +9267,7 @@ function adminMarkStaffAttendanceModal(date) {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Enter staff attendance from the sign-in book. Non-academic staff (security, cleaners, drivers, etc.) are marked manually by admin. Academic staff can also be overridden here. Anything after <strong>08:00</strong> is marked late by default.
         </div>
         <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
@@ -9451,7 +9451,7 @@ function roleEditorModal(roleId) {
     title: isEdit ? `Edit Role — ${existing.name}` : 'New Role',
     size: 'lg',
     body: `
-      ${existing && existing.system ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900 mb-3">
+      ${existing && existing.system ? `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900 mb-3">
         <strong>System role.</strong> You can change permissions but cannot delete or rename this role.
       </div>` : ''}
       <div class="space-y-3">
@@ -9603,7 +9603,7 @@ function renderPaymentSettings() {
       <h3 class="font-bold text-slate-900 mb-3">Payment Gateway Configuration</h3>
       <p class="text-sm text-slate-500 mb-4">Connect Paystack to accept payments. Funds settle to your registered school account.</p>
       <div class="space-y-3">
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-3">
+        <div class="bg-emerald-50 rounded-xl p-3 flex items-center gap-3">
           <div class="w-10 h-10 rounded-lg bg-emerald-200 text-emerald-700 flex items-center justify-center">${icon('check','w-5 h-5')}</div>
           <div class="flex-1">
             <div class="font-semibold text-emerald-900">Paystack — Connected</div>
@@ -9642,7 +9642,7 @@ function reconnectPaystackModal() {
     title: 'Reconnect Paystack',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Get your API keys from the Paystack dashboard under <strong>Settings › API Keys & Webhooks</strong>.
         </div>
         <div><label class="input-label">Public Key</label><input id="ps_pk" class="input font-mono text-sm" placeholder="pk_live_…" /></div>
@@ -9716,7 +9716,7 @@ function restoreBackupModal() {
   modal({
     title: 'Restore from Backup',
     body: `<div class="space-y-3">
-      <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-900">
+      <div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-900">
         <strong>Warning:</strong> Restoring will overwrite all current data with the snapshot you choose. This action is reversible only by restoring a newer backup. Schools are typically taken offline during a restore.
       </div>
       <div><label class="input-label">Choose Backup</label>
@@ -9873,7 +9873,7 @@ function termClosingWizard() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <strong>End-of-term close-out.</strong> This guided flow walks you through five steps to formally end the current term and prepare for the next.
         </div>
 
@@ -9894,7 +9894,7 @@ function termClosingWizard() {
           </div>`).join('')}
         </div>
 
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           <strong>Tip:</strong> You don't have to do this all in one sitting — steps can be done over a few days. The wizard will remember which are done.
         </div>
       </div>
@@ -10021,7 +10021,7 @@ function renderExamStructureSettings() {
   const assessmentCats = _getAssessmentCategories();
   return `
     <div class="space-y-4">
-      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+      <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} Define the assessment types and their weighting for each term. Categories are managed in the section above.
       </div>
       ${examStructure.terms.map((term, ti) => `
@@ -10101,7 +10101,7 @@ function renderAppraisalSettings() {
   };
   return `
     <div class="space-y-4">
-      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+      <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} Define how teacher appraisals are scored. Weights must total 100%. These parameters appear on appraisal forms for principals and department heads.
       </div>
       <div class="card p-5">
@@ -10173,7 +10173,7 @@ function renderBudgetCategoriesSettings() {
   const budgetCats = s.budgetCategories || ['Salaries','Utilities','Maintenance','Supplies','Internet','Transport','Events','Other'];
   return `
     <div class="space-y-4">
-      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+      <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} These categories appear in the Expenses and Budget sections. Edit, reorder, or add your own categories to match your school's accounting structure.
       </div>
       <div class="card p-5">
@@ -10244,7 +10244,7 @@ function renderCustomListsSettings() {
   const s = DB.settings();
   return `
     <div class="space-y-4">
-      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+      <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} Every dropdown below is used across the system. Add, rename, or remove items to match your school's terminology. Changes take effect immediately on new entries.
       </div>
       <div class="grid lg:grid-cols-2 gap-4">
@@ -10318,7 +10318,7 @@ function renderAcademicStructure() {
           <button class="btn btn-ghost text-sm" onclick="newSessionModal()">${icon('plus','w-3.5 h-3.5')}</button>
         </div>
         <div class="space-y-2">
-          ${sessions.map(s => `<div class="p-3 ${s.current ? 'bg-brand-50 border border-brand-200' : 'bg-slate-50'} rounded-xl">
+          ${sessions.map(s => `<div class="p-3 ${s.current ? 'bg-brand-50' : 'bg-slate-50'} rounded-xl">
             <div class="font-bold text-sm">${s.name} ${s.current ? '<span class="badge badge-success ml-1">Current</span>' : ''}</div>
             <div class="text-xs text-slate-500 mt-1">${fdate(s.startDate, { short: true })} → ${fdate(s.endDate, { short: true })}</div>
           </div>`).join('')}
@@ -10332,7 +10332,7 @@ function renderAcademicStructure() {
         <div class="space-y-2">
           ${terms.map(t => {
             const sess = sessions.find(s => s.id === t.sessionId);
-            return `<div class="p-3 ${t.current ? 'bg-brand-50 border border-brand-200' : 'bg-slate-50'} rounded-xl">
+            return `<div class="p-3 ${t.current ? 'bg-brand-50' : 'bg-slate-50'} rounded-xl">
               <div class="font-bold text-sm">${t.name} ${t.current ? '<span class="badge badge-success ml-1">Current</span>' : ''}</div>
               <div class="text-xs text-slate-500 mt-1">${sess ? sess.name : ''} · ${fdate(t.startDate, { short: true })} → ${fdate(t.endDate, { short: true })}</div>
             </div>`;
@@ -10810,7 +10810,7 @@ function newApplicationModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline')} Use this for walk-in enquiries or phone calls. For online self-service, share your <strong>public admission link</strong>.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -10949,22 +10949,22 @@ function viewApplication(appId) {
                 '</div><div class="text-xs leading-tight max-w-[3.5rem] ' + (active ? 'text-brand-700 font-semibold' : done ? 'text-slate-600' : 'text-slate-400') + '">' + stepLabels[s] + '</div></div>';
             }).join('') +
           '</div>'
-        : '<div class="bg-rose-50 border border-rose-200 rounded-xl p-2 text-xs text-rose-700 text-center font-semibold">This application has been rejected</div>'}
+        : '<div class="bg-rose-50 rounded-xl p-2 text-xs text-rose-700 text-center font-semibold">This application has been rejected</div>'}
 
         <!-- What happens next (pending/reviewing only) -->
-        ${a.status === 'pending' ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        ${a.status === 'pending' ? `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           <div class="font-semibold mb-0.5">${icon('bell','w-3.5 h-3.5 inline mr-1')} Next step: Review the application</div>
           Click <strong>Review</strong> to log notes and mark it as actively considered. Once reviewing, you can <strong>Schedule a Visit</strong> or go straight to <strong>Accept &amp; Enrol</strong> if the family walked in.
         </div>` : ''}
-        ${a.status === 'reviewing' ? `<div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        ${a.status === 'reviewing' ? `<div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <div class="font-semibold mb-0.5">${icon('calendar','w-3.5 h-3.5 inline mr-1')} Next step: Schedule a school visit</div>
           Use <strong>Schedule Visit</strong> to pick a date and notify the parent. After the family visits, click <strong>Mark Visit Done</strong> — this unlocks the fee preview in the parent portal. You can also <strong>Accept &amp; Enrol</strong> directly without a visit.
         </div>` : ''}
-        ${a.status === 'visit_scheduled' ? `<div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        ${a.status === 'visit_scheduled' ? `<div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <div class="font-semibold mb-0.5">${icon('check','w-3.5 h-3.5 inline mr-1')} Waiting for the visit to happen</div>
           Once the family comes in, click <strong>Mark Visit Done</strong>. This confirms the visit, creates a parent account (if they don't have one), and unlocks the fee preview for them.
         </div>` : ''}
-        ${a.status === 'visit_confirmed' ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        ${a.status === 'visit_confirmed' ? `<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           <div class="font-semibold mb-0.5">${icon('check','w-3.5 h-3.5 inline mr-1')} Visit done — ready to enrol</div>
           The parent can now see the fee structure in their portal. Click <strong>Accept &amp; Enrol</strong> to create the student record, assign an admission number, and auto-generate the first invoice.
         </div>` : ''}
@@ -10979,12 +10979,12 @@ function viewApplication(appId) {
           <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Home Address</div><div>${a.location || a.address || '—'}</div></div>
         </div>
 
-        ${a.reviewNotes ? `<div class="bg-brand-50 border border-brand-200 rounded-xl p-3">
+        ${a.reviewNotes ? `<div class="bg-brand-50 rounded-xl p-3">
           <div class="text-xs uppercase text-brand-600 font-semibold mb-1">Review Notes</div>
           <div class="text-sm text-brand-900">${a.reviewNotes}</div>
           ${a.reviewedAt ? `<div class="text-xs text-brand-500 mt-1">Noted ${fdate(a.reviewedAt, { relative: true })}</div>` : ''}
         </div>` : ''}
-        ${a.status === 'rejected' && a.rejectionReason ? `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3">
+        ${a.status === 'rejected' && a.rejectionReason ? `<div class="bg-rose-50 rounded-xl p-3">
           <div class="text-xs uppercase text-rose-600 font-semibold mb-1">Rejection Reason</div>
           <div class="text-sm text-rose-900">${a.rejectionReason}</div>
           ${a.decidedAt ? `<div class="text-xs text-rose-400 mt-1">Decided ${fdate(a.decidedAt, { relative: true })}</div>` : ''}
@@ -11011,7 +11011,7 @@ function viewApplication(appId) {
             ${docList.map(d => {
               const doc = docs[d.key];
               if (!doc) {
-                return `<div class="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+                return `<div class="flex items-center gap-2 p-2.5 bg-amber-50 rounded-xl text-sm">
                   <span class="text-amber-600">${icon('bell','w-4 h-4')}</span>
                   <div class="flex-1">
                     <div class="font-semibold text-amber-900">${d.label}</div>
@@ -11019,7 +11019,7 @@ function viewApplication(appId) {
                   </div>
                 </div>`;
               }
-              return `<button type="button" class="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-left hover:bg-emerald-100 transition w-full" onclick="previewAdmissionDoc('${a.id}', '${d.key}')">
+              return `<button type="button" class="flex items-center gap-2 p-2.5 bg-emerald-50 rounded-xl text-sm text-left hover:bg-emerald-100 transition w-full" onclick="previewAdmissionDoc('${a.id}', '${d.key}')">
                 <span class="text-emerald-600 flex-shrink-0">${icon('paperclip','w-4 h-4')}</span>
                 <div class="flex-1 min-w-0">
                   <div class="font-semibold text-emerald-900 truncate">${d.label}</div>
@@ -11086,7 +11086,7 @@ function previewAdmissionDoc(appId, docKey) {
           <span class="badge ${a.status === 'pending' ? 'badge-warn' : 'badge-info'}">${a.status}</span>
         </div>
         ${placeholder}
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <strong>${icon('check','w-3 h-3 inline')} Verified at submission</strong> — uploaded by ${a.parentName} on ${fdate(a.appliedAt, { long: true })}. File checksum on record.
         </div>
       </div>
@@ -11103,7 +11103,7 @@ function reviewApplicationModal(appId) {
     title: 'Review Application — ' + a.applicantName,
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Mark this application as under review and record notes. The application remains visible to your team but is clearly flagged as being actively reviewed.
         </div>
         <div>
@@ -11154,7 +11154,7 @@ function rejectApplicationModal(appId) {
     title: 'Reject Application — ' + a.applicantName,
     body: `
       <div class="space-y-3">
-        <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-900">
+        <div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-900">
           ${icon('x_circle','w-4 h-4 inline')} This will mark the application as <strong>rejected</strong>.
           If the parent has a portal account, they will receive a notification.
         </div>
@@ -11197,7 +11197,7 @@ function scheduleVisitModal(appId) {
     title: 'Schedule School Visit — ' + a.applicantName,
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Schedule a visit for <strong>${a.parentName}</strong> to bring <strong>${a.applicantName}</strong> to school.
           Fee information will only be revealed to the parent <strong>after</strong> the visit is confirmed as complete.
         </div>
@@ -11215,7 +11215,7 @@ function scheduleVisitModal(appId) {
           <label class="input-label">Instructions for Parent (optional)</label>
           <textarea id="vis_notes" rows="2" class="input" placeholder="e.g. Please bring last term's report card and the child's birth certificate…">${a.visitNotes || ''}</textarea>
         </div>
-        <div class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+        <div class="flex items-start gap-2 bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
           ${icon('bell','w-4 h-4 flex-shrink-0 mt-0.5')}
           <span>A notification will be sent to the parent with visit details. Fees remain hidden until you mark the visit as done.</span>
         </div>
@@ -11260,7 +11260,7 @@ function markVisitCompleteModal(appId) {
     title: 'Confirm Visit Attended — ' + a.applicantName,
     body: `
       <div class="space-y-3">
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        <div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           <div class="font-semibold mb-0.5">${icon('check','w-4 h-4 inline')} Confirm ${a.applicantName} visited the school</div>
           <div class="text-xs text-emerald-700">After confirmation the parent will gain access to fee information for their child's class.</div>
         </div>
@@ -11272,7 +11272,7 @@ function markVisitCompleteModal(appId) {
           <label class="input-label">Visit Notes (optional)</label>
           <textarea id="vc_notes" rows="2" class="input" placeholder="e.g. Child participated well in assessment. Parent asked questions about transport..."></textarea>
         </div>
-        <div class="flex items-start gap-2 bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">
+        <div class="flex items-start gap-2 bg-brand-50 rounded-xl p-3 text-xs text-brand-900">
           ${icon('bell','w-4 h-4 flex-shrink-0 mt-0.5')}
           <span>If the parent has no portal account yet, one will be created and login credentials sent to them so they can view fees.</span>
         </div>
@@ -11724,7 +11724,7 @@ function issueBookModal(bookId) {
         <select id="iss_student" class="input">${students.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
       </div>
       <div><label class="input-label">Due Date</label><input id="iss_due" type="date" class="input" value="${daysAhead(14)}" /></div>
-      <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">${book.copiesAvailable} of ${book.copiesTotal} copies available · ${book.location}</div>
+      <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">${book.copiesAvailable} of ${book.copiesTotal} copies available · ${book.location}</div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="issueBook('${bookId}')">Issue Book</button>`
@@ -11859,7 +11859,7 @@ function raiseTicketModal() {
         <div><label class="input-label">Subject</label><input id="tk_subject" class="input" placeholder="Briefly, what do you need help with?" /></div>
         <div><label class="input-label">Details</label><textarea id="tk_desc" rows="4" class="input" placeholder="Describe the issue…"></textarea></div>
         <div><label class="input-label">Priority</label><select id="tk_priority" class="input"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">${icon('info','w-4 h-4 inline mr-1')} Our team responds within the SLA based on priority (High: 4h, Medium: 24h, Low: 48h).</div>
+        <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-900">${icon('info','w-4 h-4 inline mr-1')} Our team responds within the SLA based on priority (High: 4h, Medium: 24h, Low: 48h).</div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -11942,7 +11942,7 @@ function _renderPrintCenter() {
     </div>`;
 
   return `
-    <div class="bg-brand-50 border border-brand-200 rounded-xl px-4 py-3 text-sm text-brand-900 mb-5 flex items-start gap-3">
+    <div class="bg-brand-50 rounded-xl px-4 py-3 text-sm text-brand-900 mb-5 flex items-start gap-3">
       ${icon('reports','w-5 h-5 flex-shrink-0 mt-0.5')}
       <span>Click <strong>Print / Save as PDF</strong> on any report to open a formatted, ready-to-print document you can save, share or file. <strong>Download Spreadsheet</strong> gives you an Excel-compatible file for those who want to work with the numbers.</span>
     </div>

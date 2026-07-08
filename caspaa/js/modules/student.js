@@ -67,7 +67,7 @@ function view_stu_dashboard() {
         <div class="flex flex-wrap gap-3">
           ${reward.badges.length === 0
             ? `<p class="text-sm text-slate-500">No badges yet — keep working hard!</p>`
-            : reward.badges.map(b => `<div class="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+            : reward.badges.map(b => `<div class="flex items-center gap-2 bg-amber-50 rounded-xl px-3 py-2">
             <span class="text-2xl">${b.icon}</span>
             <span class="text-sm font-semibold text-amber-900">${b.label}</span>
           </div>`).join('')}
@@ -281,7 +281,7 @@ function stu_openNote(id) {
       </div>
       ${m.content ? `<div class="bg-slate-50 rounded-xl p-4 text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">${m.content}</div>` : ''}
       ${m.description && !m.content ? `<p class="text-sm text-slate-700">${m.description}</p>` : ''}
-      ${m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="inline-flex items-center gap-2 px-4 py-2 bg-brand-50 border border-brand-200 rounded-xl text-sm hover:bg-brand-100 font-semibold text-brand-900">
+      ${m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="inline-flex items-center gap-2 px-4 py-2 bg-brand-50 rounded-xl text-sm hover:bg-brand-100 font-semibold text-brand-900">
         ${icon('download','w-4 h-4 text-brand-600')} Download Attachment — ${m.file.name} (${m.file.size})
       </a>` : ''}
     </div>`,
@@ -444,7 +444,7 @@ function stu_onSubFile(ev) {
     const isImage = file.type.startsWith('image/');
     p.innerHTML = isImage
       ? `<div class="mt-2"><img src="${e.target.result}" class="max-h-48 rounded-xl border border-slate-200 object-contain w-full" alt="Preview"><div class="text-xs text-slate-500 mt-1 text-center">${file.name} · ${_stuSubFile.size}</div></div>`
-      : `<div class="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="flex-1 truncate font-semibold text-emerald-900">${file.name}</span><span class="text-xs text-emerald-700">${_stuSubFile.size}</span></div>`;
+      : `<div class="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="flex-1 truncate font-semibold text-emerald-900">${file.name}</span><span class="text-xs text-emerald-700">${_stuSubFile.size}</span></div>`;
   };
   reader.readAsDataURL(file);
 }
@@ -458,7 +458,7 @@ function stu_resubmitModal(assignmentId) {
   modal({
     title: 'Resubmit Assignment',
     body: `
-      <div class="${isReturned && sub.resubmissionRequested ? 'bg-amber-50 border border-amber-200' : 'bg-brand-50 border border-brand-200'} rounded-xl p-3 mb-3 text-sm ${isReturned && sub.resubmissionRequested ? 'text-amber-800' : 'text-brand-800'}">
+      <div class="${isReturned && sub.resubmissionRequested ? 'bg-amber-50' : 'bg-brand-50'} rounded-xl p-3 mb-3 text-sm ${isReturned && sub.resubmissionRequested ? 'text-amber-800' : 'text-brand-800'}">
         ${icon('refresh','w-4 h-4 inline mr-1')} ${isReturned && sub.resubmissionRequested ? 'Your teacher has requested a revision. Review the feedback and re-upload your corrected work.' : 'Upload a new version of your work to send back to your teacher.'}
         ${sub && sub.feedback ? `<div class="mt-1 font-semibold">"${sub.feedback}"</div>` : ''}
       </div>
@@ -495,7 +495,7 @@ function stu_viewReturnedWork(assignmentId) {
       <div class="space-y-4">
         <!-- Grade row -->
         <div class="flex items-center gap-3">
-          <div class="text-center bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-3">
+          <div class="text-center bg-emerald-50 rounded-2xl px-5 py-3">
             <div class="text-3xl font-extrabold text-emerald-700">${sub.grade}</div>
             <div class="text-xs text-slateald-500">/100</div>
           </div>
@@ -527,7 +527,7 @@ function stu_viewReturnedWork(assignmentId) {
             <img src="${sub.file.data}" class="max-h-48 rounded-xl border border-slate-200 object-contain w-full" alt="submission" />
           </div>` : ''}
         ${sub.resubmissionRequested ? `
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+          <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-800">
             ${icon('refresh','w-4 h-4 inline mr-1')} Your teacher is asking you to revise and resubmit this work.
           </div>` : ''}
       </div>`,
@@ -551,7 +551,7 @@ function stu_onResubFile(ev) {
     const isImage = file.type.startsWith('image/');
     p.innerHTML = isImage
       ? `<img src="${e.target.result}" class="max-h-40 rounded-xl border border-slate-200 object-contain w-full mt-1" alt="Preview">`
-      : `<div class="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-amber-600')}<span class="font-semibold text-amber-900">${file.name}</span><span class="text-xs text-amber-700">${_stuResubFile.size}</span></div>`;
+      : `<div class="flex items-center gap-2 p-2 bg-amber-50 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-amber-600')}<span class="font-semibold text-amber-900">${file.name}</span><span class="text-xs text-amber-700">${_stuResubFile.size}</span></div>`;
   };
   reader.readAsDataURL(file);
 }
@@ -816,7 +816,7 @@ function view_stu_results() {
   return `
     ${pageHeader({ title: 'My Results', subtitle: `${(APP.params && APP.params.term) || (results.length > 0 && results[0].term) || DB.settings().currentTerm} · academic performance`, actions: results.length ? `
       <div class="flex items-center gap-2">
-        ${!reportComment ? `<span class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">${icon('info','w-3.5 h-3.5 inline mr-1')} Awaiting teacher comment</span>` : ''}
+        ${!reportComment ? `<span class="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">${icon('info','w-3.5 h-3.5 inline mr-1')} Awaiting teacher comment</span>` : ''}
         <button class="btn btn-secondary ${!canDownload ? 'opacity-50 cursor-not-allowed' : ''}" ${canDownload ? `onclick="printReportCard('${s.id}')"` : 'disabled title="Your class teacher must add a comment before the report card can be downloaded"'}>${icon('download','w-4 h-4')} Report Card</button>
       </div>` : '' })}
 
@@ -853,7 +853,7 @@ function view_stu_results() {
         <span>By ${reportComment.classTeacher || 'Class Teacher'}</span>
         <span>Head Teacher: ${reportComment.headTeacher || '—'}</span>
       </div>
-    </div>` : `<div class="card p-4 mb-4 bg-amber-50 border border-amber-200">
+    </div>` : `<div class="card p-4 mb-4 bg-amber-50">
       <div class="flex items-center gap-3">
         <span class="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">${icon('bell','w-5 h-5')}</span>
         <div>

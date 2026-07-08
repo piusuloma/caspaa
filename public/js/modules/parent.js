@@ -71,7 +71,7 @@ function view_par_dashboard() {
       </div>
 
       <!-- Pending consent alert -->
-      ${pendingConsent ? `<button class="w-full flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-left hover:bg-amber-100 transition" onclick="APP.go('par_consent')">
+      ${pendingConsent ? `<button class="w-full flex items-center gap-3 bg-amber-50 rounded-xl p-4 text-left hover:bg-amber-100 transition" onclick="APP.go('par_consent')">
         <span class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">${icon('check','w-5 h-5')}</span>
         <div class="flex-1 min-w-0">
           <div class="font-semibold text-amber-900">${pendingConsent} consent form${pendingConsent !== 1 ? 's' : ''} awaiting your approval</div>
@@ -124,7 +124,7 @@ function view_par_dashboard() {
             <div class="flex items-center justify-between mb-3">
               <h2 class="font-bold text-slate-900">Admission Tracker</h2>
             </div>
-            <button class="w-full card p-4 text-left hover:shadow-md transition border border-brand-100" onclick="APP.go('par_fees')">
+            <button class="w-full card p-4 text-left hover:shadow-md transition" onclick="APP.go('par_fees')">
               <div class="flex items-center gap-3 mb-2">
                 ${avatar(myApp.applicantName, 'md')}
                 <div class="flex-1">
@@ -143,7 +143,7 @@ function view_par_dashboard() {
       ${(() => {
         const achievers = children.filter(c => c.awards || c.achievements || c.badges);
         if (!achievers.length) return '';
-        return `<div class="card bg-amber-50 border border-amber-200 p-4">
+        return `<div class="card bg-amber-50 p-4">
           <div class="flex items-center gap-2 mb-3">
             <span class="w-8 h-8 rounded-lg bg-amber-400 text-white flex items-center justify-center text-base">🏆</span>
             <h3 class="font-bold text-amber-900">Recent Achievements</h3>
@@ -168,7 +168,7 @@ function view_par_dashboard() {
       <!-- Parent assistance banner -->
       ${(() => {
         const school = DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {};
-        return `<div class="bg-brand-50 border border-brand-200 rounded-xl p-4 flex gap-3">
+        return `<div class="bg-brand-50 rounded-xl p-4 flex gap-3">
           <span class="w-10 h-10 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0">${icon('chat','w-5 h-5')}</span>
           <div class="flex-1 min-w-0">
             <div class="font-semibold text-brand-900">Need help?</div>
@@ -303,7 +303,7 @@ function parentWelcomeWizard() {
           </div>`;
         }).join('')}
       </div>
-      ${totalOutstanding > 0 ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900 mt-3">
+      ${totalOutstanding > 0 ? `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900 mt-3">
         ${icon('fees','w-4 h-4 inline')} Your first invoice (<strong>${money(totalOutstanding)} outstanding</strong>) is ready. We made paying easy — card, transfer, USSD, or visit the school office.
       </div>` : ''}
     `;
@@ -800,7 +800,7 @@ function view_par_fees() {
 
           ${(() => {
             const credit = getStudentCredit(s.id);
-            return credit > 0 ? `<div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 mt-3 text-sm">
+            return credit > 0 ? `<div class="flex items-center justify-between bg-emerald-50 rounded-xl px-3 py-2 mt-3 text-sm">
               <div class="flex items-center gap-2 text-emerald-800 font-semibold">${icon('check','w-4 h-4')} Advance Payment: ${money(credit)}</div>
               ${inv.balance > 0 ? `<button class="text-xs underline text-emerald-700 font-semibold" onclick="applyStudentCredit('${inv.id}')">Apply to balance →</button>` : '<span class="text-xs text-emerald-600">Auto-applies to next invoice</span>'}
             </div>` : '';
@@ -851,7 +851,7 @@ function renderProspectFeeGate(app) {
     </div>
 
     ${app.status === 'visit_scheduled' ? `
-    <div class="card p-4 mb-4 border border-brand-200 bg-brand-50">
+    <div class="card p-4 mb-4 bg-brand-50">
       <div class="flex items-start gap-3">
         <div class="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center text-brand-700 flex-shrink-0">${icon('calendar','w-5 h-5')}</div>
         <div class="flex-1">
@@ -867,7 +867,7 @@ function renderProspectFeeGate(app) {
     </div>` : ''}
 
     ${app.status === 'visit_confirmed' ? `
-    <div class="card p-4 mb-4 border border-emerald-200 bg-emerald-50">
+    <div class="card p-4 mb-4 bg-emerald-50">
       <div class="flex items-center gap-2">
         <span class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">${icon('check','w-5 h-5')}</span>
         <div>
@@ -907,7 +907,7 @@ function renderProspectFeeGate(app) {
     </div>`}` : ''}
 
     ${app.status === 'pending' ? `
-    <div class="card p-4 mb-4 border border-amber-200 bg-amber-50">
+    <div class="card p-4 mb-4 bg-amber-50">
       <div class="flex items-start gap-3">
         <div class="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 flex-shrink-0">${icon('bell','w-5 h-5')}</div>
         <div>
@@ -918,7 +918,7 @@ function renderProspectFeeGate(app) {
     </div>` : ''}
 
     ${app.status === 'reviewing' ? `
-    <div class="card p-4 mb-4 border border-brand-200 bg-brand-50">
+    <div class="card p-4 mb-4 bg-brand-50">
       <div class="flex items-start gap-3">
         <div class="w-9 h-9 bg-brand-100 rounded-xl flex items-center justify-center text-brand-600 flex-shrink-0">${icon('search','w-5 h-5')}</div>
         <div>
@@ -1015,7 +1015,7 @@ function installmentPlanModal(invoiceId) {
     title: 'Installment Plan — ' + s.name,
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Split the outstanding balance of <strong>${money(inv.balance)}</strong> across several scheduled payments. The school keeps track of due dates and sends reminders automatically.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -1039,7 +1039,7 @@ function installmentPlanModal(invoiceId) {
           </select>
         </div>
         <div id="ip_preview"></div>
-        ${hasExisting ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">A plan already exists. Saving will replace it.</div>` : ''}
+        ${hasExisting ? `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">A plan already exists. Saving will replace it.</div>` : ''}
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -1101,12 +1101,12 @@ function applyDiscountModal(invoiceId) {
     title: 'Apply Discount / Scholarship',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           The discount appears as a negative line item on the invoice. The student's balance reduces immediately.
         </div>
-        ${promptExpired ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        ${promptExpired ? `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           ${icon('bell','w-4 h-4 inline')} The <strong>Prompt Payment Discount</strong> deadline was ${fdate(dcDeadline, { long: true })} — this discount type is no longer available.
-        </div>` : dcDeadline ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        </div>` : dcDeadline ? `<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           ${icon('check','w-4 h-4 inline')} Prompt Payment Discount available until <strong>${fdate(dcDeadline, { long: true })}</strong>.
         </div>` : ''}
         <div>
@@ -1230,7 +1230,7 @@ function payInvoiceModal(invoiceId) {
         <div class="mt-3 font-bold text-slate-900">${s.name}</div>
         <div class="text-xs text-slate-500">Outstanding balance</div>
         <div class="text-3xl font-extrabold text-brand-700 mt-1">${money(inv.balance)}</div>
-        ${credit > 0 ? `<div class="mt-2 inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-3 py-1 text-sm font-semibold">
+        ${credit > 0 ? `<div class="mt-2 inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 rounded-full px-3 py-1 text-sm font-semibold">
           ${icon('check','w-3.5 h-3.5')} Advance Payment: ${money(credit)}
           <button class="ml-1 text-xs underline font-normal hover:text-emerald-900" onclick="applyStudentCredit('${inv.id}')">Apply now →</button>
         </div>` : ''}
@@ -1245,7 +1245,7 @@ function payInvoiceModal(invoiceId) {
       <div>
         <label class="input-label">Payment Method</label>
         <div class="space-y-2">
-          <label class="flex items-center gap-3 p-3 border-2 border-brand-500 rounded-xl cursor-pointer bg-brand-50">
+          <label class="flex items-center gap-3 p-3 rounded-xl cursor-pointer bg-brand-50">
             <input type="radio" name="payMethod" value="card" checked class="text-brand-600" />
             <div class="flex-1">
               <div class="font-semibold text-sm">Debit / Credit Card</div>
@@ -1342,7 +1342,7 @@ function failPayment(invoiceId, amount, method) {
       <div class="text-center py-5">
         <div class="w-20 h-20 mx-auto rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4">${icon('x','w-12 h-12')}</div>
         <h2 class="text-lg font-bold text-slate-900">${money(amount)} could not be charged</h2>
-        <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 mt-4 text-sm text-rose-900 text-left">
+        <div class="bg-rose-50 rounded-xl p-3 mt-4 text-sm text-rose-900 text-left">
           <div class="font-semibold mb-1">${r.code.replace(/_/g, ' ')}</div>
           <div>${r.message}</div>
         </div>
@@ -1397,7 +1397,7 @@ function completePayment(invoiceId, amount, method) {
         <div class="w-20 h-20 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">${icon('check','w-12 h-12')}</div>
         <h2 class="text-2xl font-bold text-slate-900">${money(amount)}</h2>
         <p class="text-slate-500 mt-1">paid successfully</p>
-        ${creditToAdd > 0 ? `<div class="mt-3 bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        ${creditToAdd > 0 ? `<div class="mt-3 bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           ${icon('check','w-4 h-4 inline')} <strong>${money(creditToAdd)}</strong> recorded as advance payment — will be automatically applied to your next invoice.
         </div>` : ''}
         <div class="bg-slate-50 rounded-xl p-3 mt-3 text-left text-sm">
@@ -1406,7 +1406,7 @@ function completePayment(invoiceId, amount, method) {
           <div class="flex justify-between py-1"><span class="text-slate-500">Date</span><span>${fdate(txn.timestamp, { time: true })}</span></div>
           <div class="flex justify-between py-1"><span class="text-slate-500">Status</span>${statusBadge('successful')}</div>
         </div>
-        ${hasMore ? `<div class="mt-4 bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        ${hasMore ? `<div class="mt-4 bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Next up: <strong>${nextChild.name}</strong> · ${_payQueue.length} more invoice${_payQueue.length>1?'s':''} to pay
         </div>` : ''}
       </div>
@@ -1575,7 +1575,7 @@ function renderLoanCard(loan) {
           <p class="text-xs text-slate-500">Applied ${fdate(loan.appliedAt, { relative: true })}</p>
         </div>
       </div>
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+      <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-800">
         Our risk engine is reviewing your application. Decision usually within 24 hours.
       </div>
     </div>`;
@@ -1589,7 +1589,7 @@ function renderLoanCard(loan) {
           <p class="text-xs text-slate-500">Decision ${fdate(loan.decidedAt || loan.appliedAt, { relative: true })}</p>
         </div>
       </div>
-      ${loan.rejectionReason ? `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-900">
+      ${loan.rejectionReason ? `<div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-900">
         <strong>Reason:</strong> ${loan.rejectionReason}${loan.rejectionNote ? `<br/><span class="text-xs">${loan.rejectionNote}</span>` : ''}
       </div>` : ''}
     </div>`;
@@ -1623,14 +1623,14 @@ function renderLoanCard(loan) {
       </div>
       <button class="btn btn-primary !py-1.5" onclick="payLoanInstallment('${loan.id}')">Pay Now</button>
     </div>
-    <label class="flex items-center justify-between p-3 bg-brand-50 border border-brand-200 rounded-xl text-sm cursor-pointer">
+    <label class="flex items-center justify-between p-3 bg-brand-50 rounded-xl text-sm cursor-pointer">
       <div>
         <div class="font-semibold text-brand-900">Auto-debit on due date</div>
         <div class="text-xs text-brand-700">We'll charge your saved card automatically when payment is due</div>
       </div>
       <input type="checkbox" class="w-5 h-5 accent-brand-600" ${loan.autoDebit ? 'checked' : ''} onchange="toggleLoanAutoDebit('${loan.id}', this.checked)" />
     </label>
-    ` : `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800">${icon('check','w-4 h-4 inline')} Loan fully repaid. Thank you!</div>`}
+    ` : `<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-800">${icon('check','w-4 h-4 inline')} Loan fully repaid. Thank you!</div>`}
   </div>`;
 }
 
@@ -1646,7 +1646,7 @@ function applyLoanModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <strong>How it works:</strong> Tell us how much you need, choose a repayment term, and we'll give you an instant decision. No paperwork required.
         </div>
 
@@ -1677,7 +1677,7 @@ function applyLoanModal() {
         <div>
           <label class="input-label">Repayment Term</label>
           <div class="grid grid-cols-4 gap-2">
-            <button class="ln-term px-3 py-2 rounded-lg border-2 border-brand-500 bg-brand-50 text-brand-700 font-semibold text-sm" data-term="3" onclick="selectTerm(3)">3 months</button>
+            <button class="ln-term px-3 py-2 rounded-lg bg-brand-50 text-brand-700 font-semibold text-sm" data-term="3" onclick="selectTerm(3)">3 months</button>
             <button class="ln-term px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-semibold text-sm" data-term="6" onclick="selectTerm(6)">6 months</button>
             <button class="ln-term px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-semibold text-sm" data-term="9" onclick="selectTerm(9)">9 months</button>
             <button class="ln-term px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-semibold text-sm" data-term="12" onclick="selectTerm(12)">12 months</button>
@@ -1711,7 +1711,7 @@ function selectTerm(months) {
   _selectedTerm = months;
   document.querySelectorAll('.ln-term').forEach(b => {
     if (parseInt(b.dataset.term) === months) {
-      b.className = 'ln-term px-3 py-2 rounded-lg border-2 border-brand-500 bg-brand-50 text-brand-700 font-semibold text-sm';
+      b.className = 'ln-term px-3 py-2 rounded-lg bg-brand-50 text-brand-700 font-semibold text-sm';
     } else {
       b.className = 'ln-term px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-semibold text-sm';
     }

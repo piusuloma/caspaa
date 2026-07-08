@@ -150,7 +150,7 @@ function pay_viewSlip(id) {
         ` : ''}
 
         <!-- Net Pay -->
-        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center justify-between">
+        <div class="bg-emerald-50 rounded-2xl px-5 py-4 flex items-center justify-between">
           <div>
             <div class="text-xs text-emerald-700 font-bold uppercase tracking-wide mb-0.5">Net Pay</div>
             <div class="text-3xl font-extrabold text-emerald-800">${pay_fmt(p.netPay)}</div>
@@ -335,7 +335,7 @@ function adm_generatePayslipModal() {
           </div>
         </div>
 
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-900">
           ${icon('info', 'w-4 h-4 inline mr-1')} Deductions are computed automatically: PAYE uses a simplified progressive formula, Pension is 8% of gross, NHF is 2.5% of basic.
         </div>
       </div>

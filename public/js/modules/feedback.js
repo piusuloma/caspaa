@@ -71,10 +71,10 @@ function fb_setYesNo(qid, val) {
   const noBtn  = document.getElementById('yesno_no_'  + qid);
   if (yesBtn && noBtn) {
     yesBtn.className = val === 'yes'
-      ? 'px-6 py-2.5 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-sm font-semibold text-emerald-800 transition'
+      ? 'px-6 py-2.5 rounded-xl bg-emerald-50 text-sm font-semibold text-emerald-800 transition'
       : 'px-6 py-2.5 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50';
     noBtn.className = val === 'no'
-      ? 'px-6 py-2.5 rounded-xl border-2 border-rose-500 bg-rose-50 text-sm font-semibold text-rose-800 transition'
+      ? 'px-6 py-2.5 rounded-xl bg-rose-50 text-sm font-semibold text-rose-800 transition'
       : 'px-6 py-2.5 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-700 transition hover:border-rose-400 hover:bg-rose-50';
   }
 }
@@ -305,7 +305,7 @@ function adm_createSurveyModal() {
           </div>
         </div>
 
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-xs text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-900">
           ${icon('info', 'w-4 h-4 inline mr-1')} Choose: <strong>Star</strong> (1–5 rating), <strong>Yes / No</strong> (binary), or <strong>Text</strong> (open response).
         </div>
       </div>
@@ -490,11 +490,11 @@ function adm_viewFeedbackResults(formId) {
         <div class="p-4 bg-slate-50 rounded-xl">
           <div class="font-semibold text-sm text-slate-800 mb-3">${q.text}</div>
           <div class="grid grid-cols-2 gap-3 text-center">
-            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+            <div class="bg-emerald-50 rounded-xl p-3">
               <div class="text-2xl font-extrabold text-emerald-700">${yesCount}</div>
               <div class="text-xs text-emerald-600">Yes · ${yesPct}%</div>
             </div>
-            <div class="bg-rose-50 border border-rose-200 rounded-xl p-3">
+            <div class="bg-rose-50 rounded-xl p-3">
               <div class="text-2xl font-extrabold text-rose-700">${noCount}</div>
               <div class="text-xs text-rose-600">No · ${noPct}%</div>
             </div>
@@ -535,7 +535,7 @@ function adm_viewFeedbackResults(formId) {
     body: `
       <div class="space-y-5">
         <!-- Summary -->
-        <div class="flex items-center gap-4 p-4 bg-brand-50 border border-brand-200 rounded-xl">
+        <div class="flex items-center gap-4 p-4 bg-brand-50 rounded-xl">
           <div class="w-12 h-12 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0">
             ${icon('reports', 'w-6 h-6')}
           </div>

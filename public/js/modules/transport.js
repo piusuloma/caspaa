@@ -210,13 +210,13 @@ function adm_renderAssignmentsTab(assignments, schoolId) {
     ` : ''}
 
     ${unassigned.length > 0 ? `
-      <div class="card p-4 bg-amber-50 border border-amber-200">
+      <div class="card p-4 bg-amber-50">
         <div class="flex items-center gap-2 mb-2">
           <div class="text-amber-700">${icon('bell','w-4 h-4')}</div>
           <h4 class="font-semibold text-amber-900">${unassigned.length} student${unassigned.length !== 1 ? 's' : ''} not registered for school bus</h4>
         </div>
         <div class="flex flex-wrap gap-1.5">
-          ${unassigned.slice(0, 12).map(s => `<span class="text-xs bg-white border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full">${s.name}</span>`).join('')}
+          ${unassigned.slice(0, 12).map(s => `<span class="text-xs bg-white text-amber-800 px-2 py-0.5 rounded-full">${s.name}</span>`).join('')}
           ${unassigned.length > 12 ? `<span class="text-xs text-amber-700 px-2 py-0.5">+${unassigned.length - 12} more</span>` : ''}
         </div>
       </div>
@@ -260,7 +260,7 @@ function adm_renderPickupsTab(pickups, schoolId) {
           </div>
         </div>
       ` : `
-        <div class="card p-4 bg-emerald-50 border border-emerald-200 flex items-center gap-3">
+        <div class="card p-4 bg-emerald-50 flex items-center gap-3">
           <div class="text-emerald-600">${icon('check','w-5 h-5')}</div>
           <p class="text-sm text-emerald-800 font-medium">No pending pickup authorisation requests.</p>
         </div>
@@ -335,7 +335,7 @@ function adm_editRouteModal(routeId) {
     title: existing ? 'Edit Bus Route' : 'Add Bus Route',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           This system uses <strong>house-to-house pickup</strong>. After creating a route, assign students to it and set each student's pickup order (1st house, 2nd house, etc.).
         </div>
         <div>
@@ -554,7 +554,7 @@ function adm_editAssignmentModal(assignmentId) {
     size: 'sm',
     body: `
       <div class="space-y-3">
-        ${homeAddr ? `<div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-600"><span class="font-semibold text-slate-700">Home address on file:</span> ${homeAddr}</div>` : `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">No home address on file for this parent.</div>`}
+        ${homeAddr ? `<div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-600"><span class="font-semibold text-slate-700">Home address on file:</span> ${homeAddr}</div>` : `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-800">No home address on file for this parent.</div>`}
         <div>
           <label class="input-label">Pickup Order *</label>
           <input id="ea_order" type="number" min="1" class="input" value="${a.pickupOrder || ''}" placeholder="e.g. 3 = 3rd house the driver visits" />
@@ -777,10 +777,10 @@ function adm_renderBusStatusTab(routes, schoolId) {
                       </div>
                     `).join('')}
                     ${noOrder.length > 0 ? `
-                      <div class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                      <div class="mt-2 p-3 bg-amber-50 rounded-xl">
                         <div class="text-xs font-semibold text-amber-800 mb-1.5">Pickup order not set (${noOrder.length})</div>
                         <div class="flex flex-wrap gap-1.5">
-                          ${noOrder.map(m => `<span class="text-xs bg-white border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full">${m.name}</span>`).join('')}
+                          ${noOrder.map(m => `<span class="text-xs bg-white text-amber-800 px-2 py-0.5 rounded-full">${m.name}</span>`).join('')}
                         </div>
                         <p class="text-xs text-amber-700 mt-1.5">Go to Student Assignments → edit the pencil icon to set their pickup order.</p>
                       </div>
@@ -912,12 +912,12 @@ function view_par_transport(params) {
   const childParent = child && child.parentId ? DB.find('parents', child.parentId) : null;
   const pickupAddr  = assignment ? (assignment.pickupAddress || (childParent ? childParent.address : '') || '') : '';
   const pickupBlock = pickupAddr
-    ? '<div class="mt-4 p-3 bg-brand-50 border border-brand-200 rounded-xl">'
+    ? '<div class="mt-4 p-3 bg-brand-50 rounded-xl">'
       + '<div class="text-xs font-semibold uppercase text-brand-600 mb-1">Your Pickup Address</div>'
       + '<div class="text-sm font-semibold text-brand-900">' + pickupAddr + '</div>'
       + (assignment && assignment.pickupOrder ? '<div class="text-xs text-brand-600 mt-0.5">Stop #' + assignment.pickupOrder + ' on this route</div>' : '')
       + '</div>'
-    : '<div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">No pickup address on file. Please contact the school to confirm your pickup location.</div>';
+    : '<div class="mt-4 p-3 bg-amber-50 rounded-xl text-sm text-amber-800">No pickup address on file. Please contact the school to confirm your pickup location.</div>';
 
   return `
     <div class="space-y-5">
@@ -984,7 +984,7 @@ function view_par_transport(params) {
         </div>
 
         ${pendingPickups.length > 0 ? `
-          <div class="mb-3 card p-3 bg-amber-50 border border-amber-200">
+          <div class="mb-3 card p-3 bg-amber-50">
             <div class="font-semibold text-amber-800 text-sm mb-2 flex items-center gap-2">${icon('bell','w-4 h-4')} ${pendingPickups.length} pending approval${pendingPickups.length !== 1 ? 's' : ''}</div>
             <div class="space-y-1">
               ${pendingPickups.map(p => `<div class="text-sm text-amber-800 flex items-center gap-2">
@@ -999,7 +999,7 @@ function view_par_transport(params) {
           <div class="space-y-2">
             ${approvedPickups.map(p => `
               <div class="card p-4 flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center flex-shrink-0 text-emerald-600">${icon('check','w-5 h-5')}</div>
+                <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0 text-emerald-600">${icon('check','w-5 h-5')}</div>
                 <div class="flex-1 min-w-0">
                   <div class="font-semibold text-slate-900">${p.name}</div>
                   <div class="text-sm text-slate-500">${p.relationship} · ${p.phone}</div>
@@ -1030,7 +1030,7 @@ function par_addPickupModal(studentId) {
     title: `Add Authorized Pickup Person${student ? ' — ' + student.name : ''}`,
     body: `
       <div class="space-y-4">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${icon('bell','w-4 h-4 inline mr-1')}
           Your request will be reviewed by the school admin before the person is authorized.
         </div>
@@ -1147,7 +1147,7 @@ function adm_renderDismissalTab(schoolId, todayDismissals, activeStudents) {
     <div class="space-y-4">
       <!-- Config banner -->
       <div class="flex items-start gap-3 flex-wrap">
-        <div class="flex-1 ${isLatePickupTime ? 'bg-amber-50 border border-amber-200' : isDuringSchool ? 'bg-brand-50 border border-brand-200' : 'bg-emerald-50 border border-emerald-200'} rounded-xl p-3">
+        <div class="flex-1 ${isLatePickupTime ? 'bg-amber-50' : isDuringSchool ? 'bg-brand-50' : 'bg-emerald-50'} rounded-xl p-3">
           <div class="flex items-center gap-2 mb-1">
             ${icon('bell','w-4 h-4 text-current')}
             <span class="font-semibold text-sm">${
@@ -1275,7 +1275,7 @@ function adm_dismissalConfigModal() {
     title: 'Dismissal Time Configuration',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <strong>Time-bound model:</strong> During school hours, teachers handle student release from class. After the late pickup threshold, the system flags remaining students for parent/admin action and sends parent notifications.
         </div>
         <div class="grid grid-cols-2 gap-3">

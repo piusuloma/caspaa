@@ -47,7 +47,7 @@ function processPayment(invoiceId) {
       modal({
         title: 'Pay via Bank Transfer',
         body: `<div class="space-y-4">
-          <div class="bg-brand-50 border border-brand-200 rounded-2xl p-5 text-center">
+          <div class="bg-brand-50 rounded-2xl p-5 text-center">
             <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Transfer exactly</div>
             <div class="text-3xl font-extrabold text-brand-700">${money(amount)}</div>
             <div class="text-xs text-slate-400 mt-1">to this dedicated account</div>
@@ -70,7 +70,7 @@ function processPayment(invoiceId) {
               <span class="font-semibold text-slate-900">${studentName} School Fees</span>
             </div>
           </div>
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
+          <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-700">
             This is a dedicated virtual account. Use the narration above so your payment is matched automatically within 5 minutes of transfer.
           </div>
         </div>`,

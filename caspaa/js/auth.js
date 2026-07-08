@@ -230,7 +230,7 @@ function promptFirstLoginPasswordChange(account) {
     title: 'Change Your Password',
     body: `
       <div class="space-y-3">
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           <strong>Action required:</strong> For your security, please set a personal password before continuing. You will not be able to proceed until this is done.
         </div>
         <div>
@@ -298,7 +298,7 @@ function showOTPScreen(account) {
             <h3 class="text-2xl font-bold text-slate-900 mb-1">Two-factor authentication</h3>
             <p class="text-sm text-slate-500 mb-6">A 6-digit code was sent to <strong class="text-slate-700">${account.email}</strong></p>
 
-            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 text-center">
+            <div class="bg-amber-50 rounded-lg p-3 mb-5 text-center">
               <div class="text-xs text-amber-800 font-semibold mb-1 uppercase tracking-wide">Demo code (for testing)</div>
               <div class="text-2xl font-mono font-bold text-amber-900 tracking-[0.3em]">${otp}</div>
             </div>

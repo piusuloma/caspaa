@@ -418,7 +418,7 @@ function assess_previewCsv(targetType) {
   if (!preview) return;
 
   if (!questions.length) {
-    preview.className = 'block bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-700';
+    preview.className = 'block bg-rose-50 rounded-xl p-3 text-sm text-rose-700';
     preview.innerHTML = 'No valid questions found. Check your CSV format.';
     return;
   }

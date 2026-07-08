@@ -149,7 +149,7 @@ function view_sa_dashboard() {
         <!-- Needs Attention -->
         <div class="card p-5">
           <h3 class="font-bold text-slate-900 mb-3 flex items-center gap-2">${icon('bell','w-4 h-4 text-rose-500')} Needs Attention</h3>
-          ${needsAttention.length === 0 ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center text-sm text-emerald-800">${icon('check','w-6 h-6 mx-auto mb-1')}<div class="font-semibold">All clear today.</div></div>` : `
+          ${needsAttention.length === 0 ? `<div class="bg-emerald-50 rounded-xl p-4 text-center text-sm text-emerald-800">${icon('check','w-6 h-6 mx-auto mb-1')}<div class="font-semibold">All clear today.</div></div>` : `
             <div class="space-y-2">
               ${needsAttention.map(n => `<button class="w-full flex items-center gap-3 p-2.5 bg-${n.tone}-50 hover:bg-${n.tone}-100 rounded-xl text-left transition" onclick="APP.go('${n.view}', ${JSON.stringify(n.params).replace(/"/g, '&quot;')})">
                 <div class="w-9 h-9 rounded-lg bg-${n.tone}-200 text-${n.tone}-800 flex items-center justify-center font-bold flex-shrink-0">${n.count}</div>
@@ -496,7 +496,7 @@ function onboardSchoolModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Required: school name, proprietor details, CAC registration, accreditation. School starts on a 14-day free trial.
         </div>
 
@@ -874,7 +874,7 @@ function renderDisbursementTab() {
       ${statCard({ label: 'Failed', value: disbursements.filter(d => d.status === 'failed').length, icon: 'trending_down', color: 'rose' })}
     </div>
 
-    ${pending.length ? `<div class="card p-4 mb-4 bg-amber-50 border border-amber-200">
+    ${pending.length ? `<div class="card p-4 mb-4 bg-amber-50">
       <h4 class="font-bold text-amber-900 mb-2">${pending.length} approved loan${pending.length>1?'s':''} awaiting disbursement</h4>
       <div class="space-y-2">
         ${pending.map(l => {
@@ -890,7 +890,7 @@ function renderDisbursementTab() {
           </div>`;
         }).join('')}
       </div>
-    </div>` : `<div class="card p-4 mb-4 bg-emerald-50 border border-emerald-200 text-sm text-emerald-900 flex items-center gap-2">
+    </div>` : `<div class="card p-4 mb-4 bg-emerald-50 text-sm text-emerald-900 flex items-center gap-2">
       ${icon('check','w-5 h-5')} <span>All approved loans have been disbursed.</span>
     </div>`}
 
@@ -924,7 +924,7 @@ function initiateDisbursement(loanId) {
     title: 'Verify & Disburse',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Confirm the recipient and amount. Funds move via NIBSS transfer to the school's verified account. This action is logged in the audit trail.
         </div>
         <div class="bg-slate-50 rounded-xl p-3 space-y-1.5 text-sm">
@@ -1702,7 +1702,7 @@ function editTeamMember(memberId) {
             <div class="text-xs text-slate-500">${m.role} · ${m.email}</div>
           </div>
         </div>
-        ${isSuper ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        ${isSuper ? `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           This is the platform Super Admin. They have unrestricted access to all modules.
         </div>` : `<div>
           <label class="input-label">Granular Permissions (RBAC)</label>
@@ -1756,7 +1756,7 @@ function addTeamMemberModal() {
             <option>BI / Analytics</option>
           </select>
         </div>
-        <div class="text-sm text-slate-600 bg-brand-50 border border-brand-200 rounded-xl p-3">
+        <div class="text-sm text-slate-600 bg-brand-50 rounded-xl p-3">
           Default permissions will be assigned based on role. You can fine-tune them after creation.
         </div>
       </div>
