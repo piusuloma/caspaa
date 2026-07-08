@@ -280,7 +280,7 @@ function pay_downloadReceipt(invoiceId, amount) {
         .label{color:#64748b;}
         .val{font-weight:600;text-align:right;}
         .amount{font-size:28px;font-weight:800;color:#234e70;text-align:center;margin:20px 0;padding:16px;background:#ecfdf5;border-radius:8px;}
-        .ref{font-family:monospace;font-size:12px;color:#94a3b8;text-align:center;margin-top:16px;}
+        .ref{font-family:'Figtree',system-ui,sans-serif;font-size:12px;color:#94a3b8;text-align:center;margin-top:16px;}
         .badge{display:inline-block;background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
         @media print{button{display:none;}}
       </style>
@@ -294,7 +294,7 @@ function pay_downloadReceipt(invoiceId, amount) {
         </div>
         <div class="amount">${money(amount)}</div>
         <div class="row"><span class="label">Student</span><span class="val">${student ? student.name : '—'}</span></div>
-        <div class="row"><span class="label">Invoice ID</span><span class="val" style="font-family:monospace;font-size:12px;">${invoiceId}</span></div>
+        <div class="row"><span class="label">Invoice ID</span><span class="val" style="font-family:'Figtree',system-ui,sans-serif;font-size:12px;">${invoiceId}</span></div>
         <div class="row"><span class="label">Payment Method</span><span class="val">Debit / Credit Card</span></div>
         <div class="row"><span class="label">Gateway</span><span class="val">Paystack</span></div>
         <div class="row"><span class="label">Date & Time</span><span class="val">${new Date().toLocaleString('en-NG')}</span></div>

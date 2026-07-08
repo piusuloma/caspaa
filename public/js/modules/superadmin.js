@@ -165,7 +165,7 @@ function view_sa_dashboard() {
         <div class="flex items-center justify-between mb-3">
           <div>
             <h3 class="font-bold text-slate-900">Schools at a Glance</h3>
-            <p class="text-xs text-slate-500">Color = composite health · click any card to drill in</p>
+            <p class="text-xs text-slate-500">Status dot shows composite health · click any card to drill in</p>
           </div>
           <button class="text-sm text-brand-700 font-semibold" onclick="APP.go('sa_schools')">All schools →</button>
         </div>
@@ -174,25 +174,23 @@ function view_sa_dashboard() {
             const h = computeSchoolHealth(s);
             const onboarding = computeOnboardingCompletion(s);
             const renewalDays = s.nextRenewal ? Math.ceil((new Date(s.nextRenewal) - new Date()) / 86400000) : null;
-            const toneClasses = { emerald: 'bg-emerald-50 border-emerald-200', amber: 'bg-amber-50 border-amber-200', rose: 'bg-rose-50 border-rose-200' };
-            const dotClasses = { emerald: 'bg-emerald-500', amber: 'bg-amber-500', rose: 'bg-rose-500' };
-            const textClasses = { emerald: 'text-emerald-900', amber: 'text-amber-900', rose: 'text-rose-900' };
-            return `<button class="text-left p-3 rounded-xl border-2 ${toneClasses[h.tone]} hover:shadow transition" onclick="viewSchoolDetail('${s.id}')">
-              <div class="flex items-start justify-between mb-2">
+            const dotClasses = { emerald: 'bg-green-500', amber: 'bg-amber-500', rose: 'bg-red-500' };
+            return `<button class="text-left p-4 rounded-lg border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm transition" onclick="viewSchoolDetail('${s.id}')">
+              <div class="flex items-start justify-between gap-2 mb-3">
                 <div class="flex items-center gap-2 min-w-0">
-                  <div class="w-2.5 h-2.5 rounded-full ${dotClasses[h.tone]} flex-shrink-0"></div>
-                  <div class="font-bold text-sm ${textClasses[h.tone]} truncate">${s.name}</div>
+                  <span class="w-2 h-2 rounded-full ${dotClasses[h.tone]} flex-shrink-0" title="Health ${h.score}%"></span>
+                  <div class="font-semibold text-sm text-slate-900 truncate">${s.name}</div>
                 </div>
                 ${statusBadge(s.status)}
               </div>
-              <div class="grid grid-cols-3 gap-2 mb-2 text-xs">
-                <div><div class="text-slate-500">Health</div><div class="font-bold ${textClasses[h.tone]}">${h.score}%</div></div>
-                <div><div class="text-slate-500">Onboarding</div><div class="font-bold">${onboarding}%</div></div>
-                <div><div class="text-slate-500">Students</div><div class="font-bold">${s.students}</div></div>
+              <div class="grid grid-cols-3 gap-2 mb-3">
+                <div><div class="text-[11px] text-slate-400">Health</div><div class="font-semibold text-sm text-slate-800">${h.score}%</div></div>
+                <div><div class="text-[11px] text-slate-400">Onboarding</div><div class="font-semibold text-sm text-slate-800">${onboarding}%</div></div>
+                <div><div class="text-[11px] text-slate-400">Students</div><div class="font-semibold text-sm text-slate-800">${s.students}</div></div>
               </div>
-              <div class="flex items-center justify-between text-xs text-slate-500">
-                <span>${s.subscriptionPlan}</span>
-                <span class="${renewalDays !== null && renewalDays <= 7 ? 'text-rose-700 font-bold' : ''}">${renewalDays === null ? '' : renewalDays <= 0 ? 'Overdue' : `Renews ${renewalDays}d`}</span>
+              <div class="flex items-center justify-between text-xs pt-2.5 border-t border-slate-100">
+                <span class="text-slate-500">${s.subscriptionPlan}</span>
+                <span class="${renewalDays !== null && renewalDays <= 7 ? 'text-red-600 font-semibold' : 'text-slate-400'}">${renewalDays === null ? '' : renewalDays <= 0 ? 'Overdue' : `Renews ${renewalDays}d`}</span>
               </div>
             </button>`;
           }).join('')}

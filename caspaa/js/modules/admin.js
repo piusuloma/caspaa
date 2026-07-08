@@ -3543,7 +3543,7 @@ function printStudentID(studentId) {
     .avatar { width: 64px; height: 64px; border-radius: 50%; background: #dbeafe; color: #1d4ed8; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 12px; border: 3px solid #2563eb; }
     .name { font-size: 16px; font-weight: bold; color: #0f172a; text-align: center; }
     .class { font-size: 11px; color: #64748b; text-align: center; margin-top: 2px; }
-    .adm { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px; font-family: monospace; }
+    .adm { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px; font-family: 'Figtree', system-ui, sans-serif; }
     .divider { height: 1px; background: #e2e8f0; margin: 12px 0; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .info-item .label { font-size: 8px; color: #94a3b8; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }

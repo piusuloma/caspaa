@@ -155,7 +155,7 @@ function bindLoginHandlers() {
     if (!acc) { toast('No account found with that email', 'danger'); return; }
     if (acc.role !== role) { toast('This email does not match the selected role', 'danger'); return; }
     if (acc.role === 'superadmin' || acc.role === 'finance') {
-      showOTPModal(acc);
+      showOTPScreen(acc);
     } else {
       AUTH.login(acc);
       toast(`Welcome back, ${acc.name.split(' ')[0]}!`, 'success');
@@ -268,40 +268,61 @@ function saveFirstLoginPassword(accountId) {
   APP.render();
 }
 
-function showOTPModal(account) {
+function showOTPScreen(account) {
   const otp = String(Math.floor(100000 + Math.random() * 900000));
-  // In real app, we'd send via email. Here we display it.
-  modal({
-    title: 'Two-Factor Authentication',
-    size: '',
-    body: `
-      <div class="text-center py-4">
-        <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center">${icon('bell', 'w-7 h-7')}</div>
-        <p class="text-slate-700 mb-1">For security, we need to verify your identity.</p>
-        <p class="text-sm text-slate-500 mb-5">A 6-digit code was sent to <strong>${account.email}</strong></p>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm">
-          <div class="text-amber-800 font-semibold mb-1">Demo OTP (for testing)</div>
-          <div class="text-2xl font-mono font-bold text-amber-900 tracking-widest">${otp}</div>
-        </div>
-        <input id="otpInput" maxlength="6" class="input text-center text-2xl font-mono tracking-widest" placeholder="000000" />
+  // In a real app the code is emailed; here we display it for the demo.
+  document.getElementById('app').innerHTML = `
+    <div class="login-bg min-h-screen flex">
+
+      <!-- Hero image panel (left) -->
+      <div class="login-hero hidden lg:block lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0">
+        <img src="logo/login-hero.png" alt="CASPAA" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
       </div>
-    `,
-    footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
-      <button class="btn btn-primary" id="otpVerify">Verify & Sign in</button>
-    `
-  });
 
-  setTimeout(() => document.getElementById('otpInput').focus(), 100);
+      <!-- Verification card (right) -->
+      <div class="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <div class="login-card w-full max-w-md">
+          <img src="logo/caspaa-navy.svg" alt="CASPAA" class="lg:hidden h-8 w-auto mx-auto mb-8" />
+          <div class="bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-6 sm:p-8">
+            <div class="w-12 h-12 mb-4 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center">${icon('shield', 'w-6 h-6')}</div>
+            <h3 class="text-2xl font-bold text-slate-900 mb-1">Two-factor authentication</h3>
+            <p class="text-sm text-slate-500 mb-6">A 6-digit code was sent to <strong class="text-slate-700">${account.email}</strong></p>
 
-  document.getElementById('otpVerify').onclick = () => {
-    const entered = document.getElementById('otpInput').value.trim();
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 text-center">
+              <div class="text-xs text-amber-800 font-semibold mb-1 uppercase tracking-wide">Demo code (for testing)</div>
+              <div class="text-2xl font-mono font-bold text-amber-900 tracking-[0.3em]">${otp}</div>
+            </div>
+
+            <form id="otpForm" class="space-y-4">
+              <div>
+                <label class="input-label" for="otpInput">Verification code</label>
+                <input id="otpInput" inputmode="numeric" maxlength="6" class="input text-center text-2xl font-mono tracking-[0.4em]" placeholder="000000" autocomplete="one-time-code" />
+              </div>
+              <button type="submit" class="btn btn-accent w-full" id="otpVerify">Verify &amp; sign in</button>
+            </form>
+
+            <div class="text-center mt-4">
+              <button type="button" id="otpBack" class="text-sm text-coral-600 hover:text-coral-700 font-semibold">← Back to sign in</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const input = document.getElementById('otpInput');
+  setTimeout(() => input && input.focus(), 100);
+
+  document.getElementById('otpForm').onsubmit = (e) => {
+    e.preventDefault();
+    const entered = input.value.trim();
     if (entered !== otp) { toast('Invalid code. Please try again.', 'danger'); return; }
-    document.getElementById('modalBackdrop').click();
     AUTH.login(account);
-    toast(`Welcome back, ${account.name.split(' ')[0]}!`);
+    toast(`Welcome back, ${account.name.split(' ')[0]}!`, 'success');
     APP.render();
   };
+
+  document.getElementById('otpBack').onclick = () => { APP.render(); };
 }
 
 AUTH.init();
