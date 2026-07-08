@@ -56,6 +56,21 @@ function icon(name, className = 'w-5 h-5') {
   return `<span class="${className} inline-flex">${svg}</span>`;
 }
 
+/* ---------- Date pickers (flatpickr) ---------- */
+function initDatePickers() {
+  if (typeof window.flatpickr === 'undefined') return;
+  document.querySelectorAll('input[type="date"]:not([data-fp])').forEach(el => {
+    el.setAttribute('data-fp', '1');
+    window.flatpickr(el, {
+      dateFormat: 'Y-m-d',
+      altInput: true,
+      altFormat: 'M j, Y',
+      allowInput: true,
+      disableMobile: true
+    });
+  });
+}
+
 /* ---------- Toast ---------- */
 function toast(msg, type = 'success') {
   const root = document.getElementById('toasts');
@@ -89,6 +104,7 @@ function modal({ title, body, footer, size = '', onClose }) {
   `;
   document.getElementById('modalBackdrop').addEventListener('click', close);
   document.getElementById('modalClose').addEventListener('click', close);
+  initDatePickers();
   return { close };
 }
 

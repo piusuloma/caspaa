@@ -46,7 +46,7 @@ function view_sa_dashboard() {
           datasets: [{
             label: 'MRR',
             data: [1500000, 1800000, 2100000, 2500000, 2900000, mrr],
-            borderColor: '#234e70', backgroundColor: 'rgba(16,185,129,0.12)',
+            borderColor: '#fd5f54', backgroundColor: 'rgba(16,185,129,0.12)',
             tension: 0.35, fill: true, borderWidth: 3
           }]
         },
@@ -147,7 +147,7 @@ function view_sa_dashboard() {
           <h3 class="font-bold text-slate-900 mb-3 flex items-center gap-2">${icon('bell','w-4 h-4 text-rose-500')} Needs Attention</h3>
           ${needsAttention.length === 0 ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center text-sm text-emerald-800">${icon('check','w-6 h-6 mx-auto mb-1')}<div class="font-semibold">All clear today.</div></div>` : `
             <div class="space-y-2">
-              ${needsAttention.map(n => `<button class="w-full flex items-center gap-3 p-2.5 bg-${n.tone}-50 hover:bg-${n.tone}-100 border border-${n.tone}-200 rounded-xl text-left transition" onclick="APP.go('${n.view}', ${JSON.stringify(n.params).replace(/"/g, '&quot;')})">
+              ${needsAttention.map(n => `<button class="w-full flex items-center gap-3 p-2.5 bg-${n.tone}-50 hover:bg-${n.tone}-100 rounded-xl text-left transition" onclick="APP.go('${n.view}', ${JSON.stringify(n.params).replace(/"/g, '&quot;')})">
                 <div class="w-9 h-9 rounded-lg bg-${n.tone}-200 text-${n.tone}-800 flex items-center justify-center font-bold flex-shrink-0">${n.count}</div>
                 <div class="flex-1 min-w-0">
                   <div class="font-semibold text-${n.tone}-900 text-sm truncate">${n.label}</div>
@@ -754,8 +754,8 @@ function downloadSchoolInvoice(invoiceId) {
   const s = DB.find('schools', inv.schoolId);
   const html = `
     <div style="max-width:680px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #234e70;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#234e70">CASPAA</h1>
+      <div style="text-align:center;border-bottom:3px solid #fd5f54;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#fd5f54">CASPAA</h1>
         <p style="margin:4px 0;color:#666;font-size:13px">School Operating System · Lagos, Nigeria</p>
         <h2 style="margin:14px 0 4px;font-size:18px">SUBSCRIPTION INVOICE</h2>
       </div>
@@ -995,7 +995,7 @@ function renderLoanAnalyticsTab() {
     const c1 = document.getElementById('loanAnaChart1');
     if (c1) new Chart(c1, {
       type: 'doughnut',
-      data: { labels: Object.keys(buckets), datasets: [{ data: Object.values(buckets), backgroundColor: ['#234e70', '#10b981', '#f59e0b', '#dc2626'], borderWidth: 0 }] },
+      data: { labels: Object.keys(buckets), datasets: [{ data: Object.values(buckets), backgroundColor: ['#fd5f54', '#10b981', '#f59e0b', '#dc2626'], borderWidth: 0 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
     });
     const c2 = document.getElementById('loanAnaChart2');
@@ -1131,7 +1131,7 @@ function renderBusinessTab(dateFrom, dateTo) {
       type: 'bar',
       data: {
         labels: ['Lekki', 'Ikoyi', 'Ikeja', 'VI', 'Magodo', 'Festac'],
-        datasets: [{ label: 'Schools', data: [3, 2, 2, 1, 1, 1], backgroundColor: '#234e70', borderRadius: 6 }]
+        datasets: [{ label: 'Schools', data: [3, 2, 2, 1, 1, 1], backgroundColor: '#fd5f54', borderRadius: 6 }]
       },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
@@ -1229,7 +1229,7 @@ function renderUsageTab(dateFrom, dateTo) {
     const c1 = document.getElementById('usageChart1');
     if (c1) new Chart(c1, {
       type: 'line',
-      data: { labels: days.map(d => fdate(d, { short: true })), datasets: [{ label: 'DAU', data: dauByDay, borderColor: '#234e70', backgroundColor: 'rgba(16,185,129,0.15)', tension: 0.35, fill: true, borderWidth: 2 }] },
+      data: { labels: days.map(d => fdate(d, { short: true })), datasets: [{ label: 'DAU', data: dauByDay, borderColor: '#fd5f54', backgroundColor: 'rgba(16,185,129,0.15)', tension: 0.35, fill: true, borderWidth: 2 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
     const c2 = document.getElementById('usageChart2');

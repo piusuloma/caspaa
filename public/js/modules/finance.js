@@ -20,7 +20,7 @@ function view_fin_dashboard() {
         type: 'doughnut',
         data: {
           labels: ['Collected', 'Outstanding'],
-          datasets: [{ data: [collected, outstanding], backgroundColor: ['#234e70', '#fbbf24'], borderWidth: 0 }]
+          datasets: [{ data: [collected, outstanding], backgroundColor: ['#fd5f54', '#fbbf24'], borderWidth: 0 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
       });
@@ -715,8 +715,8 @@ function exportFeeStructurePDF() {
   const classes = DB.get('classes');
   const html = `
     <div style="max-width:800px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #234e70;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#234e70">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #fd5f54;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#fd5f54">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:18px">FEE STRUCTURE — ${DB.settings().currentTerm}</h2>
       </div>
       <table border="1" cellpadding="10" style="border-collapse:collapse;width:100%;font-size:13px">
@@ -2292,8 +2292,8 @@ function downloadPayrollSummary(runId) {
   const teachers = DB.query('teachers', t => t.schoolId === run.schoolId);
   const html = `
     <div style="max-width:800px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #234e70;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#234e70">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #fd5f54;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#fd5f54">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:18px">PAYROLL SUMMARY — ${run.period}</h2>
       </div>
       <table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-size:13px">
@@ -2466,7 +2466,7 @@ function view_fin_cost_center() {
     }
     new Chart(ctx, {
       type: 'bar',
-      data: { labels, datasets: [{ label: 'Collected (₦)', data, backgroundColor: '#234e70', borderRadius: 6, maxBarThickness: 60 }] },
+      data: { labels, datasets: [{ label: 'Collected (₦)', data, backgroundColor: '#fd5f54', borderRadius: 6, maxBarThickness: 60 }] },
       options: {
         responsive: true, maintainAspectRatio: false, animation: { duration: 0 },
         plugins: { legend: { display: false } },

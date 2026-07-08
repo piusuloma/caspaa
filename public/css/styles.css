@@ -7,14 +7,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Brand — Scholar Blue (navy) */
-  --brand-50:  #eff4f8;
-  --brand-100: #d9e3ee;
-  --brand-500: #2f628d;
-  --brand-600: #234e70;
-  --brand-700: #1c3f5b;
-  --brand-800: #163248;
-  --brand-900: #102230;
+  /* Brand — Coral */
+  --brand-50:  #fff1f0;
+  --brand-100: #ffdedb;
+  --brand-500: #fd6f63;
+  --brand-600: #fd5f54;
+  --brand-700: #e8483d;
+  --brand-800: #c2352b;
+  --brand-900: #9e2a22;
   /* Accent — Coral */
   --coral-500: #fd5f54;
   --coral-600: #e8483d;
@@ -91,6 +91,9 @@ body { min-height: 100vh; font-size: 1rem; line-height: 1.5; -webkit-font-smooth
 .nav-item:hover { background: #f1f5f9; color: #334155; }
 .nav-item.active { background: var(--brand-50); color: var(--brand-600); font-weight: 600; }
 .nav-item.active:hover { background: var(--brand-100); color: var(--brand-700); }
+.nav-item.signout { color: #dc2626; }
+.nav-item.signout:hover { background: #fee2e2; color: #b91c1c; }
+.nav-item.signout.active { background: #fee2e2; color: #b91c1c; }
 
 /* Mobile bottom nav */
 .bnav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px var(--s-2); font-size: 0.65rem; color: var(--muted); font-weight: 500; cursor: pointer; flex: 1; }
@@ -194,6 +197,15 @@ body { min-height: 100vh; font-size: 1rem; line-height: 1.5; -webkit-font-smooth
 
 /* Focus ring */
 button:focus-visible, a:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; border-radius: 6px; }
+
+/* Date picker (flatpickr) — brand themed */
+.flatpickr-day.selected, .flatpickr-day.selected:hover, .flatpickr-day.startRange, .flatpickr-day.endRange { background: var(--brand-600); border-color: var(--brand-600); }
+.flatpickr-day.today { border-color: var(--brand-400); }
+.flatpickr-day.today:hover { background: var(--brand-50); }
+.flatpickr-day:hover { background: var(--line-soft); }
+.flatpickr-months .flatpickr-month, .flatpickr-current-month input.cur-year, .flatpickr-monthDropdown-months { color: var(--brand-700); }
+span.flatpickr-weekday { color: var(--muted); }
+.flatpickr-calendar { border-radius: var(--r-md); box-shadow: 0 8px 24px rgba(15,23,42,0.12); }
 
 /* Animations on cards */
 .fade-in { animation: fadeIn 0.25s ease; }

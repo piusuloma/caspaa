@@ -67,12 +67,15 @@ function renderLogin() {
       <!-- Hero image panel (left) -->
       <div class="login-hero hidden lg:block lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0">
         <img src="logo/login-hero.png" alt="CASPAA" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
+        <div class="absolute inset-x-0 bottom-0 p-10">
+          <p class="text-white text-2xl font-bold leading-snug max-w-sm" style="text-shadow:0 1px 12px rgba(0,0,0,.4)">One platform for every part of your school.</p>
+        </div>
       </div>
 
       <!-- Form area (right) -->
       <div class="flex-1 flex items-center justify-center p-6 sm:p-10">
         <div class="login-card w-full max-w-md">
-          <img src="logo/caspaa-navy.svg" alt="CASPAA" class="lg:hidden h-8 w-auto mx-auto mb-8" />
+          <img src="logo/caspaa-coral.svg" alt="CASPAA" class="lg:hidden h-8 w-auto mx-auto mb-8" />
           <div class="bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-6 sm:p-8">
             <h3 class="text-2xl font-bold text-slate-900 mb-1">Sign in to your Account</h3>
             <p class="text-sm text-slate-500 mb-6">Enter your credentials to continue</p>
@@ -85,40 +88,40 @@ function renderLogin() {
                   ${ROLE_OPTIONS.map(r => `<option value="${r.role}">${r.label}</option>`).join('')}
                 </select>
               </div>
-              <div>
-                <label class="input-label" for="loginEmail">Email address</label>
-                <input type="email" class="input" id="loginEmail" placeholder="you@school.ng" autocomplete="username" />
-              </div>
-              <div>
-                <label class="input-label" for="loginPassword">Password</label>
-                <div class="relative">
-                  <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" value="demo1234" autocomplete="current-password" />
-                  <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" tabindex="-1" aria-label="Show password">
-                    <svg id="loginEyeIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                  </button>
+
+              <!-- Standard credentials (email + password) -->
+              <div id="credStandard" class="space-y-4">
+                <div>
+                  <label class="input-label" for="loginEmail">Email address</label>
+                  <input type="email" class="input" id="loginEmail" placeholder="you@school.ng" autocomplete="username" />
+                </div>
+                <div>
+                  <label class="input-label" for="loginPassword">Password</label>
+                  <div class="relative">
+                    <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" value="demo1234" autocomplete="current-password" />
+                    <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" tabindex="-1" aria-label="Show password">
+                      <svg id="loginEyeIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              <!-- Student credentials (admission number + date of birth) -->
+              <div id="credStudent" class="space-y-4 hidden">
+                <div>
+                  <label class="input-label" for="studentAdmNo">Admission number</label>
+                  <input type="text" class="input" id="studentAdmNo" placeholder="e.g. BL/2025/001" style="text-transform:uppercase" />
+                </div>
+                <div>
+                  <label class="input-label" for="studentDob">Date of birth</label>
+                  <input type="date" class="input" id="studentDob" />
+                </div>
+              </div>
+
               <button type="submit" class="btn btn-accent w-full" id="signinBtn">Sign in</button>
             </form>
 
-            <p class="text-xs text-slate-400 mt-3 text-center">Demo access — pick a role to autofill its email. Password: <strong>demo1234</strong></p>
-
-            <div class="text-center mt-4">
-              <button type="button" id="studentLoginToggle" class="text-sm text-coral-600 hover:text-coral-700 font-semibold">Student? Sign in with admission number →</button>
-            </div>
-
-            <div id="studentLoginForm" class="hidden mt-4 pt-4 border-t border-slate-100 space-y-3">
-              <p class="text-xs text-slate-500">Enter your admission number and date of birth exactly as registered by the school.</p>
-              <div>
-                <label class="input-label">Admission Number</label>
-                <input type="text" class="input" id="studentAdmNo" placeholder="e.g. BL/2025/001" style="text-transform:uppercase" />
-              </div>
-              <div>
-                <label class="input-label">Date of Birth</label>
-                <input type="date" class="input" id="studentDob" />
-              </div>
-              <button type="button" class="btn btn-accent w-full" id="studentLoginBtn">Sign in as Student</button>
-            </div>
+            <p id="demoHint" class="text-xs text-slate-400 mt-3 text-center">Demo access — pick a role to autofill its email. Password: <strong>demo1234</strong></p>
 
             <div class="mt-6 pt-5 border-t border-slate-100 text-center">
               <p class="text-xs text-slate-400">By signing in, you agree to CASPAA's Terms and Privacy Policy. Your data is encrypted with AES-256.</p>
@@ -134,20 +137,34 @@ function bindLoginHandlers() {
   const form     = document.getElementById('signinForm');
   const roleSel  = document.getElementById('loginRole');
   const emailInp = document.getElementById('loginEmail');
+  const credStd  = document.getElementById('credStandard');
+  const credStu  = document.getElementById('credStudent');
+  const demoHint = document.getElementById('demoHint');
 
-  // Autofill the demo email for the selected role until the user edits it
-  if (roleSel) roleSel.onchange = () => {
-    const acc = DEMO_ACCOUNTS.find(a => a.role === roleSel.value);
-    if (acc && emailInp && !emailInp.dataset.touched) emailInp.value = acc.email;
+  // Swap the credential fields based on the selected role
+  const syncFields = () => {
+    const stu = roleSel.value === 'student';
+    credStd.classList.toggle('hidden', stu);
+    credStu.classList.toggle('hidden', !stu);
+    if (demoHint) demoHint.classList.toggle('hidden', stu);
+    if (!stu) {
+      const acc = DEMO_ACCOUNTS.find(a => a.role === roleSel.value);
+      if (acc && emailInp && !emailInp.dataset.touched) emailInp.value = acc.email;
+    }
   };
+
+  if (roleSel) roleSel.onchange = syncFields;
   if (emailInp) emailInp.oninput = () => { emailInp.dataset.touched = '1'; };
 
   if (form) form.onsubmit = (e) => {
     e.preventDefault();
-    const role  = roleSel.value;
+    const role = roleSel.value;
+    if (!role) { toast('Please select your role', 'danger'); return; }
+
+    if (role === 'student') { studentSignIn(); return; }
+
     const email = emailInp.value.trim().toLowerCase();
     const pwd   = document.getElementById('loginPassword').value;
-    if (!role)  { toast('Please select your role', 'danger'); return; }
     if (!email) { toast('Please enter your email address', 'danger'); return; }
     if (pwd !== 'demo1234') { toast('Incorrect password', 'danger'); return; }
     let acc = DEMO_ACCOUNTS.find(a => a.email.toLowerCase() === email);
@@ -163,45 +180,39 @@ function bindLoginHandlers() {
       if (acc.firstLogin) promptFirstLoginPasswordChange(acc);
     }
   };
+}
 
-  const studentToggle = document.getElementById('studentLoginToggle');
-  if (studentToggle) studentToggle.onclick = () => {
-    document.getElementById('studentLoginForm').classList.toggle('hidden');
+function studentSignIn() {
+  const admNo = document.getElementById('studentAdmNo').value.trim().toUpperCase();
+  const dob   = document.getElementById('studentDob').value;
+  if (!admNo || !dob) { toast('Please enter your admission number and date of birth', 'danger'); return; }
+
+  const student = DB.get('students').find(s =>
+    s.admissionNo && s.admissionNo.toUpperCase() === admNo &&
+    s.dob === dob && s.status === 'active'
+  );
+  if (!student) { toast('No active student found — please check your admission number and date of birth', 'danger'); return; }
+
+  const cls         = DB.find('classes', student.classId);
+  const schoolName  = DB.settings().schoolName || 'School';
+  const isSecondary = cls && cls.level === 'Secondary';
+
+  const sessionUser = {
+    id:         student.id,
+    role:       'student',
+    name:       student.name,
+    email:      student.email || '',
+    title:      'Student',
+    subtitle:   `${cls ? cls.name : ''} — ${schoolName}`,
+    schoolId:   student.schoolId,
+    firstLogin: isSecondary && !student.passwordChanged
   };
 
-  const studentBtn = document.getElementById('studentLoginBtn');
-  if (studentBtn) studentBtn.onclick = () => {
-    const admNo = document.getElementById('studentAdmNo').value.trim().toUpperCase();
-    const dob   = document.getElementById('studentDob').value;
-    if (!admNo || !dob) { toast('Please enter your admission number and date of birth', 'danger'); return; }
-
-    const student = DB.get('students').find(s =>
-      s.admissionNo && s.admissionNo.toUpperCase() === admNo &&
-      s.dob === dob && s.status === 'active'
-    );
-    if (!student) { toast('No active student found — please check your admission number and date of birth', 'danger'); return; }
-
-    const cls        = DB.find('classes', student.classId);
-    const schoolName = DB.settings().schoolName || 'School';
-    const isSecondary = cls && cls.level === 'Secondary';
-
-    const sessionUser = {
-      id:         student.id,
-      role:       'student',
-      name:       student.name,
-      email:      student.email || '',
-      title:      'Student',
-      subtitle:   `${cls ? cls.name : ''} — ${schoolName}`,
-      schoolId:   student.schoolId,
-      firstLogin: isSecondary && !student.passwordChanged
-    };
-
-    AUTH.login(sessionUser);
-    DB.insert('auditLog', { id: uid('aud'), schoolId: student.schoolId, actor: student.id, action: 'student_login', target: student.name, timestamp: now() });
-    toast(`Welcome, ${student.name.split(' ')[0]}!`, 'success');
-    APP.render();
-    if (sessionUser.firstLogin) promptFirstLoginPasswordChange(sessionUser);
-  };
+  AUTH.login(sessionUser);
+  DB.insert('auditLog', { id: uid('aud'), schoolId: student.schoolId, actor: student.id, action: 'student_login', target: student.name, timestamp: now() });
+  toast(`Welcome, ${student.name.split(' ')[0]}!`, 'success');
+  APP.render();
+  if (sessionUser.firstLogin) promptFirstLoginPasswordChange(sessionUser);
 }
 
 function togglePwVisibility(inputId, btn) {
