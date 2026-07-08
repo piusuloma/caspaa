@@ -154,9 +154,9 @@ body { min-height: 100vh; font-size: 1rem; line-height: 1.5; -webkit-font-smooth
 .progress { height: var(--s-2); background: var(--line); border-radius: var(--r-pill); overflow: hidden; }
 .progress-bar { height: 100%; background: var(--brand-600); border-radius: var(--r-pill); transition: width 0.4s ease; }
 
-/* Login screen — 60:30:10 (neutral base 60 / coral panel 30 / gold accent 10) */
+/* Login screen — hero image (left) + form card (right) */
 .login-bg { background: #f4f2ee; }
-.login-panel { background: var(--coral-500); }
+.login-hero { background: var(--coral-500); }
 .login-card .input:focus { border-color: var(--coral-500); box-shadow: 0 0 0 3px rgba(253, 95, 84, 0.16); }
 
 /* Spinner */

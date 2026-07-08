@@ -61,100 +61,71 @@ function renderLogin() {
     { role: 'parent',      label: 'Parent' },
     { role: 'student',     label: 'Student' }
   ];
-  const FEATURES = [
-    { icon: 'wifi_off', title: 'Works Offline',   desc: 'Mark attendance with no signal' },
-    { icon: 'wallet',   title: 'Payments',        desc: 'Parents pay in 30 seconds' },
-    { icon: 'naira',    title: 'Fee Financing',   desc: 'Loans approved in 24 hours' },
-    { icon: 'sparkles', title: 'AI Assistant',    desc: 'Write report comments instantly' },
-    { icon: 'monitor',  title: 'CBT & Learning',  desc: 'Run digital tests & exams' },
-    { icon: 'shield',   title: 'Digital Consent', desc: 'Approve activities online' }
-  ];
   return `
-    <div class="login-bg min-h-screen flex items-center justify-center p-4 sm:p-6">
-      <div class="w-full max-w-5xl grid lg:grid-cols-2 gap-6 items-stretch">
+    <div class="login-bg min-h-screen flex">
 
-        <!-- Branding panel (coral · 30%) -->
-        <div class="login-panel text-white rounded-2xl p-8 lg:p-10 flex flex-col justify-between">
-          <div>
-            <div class="mb-10">
-              <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-9 w-auto mb-3" />
-              <p class="text-white/80 text-sm">School Operating System</p>
-            </div>
+      <!-- Hero image panel (left) -->
+      <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden items-start shrink-0">
+        <img src="logo/login-hero.jpg" alt="" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
+        <img src="logo/caspaa-white.svg" alt="CASPAA" class="relative z-10 h-10 w-auto mt-12 ml-10" />
+      </div>
 
-            <h2 class="text-3xl lg:text-4xl font-extrabold leading-tight mb-4">
-              One platform for <span class="text-gold-500">every part</span> of your school.
-            </h2>
-            <p class="text-white/85 text-base mb-8 max-w-md leading-relaxed">
-              School operations, payments, financing, attendance, learning and engagement — CASPAA unifies the many tools your school uses today into one.
-            </p>
-          </div>
+      <!-- Form area (right) -->
+      <div class="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <div class="login-card w-full max-w-md">
+          <img src="logo/caspaa-navy.svg" alt="CASPAA" class="lg:hidden h-8 w-auto mx-auto mb-8" />
+          <div class="bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-6 sm:p-8">
+            <h3 class="text-2xl font-bold text-slate-900 mb-1">Sign in to your Account</h3>
+            <p class="text-sm text-slate-500 mb-6">Enter your credentials to continue</p>
 
-          <div class="grid grid-cols-2 gap-4">
-            ${FEATURES.map(f => `
-              <div class="flex gap-3 items-start">
-                <div class="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">${icon(f.icon, 'w-5 h-5')}</div>
-                <div>
-                  <div class="font-semibold text-sm">${f.title}</div>
-                  <div class="text-xs text-white/70">${f.desc}</div>
+            <form id="signinForm" class="space-y-4" autocomplete="on">
+              <div>
+                <label class="input-label" for="loginRole">Role</label>
+                <select id="loginRole" class="input">
+                  <option value="">Select your role…</option>
+                  ${ROLE_OPTIONS.map(r => `<option value="${r.role}">${r.label}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="input-label" for="loginEmail">Email address</label>
+                <input type="email" class="input" id="loginEmail" placeholder="you@school.ng" autocomplete="username" />
+              </div>
+              <div>
+                <label class="input-label" for="loginPassword">Password</label>
+                <div class="relative">
+                  <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" value="demo1234" autocomplete="current-password" />
+                  <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" tabindex="-1" aria-label="Show password">
+                    <svg id="loginEyeIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  </button>
                 </div>
               </div>
-            `).join('')}
-          </div>
-        </div>
+              <button type="submit" class="btn btn-accent w-full" id="signinBtn">Sign in</button>
+            </form>
 
-        <!-- Sign-in card (neutral · 60%) -->
-        <div class="login-card bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-6 sm:p-8 flex flex-col justify-center">
-          <h3 class="text-xl font-bold text-slate-900 mb-1">Sign in to your dashboard</h3>
-          <p class="text-sm text-slate-500 mb-6">Enter your credentials to continue</p>
+            <p class="text-xs text-slate-400 mt-3 text-center">Demo access — pick a role to autofill its email. Password: <strong>demo1234</strong></p>
 
-          <form id="signinForm" class="space-y-4" autocomplete="on">
-            <div>
-              <label class="input-label" for="loginRole">Role</label>
-              <select id="loginRole" class="input">
-                <option value="">Select your role…</option>
-                ${ROLE_OPTIONS.map(r => `<option value="${r.role}">${r.label}</option>`).join('')}
-              </select>
+            <div class="text-center mt-4">
+              <button type="button" id="studentLoginToggle" class="text-sm text-coral-600 hover:text-coral-700 font-semibold">Student? Sign in with admission number →</button>
             </div>
-            <div>
-              <label class="input-label" for="loginEmail">Email address</label>
-              <input type="email" class="input" id="loginEmail" placeholder="you@school.ng" autocomplete="username" />
-            </div>
-            <div>
-              <label class="input-label" for="loginPassword">Password</label>
-              <div class="relative">
-                <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" value="demo1234" autocomplete="current-password" />
-                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" tabindex="-1" aria-label="Show password">
-                  <svg id="loginEyeIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                </button>
+
+            <div id="studentLoginForm" class="hidden mt-4 pt-4 border-t border-slate-100 space-y-3">
+              <p class="text-xs text-slate-500">Enter your admission number and date of birth exactly as registered by the school.</p>
+              <div>
+                <label class="input-label">Admission Number</label>
+                <input type="text" class="input" id="studentAdmNo" placeholder="e.g. BL/2025/001" style="text-transform:uppercase" />
               </div>
+              <div>
+                <label class="input-label">Date of Birth</label>
+                <input type="date" class="input" id="studentDob" />
+              </div>
+              <button type="button" class="btn btn-accent w-full" id="studentLoginBtn">Sign in as Student</button>
             </div>
-            <button type="submit" class="btn btn-accent w-full" id="signinBtn">Sign in</button>
-          </form>
 
-          <p class="text-xs text-slate-400 mt-3 text-center">Demo access — pick a role to autofill its email. Password: <strong>demo1234</strong></p>
-
-          <div class="text-center mt-4">
-            <button type="button" id="studentLoginToggle" class="text-sm text-coral-600 hover:text-coral-700 font-semibold">Student? Sign in with admission number →</button>
-          </div>
-
-          <div id="studentLoginForm" class="hidden mt-4 pt-4 border-t border-slate-100 space-y-3">
-            <p class="text-xs text-slate-500">Enter your admission number and date of birth exactly as registered by the school.</p>
-            <div>
-              <label class="input-label">Admission Number</label>
-              <input type="text" class="input" id="studentAdmNo" placeholder="e.g. BL/2025/001" style="text-transform:uppercase" />
+            <div class="mt-6 pt-5 border-t border-slate-100 text-center">
+              <p class="text-xs text-slate-400">By signing in, you agree to CASPAA's Terms and Privacy Policy. Your data is encrypted with AES-256.</p>
             </div>
-            <div>
-              <label class="input-label">Date of Birth</label>
-              <input type="date" class="input" id="studentDob" />
-            </div>
-            <button type="button" class="btn btn-accent w-full" id="studentLoginBtn">Sign in as Student</button>
-          </div>
-
-          <div class="mt-6 pt-5 border-t border-slate-100 text-center">
-            <p class="text-xs text-slate-400">By signing in, you agree to CASPAA's Terms and Privacy Policy. Your data is encrypted with AES-256.</p>
           </div>
         </div>
-
       </div>
     </div>
   `;
