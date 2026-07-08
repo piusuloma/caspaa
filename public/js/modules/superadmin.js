@@ -37,21 +37,25 @@ function view_sa_dashboard() {
   const topByValue = schools.slice().sort((a, b) => b.monthlyFee * 12 - a.monthlyFee * 12).slice(0, 10);
 
   window.afterRender = () => {
-    const ctx1 = document.getElementById('saChart1');
-    if (ctx1) {
-      new Chart(ctx1, {
-        type: 'line',
-        data: {
-          labels: ['Jul','Aug','Sep','Oct','Nov','Dec'],
-          datasets: [{
-            label: 'MRR',
-            data: [1500000, 1800000, 2100000, 2500000, 2900000, mrr],
-            borderColor: '#fd5f54', backgroundColor: 'rgba(16,185,129,0.12)',
-            tension: 0.35, fill: true, borderWidth: 3
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => '₦' + (v/1000000).toFixed(1) + 'M' } } } }
-      });
+    const el1 = document.getElementById('saChart1');
+    if (el1 && typeof ApexCharts !== 'undefined') {
+      // Defer so the grid column width is settled before ApexCharts measures it
+      setTimeout(() => {
+        el1.innerHTML = '';
+        new ApexCharts(el1, {
+          chart: { type: 'area', height: 250, width: '100%', parentHeightOffset: 0, toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'Figtree, system-ui, sans-serif', animations: { enabled: true, easing: 'easeinout', speed: 700 } },
+          series: [{ name: 'MRR', data: [1500000, 1800000, 2100000, 2500000, 2900000, mrr] }],
+          colors: ['#fd5f54'],
+          stroke: { curve: 'smooth', width: 3, lineCap: 'round' },
+          fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.02, stops: [0, 95, 100] } },
+          markers: { size: 0, colors: ['#fd5f54'], strokeColors: '#fff', strokeWidth: 2, hover: { size: 6 } },
+          dataLabels: { enabled: false },
+          grid: { borderColor: '#eef2f6', strokeDashArray: 4, xaxis: { lines: { show: false } }, padding: { top: 4, right: 14, bottom: 0, left: 6 } },
+          xaxis: { categories: ['Jul','Aug','Sep','Oct','Nov','Dec'], axisBorder: { show: false }, axisTicks: { show: false }, tooltip: { enabled: false }, labels: { style: { colors: '#94a3b8', fontSize: '12px', fontWeight: 500 } } },
+          yaxis: { labels: { formatter: v => '₦' + (v/1000000).toFixed(1) + 'M', style: { colors: '#94a3b8', fontSize: '12px' } } },
+          tooltip: { theme: 'light', x: { show: true }, y: { formatter: v => '₦' + Number(v).toLocaleString('en-NG') }, marker: { show: true } }
+        }).render();
+      }, 60);
     }
   };
 
@@ -127,19 +131,19 @@ function view_sa_dashboard() {
       <!-- 4 KPI cards (was 8+) -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         ${statCard({ label: 'ARR', value: money(arr), icon: 'trending_up', color: 'brand' })}
-        ${statCard({ label: 'Payment Volume', value: money(allTxns.reduce((s,t)=>s+t.amount,0)), icon: 'fees', color: 'blue' })}
+        ${statCard({ label: 'Payment Volume', value: money(allTxns.reduce((s,t)=>s+t.amount,0)), icon: 'fees', color: 'brand' })}
         ${statCard({ label: 'Loan Book', value: money(loanBook), icon: 'loan', color: 'gold', trend: par > 10 ? { direction: 'down', label: `PAR ${par}%` } : { direction: 'up', label: `PAR ${par}%` } })}
         ${statCard({ label: 'Open Tickets', value: DB.query('supportTickets', t => t.status !== 'resolved').length, icon: 'chat', color: slaBreaching ? 'rose' : 'brand', trend: slaBreaching ? { direction: 'down', label: `${slaBreaching} at risk` } : null })}
       </div>
 
       <!-- Main chart + Action queue -->
       <div class="grid lg:grid-cols-3 gap-4">
-        <div class="card p-5 lg:col-span-2">
+        <div class="card p-5 lg:col-span-2 overflow-hidden">
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-bold text-slate-900">MRR Growth (6 months)</h3>
             <button class="text-sm text-brand-700 font-semibold" onclick="APP.go('sa_revenue')">Revenue details →</button>
           </div>
-          <div style="height: 240px;"><canvas id="saChart1"></canvas></div>
+          <div id="saChart1" style="min-height:250px;overflow:hidden"></div>
         </div>
 
         <!-- Needs Attention -->
@@ -585,8 +589,8 @@ function view_sa_revenue() {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'SaaS MRR', value: money(mrr), icon: 'fees', color: 'brand' })}
       ${statCard({ label: 'Payment Fees', value: money(paymentComm), icon: 'fees', color: 'gold' })}
-      ${statCard({ label: 'Lending Interest', value: money(lendingComm), icon: 'loan', color: 'blue' })}
-      ${statCard({ label: 'Referral Fees', value: money(referralComm), icon: 'trending_up', color: 'purple' })}
+      ${statCard({ label: 'Lending Interest', value: money(lendingComm), icon: 'loan', color: 'brand' })}
+      ${statCard({ label: 'Referral Fees', value: money(referralComm), icon: 'trending_up', color: 'brand' })}
     </div>
 
     ${tabs([
@@ -808,8 +812,8 @@ function view_sa_lending() {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Active Loans', value: active.length, icon: 'loan', color: 'brand' })}
       ${statCard({ label: 'Total Disbursed', value: money(book), icon: 'fees', color: 'gold' })}
-      ${statCard({ label: 'Interest Income', value: money(interest), icon: 'trending_up', color: 'blue' })}
-      ${statCard({ label: 'Repaid So Far', value: money(repaid), icon: 'check', color: 'purple' })}
+      ${statCard({ label: 'Interest Income', value: money(interest), icon: 'trending_up', color: 'brand' })}
+      ${statCard({ label: 'Repaid So Far', value: money(repaid), icon: 'check', color: 'brand' })}
     </div>
 
     ${tabs([
@@ -1020,7 +1024,7 @@ function renderLoanAnalyticsTab() {
   return `
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Loan Volume', value: money(totalApproved), icon: 'fees', color: 'brand' })}
-      ${statCard({ label: 'Repayment Rate', value: totalDue ? Math.round((totalRepaid / totalDue) * 100) + '%' : '—', icon: 'trending_up', color: 'blue' })}
+      ${statCard({ label: 'Repayment Rate', value: totalDue ? Math.round((totalRepaid / totalDue) * 100) + '%' : '—', icon: 'trending_up', color: 'brand' })}
       ${statCard({ label: 'Overdue Installments', value: overdueRepayments.length, icon: 'bell', color: overdueRepayments.length ? 'rose' : 'brand' })}
       ${statCard({ label: 'Portfolio at Risk', value: par + '%', icon: 'trending_down', color: par > 10 ? 'rose' : 'gold' })}
     </div>
@@ -1164,9 +1168,9 @@ function renderBusinessTab(dateFrom, dateTo) {
   return `
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Active Users (DAU)', value: '1,247', icon: 'students', color: 'brand', trend: { direction: 'up', label: '+12%' } })}
-      ${statCard({ label: 'MAU', value: '4,820', icon: 'students', color: 'blue' })}
+      ${statCard({ label: 'MAU', value: '4,820', icon: 'students', color: 'brand' })}
       ${statCard({ label: 'NPS', value: '62', icon: 'trending_up', color: 'gold' })}
-      ${statCard({ label: 'Crash-free', value: '99.7%', icon: 'check', color: 'purple' })}
+      ${statCard({ label: 'Crash-free', value: '99.7%', icon: 'check', color: 'brand' })}
     </div>
     <div class="card p-5 mb-4">
       <h3 class="font-bold text-slate-900 mb-3">Schools by Location</h3>
@@ -1229,7 +1233,7 @@ function renderUsageTab(dateFrom, dateTo) {
     const c1 = document.getElementById('usageChart1');
     if (c1) new Chart(c1, {
       type: 'line',
-      data: { labels: days.map(d => fdate(d, { short: true })), datasets: [{ label: 'DAU', data: dauByDay, borderColor: '#fd5f54', backgroundColor: 'rgba(16,185,129,0.15)', tension: 0.35, fill: true, borderWidth: 2 }] },
+      data: { labels: days.map(d => fdate(d, { short: true })), datasets: [{ label: 'DAU', data: dauByDay, borderColor: '#fd5f54', backgroundColor: 'rgba(253,95,84,0.15)', tension: 0.35, fill: true, borderWidth: 2 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
     const c2 = document.getElementById('usageChart2');
@@ -1245,9 +1249,9 @@ function renderUsageTab(dateFrom, dateTo) {
   return `
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Daily Active Users', value: dauByDay[dauByDay.length - 1] || 0, icon: 'students', color: 'brand', trend: { direction: 'up', label: 'last 24h' } })}
-      ${statCard({ label: 'Weekly Active Users', value: Math.max(...dauByDay), icon: 'students', color: 'blue' })}
+      ${statCard({ label: 'Weekly Active Users', value: Math.max(...dauByDay), icon: 'students', color: 'brand' })}
       ${statCard({ label: 'Feature Events (14d)', value: totalEvents.toLocaleString(), icon: 'dashboard', color: 'gold' })}
-      ${statCard({ label: 'Avg Logins / school / week', value: '5.2', icon: 'check', color: 'purple' })}
+      ${statCard({ label: 'Avg Logins / school / week', value: '5.2', icon: 'check', color: 'brand' })}
     </div>
     <div class="grid lg:grid-cols-2 gap-4 mb-4">
       <div class="card p-5">
@@ -1281,9 +1285,9 @@ function renderSystemTab() {
   return `
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'API Uptime (90d)', value: (m.apiUptime || 99.9) + '%', icon: 'check', color: 'brand' })}
-      ${statCard({ label: 'Avg Response Time', value: (m.avgResponseMs || 200) + 'ms', icon: 'trending_up', color: 'blue' })}
+      ${statCard({ label: 'Avg Response Time', value: (m.avgResponseMs || 200) + 'ms', icon: 'trending_up', color: 'brand' })}
       ${statCard({ label: 'Failed Payment Rate', value: (m.failedPaymentRate || 0) + '%', icon: 'trending_down', color: m.failedPaymentRate > 3 ? 'rose' : 'gold' })}
-      ${statCard({ label: 'Crash-free Sessions', value: (m.crashFreeSessions || 99) + '%', icon: 'check', color: 'purple' })}
+      ${statCard({ label: 'Crash-free Sessions', value: (m.crashFreeSessions || 99) + '%', icon: 'check', color: 'brand' })}
     </div>
 
     <div class="grid lg:grid-cols-2 gap-4 mb-4">
@@ -1390,7 +1394,7 @@ function view_sa_support() {
 
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
       ${statCard({ label: 'Open', value: tickets.filter(t => t.status === 'open').length, icon: 'bell', color: 'gold' })}
-      ${statCard({ label: 'In Progress', value: tickets.filter(t => t.status === 'in_progress').length, icon: 'chat', color: 'blue' })}
+      ${statCard({ label: 'In Progress', value: tickets.filter(t => t.status === 'in_progress').length, icon: 'chat', color: 'brand' })}
       ${statCard({ label: 'Escalated', value: tickets.filter(t => t.status === 'escalated').length, icon: 'trending_up', color: 'rose' })}
       ${statCard({ label: 'Resolved', value: tickets.filter(t => t.status === 'resolved').length, icon: 'check', color: 'brand' })}
       ${statCard({ label: 'SLA at Risk', value: slaBreaching.length, icon: 'bell', color: slaBreaching.length ? 'rose' : 'brand' })}

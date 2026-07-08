@@ -58,7 +58,7 @@ function view_stu_dashboard() {
         ${statCard({ label: 'Assignments Due', value: pendingAssignments.length, icon: 'results', color: pendingAssignments.length ? 'gold' : 'brand', trend: pendingAssignments.length ? { direction: 'down', label: 'to submit' } : { direction: 'up', label: 'all done' } })}
         ${statCard({ label: 'Upcoming CBT', value: upcomingExams.length, icon: 'classes', color: upcomingExams.length ? 'gold' : 'brand', trend: upcomingExams.length ? { direction: 'down', label: 'to take' } : { direction: 'up', label: 'none pending' } })}
         ${statCard({ label: 'My Attendance', value: attRate + '%', icon: 'attendance', color: attRate >= 85 ? 'brand' : 'rose' })}
-        ${statCard({ label: 'Academic Avg', value: reward.avg + '%', icon: 'reports', color: 'blue' })}
+        ${statCard({ label: 'Academic Avg', value: reward.avg + '%', icon: 'reports', color: 'brand' })}
       </div>
 
       <!-- Badges -->
@@ -823,7 +823,7 @@ function view_stu_results() {
     <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
       ${statCard({ label: 'Subjects', value: results.length, icon: 'book', color: 'brand' })}
       ${statCard({ label: 'Average', value: avg + '%', icon: 'reports', color: avg >= 60 ? 'brand' : 'rose' })}
-      ${statCard({ label: 'CBT Taken', value: cbtSubs.length, icon: 'classes', color: 'blue' })}
+      ${statCard({ label: 'CBT Taken', value: cbtSubs.length, icon: 'classes', color: 'brand' })}
     </div>
 
 

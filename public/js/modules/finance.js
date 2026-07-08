@@ -49,7 +49,7 @@ function view_fin_dashboard() {
         ${statCard({ label: 'Total Collected', value: money(collected), icon: 'fees', color: 'brand', trend: { direction: 'up', label: '+18% MoM' } })}
         ${statCard({ label: 'Outstanding', value: money(outstanding), icon: 'bell', color: 'gold' })}
         ${statCard({ label: 'Expenses', value: money(expense), icon: 'trending_down', color: 'rose' })}
-        ${statCard({ label: 'Net Cashflow', value: money(netCash), icon: 'trending_up', color: 'blue' })}
+        ${statCard({ label: 'Net Cashflow', value: money(netCash), icon: 'trending_up', color: 'brand' })}
       </div>
 
       ${unreconciled ? `<div class="card bg-amber-50 border border-amber-200 p-3 flex items-center justify-between">
@@ -1051,7 +1051,7 @@ function view_fin_ledger() {
       `
     })}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-      ${statCard({ label: 'Students', value: rows.length, icon: 'students', color: 'blue' })}
+      ${statCard({ label: 'Students', value: rows.length, icon: 'students', color: 'brand' })}
       ${statCard({ label: 'Total Billed', value: money(totalBilled), icon: 'fees', color: 'slate' })}
       ${statCard({ label: 'Collected', value: money(totalCollected), icon: 'check', color: 'green' })}
       ${statCard({ label: 'Outstanding', value: money(totalOutstanding), icon: 'alert', color: 'red' })}
@@ -1669,7 +1669,7 @@ function view_fin_lending() {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Active Loans', value: active.length, icon: 'loan', color: 'brand' })}
       ${statCard({ label: 'Total Disbursed', value: money(totalDisbursed), icon: 'fees', color: 'gold' })}
-      ${statCard({ label: 'Repaid', value: money(totalRepaid), icon: 'check', color: 'blue' })}
+      ${statCard({ label: 'Repaid', value: money(totalRepaid), icon: 'check', color: 'brand' })}
       ${statCard({ label: 'Awaiting Decision', value: pending.length, icon: 'bell', color: 'rose' })}
     </div>
 

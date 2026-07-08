@@ -1327,7 +1327,7 @@ function mkvRenderPins() {
       const idx = pins.indexOf(p);
       return `<div style="position:absolute;left:${p.x}%;top:${p.y}%;transform:translate(-50%,-50%);z-index:8;pointer-events:auto">
         <div onclick="mkvTogglePin('${p.id}',event)"
-          style="width:22px;height:22px;border-radius:50%;background:#fd5f54;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(37,99,235,.55);border:2px solid #fff;cursor:pointer">
+          style="width:22px;height:22px;border-radius:50%;background:#fd5f54;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(253,95,84,.55);border:2px solid #fff;cursor:pointer">
           ${idx + 1}
         </div>
         <div id="mkv_tip_${p.id}" style="display:none;position:absolute;left:26px;top:-6px;width:190px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.14);padding:10px;z-index:20">

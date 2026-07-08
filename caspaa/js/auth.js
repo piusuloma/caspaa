@@ -67,8 +67,8 @@ function renderLogin() {
       <!-- Hero image panel (left) -->
       <div class="login-hero hidden lg:block lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0">
         <img src="logo/login-hero.png" alt="CASPAA" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
-        <div class="absolute inset-x-0 bottom-0 p-10">
-          <p class="text-white text-2xl font-bold leading-snug max-w-sm" style="text-shadow:0 1px 12px rgba(0,0,0,.4)">One platform for every part of your school.</p>
+        <div class="absolute inset-x-0 bottom-0 p-10 text-center">
+          <p class="text-white text-2xl font-bold leading-snug max-w-sm mx-auto" style="text-shadow:0 1px 12px rgba(0,0,0,.4)">One platform for every part of your school.</p>
         </div>
       </div>
 
@@ -121,7 +121,6 @@ function renderLogin() {
               <button type="submit" class="btn btn-accent w-full" id="signinBtn">Sign in</button>
             </form>
 
-            <p id="demoHint" class="text-xs text-slate-400 mt-3 text-center">Demo access — pick a role to autofill its email. Password: <strong>demo1234</strong></p>
 
             <div class="mt-6 pt-5 border-t border-slate-100 text-center">
               <p class="text-xs text-slate-400">By signing in, you agree to CASPAA's Terms and Privacy Policy. Your data is encrypted with AES-256.</p>

@@ -1873,7 +1873,7 @@ function view_par_results() {
     <!-- Summary row -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
       ${statCard({ label: 'Academic Avg', value: avg !== null ? avg + '%' : '—', icon: 'results', color: avg >= 70 ? 'brand' : avg >= 50 ? 'gold' : 'rose' })}
-      ${statCard({ label: 'Assignments', value: `${assignments.filter(a => (a.submissions || []).some(x => x.studentId === child.id)).length}/${assignments.length}`, icon: 'book', color: 'blue', trend: { label: 'submitted' } })}
+      ${statCard({ label: 'Assignments', value: `${assignments.filter(a => (a.submissions || []).some(x => x.studentId === child.id)).length}/${assignments.length}`, icon: 'book', color: 'brand', trend: { label: 'submitted' } })}
       ${statCard({ label: 'CBT Exams', value: `${cbtSubs.length}/${cbtExams.length}`, icon: 'classes', color: 'brand', trend: { label: 'completed' } })}
       ${statCard({ label: 'Quick Tests', value: `${ftSubs.length}/${ftTests.length}`, icon: 'check', color: 'gold', trend: { label: 'done' } })}
     </div>

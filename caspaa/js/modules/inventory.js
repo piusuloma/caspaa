@@ -54,10 +54,10 @@ function view_adm_inventory() {
     })}
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-      ${statCard({ label: 'Total Items', value: items.length, icon: 'package', color: 'blue' })}
+      ${statCard({ label: 'Total Items', value: items.length, icon: 'package', color: 'brand' })}
       ${statCard({ label: 'Stock Value', value: money(totalValue), icon: 'fees', color: 'green' })}
       ${statCard({ label: 'Low Stock', value: lowStockItems.length, icon: 'bell', color: lowStockItems.length > 0 ? 'red' : 'green' })}
-      ${statCard({ label: 'Categories', value: [...new Set(items.map(i => i.category).filter(Boolean))].length, icon: 'book', color: 'purple' })}
+      ${statCard({ label: 'Categories', value: [...new Set(items.map(i => i.category).filter(Boolean))].length, icon: 'book', color: 'brand' })}
     </div>
 
     ${lowStockItems.length ? `

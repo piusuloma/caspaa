@@ -184,8 +184,8 @@ function view_adm_hr_panel() {
   return `
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Total Staff', value: teachers.length, icon: 'teacher', color: 'brand' })}
-      ${statCard({ label: 'Monthly Gross', value: money(teachers.reduce((s, t) => s + (t.salary || 0), 0)), icon: 'fees', color: 'purple' })}
-      ${statCard({ label: 'Net Est.', value: money(Math.round(teachers.reduce((s, t) => s + (t.salary || 0), 0) * 0.85)), icon: 'check', color: 'blue' })}
+      ${statCard({ label: 'Monthly Gross', value: money(teachers.reduce((s, t) => s + (t.salary || 0), 0)), icon: 'fees', color: 'brand' })}
+      ${statCard({ label: 'Net Est.', value: money(Math.round(teachers.reduce((s, t) => s + (t.salary || 0), 0) * 0.85)), icon: 'check', color: 'brand' })}
       ${statCard({ label: 'In Today', value: todayAttendance.length, icon: 'attendance', color: 'brand' })}
     </div>
     ${renderHRPayrollPanel()}
@@ -1016,7 +1016,7 @@ function view_adm_assignments() {
     ${pageHeader({ title: 'Assignments', subtitle: 'All teacher-posted assignments across the school' })}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
       ${statCard({ label: 'Assignments', value: assignments.length, icon: 'book', color: 'brand' })}
-      ${statCard({ label: 'Submissions', value: totalSubs, icon: 'students', color: 'blue' })}
+      ${statCard({ label: 'Submissions', value: totalSubs, icon: 'students', color: 'brand' })}
       ${statCard({ label: 'Graded', value: totalGraded, icon: 'check', color: 'gold' })}
       ${statCard({ label: 'Returned', value: totalReturned, icon: 'send', color: 'brand' })}
     </div>
@@ -1115,7 +1115,7 @@ function view_adm_cbt() {
     ${pageHeader({ title: 'CBT Exams', subtitle: 'All computer-based tests set by teachers' })}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
       ${statCard({ label: 'Total Exams', value: exams.length, icon: 'book', color: 'brand' })}
-      ${statCard({ label: 'Published', value: exams.filter(e => e.status === 'published').length, icon: 'check', color: 'blue' })}
+      ${statCard({ label: 'Published', value: exams.filter(e => e.status === 'published').length, icon: 'check', color: 'brand' })}
       ${statCard({ label: 'Drafts', value: exams.filter(e => e.status === 'draft').length, icon: 'edit', color: 'gold' })}
       ${statCard({ label: 'Total Attempts', value: totalAttempts, icon: 'results', color: 'brand' })}
     </div>
@@ -1366,7 +1366,7 @@ function renderCurriculumOverview(classes, subjects, allSchemes, currentTerm) {
     <!-- Summary -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Schemes of Work', value: totalSchemes, icon: 'book', color: 'brand', tooltip: 'Number of subject × class × term schemes published for the current term.' })}
-      ${statCard({ label: 'Total Weeks', value: totalWeeks, icon: 'calendar', color: 'blue', tooltip: 'Sum of weeks planned across all schemes this term.' })}
+      ${statCard({ label: 'Total Weeks', value: totalWeeks, icon: 'calendar', color: 'brand', tooltip: 'Sum of weeks planned across all schemes this term.' })}
       ${statCard({ label: 'Weeks Covered', value: totalCovered, icon: 'check', color: 'gold', trend: { direction: 'up', label: `${overallPct}% of plan` }, tooltip: 'Number of week-topics teachers have actually delivered, as ticked on the scheme.' })}
       ${statCard({ label: 'Coverage Rate', value: overallPct + '%', icon: 'trending_up', color: overallPct >= 50 ? 'brand' : 'rose', tooltip: 'Weeks covered ÷ weeks planned. Drives the curriculum-completion reports.' })}
     </div>
@@ -2667,7 +2667,7 @@ function view_adm_dashboard() {
         ${statCard({
           label: 'Staff',
           value: teachers.length,
-          icon: 'teacher', color: 'blue',
+          icon: 'teacher', color: 'brand',
           tooltip: 'All staff on payroll (academic + non-academic). View breakdown in Staff & HR.'
         })}
         ${(() => {
@@ -2681,7 +2681,7 @@ function view_adm_dashboard() {
           });
         })()}
         ${(() => {
-          if (!school.subscriptionPlan) return statCard({ label: 'Subscription', value: '—', icon: 'settings', color: 'purple' });
+          if (!school.subscriptionPlan) return statCard({ label: 'Subscription', value: '—', icon: 'settings', color: 'brand' });
           const urgent = renewalDays !== null && renewalDays <= 7;
           return statCard({
             label: 'Subscription',
@@ -3659,7 +3659,7 @@ function view_adm_activities() {
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
       ${statCard({ label: 'Activities', value: activities.length, icon: 'check', color: 'brand' })}
-      ${statCard({ label: 'Total Revenue', value: money(totalRevenue), icon: 'fees', color: 'blue' })}
+      ${statCard({ label: 'Total Revenue', value: money(totalRevenue), icon: 'fees', color: 'brand' })}
       ${statCard({ label: 'Total Cost', value: money(totalCost), icon: 'trending_up', color: 'gold' })}
       ${statCard({ label: 'Net Income', value: money(totalNet), icon: 'reports', color: totalNet >= 0 ? 'brand' : 'rose' })}
     </div>
@@ -5399,8 +5399,8 @@ function view_adm_enrollment_analytics() {
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
       ${statCard({ label: 'Active Students', value: active.length, icon: 'students', color: 'brand' })}
-      ${statCard({ label: 'Alumni', value: alumni.length, icon: 'check', color: 'blue' })}
-      ${statCard({ label: 'Male', value: maleCount, icon: 'students', color: 'blue' })}
+      ${statCard({ label: 'Alumni', value: alumni.length, icon: 'check', color: 'brand' })}
+      ${statCard({ label: 'Male', value: maleCount, icon: 'students', color: 'brand' })}
       ${statCard({ label: 'Female', value: femaleCount, icon: 'students', color: 'rose' })}
     </div>
 
@@ -5933,7 +5933,7 @@ function view_adm_former_staff() {
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
       ${statCard({ label: 'Total Offboarded', value: former.length, icon: 'people', color: 'slate' })}
-      ${statCard({ label: 'Resignations', value: counts.resignation || 0, icon: 'logout', color: 'blue' })}
+      ${statCard({ label: 'Resignations', value: counts.resignation || 0, icon: 'logout', color: 'brand' })}
       ${statCard({ label: 'Dismissals', value: counts.dismissal || 0, icon: 'alert', color: 'rose' })}
       ${statCard({ label: 'Total Final Payments', value: money(totalFinal), icon: 'fees', color: 'gold' })}
     </div>
@@ -7286,7 +7286,7 @@ function view_adm_attendance() {
       ${statCard({ label: 'Present Today', value: totalPresent, icon: 'check', color: 'brand', trend: { direction: attendanceRate >= 80 ? 'up' : 'down', label: `${attendanceRate}% rate` } })}
       ${statCard({ label: 'Late Today', value: totalLate, icon: 'bell', color: 'gold' })}
       ${statCard({ label: 'Absent Today', value: totalAbsent, icon: 'x', color: 'rose' })}
-      ${statCard({ label: 'Total Students', value: totalStudents, icon: 'students', color: 'blue' })}
+      ${statCard({ label: 'Total Students', value: totalStudents, icon: 'students', color: 'brand' })}
     </div>
 
     <div class="card overflow-hidden">
@@ -7992,7 +7992,7 @@ function renderEnrollmentReport(schoolId) {
   return `
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Total Active', value: students.length, icon: 'user', color: 'brand' })}
-      ${statCard({ label: 'New Enrollment', value: newEnrolled.length, icon: 'plus', color: 'blue' })}
+      ${statCard({ label: 'New Enrollment', value: newEnrolled.length, icon: 'plus', color: 'brand' })}
       ${statCard({ label: 'Returning', value: returning.length, icon: 'trending_up', color: 'brand' })}
       ${statCard({ label: 'Classes', value: byClass.length, icon: 'academic', color: 'gold' })}
     </div>
@@ -8049,7 +8049,7 @@ function renderLeaversReport(schoolId) {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Leavers Total', value: leavers.length, icon: 'logout', color: 'rose' })}
       ${statCard({ label: 'Withdrawn', value: withdrawn.length, icon: 'x', color: 'rose' })}
-      ${statCard({ label: 'Transferred Out', value: transferredOut.length, icon: 'arrow_left', color: 'blue' })}
+      ${statCard({ label: 'Transferred Out', value: transferredOut.length, icon: 'arrow_left', color: 'brand' })}
       ${statCard({ label: 'Transfers In', value: transfersIn.length, icon: 'arrow_left', color: 'brand' })}
     </div>
 
@@ -8721,8 +8721,8 @@ function view_adm_hr() {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Total Staff', value: teachers.length, icon: 'teacher', color: 'brand' })}
       ${statCard({ label: 'Pending Leave', value: pendingLeaves.length, icon: 'bell', color: pendingLeaves.length ? 'gold' : 'brand' })}
-      ${statCard({ label: 'In Today', value: todayAttendance.length, icon: 'check', color: 'blue', action: { label: 'View report →', onclick: "APP.go('adm_staff_att')" } })}
-      ${statCard({ label: 'Monthly Payroll', value: money(teachers.reduce((s, t) => s + (t.salary || 0), 0)), icon: 'fees', color: 'purple' })}
+      ${statCard({ label: 'In Today', value: todayAttendance.length, icon: 'check', color: 'brand', action: { label: 'View report →', onclick: "APP.go('adm_staff_att')" } })}
+      ${statCard({ label: 'Monthly Payroll', value: money(teachers.reduce((s, t) => s + (t.salary || 0), 0)), icon: 'fees', color: 'brand' })}
     </div>
 
     ${tabs([
@@ -9680,9 +9680,9 @@ function renderBackupSettings() {
       <p class="text-sm text-slate-500 mb-4">Automatic backups run nightly at 2 AM. Snapshots are stored in two AWS regions (Frankfurt and Cape Town) for disaster recovery.</p>
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         ${statCard({ label: 'Last Backup', value: 'Today 02:00', icon: 'check', color: 'brand' })}
-        ${statCard({ label: 'Backup Size', value: '12.3 MB', icon: 'package', color: 'blue' })}
+        ${statCard({ label: 'Backup Size', value: '12.3 MB', icon: 'package', color: 'brand' })}
         ${statCard({ label: 'Retention', value: '90 days', icon: 'calendar', color: 'gold' })}
-        ${statCard({ label: 'Regions', value: '2', icon: 'building', color: 'purple' })}
+        ${statCard({ label: 'Regions', value: '2', icon: 'building', color: 'brand' })}
       </div>
       <div class="flex gap-2 mb-4">
         <button class="btn btn-primary" onclick="runBackupNow()">${icon('upload','w-4 h-4')} Run Backup Now</button>
@@ -10746,7 +10746,7 @@ function view_adm_admissions() {
     <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
       ${statCard({ label: 'Total', value: apps.length, icon: 'plus', color: 'brand' })}
       ${statCard({ label: 'Pending Review', value: apps.filter(a => a.status === 'pending').length, icon: 'bell', color: 'gold' })}
-      ${statCard({ label: 'Reviewing', value: apps.filter(a => a.status === 'reviewing').length, icon: 'chat', color: 'blue' })}
+      ${statCard({ label: 'Reviewing', value: apps.filter(a => a.status === 'reviewing').length, icon: 'chat', color: 'brand' })}
       ${statCard({ label: 'Visit Booked', value: apps.filter(a => a.status === 'visit_scheduled').length, icon: 'calendar', color: 'brand' })}
       ${statCard({ label: 'Visit Done', value: apps.filter(a => a.status === 'visit_confirmed').length, icon: 'check', color: 'gold' })}
       ${statCard({ label: 'Accepted', value: apps.filter(a => a.status === 'accepted').length, icon: 'check', color: 'brand' })}
@@ -11433,7 +11433,7 @@ function view_adm_sickbay() {
       ${statCard({ label: 'Total Visits', value: records.length, icon: 'bell', color: 'brand' })}
       ${statCard({ label: 'Today', value: todayCount, icon: 'check', color: 'gold' })}
       ${statCard({ label: 'Referred to Hospital', value: referredCount, icon: 'trending_up', color: 'rose' })}
-      ${statCard({ label: 'Parents Notified', value: records.filter(r => r.parentNotified).length, icon: 'chat', color: 'blue' })}
+      ${statCard({ label: 'Parents Notified', value: records.filter(r => r.parentNotified).length, icon: 'chat', color: 'brand' })}
     </div>
     ${records.length === 0 ? emptyState({ title: 'No sick bay records', body: 'Log a visit to start tracking.', icon: 'bell' }) : `
       <div class="card overflow-hidden">
@@ -11518,8 +11518,8 @@ function view_adm_visitors() {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Total Visits', value: log.length, icon: 'user', color: 'brand' })}
       ${statCard({ label: 'Today', value: todayCount, icon: 'calendar', color: 'gold' })}
-      ${statCard({ label: 'Currently on Premises', value: log.filter(l => !l.checkOut).length, icon: 'check', color: 'blue' })}
-      ${statCard({ label: 'With Vehicle', value: log.filter(l => l.vehicle && l.vehicle !== 'Foot').length, icon: 'bus', color: 'purple' })}
+      ${statCard({ label: 'Currently on Premises', value: log.filter(l => !l.checkOut).length, icon: 'check', color: 'brand' })}
+      ${statCard({ label: 'With Vehicle', value: log.filter(l => l.vehicle && l.vehicle !== 'Foot').length, icon: 'bus', color: 'brand' })}
     </div>
     <div class="card overflow-hidden">
       <table class="tbl">
@@ -11609,7 +11609,7 @@ function view_adm_library() {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Titles', value: books.length, icon: 'book', color: 'brand' })}
       ${statCard({ label: 'Copies Available', value: availableCopies + ' / ' + totalCopies, icon: 'check', color: 'gold' })}
-      ${statCard({ label: 'On Loan', value: activeLoans.length, icon: 'book', color: 'blue' })}
+      ${statCard({ label: 'On Loan', value: activeLoans.length, icon: 'book', color: 'brand' })}
       ${statCard({ label: 'Overdue', value: overdueLoans.length, icon: 'bell', color: overdueLoans.length ? 'rose' : 'brand' })}
     </div>
 
