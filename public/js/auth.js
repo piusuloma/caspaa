@@ -65,9 +65,8 @@ function renderLogin() {
     <div class="login-bg min-h-screen flex">
 
       <!-- Hero image panel (left) -->
-      <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden items-start shrink-0">
-        <img src="logo/login-hero.jpg" alt="" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
-        <img src="logo/caspaa-white.svg" alt="CASPAA" class="relative z-10 h-10 w-auto mt-12 ml-10" />
+      <div class="login-hero hidden lg:block lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0">
+        <img src="logo/login-hero.png" alt="CASPAA" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
       </div>
 
       <!-- Form area (right) -->
