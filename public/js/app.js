@@ -387,20 +387,6 @@ function showProfile() {
         <span class="badge badge-info mt-2">${roleLabel(u.role)}</span>
       </div>
 
-      ${otherRoles.length ? `<div class="mt-2 pt-3 border-t border-slate-100">
-        <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Switch role <span class="font-normal lowercase">(for demo)</span></div>
-        <div class="space-y-1.5">
-          ${otherRoles.map(a => `<button class="w-full flex items-center gap-3 p-2.5 rounded-xl border-2 border-slate-100 hover:border-brand-500 hover:bg-brand-50 transition text-left" onclick="quickSwitchRole('${a.id}')">
-            ${avatar(a.name, 'sm')}
-            <div class="flex-1 min-w-0">
-              <div class="font-semibold text-sm text-slate-900 truncate">${a.title}</div>
-              <div class="text-xs text-slate-500 truncate">${a.subtitle}</div>
-            </div>
-            <span class="text-brand-600">${icon('arrow_left', 'w-4 h-4 rotate-180')}</span>
-          </button>`).join('')}
-        </div>
-      </div>` : ''}
-
       <div class="space-y-2 mt-3 pt-3 border-t border-slate-100">
         <button class="btn btn-secondary w-full justify-start" onclick="showLoginSessions()">${icon('user','w-4 h-4')} Active sessions &amp; security</button>
         <button class="btn btn-secondary w-full justify-start" onclick="resetDemo()">${icon('settings', 'w-4 h-4')} Reset demo data</button>
