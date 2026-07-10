@@ -122,46 +122,32 @@ function renderLogin() {
         <!-- Login card -->
         <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8">
           <h3 class="text-xl font-bold text-slate-900 mb-1">Sign in to your dashboard</h3>
-          <p class="text-sm text-slate-500 mb-6">Choose your role to continue</p>
+          <p class="text-sm text-slate-500 mb-6">Enter the credentials from your invitation email.</p>
 
-          <!-- Quick demo logins (the killer UX feature) -->
-          <div class="space-y-2 mb-5">
-            ${DEMO_ACCOUNTS.map(a => `
-              <button data-account="${a.id}" class="demo-login w-full flex items-center gap-3 p-3 rounded-xl border-2 border-slate-100 hover:border-brand-500 hover:bg-brand-50 transition text-left group">
-                ${avatar(a.name, 'md')}
-                <div class="flex-1 min-w-0">
-                  <div class="font-semibold text-slate-900 text-sm truncate">${a.title}</div>
-                  <div class="text-xs text-slate-500 truncate">${a.subtitle}</div>
-                </div>
-                <div class="text-brand-600 opacity-0 group-hover:opacity-100 transition">${icon('arrow_left', 'w-4 h-4 rotate-180')}</div>
-              </button>
-            `).join('')}
-          </div>
-
-          <div class="text-center">
-            <button id="emailLoginToggle" class="text-sm text-brand-700 hover:text-brand-800 font-semibold">Or sign in with email →</button>
-          </div>
-
-          <div id="emailLoginForm" class="hidden mt-5 pt-5 border-t border-slate-100 space-y-3">
+          <div id="emailLoginForm" class="space-y-3">
             <div>
               <label class="input-label">Email</label>
-              <input type="email" class="input" id="loginEmail" placeholder="you@school.ng" />
+              <input type="email" class="input" id="loginEmail" placeholder="you@school.ng" autocomplete="username" />
             </div>
             <div>
               <label class="input-label">Password</label>
               <div class="relative">
-                <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" value="demo1234" />
+                <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" autocomplete="current-password" />
                 <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" tabindex="-1">
                   <svg id="loginEyeIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                 </button>
               </div>
-              <p class="text-xs text-slate-400 mt-1">Use password <strong>demo1234</strong> for any demo email</p>
+            </div>
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 text-sm text-slate-500"><input type="checkbox" class="w-4 h-4 accent-brand-600" /> Remember me</label>
+              <button type="button" class="text-sm text-brand-700 font-semibold" onclick="toast('If that email is registered, a reset link has been sent.','info')">Forgot password?</button>
             </div>
             <button class="btn btn-primary w-full" id="emailLoginBtn">Sign in</button>
+            <p class="text-xs text-slate-400 text-center">Demo accounts use password <strong>demo1234</strong></p>
           </div>
 
-          <div class="text-center mt-2">
-            <button id="studentLoginToggle" class="text-sm text-brand-700 hover:text-brand-800 font-semibold">Student login (Admission No.) →</button>
+          <div class="text-center mt-4 pt-4 border-t border-slate-100">
+            <button id="studentLoginToggle" class="text-sm text-brand-700 hover:text-brand-800 font-semibold">Student sign-in (Admission No.) →</button>
           </div>
 
           <div id="studentLoginForm" class="hidden mt-5 pt-5 border-t border-slate-100 space-y-3">
@@ -187,31 +173,87 @@ function renderLogin() {
   `;
 }
 
-function bindLoginHandlers() {
-  document.querySelectorAll('.demo-login').forEach(btn => {
-    btn.onclick = () => {
-      const id = btn.dataset.account;
-      const acc = DEMO_ACCOUNTS.find(a => a.id === id);
-      if (!acc) return;
-      // Sensitive roles get OTP step
-      if (acc.role === 'superadmin' || acc.role === 'finance') {
-        showOTPModal(acc);
-      } else {
-        AUTH.login(acc);
-        toast(`Welcome back, ${acc.name.split(' ')[0]}!`, 'success');
-        APP.render();
-        if (acc.firstLogin) promptFirstLoginPasswordChange(acc);
+/* ---------- Resolve an email + password against every account source ----------
+   Order: platform/system demo accounts → invited or seeded staff (teachers) →
+   parents (invited on enrolment) → school proprietor (by school email).
+   Role is derived from the matched record — never chosen on the login page.
+   Returns { user, ok, acceptInvite? }; user is null when the email is unknown. */
+function resolveLogin(email, pwd) {
+  const e = (email || '').trim().toLowerCase();
+  if (!e) return { user: null, ok: false };
+
+  // 1. Platform / demo personas (fixed demo password)
+  const demo = DEMO_ACCOUNTS.find(a => a.email.toLowerCase() === e);
+  if (demo) return { user: demo, ok: pwd === 'demo1234' };
+
+  // 2. Staff — invited via onboarding or seeded. Login = email OR invitation username.
+  const staff = DB.get('teachers').find(t =>
+    (t.email || '').toLowerCase() === e ||
+    (t.invitation && (t.invitation.username || '').toLowerCase() === e));
+  if (staff) {
+    const ok = pwd === 'demo1234' || !!(staff.invitation && pwd === staff.invitation.tempPassword);
+    const role = staff.staffType === 'Finance' ? 'finance' : 'teacher';
+    const firstLogin = role === 'teacher' && !!(staff.invitation && !staff.invitation.accepted) && !staff.passwordChanged;
+    return {
+      ok,
+      user: {
+        id: staff.id, role, name: staff.name,
+        email: staff.email || (staff.invitation && staff.invitation.username) || '',
+        schoolId: staff.schoolId, title: staff.role || staff.staffType, subtitle: staff.staffType, firstLogin
+      },
+      acceptInvite: () => {
+        if (staff.invitation && !staff.invitation.accepted) {
+          DB.update('teachers', staff.id, { invitation: { ...staff.invitation, accepted: true, acceptedAt: now() } });
+        }
       }
     };
-  });
+  }
 
-  document.getElementById('emailLoginToggle').onclick = () => {
-    document.getElementById('studentLoginForm').classList.add('hidden');
-    document.getElementById('emailLoginForm').classList.toggle('hidden');
+  // 3. Parents — credentials issued when their child is enrolled (username = phone or email)
+  const parent = DB.get('parents').find(p =>
+    (p.email || '').toLowerCase() === e ||
+    (p.credentials && (p.credentials.username || '').toLowerCase() === e));
+  if (parent) {
+    const ok = pwd === 'demo1234' || !!(parent.credentials && pwd === parent.credentials.tempPassword);
+    return { ok, user: { id: parent.id, role: 'parent', name: parent.name, email: parent.email || '', schoolId: parent.schoolId, firstLogin: !!parent.firstLogin } };
+  }
+
+  // 4. School proprietor — sign in with the school's contact email
+  const school = DB.get('schools').find(s => (s.email || '').toLowerCase() === e);
+  if (school) {
+    return { ok: pwd === 'demo1234', user: { id: school.id, role: 'schooladmin', name: school.proprietor || school.name, email: school.email || '', schoolId: school.id } };
+  }
+
+  return { user: null, ok: false };
+}
+
+function bindLoginHandlers() {
+  const doEmailLogin = () => {
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    const pwd = document.getElementById('loginPassword').value;
+    if (!email) { toast('Please enter your email', 'danger'); return; }
+    const res = resolveLogin(email, pwd);
+    if (!res.user) { toast('No account found with that email', 'danger'); return; }
+    if (!res.ok) { toast('Incorrect password', 'danger'); return; }
+    if (res.acceptInvite) res.acceptInvite();
+    const user = res.user;
+    // Sensitive roles get an OTP step
+    if (user.role === 'superadmin' || user.role === 'finance') {
+      showOTPModal(user);
+    } else {
+      AUTH.login(user);
+      APP.render();
+      toast(`Welcome back, ${user.name.split(' ')[0]}!`, 'success');
+      if (user.firstLogin) promptFirstLoginPasswordChange(user);
+    }
   };
 
+  document.getElementById('emailLoginBtn').onclick = doEmailLogin;
+  ['loginEmail', 'loginPassword'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doEmailLogin(); });
+  });
+
   document.getElementById('studentLoginToggle').onclick = () => {
-    document.getElementById('emailLoginForm').classList.add('hidden');
     document.getElementById('studentLoginForm').classList.toggle('hidden');
   };
 
@@ -248,19 +290,6 @@ function bindLoginHandlers() {
     if (sessionUser.firstLogin) promptFirstLoginPasswordChange(sessionUser);
   };
 
-  document.getElementById('emailLoginBtn').onclick = () => {
-    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-    const pwd = document.getElementById('loginPassword').value;
-    if (pwd !== 'demo1234') { toast('Incorrect password', 'danger'); return; }
-    const acc = DEMO_ACCOUNTS.find(a => a.email.toLowerCase() === email);
-    if (!acc) { toast('No account found with that email', 'danger'); return; }
-    if (acc.role === 'superadmin' || acc.role === 'finance') {
-      showOTPModal(acc);
-    } else {
-      AUTH.login(acc); APP.render(); toast(`Welcome back, ${acc.name.split(' ')[0]}!`);
-      if (acc.firstLogin) promptFirstLoginPasswordChange(acc);
-    }
-  };
 }
 
 function togglePwVisibility(inputId, btn) {
