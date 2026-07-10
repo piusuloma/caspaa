@@ -406,6 +406,7 @@ function showProfile() {
       </div>` : ''}
 
       <div class="space-y-2 mt-3 pt-3 border-t border-slate-100">
+        ${['schooladmin','principal'].includes(u.role) ? `<button class="btn btn-secondary w-full justify-start" onclick="document.getElementById('modalBackdrop')?.click(); APP.go('adm_onboarding')">${icon('check','w-4 h-4')} School setup guide</button>` : ''}
         <button class="btn btn-secondary w-full justify-start" onclick="showLoginSessions()">${icon('user','w-4 h-4')} Active sessions &amp; security</button>
         <button class="btn btn-secondary w-full justify-start" onclick="resetDemo()">${icon('settings', 'w-4 h-4')} Reset demo data</button>
         <button class="btn btn-danger w-full justify-start" onclick="document.getElementById('modalBackdrop')?.click(); AUTH.logout()">${icon('logout', 'w-4 h-4')} Sign out</button>

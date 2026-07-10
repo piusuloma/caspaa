@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CASPAA — Product Requirements Document</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; line-height: 1.7; color: #1a1a2e; background: #f5f5f5; }
+  .page-wrap { max-width: 900px; margin: 0 auto; background: #fff; padding: 60px 70px; }
+
+  /* COVER */
+  .cover { text-align: center; padding: 80px 0 60px; border-bottom: 3px solid #1a1a2e; margin-bottom: 60px; }
+  .cover .logo { font-size: 48px; font-weight: 900; letter-spacing: -2px; color: #1a1a2e; }
+  .cover .logo span { color: #e63946; }
+  .cover .tagline { font-size: 14px; color: #666; margin-top: 6px; letter-spacing: 2px; text-transform: uppercase; }
+  .cover h1 { font-size: 28px; font-weight: 700; margin-top: 48px; color: #1a1a2e; }
+  .cover .sub { font-size: 16px; color: #555; margin-top: 10px; }
+  .cover .meta { margin-top: 40px; font-size: 13px; color: #888; }
+  .cover .meta strong { color: #444; }
+
+  /* TOC */
+  .toc { margin-bottom: 60px; padding: 30px 36px; background: #f8f9ff; border-left: 4px solid #1a1a2e; border-radius: 4px; }
+  .toc h2 { font-size: 16px; font-weight: 700; margin-bottom: 18px; color: #1a1a2e; text-transform: uppercase; letter-spacing: 1px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #1a1a2e; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; color: #e63946; }
+  .toc .toc-section { font-weight: 700; margin-top: 12px; list-style: none; margin-left: -20px; color: #e63946; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* HEADINGS */
+  h1 { font-size: 26px; }
+  h2 { font-size: 20px; font-weight: 700; margin: 48px 0 16px; color: #1a1a2e; border-bottom: 2px solid #e63946; padding-bottom: 8px; }
+  h3 { font-size: 16px; font-weight: 700; margin: 32px 0 12px; color: #1a1a2e; }
+  h4 { font-size: 14px; font-weight: 700; margin: 20px 0 8px; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+  p { margin: 10px 0; }
+
+  /* PART HEADERS */
+  .part-header { text-align: center; padding: 40px 0 32px; margin: 60px 0 40px; border-top: 3px double #1a1a2e; border-bottom: 3px double #1a1a2e; }
+  .part-header .part-label { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #e63946; font-weight: 700; }
+  .part-header h2 { font-size: 22px; border: none; padding: 0; margin: 10px 0 0; }
+
+  /* FLOW BLOCKS */
+  .flow-block { background: #f8f9ff; border: 1px solid #dde; border-radius: 6px; padding: 20px 24px; margin: 16px 0; font-family: 'Courier New', monospace; font-size: 12.5px; white-space: pre-wrap; line-height: 1.6; color: #1a1a2e; }
+
+  /* TABLES */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th { background: #1a1a2e; color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 9px 14px; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9f9ff; }
+  tr:hover td { background: #f0f0ff; }
+
+  /* ACTOR / TRIGGER BADGES */
+  .actor-line { margin: 8px 0; font-size: 13px; }
+  .actor-line strong { color: #e63946; }
+
+  /* ACCEPTANCE CRITERIA */
+  .ac-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #e63946; margin: 20px 0 6px; }
+
+  /* USER STORY */
+  .user-story { background: #fff8f0; border-left: 4px solid #e63946; padding: 12px 16px; margin: 16px 0; font-style: italic; font-size: 13px; color: #444; border-radius: 0 4px 4px 0; }
+
+  /* SECTION DIVIDER */
+  hr { border: none; border-top: 1px solid #eee; margin: 36px 0; }
+  .flow-divider { border: none; border-top: 2px solid #eee; margin: 48px 0; }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-red { background: #fde8e8; color: #e63946; }
+  .badge-blue { background: #e8eeff; color: #1a1a2e; }
+
+  /* CODE */
+  code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 12px; color: #c0392b; }
+
+  /* LISTS */
+  ul, ol { padding-left: 24px; margin: 8px 0; }
+  li { margin: 4px 0; }
+
+  /* PRINT */
+  @media print {
+    body { background: #fff; font-size: 12px; }
+    .page-wrap { max-width: 100%; padding: 0; }
+    .cover { padding: 60px 0 40px; }
+    .cover .logo { font-size: 40px; }
+    h2 { page-break-before: auto; }
+    .part-header { page-break-before: always; }
+    .flow-header { page-break-after: avoid; }
+    table { page-break-inside: avoid; }
+    .flow-block { page-break-inside: avoid; font-size: 11px; }
+    tr { page-break-inside: avoid; }
+    a { color: inherit; text-decoration: none; }
+    .toc { page-break-after: always; }
+    @page { size: A4; margin: 20mm 18mm; }
+  }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+<!-- COVER -->
+<div class="cover">
+  <div class="logo">CAS<span>PAA</span></div>
+  <div class="tagline">EduFinTech Platform</div>
+  <h1>Product Requirements Document</h1>
+  <div class="sub">School Management Platform &amp; Core Operations Portal (COP)</div>
+  <div class="meta">
+    <strong>Version:</strong> 2.0 &nbsp;&nbsp;|&nbsp;&nbsp;
+    <strong>Date:</strong> June 2026 &nbsp;&nbsp;|&nbsp;&nbsp;
+    <strong>Status:</strong> Approved
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li class="toc-section">PART A — SCHOOL PLATFORM</li>
+    <li><a href="#s1">1. Executive Summary</a></li>
+    <li><a href="#s2">2. Platform Goals</a></li>
+    <li><a href="#s3">3. User Roles</a></li>
+    <li><a href="#s4">4. School Platform Modules</a></li>
+    <li><a href="#s5">5. User Flows (01–20)</a></li>
+    <li><a href="#s6">6. Data Model Summary</a></li>
+    <li class="toc-section">PART B — CORE OPERATIONS PORTAL (COP)</li>
+    <li><a href="#s7">7. COP Overview</a></li>
+    <li><a href="#s8">8. COP Target Users</a></li>
+    <li><a href="#s9">9. COP System Modules (1–8)</a></li>
+    <li><a href="#s10">10. COP User Flows (01–08)</a></li>
+    <li class="toc-section">PART C — GOVERNANCE</li>
+    <li><a href="#s11">11. Non-Functional Requirements</a></li>
+    <li><a href="#s12">12. Success Metrics &amp; KPIs</a></li>
+    <li><a href="#s13">13. Roles &amp; Permissions Matrix</a></li>
+    <li><a href="#s14">14. Out of Scope (Post-MVP)</a></li>
+  </ol>
+</div>
+
+<!-- ===== PART A ===== -->
+<div class="part-header">
+  <div class="part-label">Part A</div>
+  <h2>CASPAA School Management Platform</h2>
+</div>
+
+<h2 id="s1">1. Executive Summary</h2>
+<p>CASPAA is a comprehensive school ERP and EduFinTech platform serving K–12 schools across Nigeria and sub-Saharan Africa. It unifies academic management, financial operations, staff administration, parent engagement, and school lending into a single, role-aware web application.</p>
+<p>This document defines all user flows, acceptance criteria, user stories, and data models for both the School Platform (used by schools) and the Core Operations Portal (COP, used internally by the CASPAA team).</p>
+
+<h2 id="s2">2. Platform Goals</h2>
+<ul>
+  <li>Eliminate paper-based administration across all school departments</li>
+  <li>Enable real-time parent engagement and transparency</li>
+  <li>Provide embedded school-fee financing (CASPAA Loans)</li>
+  <li>Give CASPAA full operational visibility through the COP</li>
+  <li>Support 50,000+ concurrent users across 10,000+ schools</li>
+</ul>
+
+<h2 id="s3">3. User Roles</h2>
+<table>
+  <tr><th>Role</th><th>Description</th></tr>
+  <tr><td><strong>Super Admin</strong></td><td>CASPAA staff with full cross-school visibility</td></tr>
+  <tr><td><strong>School Admin</strong></td><td>School-level administrator managing all operations</td></tr>
+  <tr><td><strong>Principal</strong></td><td>Academic leadership; result approval and staff oversight</td></tr>
+  <tr><td><strong>Finance Officer</strong></td><td>Fee collection, payroll, loans, and financial reporting</td></tr>
+  <tr><td><strong>Teacher</strong></td><td>Academic delivery, attendance, assignments, grading</td></tr>
+  <tr><td><strong>Parent</strong></td><td>Fee payment, child monitoring, loan applications</td></tr>
+  <tr><td><strong>Student</strong></td><td>Assignments, results, assessments, house points</td></tr>
+</table>
+
+<h2 id="s4">4. School Platform Modules</h2>
+<table>
+  <tr><th>Module</th><th>Key Capabilities</th></tr>
+  <tr><td><strong>Student Management</strong></td><td>Enrolment, profiles, promotion, graduation, alumni</td></tr>
+  <tr><td><strong>Academic</strong></td><td>Timetable, attendance, lesson plans, schemes of work, CBT exams</td></tr>
+  <tr><td><strong>Results &amp; Reports</strong></td><td>Score entry, grade computation, report cards, approval workflow</td></tr>
+  <tr><td><strong>Finance</strong></td><td>Fee structure, invoicing, payments, loans, payroll, expenses</td></tr>
+  <tr><td><strong>Assignments</strong></td><td>Creation, submission, inline image annotation, resubmission</td></tr>
+  <tr><td><strong>Communication</strong></td><td>Diary, notice board, consent forms, surveys, announcements</td></tr>
+  <tr><td><strong>Transport</strong></td><td>Bus routes, live status, authorised pickup management</td></tr>
+  <tr><td><strong>Operations</strong></td><td>Inventory, sickbay, visitor log, leave requests, staff attendance</td></tr>
+  <tr><td><strong>House Points</strong></td><td>Merit awards, competition scoring, leaderboard</td></tr>
+  <tr><td><strong>HR &amp; Staff</strong></td><td>Staff profiles, appraisals, payslips, leave management</td></tr>
+  <tr><td><strong>Calendar</strong></td><td>Academic calendar, events, notice board, term dates</td></tr>
+  <tr><td><strong>Settings</strong></td><td>School configuration, branding, role management, integrations</td></tr>
+</table>
+
+<h2 id="s5">5. User Flows</h2>
+
+<hr class="flow-divider">
+<h3 id="flow01">FLOW 01 — Student Enrolment</h3>
+<p class="actor-line"><strong>Actor:</strong> School Admin &nbsp;|&nbsp; <strong>Trigger:</strong> New student joining the school</p>
+<div class="flow-block">NEW ADMISSION:
+1. Admin → Students → Add New Student
+2. Fills: first name, last name, gender, date of birth, class, arm, admission number
+3. Adds parent/guardian: name, phone, email, relationship
+4. Uploads optional profile photo
+5. Saves → student assigned unique ID, parent account auto-created
+6. Parent receives welcome notification with login credentials
+
+BULK IMPORT:
+7. Admin → Students → Import CSV
+8. Downloads CSV template
+9. Fills: student details + parent details per row
+10. Uploads CSV → system validates each row
+11. Rows with errors flagged (duplicate admission number, missing required fields)
+12. Admin resolves errors and re-imports
+13. All valid students created in one batch</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Duplicate admission number blocked</td><td>Error message shown; student not created</td></tr>
+  <tr><td>Parent account created automatically</td><td>Parent can log in with generated credentials</td></tr>
+  <tr><td>CSV import validates each row</td><td>Invalid rows listed with reason; valid rows created</td></tr>
+  <tr><td>Student appears in class register</td><td>Visible in attendance and results for assigned class</td></tr>
+  <tr><td>Profile photo upload works</td><td>Photo stored and displayed on student card</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow02">FLOW 02 — Fee Payment (Parent)</h3>
+<p class="actor-line"><strong>Actor:</strong> Parent → Finance Officer &nbsp;|&nbsp; <strong>Trigger:</strong> School term begins, invoices generated</p>
+<div class="flow-block">INVOICE GENERATION:
+1. Finance → Fee Structure → confirm current term structure
+2. Finance → Invoices → Generate Invoices for [Class/All Students]
+3. System creates per-student invoice based on fee structure + any credits/discounts
+4. Parent notified: "Your child's invoice for [Term] is ready"
+
+PAYMENT:
+5. Parent → Finance → sees outstanding invoice with breakdown
+6. Clicks "Pay Now"
+7. Selects payment method (bank transfer / card / USSD)
+8. Payment processed via Paystack
+9. Receipt generated automatically
+10. Invoice marked as "Paid" or "Part Paid" (if partial)
+11. Finance Officer sees real-time payment dashboard update
+
+RECORDING CASH / BANK TRANSFER:
+12. Finance → Payments → Record Manual Payment
+13. Selects student, enters amount, payment method, reference, date
+14. Saves → invoice updated, receipt generated</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Invoice total matches fee structure</td><td>No rounding errors; discounts applied correctly</td></tr>
+  <tr><td>Online payment updates invoice immediately</td><td>Invoice status changes to Paid on webhook confirmation</td></tr>
+  <tr><td>Part payment updates outstanding balance</td><td>Balance = original − amount paid</td></tr>
+  <tr><td>Receipt downloadable</td><td>PDF receipt generated with payment reference</td></tr>
+  <tr><td>Finance dashboard reflects new payment</td><td>Daily collection total updates in real time</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow03">FLOW 03 — Attendance Marking</h3>
+<p class="actor-line"><strong>Actor:</strong> Teacher &nbsp;|&nbsp; <strong>Trigger:</strong> Each school day</p>
+<div class="flow-block">DAILY ATTENDANCE:
+1. Teacher → Attendance → select class + date (defaults to today)
+2. Student list loads with three-state toggle: Present / Absent / Late
+3. Teacher marks each student
+4. Clicks Save → attendance recorded for that class on that date
+5. Absent students' parents notified: "[Child name] was marked absent today"
+
+EDITING:
+6. Teacher or Admin can edit a past record (today only for teachers, any date for admin)
+7. Edit reason logged for audit trail
+
+REPORTS:
+8. Admin → Attendance → Reports → filter by class / date range / student
+9. Attendance % computed per student: days present / school days
+10. Students below threshold (e.g. 75%) flagged with amber badge</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Absent parent notification sent</td><td>Parent receives in-app notification within 60 seconds</td></tr>
+  <tr><td>Attendance % calculated correctly</td><td>Formula: present days ÷ total school days × 100</td></tr>
+  <tr><td>Below-threshold students flagged</td><td>Amber badge visible on report and student profile</td></tr>
+  <tr><td>Teacher can only edit today's record</td><td>Past dates locked for teachers; admin can override</td></tr>
+  <tr><td>Attendance visible on report card</td><td>Term attendance % shown on printed report card</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow04">FLOW 04 — Results Entry &amp; Report Card</h3>
+<p class="actor-line"><strong>Actor:</strong> Teacher → Principal &nbsp;|&nbsp; <strong>Trigger:</strong> End of term</p>
+<div class="flow-block">RESULT ENTRY:
+1. Teacher → Results → select subject + class + term
+2. Student list loads with score columns (CA1, CA2, CA3, Exam)
+3. Teacher enters scores for each student
+4. System computes total and grade automatically
+5. Teacher clicks Submit for Approval
+
+PRINCIPAL APPROVAL:
+6. Principal → Results → Pending Approval
+7. Reviews scores per subject/class
+8. Must add a comment per student before approving
+9. Clicks Approve → results locked for editing
+10. Students and parents notified: "Your [Term] results are available"
+
+REPORT CARD:
+11. Admin/Principal → Reports → select student → Print Report Card
+12. Report card opens in print view with:
+    - School branding
+    - Subject scores, grades, remarks
+    - Attendance percentage
+    - Position in class
+    - Principal's comment</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Total computed automatically</td><td>CA1+CA2+CA3+Exam = Total; Grade from grade table</td></tr>
+  <tr><td>Scores locked after approval</td><td>Teacher cannot edit after principal approves</td></tr>
+  <tr><td>Report comment required before approval</td><td>Approve button disabled if any student lacks a comment</td></tr>
+  <tr><td>Rank positions calculated correctly</td><td>Tied scores produce same rank; next rank skips accordingly</td></tr>
+  <tr><td>Notification sent on approval</td><td>Students and parents receive in-app notification</td></tr>
+  <tr><td>Report card printable</td><td>Print view opens in new window with school branding</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow05">FLOW 05 — Loan Application (Parent)</h3>
+<p class="actor-line"><strong>Actor:</strong> Parent → Finance Officer &nbsp;|&nbsp; <strong>Trigger:</strong> Parent cannot pay full fees upfront</p>
+<div class="flow-block">1. Parent → Loans → Apply for Loan
+2. Fills application: amount requested, purpose, preferred repayment period
+3. System runs live credit score: analyses payment history + income estimate + tenure
+4. Score shown to parent (Excellent / Good / Fair / Poor)
+5. Application submitted — Finance notified
+
+FINANCE OFFICER:
+6. Finance → Lending → Pending applications
+7. Reviews application + credit score breakdown (5-factor assessment)
+8. Approves with repayment schedule OR rejects with reason
+9. If approved: disbursement recorded, parent notified with schedule
+
+REPAYMENT:
+10. Parent → Loans → sees outstanding balance + instalment due dates
+11. Parent makes repayment via payment modal (same as fee payment)
+12. Instalment marked paid, balance reduces
+13. Loan closes when all instalments paid</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Credit score computed on submission</td><td>Score displayed before parent submits</td></tr>
+  <tr><td>Finance notified of new application</td><td>Pending badge appears in Finance → Lending</td></tr>
+  <tr><td>Repayment schedule generated on approval</td><td>Instalment dates and amounts visible to parent</td></tr>
+  <tr><td>Loan balance reduces on each repayment</td><td>Outstanding balance updates in real time</td></tr>
+  <tr><td>Loan status changes to "Closed" on full repayment</td><td>Loan no longer appears in active loans</td></tr>
+  <tr><td>Rejection reason communicated to parent</td><td>Parent sees reason in notification and loan detail</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow06">FLOW 06 — House Points Award</h3>
+<p class="actor-line"><strong>Actor:</strong> Teacher → Student (via leaderboard)</p>
+<div class="flow-block">INDIVIDUAL AWARD:
+1. Teacher → House Points → Award Points button
+2. Selects student, enters points (positive = award, negative = deduction)
+3. Toggles between Award (green) and Deduct (red) with reason
+4. Saves → student's house total increases/decreases
+5. Student and parent notified: "[Name] was awarded 5 house points for Good Conduct"
+
+COMPETITION (Inter-house event):
+6. Admin → House Points → Competitions tab → Record Competition
+7. Enters event name (e.g. "Sports Day") and type
+8. For each participating house: selects house and position (1st, 2nd, 3rd, 4th)
+9. System assigns competition points: 1st=50, 2nd=35, 3rd=20, 4th=10
+10. Saves → leaderboard recalculates (individual merit points + competition points)
+11. All house members notified of the result
+
+LEADERBOARD:
+12. Admin/Teacher/Student/Parent → House Points → Leaderboard
+13. Houses sorted by total points (merit + competition)
+14. Breakdown shown: merit pts · competition pts
+15. Student sees their personal points within the house total</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Points awarded/deducted update leaderboard immediately</td><td>House total changes on save</td></tr>
+  <tr><td>Competition points assigned by position correctly</td><td>1st=50, 2nd=35, 3rd=20, 4th=10</td></tr>
+  <tr><td>Student and parent notified on award</td><td>Both receive in-app notification</td></tr>
+  <tr><td>Leaderboard shows correct house ranking</td><td>Houses sorted highest to lowest total</td></tr>
+  <tr><td>Individual student point history visible</td><td>Admin/teacher can see per-student point log</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow07">FLOW 07 — Authorised Pickup Management</h3>
+<p class="actor-line"><strong>Actor:</strong> Parent → Admin &nbsp;|&nbsp; <strong>Trigger:</strong> Parent wants someone else to collect their child</p>
+<div class="flow-block">PARENT:
+1. Parent → Transport → Authorized Pickup Persons → Add Person
+2. Fills: full name, relationship (Aunt, Grandparent, etc.), phone number
+3. Submits request — status: Pending
+4. School admin notified: "New pickup authorization request for [child name]"
+
+ADMIN:
+5. Admin → Transport → Pickup Authorizations tab
+6. Sees pending requests with amber highlight
+7. Reviews: name, relationship, phone, which student
+8. Clicks Approve or Deny
+9. Parent notified of outcome
+10. If approved: person appears in the child's approved pickup list
+11. If denied: parent can submit a new request or contact school
+
+DAILY USE:
+12. When person arrives to collect child, admin verifies against approved list
+13. Admin can revoke authorization at any time — parent notified</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Admin notified of new pickup request</td><td>Notification with child name and requester</td></tr>
+  <tr><td>Approved person appears in pickup list</td><td>Visible to admin at gate check</td></tr>
+  <tr><td>Denied request triggers parent notification</td><td>Parent sees reason if provided</td></tr>
+  <tr><td>Revoked authorization removes person from list</td><td>Revocation reflected immediately</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow08">FLOW 08 — Bus Status Updates</h3>
+<p class="actor-line"><strong>Actor:</strong> Admin / Transport Officer → Parent &nbsp;|&nbsp; <strong>Trigger:</strong> Each school day, morning and afternoon runs</p>
+<div class="flow-block">1. Admin → Transport → Bus Status tab
+2. Sees all active routes with current status (default: Waiting at School)
+3. When bus departs: clicks "Departed — En Route" for that route
+4. All parents of students on that route receive push notification:
+   "The [Route Name] bus has departed and is now en route"
+5. If delay occurs: clicks "Delayed" + optionally adds note ("Stuck in traffic")
+6. Parents notified: "Bus is delayed — Stuck in traffic"
+7. When bus arrives: clicks "Arrived" → parents notified
+8. Parent → Transport → sees live status pill on child's route card</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Status change triggers push notification</td><td>All parents on the route notified within seconds</td></tr>
+  <tr><td>Status pill visible on parent transport card</td><td>Shows current status with colour coding</td></tr>
+  <tr><td>Delay note visible to parents</td><td>Note text appears in notification and status card</td></tr>
+  <tr><td>Multiple routes manageable independently</td><td>Each route has its own status</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow09">FLOW 09 — Student Graduation (Alumni)</h3>
+<p class="actor-line"><strong>Actor:</strong> School Admin &nbsp;|&nbsp; <strong>Trigger:</strong> End of final year (SS3 or JSS3)</p>
+<div class="flow-block">INDIVIDUAL GRADUATION:
+1. Admin → Students → open student profile → Actions → Graduate to Alumni
+2. Graduation modal opens with pre-filled info (final class, year)
+3. Admin enters/confirms:
+   - Graduation year
+   - Final class
+   - Examination type (WAEC, NECO, BECE, etc.)
+   - Examination index number
+   - Awards and distinctions
+   - Leaving certificate issued? (Yes/No)
+4. Confirms → student status changes to 'alumni'
+5. Student no longer appears in active registers, fee invoices, or attendance
+
+BULK GRADUATION:
+6. Admin → Academic → Bulk Promotion
+7. Selects class (e.g. SS3A) → destination: "Graduate to Alumni"
+8. All students in class are graduated at once
+
+ALUMNI RECORD MANAGEMENT:
+9. Admin → Alumni → search for graduate by name or admission number
+10. Clicks "Update Info" → adds: current university/employer, course, alumni email, phone
+11. Clicks "Certificate" → prints School Leaving Certificate in new window
+12. Alumni page shows stats: total alumni, this year's graduates, % with post-grad info
+
+RE-ADMISSION:
+13. Admin → Alumni → find alumnus → "Re-admit"
+14. Confirms → status returns to active, alumni data preserved</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Graduated student removed from active rolls</td><td>No longer in attendance, results, or fee invoice system</td></tr>
+  <tr><td>Alumni record preserves all school data</td><td>Historical records intact after graduation</td></tr>
+  <tr><td>School Leaving Certificate printable</td><td>Opens formatted print view in new window</td></tr>
+  <tr><td>Bulk graduation processes entire class</td><td>All students in class change to alumni status in one action</td></tr>
+  <tr><td>Re-admitted alumnus rejoins active students</td><td>All modules reflect re-activation</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow10">FLOW 10 — Teacher-Parent Communication Diary</h3>
+<p class="actor-line"><strong>Actor:</strong> Teacher → Parent (and back)</p>
+<div class="flow-block">TEACHER:
+1. Teacher → Diary → select student → Write Note
+2. Chooses category (Homework, Academic, Behaviour, Health, General)
+3. Writes note: e.g. "Dawit struggled with fractions today — extra practice recommended"
+4. Saves → parent notified: "Your child's teacher left a note"
+
+PARENT:
+5. Parent → Diary → sees notes filtered by category (All / Homework / Academic / etc.)
+6. Reads note — automatically marked as read when viewed
+7. Taps Reply → writes response
+8. Teacher notified: "A parent replied to your note about [student name]"
+
+TEACHER:
+9. Teacher → Diary → sees reply in thread
+10. Can continue the conversation or mark as resolved
+
+ADMIN OVERSIGHT:
+11. Admin → Communications → Oversight tab
+12. Sees all teacher-parent conversations school-wide
+13. Can read full thread history (read-only)</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Note saved and parent notified</td><td>Notification delivered with teacher name and student</td></tr>
+  <tr><td>Note marked read on parent view</td><td>Read status updates automatically on open</td></tr>
+  <tr><td>Reply threads correctly threaded</td><td>Replies appear under the original note</td></tr>
+  <tr><td>Admin can see all conversations</td><td>Oversight tab shows school-wide threads</td></tr>
+  <tr><td>Category filter works correctly</td><td>Only notes of selected category displayed</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow11">FLOW 11 — Digital Consent Form</h3>
+<p class="actor-line"><strong>Actor:</strong> Admin → Parent &nbsp;|&nbsp; <strong>Trigger:</strong> School event requiring parental permission</p>
+<div class="flow-block">1. Admin → Communications → Digital Consent → Create Form
+2. Enters: title, description, deadline, target audience (all parents / specific class)
+3. Publishes form → parents notified in-app
+4. Parent → Consent → sees open forms with deadline countdown
+5. Parent reads form, selects Agree or Decline
+6. If declining: optionally notes reason
+7. Admin → Consent → sees real-time response count and list
+8. Admin can export consent list (for trip registers, etc.)
+9. After deadline: form auto-closes, final response tally visible</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Form created and parents notified</td><td>All targeted parents receive notification</td></tr>
+  <tr><td>Deadline countdown visible</td><td>Timer shown on form card</td></tr>
+  <tr><td>Parent cannot re-submit</td><td>Submit button disabled after first response</td></tr>
+  <tr><td>Response tally updates in real time</td><td>Admin sees count without refreshing</td></tr>
+  <tr><td>Form auto-closes after deadline</td><td>No new submissions accepted after deadline</td></tr>
+  <tr><td>Export works</td><td>Consent list downloadable for record-keeping</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow12">FLOW 12 — Formative Assessment / CBT Exam</h3>
+<p class="actor-line"><strong>Actor:</strong> Teacher → Student</p>
+<div class="flow-block">TEACHER CREATES:
+1. Teacher → Assessments → Create Test
+2. Enters: title, subject, duration, pass mark, due date
+3. Adds questions: MCQ (A/B/C/D), True/False, Short Answer
+4. Sets correct answers and marks per question
+5. Publishes test → students in class notified
+
+STUDENT TAKES:
+6. Student → Assessments → sees Pending tests (overdue tests shown with 'Overdue' badge)
+7. Opens test → sees duration reminder
+8. Answers all questions
+9. Clicks Submit → confirmation dialog: "Submit? You cannot edit after submission"
+10. Confirms → submission saved, score computed for auto-graded questions
+11. Teacher notified: "[Name] submitted [Test Name]"
+12. Score shown to student immediately (for MCQ/True-False)
+13. Short answer: marked by teacher, then score released
+
+TEACHER REVIEWS:
+14. Teacher → Assessments → sees submission list for each test
+15. For short answer: enters score + feedback
+16. Student sees final score in completed tests
+
+ADMIN OVERSIGHT:
+17. Admin → Academic → CBT tab → sees all published CBT exams school-wide
+18. Clicks any exam to view per-student submissions and scores</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>MCQ/True-False auto-graded on submit</td><td>Score computed immediately</td></tr>
+  <tr><td>Short-answer held until teacher grades</td><td>Score shown as pending until teacher marks</td></tr>
+  <tr><td>Timer counts down during test</td><td>Student sees time remaining</td></tr>
+  <tr><td>Overdue tests marked with badge</td><td>Overdue badge shown; student cannot submit overdue tests</td></tr>
+  <tr><td>Admin can see all school-wide CBT exams</td><td>Oversight view includes all teachers' exams</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow13">FLOW 13 — Payroll Processing</h3>
+<p class="actor-line"><strong>Actor:</strong> Finance Officer / Admin &nbsp;|&nbsp; <strong>Trigger:</strong> Monthly, on payroll run date</p>
+<div class="flow-block">STEP 1 — Generate:
+1. Finance → Payroll → Start New Payroll Run
+2. System loads all active staff with their salary components
+3. Auto-calculates: basic salary, allowances, deductions, net pay
+4. Finance reviews generated payroll (all staff, total outflow)
+
+STEP 2 — Adjustments:
+5. Finance adds one-off adjustments: bonus, salary advance deduction, etc.
+6. Each adjustment shows impact on net pay
+
+STEP 3 — Review & Approve:
+7. Finance / Admin reviews final payroll summary
+8. Checks total payroll vs budget
+9. Clicks Approve
+
+STEP 4 — Publish:
+10. System creates payslip records for all staff
+11. Each staff member notified: "Your payslip for [Month] is available"
+12. Teacher → My Payslip → views breakdown, can download PDF</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>All active staff loaded for run</td><td>No inactive or terminated staff included</td></tr>
+  <tr><td>Net pay calculated correctly</td><td>Basic + Allowances − Deductions = Net</td></tr>
+  <tr><td>Adjustments reflected before approval</td><td>Preview shows updated net per staff member</td></tr>
+  <tr><td>Payslips published to all staff simultaneously</td><td>All notifications sent on approval</td></tr>
+  <tr><td>Staff can view and download payslip</td><td>PDF download available from staff portal</td></tr>
+  <tr><td>Payroll run history preserved</td><td>Previous runs visible and not editable</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow14">FLOW 14 — Calendar Event &amp; Notice Board</h3>
+<p class="actor-line"><strong>Actor:</strong> Admin / Principal &nbsp;|&nbsp; <strong>Trigger:</strong> Upcoming school event or information to share</p>
+<div class="flow-block">CALENDAR EVENT (date-specific):
+1. Admin → Calendar → Add Event
+2. Enters: title, start/end date, type (Holiday, Academic, Sports, Exam, etc.), audience
+3. Event appears on calendar grid for all relevant users
+4. Admin can edit or delete events (role-gated)
+
+NOTICE BOARD (non-date-specific pinned info):
+1. Admin → Calendar → Notice Board tab → Post Notice
+2. Enters: title, message, audience (Everyone / Parents / Teachers / Students)
+3. Notice appears as pinned card, sorted newest first
+4. All users in the audience see the notice on their Calendar → Notice Board tab
+5. Admin can delete notices when no longer relevant</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Event appears on all relevant user calendars</td><td>Visible to correct audience on their calendar view</td></tr>
+  <tr><td>Notice audience filter works</td><td>Notice only visible to targeted role</td></tr>
+  <tr><td>Only admin/principal can post/edit/delete</td><td>Teachers and parents see view-only calendar</td></tr>
+  <tr><td>Events spanning multiple days shown correctly</td><td>Multi-day events displayed across all affected days</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow15">FLOW 15 — Survey / Feedback Collection</h3>
+<p class="actor-line"><strong>Actor:</strong> Admin → Parent &nbsp;|&nbsp; <strong>Trigger:</strong> End of term, after events, ongoing quality monitoring</p>
+<div class="flow-block">ADMIN:
+1. Admin → Surveys → Create Survey
+2. Enters: title, description, deadline
+3. Adds questions (rating / multiple choice / open text)
+4. Publishes → all parents notified: "New survey: [Title]"
+
+PARENT:
+5. Parent → Surveys → sees open surveys with deadline
+6. Opens survey, answers all questions
+7. Submits → cannot re-submit
+8. If deadline passed: "This survey has closed" message shown
+
+ADMIN REVIEWS:
+9. Admin → Surveys → clicks "View Results (N)"
+10. Sees aggregated responses: rating averages, option breakdowns, open text answers
+11. Can close survey early or delete it</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Parents notified on publish</td><td>All parents receive in-app notification</td></tr>
+  <tr><td>Parent cannot re-submit</td><td>Submission button disabled after first response</td></tr>
+  <tr><td>Closed survey shows correct message</td><td>"Survey closed" shown after deadline</td></tr>
+  <tr><td>Results aggregated accurately</td><td>Rating averages and option counts correct</td></tr>
+  <tr><td>Admin can close survey early</td><td>Survey closes immediately, no new submissions</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow16">FLOW 16 — Sickbay Visit Recording</h3>
+<p class="actor-line"><strong>Actor:</strong> Admin / Health Staff &nbsp;|&nbsp; <strong>Trigger:</strong> Student reports ill during school hours</p>
+<div class="flow-block">1. Admin → Health/Sickbay → Log Visit
+2. Selects student, enters: complaint, vital signs (optional), treatment given
+3. Selects outcome:
+   - Treated & Returned to class
+   - Resting in sickbay
+   - Sent Home → parent notification MANDATORY, auto-triggered
+   - Referred to Hospital → parent notification MANDATORY, auto-triggered
+4. If "Sent Home" or "Referred": system forces parent notification regardless of checkbox
+5. Parent receives: "[Child name] has been sent home from school. Please contact the school."
+6. Admin → Health → Student record → visit history (newest first)
+7. Parent → Health → sees child's sickbay visit history</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>"Sent Home" or "Referred" forces notification</td><td>Parent notified even if checkbox unchecked</td></tr>
+  <tr><td>Visit logged with timestamp</td><td>Date and time recorded on each visit</td></tr>
+  <tr><td>Parent sees visit history</td><td>All visits visible in parent's health tab</td></tr>
+  <tr><td>Complaint and treatment visible to admin</td><td>Full record accessible from student profile</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow17">FLOW 17 — Leave Request (Staff)</h3>
+<p class="actor-line"><strong>Actor:</strong> Teacher → Admin &nbsp;|&nbsp; <strong>Trigger:</strong> Teacher needs time off</p>
+<div class="flow-block">1. Teacher → My Payslip → Leave Requests tab → Apply for Leave
+2. Fills: leave type (Annual, Sick, Emergency, Study), start date, end date, reason
+3. Submits → Admin / Principal notified
+
+ADMIN:
+4. Admin → Staff & HR → Leave Requests → sees pending requests
+5. Reviews: dates, type, reason, remaining leave balance
+6. Approves or Denies with optional comment
+7. Teacher notified of outcome
+8. If approved: leave dates reflected in staff attendance record
+9. Admin can arrange substitute coverage for affected classes</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Admin notified on submission</td><td>Notification with teacher name and dates</td></tr>
+  <tr><td>Leave balance shown to admin</td><td>Remaining entitlement visible before decision</td></tr>
+  <tr><td>Teacher notified of outcome</td><td>Approval or denial with comment delivered</td></tr>
+  <tr><td>Approved leave reflected in records</td><td>Staff attendance updated with leave dates</td></tr>
+  <tr><td>Substitute can be assigned to affected classes</td><td>Coverage tracked and visible</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow18">FLOW 18 — Inventory Management</h3>
+<p class="actor-line"><strong>Actor:</strong> Admin &nbsp;|&nbsp; <strong>Trigger:</strong> Receiving stock, issuing items, conducting stock check</p>
+<div class="flow-block">ADDING STOCK:
+1. Admin → Operations → Inventory
+2. If new item: Add Item (name, category, initial qty, unit cost, min stock, supplier)
+3. If existing: Stock In (quantity received, reason: "New delivery")
+4. History entry created automatically
+
+ISSUING:
+5. Admin → select item → Issue
+6. Enters: quantity, recipient, reason
+7. Stock level decreases, history entry created
+8. If stock drops below min level: low-stock badge shown on item card
+
+WRITE-OFF:
+9. Admin selects item → Write Off (for damaged/lost items)
+10. Quantity decreases, history entry shows reason
+
+HISTORY:
+11. Admin → item → View History: full log of all stock movements (in/out/write-off) newest first</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Stock in increases quantity correctly</td><td>Quantity updates immediately</td></tr>
+  <tr><td>Issuing decreases quantity correctly</td><td>Issued quantity deducted from current stock</td></tr>
+  <tr><td>Low-stock badge appears at threshold</td><td>Badge shown when quantity ≤ min stock level</td></tr>
+  <tr><td>Write-off logged with reason</td><td>History entry shows write-off reason and quantity</td></tr>
+  <tr><td>Full history auditable</td><td>All movements logged with timestamp and action</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow19">FLOW 19 — Assignment Marking with Inline Comments</h3>
+<p class="actor-line"><strong>Actor:</strong> Teacher &nbsp;|&nbsp; <strong>Trigger:</strong> Student submits an assignment with an image or PDF attachment</p>
+<div class="flow-block">TEACHER MARKS:
+1. Teacher → Assignments → select assignment → View Submissions
+2. Clicks "Mark" on a student's row
+3. Marking panel opens: student submission on left, grading panel on right
+
+FOR IMAGE SUBMISSIONS:
+4. Pin comment tool auto-activates when marking panel opens
+5. Teacher clicks any spot on the image
+6. Floating bubble appears at the click location
+7. Teacher types the comment in the bubble, presses Enter or Save
+8. Numbered blue pin (①, ②, ③…) appears on the image at that location
+9. Teacher can click any pin to expand/collapse the comment
+10. Teacher can add multiple pins across the image
+
+FOR PDF SUBMISSIONS:
+4. PDF rendered in embedded viewer
+5. Teacher clicks "Add" button in the Inline Comments section
+6. Floating bubble appears, teacher types comment
+7. Comment saved to sidebar list (no image anchor for PDF)
+
+GRADING:
+8. Teacher enters Score / 100 (or uses rubric if defined)
+9. Selects Mark Status: ⭐ Excellent / ✓ Satisfactory / 🔄 Needs Revision
+10. Writes General Feedback in text area
+11. Uses Quick Comment chips for common feedback phrases
+
+SAVE OPTIONS:
+12a. "Save & Grade" — saves grade, feedback, and all inline comments
+12b. "Return to Student" — saves everything AND sets returned:true, notifies student and parent
+13. "Next →" navigates to next submitted student without closing panel</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Pin placed at click position on image</td><td>Pin appears at the exact % coordinates of the click</td></tr>
+  <tr><td>Bubble appears at click location</td><td>Floating popup opens adjacent to the clicked spot</td></tr>
+  <tr><td>Empty pin cancelled removes the pin</td><td>Clicking Cancel or closing without text removes the pin</td></tr>
+  <tr><td>Existing pins reloaded when teacher re-opens</td><td>Previously saved marginalComments restored as pins</td></tr>
+  <tr><td>PDF submission shows embed viewer</td><td>PDF renders in embedded viewer panel</td></tr>
+  <tr><td>Return to Student notifies student and parent</td><td>Both receive in-app notification with grade and feedback</td></tr>
+  <tr><td>Rubric total auto-calculated</td><td>Weighted % shown when all criterion scores entered</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3 id="flow20">FLOW 20 — Student Views Returned Work &amp; Resubmits</h3>
+<p class="actor-line"><strong>Actor:</strong> Student / Parent &nbsp;|&nbsp; <strong>Trigger:</strong> Teacher clicks "Return to Student" on a marked assignment</p>
+<div class="flow-block">STUDENT RECEIVES NOTIFICATION:
+1. Student notified: "Your work on [Assignment] has been returned: 78/100 (✓ Satisfactory)"
+2. Student → My Assignments → sees "Returned · 78/100" badge on the assignment
+
+STUDENT VIEWS FEEDBACK:
+3. Student clicks "View Feedback" button
+4. Modal opens showing:
+   - Grade: 78/100
+   - Status badge: ✓ Satisfactory / ⭐ Excellent / 🔄 Revision Requested
+   - Return date
+   - General Feedback text from teacher
+   - Numbered inline comments list (from teacher's image pins)
+   - Image preview (if image submission)
+5. If "Revision Requested" banner shown: student prompted to revise and resubmit
+
+STUDENT RESUBMITS:
+6. Student clicks "Resubmit" button (always visible on returned work)
+7. Resubmit modal opens with previous answer pre-populated
+8. Student updates text / uploads new file / photo
+9. Clicks "Submit Resubmission"
+10. Teacher notified: "[Name] has resubmitted [Assignment]"
+11. Previous submission replaced; teacher can re-mark
+
+PARENT PARALLEL:
+11. Parent also notified when work is returned
+12. Parent → child's assignment → sees "View Feedback" with same modal content</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>"Returned" badge appears on assignment card</td><td>Distinct from "Graded" badge; includes score</td></tr>
+  <tr><td>View Feedback shows grade, status, feedback, and inline comments</td><td>All teacher comments visible</td></tr>
+  <tr><td>Resubmit button always visible on returned work</td><td>Not gated by "Needs Revision" flag</td></tr>
+  <tr><td>Resubmit modal pre-populates previous text</td><td>Student sees their original answer to edit</td></tr>
+  <tr><td>Teacher notified on resubmission</td><td>Notification delivered to teacher immediately</td></tr>
+  <tr><td>Parent sees same feedback content</td><td>Parent modal mirrors student modal</td></tr>
+</table>
+
+<h2 id="s6">6. Data Model Summary</h2>
+<p>The platform uses 56+ named collections:</p>
+<table>
+  <tr><th>Category</th><th>Collections</th></tr>
+  <tr><td><strong>People</strong></td><td>schools, teachers, parents, students</td></tr>
+  <tr><td><strong>Academic</strong></td><td>classes, subjects, arms, academicSessions, academicTerms, schemesOfWork, timetable, lessonPlans, learningMaterials, cbtExams, cbtSubmissions, formativeTests, formativeSubmissions, reportComments</td></tr>
+  <tr><td><strong>Records</strong></td><td>attendance, results, assignments, discipline, appraisals, appraisalCycles</td></tr>
+  <tr><td><strong>Finance</strong></td><td>feeStructures, invoices, transactions, expenses, loans, disbursements, payrollRuns, payslips, salaryAdvances, budgets, remittances, schoolInvoices, studentCredits</td></tr>
+  <tr><td><strong>Communication</strong></td><td>conversations, announcements, notifications, diaryEntries, consentForms, consentResponses, feedbackForms, feedbackResponses, smsCampaigns</td></tr>
+  <tr><td><strong>Operations</strong></td><td>inventory, inventoryRequests, busRoutes, busAssignments, authorizedPickups, busStatus, sickbayVisits, visitorLog, leaveRequests, staffAttendance, substituteCoverage</td></tr>
+  <tr><td><strong>Engagement</strong></td><td>houses, housePoints, houseEvents, schoolEvents, activities, studentActivities, libraryBooks, libraryLoans, admissionApplications</td></tr>
+  <tr><td><strong>Platform</strong></td><td>auditLog, loginSessions, supportTickets, helpArticles, usageEvents, errorLogs, systemMetrics, platformTeam, schoolRoles</td></tr>
+  <tr><td><strong>Config</strong></td><td>settings, academicCalendar</td></tr>
+</table>
+
+<h4>Key Data Structures</h4>
+<p><strong>submissions</strong> (sub-array on assignments):</p>
+<div class="flow-block">{ studentId, submittedAt, text, file, grade, feedback, markStatus, annotation,
+  marginalComments: [{ id, pin, x, y, text, createdAt }],
+  rubricScores, returned, returnedAt, resubmissionRequested, resubmittedAt }</div>
+
+<!-- ===== PART B ===== -->
+<div class="part-header">
+  <div class="part-label">Part B</div>
+  <h2>CASPAA Core Operations Portal (COP)</h2>
+</div>
+
+<h2 id="s7">7. COP Overview</h2>
+<p>The CASPAA Core Operations Portal is the centralised EDU_FINTECH administration and operational control platform used internally by the CASPAA team to monitor schools, manage subscriptions, oversee financial activities, manage loan disbursement and repayments, track analytics, configure platform features, manage customer support, and oversee revenue operations.</p>
+<p>The COP is the internal "mission control center" powering the EduFinOS ecosystem — the operational backbone, risk monitoring engine, lending command center, business intelligence layer, and revenue operations dashboard.</p>
+
+<h2 id="s8">8. COP Target Users</h2>
+<table>
+  <tr><th>Role</th><th>Description</th></tr>
+  <tr><td><strong>Founder / Super Admin</strong></td><td>Full platform control</td></tr>
+  <tr><td><strong>Operations Team</strong></td><td>School management and onboarding</td></tr>
+  <tr><td><strong>Finance Team</strong></td><td>Revenue &amp; remittance oversight</td></tr>
+  <tr><td><strong>Credit/Risk Team</strong></td><td>Lending management and portfolio risk</td></tr>
+  <tr><td><strong>Customer Support Team</strong></td><td>Ticket resolution and school liaison</td></tr>
+  <tr><td><strong>Compliance Team</strong></td><td>Monitoring &amp; audit trail review</td></tr>
+  <tr><td><strong>Business Intelligence Team</strong></td><td>Analytics &amp; reporting</td></tr>
+</table>
+
+<h2 id="s9">9. COP System Modules</h2>
+
+<hr class="flow-divider">
+<h3>COP MODULE 1 — Analytics Dashboard (Mission Control)</h3>
+<p><strong>Objective:</strong> Provide real-time business intelligence and operational visibility.</p>
+
+<h4>Dashboard Overview Metrics</h4>
+<table>
+  <tr><th>Metric</th><th>Description</th></tr>
+  <tr><td>Total Schools Onboarded</td><td>Total registered schools</td></tr>
+  <tr><td>Active Schools</td><td>Schools currently subscribed</td></tr>
+  <tr><td>Inactive Schools</td><td>Expired/suspended schools</td></tr>
+  <tr><td>Number of Students</td><td>Total student records across all schools</td></tr>
+  <tr><td>Number of Countries</td><td>Geographic expansion tracking</td></tr>
+  <tr><td>Transaction Value</td><td>Total transaction amount processed</td></tr>
+  <tr><td>Transaction Volume</td><td>Total transaction count</td></tr>
+  <tr><td>Highest Value Schools</td><td>Schools with largest revenue contribution</td></tr>
+</table>
+
+<h4>Lending Analytics</h4>
+<table>
+  <tr><th>Metric</th><th>Description</th></tr>
+  <tr><td>Number of Students on Loan</td><td>Active borrowers</td></tr>
+  <tr><td>Total Loans Disbursed</td><td>Successful loans value</td></tr>
+  <tr><td>Outstanding Loans</td><td>Unpaid balances</td></tr>
+  <tr><td>Defaulting Students</td><td>Delinquent borrowers</td></tr>
+  <tr><td>Portfolio at Risk (PAR)</td><td>Risk monitoring ratio</td></tr>
+</table>
+
+<div class="user-story">"As a Super Admin, I want to view real-time operational and financial analytics so that I can make informed strategic decisions."</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Dashboard loads in &lt; 5 seconds</td><td>Fast visibility for daily use</td></tr>
+  <tr><td>Metrics refresh automatically</td><td>Near real-time updates without page reload</td></tr>
+  <tr><td>Charts filterable by date/state/school</td><td>Drill-down to specific segments</td></tr>
+  <tr><td>Export supported</td><td>Excel/CSV/PDF export of any metric</td></tr>
+  <tr><td>KPI trends visualised</td><td>Historical comparison visible on charts</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP MODULE 2 — School Management</h3>
+<p><strong>Objective:</strong> Enable centralised onboarding and lifecycle management of schools.</p>
+<ul>
+  <li><strong>Create School</strong> — Register with unique ID, configure subscription plan, assign feature modules, set onboarding status</li>
+  <li><strong>Suspend School</strong> — Temporary (with reactivation date) or permanent suspension; restricts all school-side access; notifies school admin</li>
+  <li><strong>Subscription Management</strong> — Assign/upgrade/downgrade plans (Starter / Growth / Enterprise); expiry notifications at 30-day, 7-day, 1-day; auto-renewal configuration</li>
+  <li><strong>School Usage Analytics</strong> — Per-school usage statistics, active teacher/student counts, payment activity summary</li>
+</ul>
+<div class="user-story">"As an Operations Manager, I want to onboard and manage schools centrally so that platform operations remain scalable and controlled."</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Admin can create and activate a school</td><td>School immediately accessible to school-side admin</td></tr>
+  <tr><td>Subscription assigned at onboarding</td><td>Billing activated with correct plan</td></tr>
+  <tr><td>School suspension restricts all access</td><td>School-side logins blocked on suspension</td></tr>
+  <tr><td>Notifications sent on suspension</td><td>School admin receives email and in-app notification</td></tr>
+  <tr><td>Usage metrics visible per school</td><td>Analytics updated in real time</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP MODULE 3 — Revenue Management</h3>
+<p><strong>Objective:</strong> Maintain full visibility over all platform revenue streams.</p>
+<ul>
+  <li><strong>Subscription Revenue</strong> — MRR, ARR, breakdown by tier and geography</li>
+  <li><strong>Payment Tracking</strong> — All incoming payments, failed payments, full transaction history</li>
+  <li><strong>Invoicing Schools</strong> — Auto-generate platform invoices, send reminders, download invoices</li>
+  <li><strong>Commission Tracking</strong> — Payment processing, lending interest/margin, referral commissions</li>
+</ul>
+<div class="user-story">"As a Finance Officer, I want to track all platform revenues so that financial operations remain transparent and measurable."</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Revenue dashboard matches transactions</td><td>Figures reconcile with payment processor</td></tr>
+  <tr><td>Invoices auto-generated for subscriptions</td><td>Schools billed on renewal date</td></tr>
+  <tr><td>Failed payments flagged with alert</td><td>Finance team notified immediately</td></tr>
+  <tr><td>MRR/ARR dashboard filterable</td><td>By month, tier, and geography</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP MODULE 4 — Lending &amp; Disbursement Engine</h3>
+<p><strong>Objective:</strong> Operate CASPAA's embedded school fee lending product.</p>
+<ul>
+  <li><strong>Loan Management</strong> — View all loan requests, approve/reject, disburse, monitor repayment schedules; status tracking: Pending / Approved / Disbursed / Repaying / Closed / Defaulted</li>
+  <li><strong>Loan Analytics</strong> — Volume by school/term/amount, risk categorisation (low/medium/high), default analytics, repayment trends</li>
+  <li><strong>Repayment Monitoring</strong> — Outstanding balances per borrower, auto-reminders, delinquency tracking (7-day, 30-day, 60-day overdue)</li>
+  <li><strong>Disbursement Console</strong> — Trigger disbursement, verify recipient details, monitor status (pending/sent/confirmed), generate reports</li>
+</ul>
+<div class="user-story">"As a Credit Officer, I want to review and disburse school fee loans so that parents can access education financing seamlessly and efficiently."</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Loan requests visible in queue</td><td>Real-time updates as new applications arrive</td></tr>
+  <tr><td>Approval workflow changes status</td><td>Status updates visible to parent immediately</td></tr>
+  <tr><td>Disbursement logged as transaction</td><td>Transaction record created on disbursement</td></tr>
+  <tr><td>Repayment schedules generated</td><td>Parent receives schedule on approval</td></tr>
+  <tr><td>Default alerts triggered at 30 days</td><td>Risk dashboard updated and team notified</td></tr>
+  <tr><td>Portfolio at Risk (PAR) calculated</td><td>Updated daily based on overdue balances</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP MODULE 5 — System Control</h3>
+<p><strong>Objective:</strong> Dynamically configure platform capabilities and resource allocation.</p>
+<ul>
+  <li><strong>Feature Management</strong> — Add/enable/disable modules per school; beta feature rollout; tier-based access</li>
+  <li><strong>Storage Management</strong> — Allocation per school, media usage monitoring, over-quota alerts</li>
+  <li><strong>SMS Units</strong> — Credit allocation per school, usage monitoring, recharge</li>
+  <li><strong>Email Usage</strong> — Quota tracking per school, delivery monitoring and bounce rates</li>
+</ul>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Feature toggle applies instantly</td><td>School-side access changes without redeploy</td></tr>
+  <tr><td>Usage tracked in real time</td><td>Storage and SMS usage visible per school</td></tr>
+  <tr><td>Quotas enforced at threshold</td><td>School receives warning and then blocked at limit</td></tr>
+  <tr><td>Tier changes update feature access</td><td>Upgrade/downgrade reflected immediately</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP MODULE 6 — User Management</h3>
+<p><strong>Objective:</strong> Secure and granular management of internal CASPAA team access.</p>
+<ul>
+  <li><strong>Roles</strong> — Admin, Finance, Support, Risk/Credit, Analyst/BI</li>
+  <li><strong>Permission Control</strong> — Granular RBAC; module-level permissions; enforced at API and UI level</li>
+  <li><strong>Activity Logs</strong> — All user actions tracked with timestamp and user ID; login logs; change history; immutable audit trails</li>
+</ul>
+<div class="user-story">"As a Super Admin, I want role-based access control for all internal team members so that sensitive operations remain secure and auditable."</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Roles configurable without code change</td><td>Permissions saved and applied immediately</td></tr>
+  <tr><td>Unauthorised access blocked at module level</td><td>User sees access-denied screen, not blank page</td></tr>
+  <tr><td>Logs are immutable</td><td>Audit records cannot be edited or deleted</td></tr>
+  <tr><td>Login failures logged</td><td>Failed attempts visible with IP and timestamp</td></tr>
+  <tr><td>Change history queryable</td><td>Filter by user, date range, and action type</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP MODULE 7 — Support Desk</h3>
+<p><strong>Objective:</strong> Manage all inbound support requests from schools efficiently.</p>
+<ul>
+  <li><strong>Support Tickets</strong> — Creation, priority assignment (Low/Medium/High/Critical), SLA tracking per priority</li>
+  <li><strong>Issue Tracking</strong> — Bug tracking with severity, resolution workflows (Open → In Progress → Resolved → Closed), auto-escalation on SLA breach</li>
+  <li><strong>Live Chat Support</strong> — Real-time messaging with school admins; internal notes not visible to school; full chat history archived</li>
+</ul>
+<div class="user-story">"As a Support Agent, I want to manage school support requests efficiently so that customer satisfaction remains high and SLAs are met."</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Tickets assigned with correct priority</td><td>Routed to correct team by type</td></tr>
+  <tr><td>SLA timer visible on each ticket</td><td>Countdown shows time remaining before breach</td></tr>
+  <tr><td>Live chat functional</td><td>Real-time messaging with &lt; 1 second latency</td></tr>
+  <tr><td>Resolution feedback sent to school</td><td>School admin notified when ticket resolved</td></tr>
+  <tr><td>Auto-escalation on SLA breach</td><td>Alert sent to team lead if ticket unresolved at deadline</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP MODULE 8 — Advanced Analytics &amp; Business Intelligence</h3>
+<p><strong>Objective:</strong> Provide actionable insights for management and product decisions.</p>
+<ul>
+  <li><strong>Revenue per School</strong> — School-level revenue over time, MoM/QoQ/YoY trends</li>
+  <li><strong>Student Enrollment Analytics</strong> — Students per school, enrollment trends, cohort tracking</li>
+  <li><strong>Feature Adoption</strong> — Most-used features, engagement heatmaps, adoption by school tier</li>
+  <li><strong>System Performance</strong> — Infrastructure monitoring, error rates, API response times, uptime history</li>
+</ul>
+<div class="user-story">"As a Business Intelligence Analyst, I want actionable platform insights so that management can optimise growth, product investment, and operational efficiency."</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Reports exportable</td><td>Excel/CSV/PDF export available on all reports</td></tr>
+  <tr><td>Filters supported</td><td>Region, date range, school, and feature filters</td></tr>
+  <tr><td>BI dashboard interactive</td><td>Drill-down from summary to school to user level</td></tr>
+  <tr><td>Trend charts rendered correctly</td><td>MoM and YoY comparisons shown side by side</td></tr>
+</table>
+
+<h2 id="s10">10. COP User Flows</h2>
+
+<hr class="flow-divider">
+<h3>COP FLOW 01 — School Onboarding</h3>
+<p class="actor-line"><strong>Actor:</strong> Operations Team Member &nbsp;|&nbsp; <strong>Trigger:</strong> New school signs up or is referred</p>
+<div class="flow-block">1. COP → School Management → Create School
+2. Enters school details: name, address, state, type (primary/secondary/combined), contact
+3. Assigns subscription plan (Starter / Growth / Enterprise)
+4. Selects feature modules to enable for this school
+5. System generates school ID and admin credentials
+6. Sends onboarding email to school proprietor with login link and credentials
+7. School status set to: Onboarding
+8. Operations team follows up to complete configuration:
+   - Create classes and arms
+   - Upload staff roster
+   - Configure fee structure
+   - Set academic calendar
+9. Status updated to: Active
+10. School appears in COP dashboard as Active School</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>School created with unique ID</td><td>Duplicate school name within same state flagged</td></tr>
+  <tr><td>Admin credentials auto-generated</td><td>School admin can log in immediately</td></tr>
+  <tr><td>Onboarding email sent</td><td>School receives credentials email within 60 seconds</td></tr>
+  <tr><td>Feature modules assigned by plan</td><td>School-side only sees modules in their plan</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP FLOW 02 — School Suspension</h3>
+<p class="actor-line"><strong>Actor:</strong> Operations Team / Super Admin &nbsp;|&nbsp; <strong>Trigger:</strong> Subscription expired, non-payment, or policy violation</p>
+<div class="flow-block">1. COP → School Management → select school → Suspend
+2. Selects suspension type: Temporary (with reactivation date) or Permanent
+3. Enters reason for suspension
+4. Confirms action
+5. System immediately blocks all school-side logins
+6. School admin receives notification: "Your school account has been suspended. Contact support."
+7. COP dashboard shows school as Inactive
+8. All student and parent logins for that school also suspended
+
+TO REACTIVATE:
+9. COP → school → Reactivate → confirm
+10. All access restored, school notified of reactivation</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>All school-side logins blocked immediately</td><td>No session persists after suspension</td></tr>
+  <tr><td>School admin notified</td><td>Notification delivered within 60 seconds</td></tr>
+  <tr><td>Reactivation restores full access</td><td>All users can log in after reactivation</td></tr>
+  <tr><td>Suspension reason logged</td><td>Audit trail records who suspended and why</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP FLOW 03 — Loan Approval &amp; Disbursement</h3>
+<p class="actor-line"><strong>Actor:</strong> Credit/Risk Team Member &nbsp;|&nbsp; <strong>Trigger:</strong> Parent loan application submitted from school platform</p>
+<div class="flow-block">1. COP → Lending → Pending Loan Requests
+2. Credit officer opens application: sees amount, purpose, repayment period, credit score
+3. Reviews 5-factor credit assessment:
+   - Payment history (previous fee payments)
+   - Loan history (prior CASPAA loans)
+   - School tenure (how long child has been enrolled)
+   - Income estimate (from fee payment patterns)
+   - Requested amount vs estimated capacity
+4. Adds internal risk note (visible to COP team only)
+5. Decision:
+   a. Approve: sets repayment schedule, clicks Approve
+   b. Reject: enters reason for parent, clicks Reject
+
+ON APPROVAL:
+6. System generates repayment schedule
+7. Parent notified: "Your loan of ₦X has been approved. Repayment starts [date]."
+8. Credit officer → Disbursement Console → verifies recipient account
+9. Triggers disbursement
+10. Disbursement status monitored: Pending → Sent → Confirmed
+
+REPAYMENT MONITORING:
+11. COP → Lending → Active Loans → shows outstanding per borrower
+12. Automated reminders sent to parent 3 days before due date
+13. Overdue loans escalate: 7-day → 30-day → 60-day flags
+14. Portfolio at Risk (PAR) updated daily</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Credit score visible to reviewer</td><td>Full 5-factor breakdown shown</td></tr>
+  <tr><td>Approval triggers repayment schedule</td><td>Schedule created with correct dates and amounts</td></tr>
+  <tr><td>Parent notified on approval and rejection</td><td>Notification includes reason if rejected</td></tr>
+  <tr><td>Disbursement logged as transaction</td><td>Transaction record with timestamp and amount</td></tr>
+  <tr><td>Overdue loans trigger escalation alerts</td><td>Team lead notified at 30-day overdue mark</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP FLOW 04 — Revenue Dashboard &amp; Reporting</h3>
+<p class="actor-line"><strong>Actor:</strong> Finance Team Member &nbsp;|&nbsp; <strong>Trigger:</strong> Monthly close, investor reporting, or ad-hoc query</p>
+<div class="flow-block">1. COP → Revenue Management → Dashboard
+2. Views summary: Total Revenue MTD, MRR, ARR, by stream (subscriptions, commissions, lending)
+3. Filters by: date range, school, region, plan tier
+4. Drills down to school level: clicks any school to see its revenue contribution
+5. Views payment breakdown: successful, failed, retried
+6. Commission report: payment commissions, lending margins, referral fees
+7. Clicks Export → selects format (Excel / CSV / PDF)
+8. Report downloaded with selected filters applied</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Dashboard loads in &lt; 5 seconds</td><td>Fast access for daily monitoring</td></tr>
+  <tr><td>Filters apply without full reload</td><td>Charts update dynamically</td></tr>
+  <tr><td>Revenue figures match payment processor</td><td>Reconciliation diff = 0</td></tr>
+  <tr><td>Commission calculations broken down by type</td><td>Payment / lending / referral shown separately</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP FLOW 05 — Support Ticket Resolution</h3>
+<p class="actor-line"><strong>Actor:</strong> Customer Support Team Member &nbsp;|&nbsp; <strong>Trigger:</strong> School admin submits a support ticket</p>
+<div class="flow-block">1. School admin → Help/Support → Submit Ticket (school-side)
+   OR COP agent creates ticket on school's behalf
+2. COP → Support Desk → New ticket appears in queue
+3. Agent reviews: school, issue type, priority, description
+4. Assigns to themselves or routes to specialist
+5. Changes status: Open → In Progress
+6. Adds internal notes (not visible to school)
+7. If bug: escalates to engineering with reproduction steps
+8. Resolves issue, changes status: In Progress → Resolved
+9. Sends resolution message to school admin
+10. School admin receives: "Your support ticket #X has been resolved"
+11. Agent closes ticket after school confirms resolution
+12. If SLA breached: automatic escalation to team lead
+
+AUDIT:
+13. All ticket history preserved and searchable
+14. Resolution time recorded in SLA report</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>SLA countdown visible on each ticket</td><td>Timer shows time remaining to resolution</td></tr>
+  <tr><td>Internal notes not visible to school</td><td>School only sees agent's outbound messages</td></tr>
+  <tr><td>School notified on resolution</td><td>Notification with ticket number and resolution detail</td></tr>
+  <tr><td>SLA breach triggers escalation</td><td>Team lead alerted automatically</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP FLOW 06 — Feature Flag Management</h3>
+<p class="actor-line"><strong>Actor:</strong> Super Admin / Operations Team &nbsp;|&nbsp; <strong>Trigger:</strong> New feature rollout, tier upgrade, or plan downgrade</p>
+<div class="flow-block">1. COP → System Control → Feature Management
+2. Selects school or selects plan tier
+3. Sees list of all available modules with current on/off state
+4. Toggles module on or off for selected school or tier
+5. Change applied immediately — no redeploy required
+6. School-side: affected users see or lose access to the module instantly
+7. Change logged in audit trail: who changed, what module, for which school, when</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Toggle applies without redeploy</td><td>School-side access changes within 5 seconds</td></tr>
+  <tr><td>Change logged in audit trail</td><td>Immutable record with agent ID and timestamp</td></tr>
+  <tr><td>Tier-level change affects all schools on that tier</td><td>All schools in tier updated simultaneously</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP FLOW 07 — COP User &amp; Role Management</h3>
+<p class="actor-line"><strong>Actor:</strong> Super Admin &nbsp;|&nbsp; <strong>Trigger:</strong> New team member onboarded or role change required</p>
+<div class="flow-block">1. COP → User Management → Create User
+2. Enters: name, email, team (Finance / Support / Risk / Operations / BI)
+3. Assigns role: determines module-level access
+4. Sets temporary password, sends invite email
+5. New team member logs in, resets password, completes profile
+6. Super Admin can edit or revoke access at any time
+7. On revocation: all active sessions terminated immediately
+
+ACTIVITY MONITORING:
+8. COP → User Management → Activity Logs
+9. Filters by: user, date range, action type (login / data view / change / export)
+10. Sees full audit trail with IP address and timestamp
+11. Failed login attempts visible with source IP</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>Invite email sent on user creation</td><td>New user receives login link within 60 seconds</td></tr>
+  <tr><td>Role determines module access correctly</td><td>User only sees permitted modules</td></tr>
+  <tr><td>Revocation terminates all sessions</td><td>User cannot access COP after revocation</td></tr>
+  <tr><td>Activity logs are immutable</td><td>No user (including super admin) can delete logs</td></tr>
+</table>
+
+<hr class="flow-divider">
+<h3>COP FLOW 08 — Analytics &amp; BI Reporting</h3>
+<p class="actor-line"><strong>Actor:</strong> Business Intelligence Team &nbsp;|&nbsp; <strong>Trigger:</strong> Weekly/monthly reporting or ad-hoc management query</p>
+<div class="flow-block">1. COP → Analytics → select report type:
+   - Platform Overview (schools, users, transactions)
+   - Revenue Analysis (MRR, ARR, by tier)
+   - Lending Portfolio (volume, defaults, PAR)
+   - Feature Adoption (most-used features, DAU)
+   - System Performance (uptime, API latency, errors)
+2. Sets filters: date range, region, school, plan tier
+3. Charts render with selected data
+4. Drill-down: clicks any bar/segment → see school-level breakdown
+5. Annotates key findings (internal notes on chart)
+6. Exports report in required format
+7. Schedules automated report delivery to management email (daily/weekly/monthly)</div>
+<p class="ac-label">Acceptance Criteria</p>
+<table>
+  <tr><th>Criteria</th><th>Expected Outcome</th></tr>
+  <tr><td>All 5 report types render correctly</td><td>Data accurate and filters applied</td></tr>
+  <tr><td>Drill-down works to school level</td><td>Click on any metric to see per-school breakdown</td></tr>
+  <tr><td>Export includes charts and tables</td><td>PDF export includes visualisations</td></tr>
+  <tr><td>Scheduled reports delivered on time</td><td>Email sent at configured time with correct data</td></tr>
+</table>
+
+<!-- ===== PART C ===== -->
+<div class="part-header">
+  <div class="part-label">Part C</div>
+  <h2>Governance</h2>
+</div>
+
+<h2 id="s11">11. Non-Functional Requirements</h2>
+
+<h4>Performance</h4>
+<table>
+  <tr><th>Requirement</th><th>Target</th></tr>
+  <tr><td>Dashboard load time</td><td>&lt; 5 seconds</td></tr>
+  <tr><td>Concurrent admin users (COP)</td><td>5,000+</td></tr>
+  <tr><td>Concurrent school-side users</td><td>50,000+</td></tr>
+  <tr><td>API response time</td><td>&lt; 300ms</td></tr>
+  <tr><td>Real-time notification delivery</td><td>&lt; 5 seconds</td></tr>
+</table>
+
+<h4>Security</h4>
+<table>
+  <tr><th>Requirement</th><th>Description</th></tr>
+  <tr><td>RBAC</td><td>Granular role-based permissions at module and action level</td></tr>
+  <tr><td>MFA</td><td>Required for all COP admin accounts</td></tr>
+  <tr><td>Audit logs</td><td>Immutable; cannot be edited or deleted</td></tr>
+  <tr><td>Encryption</td><td>AES-256 at rest + TLS 1.3 in transit</td></tr>
+  <tr><td>Session timeout</td><td>Auto logout after 30 minutes of inactivity (COP)</td></tr>
+  <tr><td>IP allowlisting</td><td>COP accessible only from approved IPs</td></tr>
+</table>
+
+<h4>Reliability</h4>
+<table>
+  <tr><th>Requirement</th><th>Target</th></tr>
+  <tr><td>Platform uptime</td><td>99.9% SLA</td></tr>
+  <tr><td>Backups</td><td>Daily automated with 30-day retention</td></tr>
+  <tr><td>Disaster recovery</td><td>Multi-region failover; RTO &lt; 4 hours</td></tr>
+  <tr><td>Data integrity</td><td>Zero tolerance for data loss on payment transactions</td></tr>
+</table>
+
+<h4>Tech Stack (Production Target)</h4>
+<table>
+  <tr><th>Layer</th><th>Technology</th></tr>
+  <tr><td>School Portal Frontend</td><td>React.js / Next.js</td></tr>
+  <tr><td>COP Frontend</td><td>React.js / Next.js</td></tr>
+  <tr><td>Backend</td><td>Node.js (NestJS)</td></tr>
+  <tr><td>Database</td><td>PostgreSQL (multi-tenant)</td></tr>
+  <tr><td>Cache</td><td>Redis</td></tr>
+  <tr><td>Realtime Messaging</td><td>Socket.io</td></tr>
+  <tr><td>Cloud</td><td>AWS</td></tr>
+  <tr><td>Analytics</td><td>Metabase / Power BI</td></tr>
+  <tr><td>Monitoring</td><td>CloudWatch + PagerDuty</td></tr>
+  <tr><td>Payments</td><td>Paystack</td></tr>
+  <tr><td>SMS</td><td>Termii / Africa's Talking</td></tr>
+  <tr><td>Email</td><td>SendGrid</td></tr>
+</table>
+
+<h2 id="s12">12. Success Metrics &amp; KPIs</h2>
+
+<h4>Business KPIs (Year 1)</h4>
+<table>
+  <tr><th>KPI</th><th>Target</th></tr>
+  <tr><td>Schools onboarded</td><td>60</td></tr>
+  <tr><td>Active schools</td><td>50+</td></tr>
+  <tr><td>Revenue tracked</td><td>₦1B+ payments</td></tr>
+  <tr><td>Loan disbursement</td><td>₦300M</td></tr>
+</table>
+
+<h4>Operations KPIs</h4>
+<table>
+  <tr><th>KPI</th><th>Target</th></tr>
+  <tr><td>Support ticket resolution time</td><td>&lt; 12 hours</td></tr>
+  <tr><td>Platform uptime</td><td>99.9%</td></tr>
+  <tr><td>Payment reconciliation accuracy</td><td>&gt; 98%</td></tr>
+</table>
+
+<h4>Lending KPIs</h4>
+<table>
+  <tr><th>KPI</th><th>Target</th></tr>
+  <tr><td>Loan repayment rate</td><td>&gt; 92%</td></tr>
+  <tr><td>Default rate</td><td>&lt; 8%</td></tr>
+  <tr><td>Loan approval turnaround</td><td>&lt; 24 hours</td></tr>
+  <tr><td>Portfolio at Risk (PAR 30)</td><td>&lt; 10%</td></tr>
+</table>
+
+<h2 id="s13">13. Roles &amp; Permissions Matrix</h2>
+
+<h4>School Platform</h4>
+<div style="overflow-x:auto;">
+<table>
+  <tr><th>Feature</th><th>Super Admin</th><th>School Admin</th><th>Principal</th><th>Finance</th><th>Teacher</th><th>Parent</th><th>Student</th></tr>
+  <tr><td>Student records</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>Read</td><td>Own child</td><td>Own</td></tr>
+  <tr><td>Staff records</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>Own</td><td>—</td><td>—</td></tr>
+  <tr><td>Results (enter)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+  <tr><td>Results (approve)</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td>Results (view)</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>✓</td><td>Approved only</td><td>Approved only</td></tr>
+  <tr><td>Fee structure</td><td>—</td><td>✓</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td>Invoices</td><td>—</td><td>✓</td><td>—</td><td>✓</td><td>—</td><td>Own</td><td>—</td></tr>
+  <tr><td>Payments</td><td>—</td><td>✓</td><td>—</td><td>✓</td><td>—</td><td>Own</td><td>—</td></tr>
+  <tr><td>Loans (apply)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td></tr>
+  <tr><td>Loans (approve)</td><td>✓</td><td>✓</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td>Payroll</td><td>—</td><td>✓</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td>Payslip</td><td>—</td><td>—</td><td>—</td><td>—</td><td>Own</td><td>—</td><td>—</td></tr>
+  <tr><td>Attendance (mark)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+  <tr><td>Attendance (view)</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>Class</td><td>Own child</td><td>Own</td></tr>
+  <tr><td>Assignments (create)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+  <tr><td>Assignments (mark)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+  <tr><td>Assignments (submit)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+  <tr><td>Calendar</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>View</td><td>View</td><td>View</td></tr>
+  <tr><td>House Points (award)</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+  <tr><td>Transport (manage)</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>Own child</td><td>—</td></tr>
+  <tr><td>Sickbay</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>View</td><td>—</td></tr>
+  <tr><td>Inventory</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td>Alumni</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td>Surveys (create)</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td>Surveys (respond)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td></tr>
+  <tr><td>Diary (write)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+  <tr><td>Diary (read/reply)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td></tr>
+  <tr><td>CBT (create)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+  <tr><td>CBT (take)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+  <tr><td>School settings</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td>All schools data</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+</table>
+</div>
+
+<h4>COP — Internal Team Permissions</h4>
+<div style="overflow-x:auto;">
+<table>
+  <tr><th>Module</th><th>Super Admin</th><th>Operations</th><th>Finance</th><th>Credit/Risk</th><th>Support</th><th>BI/Analyst</th><th>Compliance</th></tr>
+  <tr><td>Analytics Dashboard</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>✓</td><td>✓</td></tr>
+  <tr><td>School Management</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>Read</td><td>—</td><td>Read</td></tr>
+  <tr><td>Revenue Management</td><td>✓</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>✓</td><td>Read</td></tr>
+  <tr><td>Lending &amp; Disbursement</td><td>✓</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>Read</td><td>✓</td></tr>
+  <tr><td>System Control</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td>User Management</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+  <tr><td>Support Desk</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+  <tr><td>Advanced Analytics</td><td>✓</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>✓</td><td>✓</td></tr>
+</table>
+</div>
+
+<h2 id="s14">14. Out of Scope (Post-MVP)</h2>
+<table>
+  <tr><th>Feature</th><th>Reason</th></tr>
+  <tr><td>Bulk disbursement</td><td>Future treasury operations layer</td></tr>
+  <tr><td>NIBSS direct settlement</td><td>Phase 2 banking integration</td></tr>
+  <tr><td>Savings products</td><td>Requires banking/microfinance licence</td></tr>
+  <tr><td>Investment products</td><td>Future EDU_FINTECH vertical</td></tr>
+  <tr><td>Cross-border lending</td><td>Regulatory complexity</td></tr>
+  <tr><td>Advanced AI underwriting</td><td>Requires larger dataset (Phase 3)</td></tr>
+  <tr><td>Native mobile app</td><td>Phase 2 after web platform validated</td></tr>
+  <tr><td>Offline mode</td><td>Complex sync; deferred to Phase 2</td></tr>
+</table>
+
+<hr style="margin-top:60px;">
+<p style="text-align:center; color:#aaa; font-size:12px; padding:20px 0;">
+  CASPAA EduFinTech Platform &nbsp;·&nbsp; PRD v2.0 &nbsp;·&nbsp; June 2026 &nbsp;·&nbsp; Confidential
+</p>
+
+</div>
+</body>
+</html>
