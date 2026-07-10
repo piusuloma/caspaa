@@ -119,48 +119,30 @@ function renderLogin() {
           </div>
         </div>
 
-        <!-- Login card -->
+        <!-- Login card (identifier-first, two-step) -->
         <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8">
-          <h3 class="text-xl font-bold text-slate-900 mb-1">Sign in to your dashboard</h3>
-          <p class="text-sm text-slate-500 mb-6">Enter the credentials from your invitation email.</p>
 
-          <div id="emailLoginForm" class="space-y-3">
-            <div>
-              <label class="input-label">Email</label>
-              <input type="email" class="input" id="loginEmail" placeholder="you@school.ng" autocomplete="username" />
-            </div>
-            <div>
-              <label class="input-label">Password</label>
-              <div class="relative">
-                <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" autocomplete="current-password" />
-                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" tabindex="-1">
-                  <svg id="loginEyeIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                </button>
+          <!-- Step 1: who are you? -->
+          <div id="loginStep1">
+            <h3 class="text-xl font-bold text-slate-900 mb-1">Sign in to your dashboard</h3>
+            <p class="text-sm text-slate-500 mb-6">Enter your email or admission number to continue.</p>
+            <div class="space-y-3">
+              <div>
+                <label class="input-label">Email or Admission Number</label>
+                <input type="text" class="input" id="loginIdentifier" placeholder="you@school.ng  ·  BL/2025/001" autocomplete="username" />
               </div>
+              <button class="btn btn-primary w-full" id="loginContinueBtn">Continue</button>
+              <p class="text-xs text-slate-400 text-center">Staff &amp; parents use email · students use their admission number</p>
             </div>
-            <div class="flex items-center justify-between">
-              <label class="flex items-center gap-2 text-sm text-slate-500"><input type="checkbox" class="w-4 h-4 accent-brand-600" /> Remember me</label>
-              <button type="button" class="text-sm text-brand-700 font-semibold" onclick="toast('If that email is registered, a reset link has been sent.','info')">Forgot password?</button>
-            </div>
-            <button class="btn btn-primary w-full" id="emailLoginBtn">Sign in</button>
-            <p class="text-xs text-slate-400 text-center">Demo accounts use password <strong>demo1234</strong></p>
           </div>
 
-          <div class="text-center mt-4 pt-4 border-t border-slate-100">
-            <button id="studentLoginToggle" class="text-sm text-brand-700 hover:text-brand-800 font-semibold">Student sign-in (Admission No.) →</button>
-          </div>
-
-          <div id="studentLoginForm" class="hidden mt-5 pt-5 border-t border-slate-100 space-y-3">
-            <p class="text-xs text-slate-500">Enter your admission number and date of birth exactly as registered by the school.</p>
-            <div>
-              <label class="input-label">Admission Number</label>
-              <input type="text" class="input" id="studentAdmNo" placeholder="e.g. BL/2025/001" style="text-transform:uppercase" />
-            </div>
-            <div>
-              <label class="input-label">Date of Birth</label>
-              <input type="date" class="input" id="studentDob" />
-            </div>
-            <button class="btn btn-primary w-full" id="studentLoginBtn">Sign in as Student</button>
+          <!-- Step 2: prove it (password or date of birth, chosen by identifier) -->
+          <div id="loginStep2" class="hidden">
+            <button type="button" id="loginBackBtn" class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-4">
+              <span class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">${icon('arrow_left', 'w-4 h-4')}</span>
+              <span id="loginIdentDisplay" class="font-semibold text-slate-700 truncate max-w-[220px]"></span>
+            </button>
+            <div id="loginStep2Body" class="space-y-3"></div>
           </div>
 
           <div class="mt-6 pt-5 border-t border-slate-100 text-center">
@@ -227,17 +209,98 @@ function resolveLogin(email, pwd) {
   return { user: null, ok: false };
 }
 
+/* ---------- Route a step-1 identifier ----------
+   Decides which credential step 1 should lead to, without asking the
+   user to declare their type. An admission number that matches an
+   active student → date-of-birth step; anything that matches a known
+   account (email or phone username) → password step; else unknown. */
+function routeLoginIdentifier(identifier) {
+  const id = (identifier || '').trim();
+  if (!id) return { kind: 'empty' };
+  // Student — matched by admission number (case-insensitive)
+  const student = DB.get('students').find(s =>
+    s.admissionNo && s.admissionNo.toUpperCase() === id.toUpperCase() && s.status === 'active');
+  if (student) return { kind: 'student', student, label: student.admissionNo };
+  // Any credentialled account (staff, parent, admin, school proprietor)
+  if (resolveLogin(id, '').user) return { kind: 'password', identifier: id, label: id };
+  return { kind: 'unknown' };
+}
+
+// Module-level state carried between step 1 and step 2
+let _loginRoute = null;
+
 function bindLoginHandlers() {
-  const doEmailLogin = () => {
-    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const step1 = document.getElementById('loginStep1');
+  const step2 = document.getElementById('loginStep2');
+  const idInput = document.getElementById('loginIdentifier');
+
+  const goToStep1 = () => {
+    _loginRoute = null;
+    step2.classList.add('hidden');
+    step1.classList.remove('hidden');
+    document.getElementById('loginStep2Body').innerHTML = '';
+    setTimeout(() => idInput.focus(), 0);
+  };
+
+  const goToStep2 = () => {
+    const route = routeLoginIdentifier(idInput.value);
+    if (route.kind === 'empty') { toast('Please enter your email or admission number', 'danger'); return; }
+    if (route.kind === 'unknown') { toast('No account found with that email or admission number', 'danger'); return; }
+    _loginRoute = route;
+    document.getElementById('loginIdentDisplay').textContent = route.label;
+
+    const body = document.getElementById('loginStep2Body');
+    if (route.kind === 'student') {
+      body.innerHTML = `
+        <p class="text-sm text-slate-500">Enter your date of birth to confirm it's you.</p>
+        <div>
+          <label class="input-label">Date of Birth</label>
+          <input type="date" class="input" id="loginDob" />
+        </div>
+        <button class="btn btn-primary w-full" id="loginSubmitBtn">Sign in as Student</button>`;
+    } else {
+      body.innerHTML = `
+        <div>
+          <label class="input-label">Password</label>
+          <div class="relative">
+            <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" autocomplete="current-password" />
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" tabindex="-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between">
+          <label class="flex items-center gap-2 text-sm text-slate-500"><input type="checkbox" class="w-4 h-4 accent-brand-600" /> Remember me</label>
+          <button type="button" class="text-sm text-brand-700 font-semibold" onclick="toast('If that account exists, a reset link has been sent.','info')">Forgot password?</button>
+        </div>
+        <button class="btn btn-primary w-full" id="loginSubmitBtn">Sign in</button>
+        <p class="text-xs text-slate-400 text-center">Demo accounts use password <strong>demo1234</strong></p>`;
+    }
+
+    step1.classList.add('hidden');
+    step2.classList.remove('hidden');
+    const submit = document.getElementById('loginSubmitBtn');
+    submit.onclick = doSubmit;
+    const focusEl = document.getElementById(route.kind === 'student' ? 'loginDob' : 'loginPassword');
+    if (focusEl) {
+      setTimeout(() => focusEl.focus(), 0);
+      focusEl.addEventListener('keydown', e => { if (e.key === 'Enter') doSubmit(); });
+    }
+  };
+
+  const doSubmit = () => {
+    if (!_loginRoute) return;
+    if (_loginRoute.kind === 'student') return studentSignIn(_loginRoute.student);
+    return passwordSignIn(_loginRoute.identifier);
+  };
+
+  const passwordSignIn = (identifier) => {
     const pwd = document.getElementById('loginPassword').value;
-    if (!email) { toast('Please enter your email', 'danger'); return; }
-    const res = resolveLogin(email, pwd);
-    if (!res.user) { toast('No account found with that email', 'danger'); return; }
+    const res = resolveLogin(identifier, pwd);
+    if (!res.user) { toast('No account found', 'danger'); return; }
     if (!res.ok) { toast('Incorrect password', 'danger'); return; }
     if (res.acceptInvite) res.acceptInvite();
     const user = res.user;
-    // Sensitive roles get an OTP step
     if (user.role === 'superadmin' || user.role === 'finance') {
       showOTPModal(user);
     } else {
@@ -248,41 +311,19 @@ function bindLoginHandlers() {
     }
   };
 
-  document.getElementById('emailLoginBtn').onclick = doEmailLogin;
-  ['loginEmail', 'loginPassword'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doEmailLogin(); });
-  });
+  const studentSignIn = (student) => {
+    const dob = document.getElementById('loginDob').value;
+    if (!dob) { toast('Please enter your date of birth', 'danger'); return; }
+    if (student.dob !== dob) { toast("That date of birth doesn't match our records", 'danger'); return; }
 
-  document.getElementById('studentLoginToggle').onclick = () => {
-    document.getElementById('studentLoginForm').classList.toggle('hidden');
-  };
-
-  document.getElementById('studentLoginBtn').onclick = () => {
-    const admNo = document.getElementById('studentAdmNo').value.trim().toUpperCase();
-    const dob   = document.getElementById('studentDob').value;
-    if (!admNo || !dob) { toast('Please enter your admission number and date of birth', 'danger'); return; }
-
-    const student = DB.get('students').find(s =>
-      s.admissionNo && s.admissionNo.toUpperCase() === admNo &&
-      s.dob === dob && s.status === 'active'
-    );
-    if (!student) { toast('No active student found — please check your admission number and date of birth', 'danger'); return; }
-
-    const cls        = DB.find('classes', student.classId);
+    const cls = DB.find('classes', student.classId);
     const schoolName = DB.settings().schoolName || 'School';
     const isSecondary = cls && cls.level === 'Secondary';
-
     const sessionUser = {
-      id:         student.id,
-      role:       'student',
-      name:       student.name,
-      email:      student.email || '',
-      title:      'Student',
-      subtitle:   `${cls ? cls.name : ''} — ${schoolName}`,
-      schoolId:   student.schoolId,
-      firstLogin: isSecondary && !student.passwordChanged
+      id: student.id, role: 'student', name: student.name, email: student.email || '',
+      title: 'Student', subtitle: `${cls ? cls.name : ''} — ${schoolName}`,
+      schoolId: student.schoolId, firstLogin: isSecondary && !student.passwordChanged
     };
-
     AUTH.login(sessionUser);
     DB.insert('auditLog', { id: uid('aud'), schoolId: student.schoolId, actor: student.id, action: 'student_login', target: student.name, timestamp: now() });
     toast(`Welcome, ${student.name.split(' ')[0]}!`, 'success');
@@ -290,6 +331,10 @@ function bindLoginHandlers() {
     if (sessionUser.firstLogin) promptFirstLoginPasswordChange(sessionUser);
   };
 
+  document.getElementById('loginContinueBtn').onclick = goToStep2;
+  idInput.addEventListener('keydown', e => { if (e.key === 'Enter') goToStep2(); });
+  document.getElementById('loginBackBtn').onclick = goToStep1;
+  setTimeout(() => idInput.focus(), 0);
 }
 
 function togglePwVisibility(inputId, btn) {
