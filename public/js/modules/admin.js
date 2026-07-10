@@ -2585,8 +2585,8 @@ function schoolOnboardingSteps() {
     },
     {
       key: 'students', icon: 'students',
-      title: 'Add students',
-      desc: 'Enrol students or import them in bulk to start tracking attendance, results and fees.',
+      title: 'Add students & families',
+      desc: "Enrol students to start tracking attendance, results and fees. Enrolling a child automatically creates the parent's login and sends their welcome message — students sign in with their admission number.",
       done: DB.query('students', s => s.schoolId === sid).length > 0,
       cta: 'Add students', action: "APP.go('adm_people')"
     }
