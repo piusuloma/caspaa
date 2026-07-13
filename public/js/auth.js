@@ -50,89 +50,357 @@ const DEMO_ACCOUNTS = [
   { id: 'stu_002', role: 'student', name: 'Tobi Okafor', email: 'tobi@brightlights.ng',          title: 'Student',          subtitle: 'JSS 1 — Bright Lights Academy', schoolId: 'sch_brightlights' }
 ];
 
-/* ---------- Login screen ---------- */
-function renderLogin() {
-  return `
-    <div class="login-bg min-h-screen flex items-center justify-center p-4">
-      <div class="w-full max-w-5xl grid lg:grid-cols-2 gap-8 items-center">
+/* ---------- Role-differentiated login presentation ----------
+   Each role tab only changes what the login card *says* (heading, field
+   label, placeholder, image). The identifier is still resolved by
+   routeLoginIdentifier / resolveLogin — nobody's type is trusted from the
+   tab they pick, so the security model is unchanged. This mirrors the
+   Edves model (Students / Parents / Educator / Tour / Admissions) while
+   keeping CASPAA's brand colours. */
+const LOGIN_ROLES = {
+  student: {
+    key: 'student', label: 'Students', icon: 'students',
+    heading: 'Student Login', subtitle: 'Access your learning dashboard',
+    fieldLabel: 'Admission Number', placeholder: 'e.g. BL/2025/001',
+    hint: 'Sign in with your admission number, then your date of birth.'
+  },
+  parent: {
+    key: 'parent', label: 'Parents', icon: 'user',
+    heading: 'Parent Login', subtitle: 'Follow your child\'s progress',
+    fieldLabel: 'Email or Phone', placeholder: 'you@email.com · +234…',
+    hint: 'Use the email or phone number your school has on record.'
+  },
+  educator: {
+    key: 'educator', label: 'Educator', icon: 'teacher',
+    heading: 'Educator Login', subtitle: 'Access your teaching dashboard',
+    fieldLabel: 'Staff Email or ID', placeholder: 'you@school.ng',
+    hint: 'Staff & school administrators sign in here.'
+  }
+};
 
-        <!-- Branding side -->
-        <div class="text-white">
-          <div class="flex items-center gap-3 mb-8">
-            <div class="w-14 h-14 rounded-2xl bg-brand-500 flex items-center justify-center text-2xl font-extrabold shadow-lg">C</div>
+/* ============================================================
+   PUBLIC PROSPECTIVE-PARENT FUNNEL (pre-account, no login required)
+   - Book a Tour   → tourBookings
+   - Admissions    → admissionApplications
+   - Careers       → careerApplications
+   All persist to the DB, generate a reference number, and are visible
+   to the school later (School Admin views ship in a follow-up).
+   ============================================================ */
+
+// Which school a public submission belongs to (portal school when known).
+function publicSchoolContext() {
+  const sid = (typeof APP !== 'undefined' && APP.portalSchoolId) || (DB.settings().currentSchoolId) || 'platform';
+  const school = DB.find('schools', sid);
+  return { schoolId: sid, schoolName: (school && school.name) || DB.settings().schoolName || 'CASPAA School' };
+}
+
+const TOUR_SLOTS = ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM'];
+const CLASS_LEVELS = ['Creche / Daycare', 'Pre-Nursery', 'Nursery', 'Primary (KG–P6)', 'Junior Secondary (JSS)', 'Senior Secondary (SSS)'];
+
+function publicRef(prefix) {
+  // Human-friendly reference, e.g. TOUR-8F3K
+  const s = uid(prefix).replace(/[^a-z0-9]/gi, '').slice(-4).toUpperCase();
+  return `${prefix.toUpperCase()}-${s}`;
+}
+
+function publicSuccess(title, ref, message) {
+  modal({
+    title: '',
+    body: `<div class="text-center py-4">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">${icon('check', 'w-8 h-8')}</div>
+        <h3 class="text-xl font-bold text-slate-900 mb-1">${title}</h3>
+        <p class="text-sm text-slate-500 mb-4">${message}</p>
+        <div class="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2">
+          <span class="text-xs uppercase tracking-wide text-slate-400 font-semibold">Reference</span>
+          <span class="font-mono font-bold text-slate-800">${ref}</span>
+        </div>
+      </div>`,
+    footer: `<button class="btn btn-primary w-full" onclick="document.getElementById('modalBackdrop')?.click()">Done</button>`
+  });
+}
+
+/* ---------- Book a Tour ---------- */
+function bookTourModal() {
+  const { schoolName } = publicSchoolContext();
+  modal({
+    title: `Book a Tour${schoolName ? ' · ' + schoolName : ''}`,
+    size: 'lg',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+          Pick a day and time to visit. The school will confirm your slot and share directions.
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Parent / Guardian Name *</label><input id="tr_name" class="input" placeholder="e.g. Mrs. Grace Bello" /></div>
+          <div><label class="input-label">Phone *</label><input id="tr_phone" class="input" placeholder="+234…" /></div>
+        </div>
+        <div><label class="input-label">Email *</label><input id="tr_email" type="email" class="input" placeholder="you@email.com" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Child's Name</label><input id="tr_child" class="input" placeholder="Optional" /></div>
+          <div><label class="input-label">Class of Interest</label>
+            <select id="tr_class" class="input">${CLASS_LEVELS.map(c => `<option>${c}</option>`).join('')}</select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Preferred Date *</label><input id="tr_date" type="date" class="input" min="${today()}" /></div>
+          <div><label class="input-label">Preferred Time *</label>
+            <select id="tr_time" class="input">${TOUR_SLOTS.map(s => `<option>${s}</option>`).join('')}</select>
+          </div>
+        </div>
+        <div><label class="input-label">Anything we should know?</label><textarea id="tr_note" class="input" rows="2" placeholder="Optional"></textarea></div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveTourBooking()">${icon('calendar','w-4 h-4')} Request Tour</button>`
+  });
+}
+
+function saveTourBooking() {
+  const g = id => (document.getElementById(id).value || '').trim();
+  const name = g('tr_name'), phone = g('tr_phone'), email = g('tr_email');
+  const date = g('tr_date'), time = g('tr_time');
+  if (!name || !phone || !email) { toast('Please fill your name, phone and email', 'danger'); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Enter a valid email', 'danger'); return; }
+  if (!date) { toast('Please choose a preferred date', 'danger'); return; }
+
+  const { schoolId } = publicSchoolContext();
+  const ref = publicRef('TOUR');
+  DB.insert('tourBookings', {
+    id: uid('tour'), ref, schoolId,
+    parentName: name, phone, email,
+    childName: g('tr_child'), classOfInterest: g('tr_class'),
+    date, time, note: g('tr_note'),
+    status: 'requested', createdAt: now()
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId, actor: email, action: 'tour_requested', target: name, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  publicSuccess('Tour requested!', ref, `We've received your request for ${date} at ${time}. The school will confirm shortly by email or phone.`);
+}
+
+/* ---------- Admissions application ---------- */
+function admissionsModal() {
+  const { schoolName } = publicSchoolContext();
+  modal({
+    title: `Admissions${schoolName ? ' · ' + schoolName : ''}`,
+    size: 'lg',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+          Submit your child's details to begin the application. The school reviews it and reaches out to schedule a visit and next steps.
+        </div>
+        <div class="text-xs font-semibold uppercase text-slate-400 pt-1">Child's details</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Child's Full Name *</label><input id="ad_child" class="input" placeholder="e.g. Tobi Okafor" /></div>
+          <div><label class="input-label">Date of Birth *</label><input id="ad_dob" type="date" class="input" max="${today()}" /></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Gender</label>
+            <select id="ad_gender" class="input"><option>Male</option><option>Female</option></select>
+          </div>
+          <div><label class="input-label">Class Applying For *</label>
+            <select id="ad_class" class="input">${CLASS_LEVELS.map(c => `<option>${c}</option>`).join('')}</select>
+          </div>
+        </div>
+        <div><label class="input-label">Previous School</label><input id="ad_prev" class="input" placeholder="Optional" /></div>
+        <div class="text-xs font-semibold uppercase text-slate-400 pt-1">Parent / Guardian</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Full Name *</label><input id="ad_parent" class="input" placeholder="e.g. Mr. Tunde Okafor" /></div>
+          <div><label class="input-label">Phone *</label><input id="ad_phone" class="input" placeholder="+234…" /></div>
+        </div>
+        <div><label class="input-label">Email *</label><input id="ad_email" type="email" class="input" placeholder="you@email.com" /></div>
+        <div><label class="input-label">Notes</label><textarea id="ad_note" class="input" rows="2" placeholder="Anything else you'd like the school to know (optional)"></textarea></div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveAdmissionApplication()">${icon('check','w-4 h-4')} Submit Application</button>`
+  });
+}
+
+function saveAdmissionApplication() {
+  const g = id => (document.getElementById(id).value || '').trim();
+  const child = g('ad_child'), dob = g('ad_dob');
+  const parent = g('ad_parent'), phone = g('ad_phone'), email = g('ad_email');
+  if (!child || !dob) { toast("Please enter the child's name and date of birth", 'danger'); return; }
+  if (!parent || !phone || !email) { toast("Please fill the parent's name, phone and email", 'danger'); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Enter a valid email', 'danger'); return; }
+
+  const { schoolId } = publicSchoolContext();
+  const ref = publicRef('ADM');
+  // Written in the schema the built-in Admissions inbox (view_adm_admissions)
+  // understands, so a public application lands straight in the school's queue
+  // and counts toward the dashboard + nav badge.
+  const classOfInterest = g('ad_class');
+  const noteParts = [];
+  if (classOfInterest) noteParts.push('Class of interest: ' + classOfInterest);
+  if (g('ad_note')) noteParts.push(g('ad_note'));
+  DB.insert('admissionApplications', {
+    id: uid('app'), ref, schoolId,
+    applicantName: child, dob,
+    gender: g('ad_gender') === 'Female' ? 'F' : 'M',
+    requestedClass: '',            // school assigns the actual class on review
+    currentSchool: g('ad_prev'),
+    parentName: parent, parentPhone: phone, parentEmail: email,
+    address: '', reason: noteParts.join(' — '),
+    status: 'pending', appliedAt: now(), documents: {}, source: 'public_portal'
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId, actor: email, action: 'admission_submitted', target: child, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  publicSuccess('Application submitted!', ref, `Thanks — we've received ${child}'s application. The school will review it and contact you to schedule a visit.`);
+}
+
+/* ---------- Careers (register interest) ---------- */
+function careersModal() {
+  const { schoolName } = publicSchoolContext();
+  modal({
+    title: `Careers${schoolName ? ' · ' + schoolName : ''}`,
+    size: 'lg',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+          Interested in joining the team? Tell us about yourself and we'll be in touch when a matching role opens.
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Full Name *</label><input id="cr_name" class="input" placeholder="Your name" /></div>
+          <div><label class="input-label">Phone *</label><input id="cr_phone" class="input" placeholder="+234…" /></div>
+        </div>
+        <div><label class="input-label">Email *</label><input id="cr_email" type="email" class="input" placeholder="you@email.com" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Role of Interest *</label>
+            <select id="cr_role" class="input"><option>Teacher</option><option>Administrative</option><option>Finance / Bursary</option><option>ICT</option><option>Operations</option><option>Other</option></select>
+          </div>
+          <div><label class="input-label">Years of Experience</label><input id="cr_exp" class="input" placeholder="e.g. 5" /></div>
+        </div>
+        <div><label class="input-label">LinkedIn / Portfolio / CV link</label><input id="cr_link" class="input" placeholder="Optional" /></div>
+        <div><label class="input-label">Cover note</label><textarea id="cr_note" class="input" rows="2" placeholder="Optional"></textarea></div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveCareerApplication()">${icon('check','w-4 h-4')} Register Interest</button>`
+  });
+}
+
+function saveCareerApplication() {
+  const g = id => (document.getElementById(id).value || '').trim();
+  const name = g('cr_name'), phone = g('cr_phone'), email = g('cr_email');
+  if (!name || !phone || !email) { toast('Please fill your name, phone and email', 'danger'); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Enter a valid email', 'danger'); return; }
+
+  const { schoolId } = publicSchoolContext();
+  const ref = publicRef('JOB');
+  DB.insert('careerApplications', {
+    id: uid('job'), ref, schoolId,
+    name, phone, email, role: g('cr_role'), experience: g('cr_exp'),
+    link: g('cr_link'), note: g('cr_note'),
+    status: 'received', createdAt: now()
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId, actor: email, action: 'career_interest', target: name, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  publicSuccess('Interest registered!', ref, `Thanks ${name.split(' ')[0]} — we've saved your details and will reach out when a matching role opens.`);
+}
+
+// Module-level: which role tab is active (null = neutral / any).
+let _loginRole = null;
+
+function loginRoleTab(r) {
+  return `<button type="button" data-loginrole="${r.key}"
+      class="login-role-tab flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:text-brand-700 hover:bg-brand-50 transition whitespace-nowrap">
+      ${icon(r.icon, 'w-4 h-4')}<span>${r.label}</span>
+    </button>`;
+}
+
+/* ---------- Public portal feature cards (glass on brand gradient) ---------- */
+const PORTAL_FEATURES = [
+  { icon: 'book',    title: 'Learning Assistant', desc: 'Personalised, curriculum-aligned help for every learner' },
+  { icon: 'results', title: 'Tests & Results', desc: 'Online assessments with instant grading and report cards' },
+  { icon: 'classes', title: 'Classes & Content', desc: 'Lessons, resources and timetables in one place' },
+  { icon: 'fees',    title: 'Fees & Payments', desc: 'Pay securely by card or transfer, with instant receipts' }
+];
+
+function portalFeatureCard(f) {
+  return `<div class="rounded-2xl bg-white/10 border border-white/15 p-4 backdrop-blur-sm">
+      <div class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center text-white mb-3">${icon(f.icon, 'w-5 h-5')}</div>
+      <div class="font-bold text-white text-sm">${f.title}</div>
+      <div class="text-brand-100/70 text-xs mt-1 leading-snug">${f.desc}</div>
+    </div>`;
+}
+
+function portalActionBtn(label, iconName, onclick) {
+  return `<button type="button" onclick="${onclick}" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 border border-white/15 text-white text-sm font-semibold hover:bg-white/20 transition">${icon(iconName, 'w-4 h-4')}${label}</button>`;
+}
+
+function quickAccessBtn(label, iconName, onclick) {
+  return `<button type="button" onclick="${onclick}" class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:border-brand-400 hover:text-brand-700 hover:bg-brand-50 transition">${icon(iconName, 'w-4 h-4')}${label}</button>`;
+}
+
+/* ---------- Login screen (public portal) ---------- */
+function renderLogin() {
+  const { schoolName } = publicSchoolContext();
+  const displayName = (typeof APP !== 'undefined' && APP.portalSchoolId && schoolName) ? schoolName : 'CASPAA';
+  return `
+    <div class="login-bg min-h-screen flex items-center justify-center p-4 lg:p-8">
+      <div class="w-full max-w-6xl grid lg:grid-cols-2 gap-6 lg:gap-10 items-center">
+
+        <!-- Portal / branding side -->
+        <div class="text-white order-2 lg:order-1">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 rounded-2xl bg-brand-500 flex items-center justify-center text-xl font-extrabold shadow-lg">${displayName.charAt(0).toUpperCase()}</div>
             <div>
-              <h1 class="text-3xl font-extrabold tracking-tight">CASPAA</h1>
-              <p class="text-brand-200 text-sm">School Operating System</p>
+              <h1 class="text-2xl font-extrabold tracking-tight">${displayName}</h1>
+              <p class="text-brand-200 text-xs">${displayName === 'CASPAA' ? 'School Operating System' : 'Powered by CASPAA'}</p>
             </div>
           </div>
 
-          <h2 class="text-4xl lg:text-5xl font-extrabold leading-tight mb-4">
-            One platform for <span class="text-brand-300">every part</span> of your school.
+          <h2 class="text-3xl lg:text-4xl font-extrabold leading-tight mb-2">
+            Your whole school, <span class="text-brand-300">one platform</span>
           </h2>
-          <p class="text-slate-200 text-lg mb-8 max-w-md">
-            From School Operations, Payment, Financing, Attendance, Learning, CBT and Engagement Infrastructure — CASPAA is a unified solution that replaces the several different tools your school is using right now.
-          </p>
+          <p class="text-brand-100/80 text-sm lg:text-base max-w-md mb-6">From admissions and learning to attendance, results and fees — CASPAA brings everything your school runs on into one secure place for students, parents and staff.</p>
 
-          <div class="grid grid-cols-2 gap-4 max-w-md">
-            <div class="flex gap-3 items-start">
-              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('attendance', 'w-5 h-5')}</div>
-              <div>
-                <div class="font-semibold text-sm">Works Offline</div>
-                <div class="text-xs text-slate-300">Mark attendance with no signal</div>
-              </div>
-            </div>
-            <div class="flex gap-3 items-start">
-              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('fees', 'w-5 h-5')}</div>
-              <div>
-                <div class="font-semibold text-sm">Payment</div>
-                <div class="text-xs text-slate-300">Parents pay in 30 seconds</div>
-              </div>
-            </div>
-            <div class="flex gap-3 items-start">
-              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('loan', 'w-5 h-5')}</div>
-              <div>
-                <div class="font-semibold text-sm">Fee Financing</div>
-                <div class="text-xs text-slate-300">Loans approved in 24 hours</div>
-              </div>
-            </div>
-            <div class="flex gap-3 items-start">
-              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('ai', 'w-5 h-5')}</div>
-              <div>
-                <div class="font-semibold text-sm">AI Assistant</div>
-                <div class="text-xs text-slate-300">Write report comments instantly</div>
-              </div>
-            </div>
-            <div class="flex gap-3 items-start">
-              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('results', 'w-5 h-5')}</div>
-              <div>
-                <div class="font-semibold text-sm">CBT Learnings</div>
-                <div class="text-xs text-slate-300">Run digital tests & exams</div>
-              </div>
-            </div>
-            <div class="flex gap-3 items-start">
-              <div class="w-9 h-9 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0">${icon('check', 'w-5 h-5')}</div>
-              <div>
-                <div class="font-semibold text-sm">Digital Consent</div>
-                <div class="text-xs text-slate-300">Approve activities online</div>
-              </div>
-            </div>
+          <div class="grid grid-cols-2 gap-3 max-w-lg">
+            ${PORTAL_FEATURES.map(portalFeatureCard).join('')}
+          </div>
+
+          <div class="flex flex-wrap gap-2 mt-6">
+            ${portalActionBtn('Admissions', 'students', 'admissionsModal()')}
+            ${portalActionBtn('Careers', 'teacher', 'careersModal()')}
+            ${portalActionBtn('Book a Tour', 'calendar', 'bookTourModal()')}
           </div>
         </div>
 
-        <!-- Login card (identifier-first, two-step) -->
-        <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8">
+        <!-- Login card (role-differentiated tabs → identifier-first, two-step) -->
+        <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 order-1 lg:order-2 w-full max-w-md mx-auto lg:mx-0">
 
           <!-- Step 1: who are you? -->
           <div id="loginStep1">
-            <h3 class="text-xl font-bold text-slate-900 mb-1">Sign in to your dashboard</h3>
-            <p class="text-sm text-slate-500 mb-6">Enter your email or admission number to continue.</p>
-            <div class="space-y-3">
+            <div class="flex items-center gap-3 mb-1">
+              <div id="loginRoleImg" class="hidden w-11 h-11 rounded-2xl bg-brand-50 text-brand-700 flex-shrink-0 items-center justify-center"></div>
               <div>
-                <label class="input-label">Email or Admission Number</label>
+                <h3 id="loginHeading" class="text-xl font-bold text-slate-900 leading-tight">Sign in to your dashboard</h3>
+                <p id="loginSubtitle" class="text-sm text-slate-500">Choose who you are, or just enter your details below.</p>
+              </div>
+            </div>
+            <div class="space-y-3 mt-5">
+              <div>
+                <label class="input-label" id="loginFieldLabel">Email or Admission Number</label>
                 <input type="text" class="input" id="loginIdentifier" placeholder="you@school.ng  ·  BL/2025/001" autocomplete="username" />
               </div>
               <button class="btn btn-primary w-full" id="loginContinueBtn">Continue</button>
-              <p class="text-xs text-slate-400 text-center">Staff &amp; parents use email · students use their admission number</p>
+              <p class="text-xs text-slate-400 text-center" id="loginFieldHint">Staff &amp; parents use email · students use their admission number</p>
+            </div>
+
+            <!-- Quick access -->
+            <div class="mt-5 pt-5 border-t border-slate-100">
+              <div class="text-xs font-semibold uppercase text-slate-400 text-center mb-2.5">Quick Access</div>
+              <div class="grid grid-cols-3 gap-2">
+                ${quickAccessBtn('Students', 'students', "selectLoginRole('student')")}
+                ${quickAccessBtn('Parents', 'user', "selectLoginRole('parent')")}
+                ${quickAccessBtn('Book Tour', 'calendar', 'bookTourModal()')}
+              </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-slate-100 text-center">
+              <p class="text-sm text-slate-500">New to CASPAA?
+                <button type="button" class="text-brand-700 font-semibold hover:text-brand-800" onclick="signupSchoolModal()">Sign up your school &rarr;</button>
+              </p>
             </div>
           </div>
 
@@ -153,6 +421,46 @@ function renderLogin() {
       </div>
     </div>
   `;
+}
+
+/* ---------- Apply a role tab's presentation (does not change auth logic) ---------- */
+function selectLoginRole(roleKey) {
+  const r = LOGIN_ROLES[roleKey] || null;
+  _loginRole = r ? r.key : null;
+
+  const heading = document.getElementById('loginHeading');
+  const subtitle = document.getElementById('loginSubtitle');
+  const fieldLabel = document.getElementById('loginFieldLabel');
+  const hint = document.getElementById('loginFieldHint');
+  const input = document.getElementById('loginIdentifier');
+  const img = document.getElementById('loginRoleImg');
+
+  if (r) {
+    heading.textContent = r.heading;
+    subtitle.textContent = r.subtitle;
+    fieldLabel.textContent = r.fieldLabel;
+    hint.textContent = r.hint;
+    input.placeholder = r.placeholder;
+    img.innerHTML = icon(r.icon, 'w-6 h-6');
+    img.classList.remove('hidden'); img.classList.add('flex');
+  } else {
+    heading.textContent = 'Sign in to your dashboard';
+    subtitle.textContent = 'Choose who you are, or just enter your details below.';
+    fieldLabel.textContent = 'Email or Admission Number';
+    hint.textContent = 'Staff & parents use email · students use their admission number';
+    input.placeholder = 'you@school.ng  ·  BL/2025/001';
+    img.classList.add('hidden'); img.classList.remove('flex');
+  }
+
+  // Active-tab styling
+  document.querySelectorAll('.login-role-tab').forEach(t => {
+    const active = t.dataset.loginrole === _loginRole;
+    t.classList.toggle('bg-brand-50', active);
+    t.classList.toggle('text-brand-700', active);
+    t.classList.toggle('text-slate-500', !active);
+  });
+
+  if (input) setTimeout(() => input.focus(), 0);
 }
 
 /* ---------- Resolve an email + password against every account source ----------
@@ -203,7 +511,8 @@ function resolveLogin(email, pwd) {
   // 4. School proprietor — sign in with the school's contact email
   const school = DB.get('schools').find(s => (s.email || '').toLowerCase() === e);
   if (school) {
-    return { ok: pwd === 'demo1234', user: { id: school.id, role: 'schooladmin', name: school.proprietor || school.name, email: school.email || '', schoolId: school.id } };
+    const ok = pwd === 'demo1234' || !!(school.password && pwd === school.password);
+    return { ok, user: { id: school.id, role: 'schooladmin', name: school.proprietor || school.name, email: school.email || '', schoolId: school.id } };
   }
 
   return { user: null, ok: false };
@@ -334,7 +643,192 @@ function bindLoginHandlers() {
   document.getElementById('loginContinueBtn').onclick = goToStep2;
   idInput.addEventListener('keydown', e => { if (e.key === 'Enter') goToStep2(); });
   document.getElementById('loginBackBtn').onclick = goToStep1;
+
+  // Role tabs: presentation only — toggling off a re-clicked tab returns to neutral.
+  _loginRole = null;
+  document.querySelectorAll('.login-role-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const key = tab.dataset.loginrole;
+      selectLoginRole(_loginRole === key ? null : key);
+    });
+  });
+
   setTimeout(() => idInput.focus(), 0);
+}
+
+/* ---------- School self-signup (hybrid: instant trial, verify to go live) ----------
+   Anyone can create a school account and start the getting-started wizard
+   immediately. The school begins on a 14-day trial in an 'unverified' state;
+   money features (payments, financing) stay gated until the CASPAA team
+   approves the school's KYC. */
+function signupSchoolModal() {
+  const eye = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>`;
+  modal({
+    title: 'Sign up your school',
+    size: 'lg',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+          Register your school with your <strong>official school email</strong> and upload a verification document. To keep the platform secure, our team reviews every school before the dashboard is unlocked — usually within 1 business day.
+        </div>
+        <div><label class="input-label">School Name *</label><input id="su_name" class="input" placeholder="e.g. Sunrise Academy" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Your Name (Proprietor) *</label><input id="su_prop" class="input" placeholder="e.g. Mrs. Grace Bello" /></div>
+          <div><label class="input-label">Phone *</label><input id="su_phone" class="input" placeholder="+234…" /></div>
+        </div>
+        <div><label class="input-label">Work Email *</label><input id="su_email" type="email" class="input" placeholder="you@yourschool.ng" /></div>
+        <div><label class="input-label">Subscription Plan</label>
+          <select id="su_plan" class="input">
+            <option value="Essential">Essential — ₦45,000/mo (up to 100 students)</option>
+            <option value="Professional" selected>Professional — ₦95,000/mo (up to 300 students)</option>
+            <option value="Enterprise">Enterprise — from ₦250,000/mo (unlimited)</option>
+          </select>
+        </div>
+        <div><label class="input-label">School Verification Document *</label>
+          <input id="su_doc" type="file" class="input" accept=".pdf,.jpg,.jpeg,.png" />
+          <p class="text-xs text-slate-400 mt-1">CAC certificate, Ministry of Education approval, or similar proof. Required to verify your school.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Password *</label>
+            <div class="relative">
+              <input id="su_pw" type="password" class="input pr-10" placeholder="Min 8 characters" />
+              <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('su_pw', this)" tabindex="-1">${eye}</button>
+            </div>
+          </div>
+          <div><label class="input-label">Confirm Password *</label><input id="su_pw2" type="password" class="input" placeholder="Repeat password" /></div>
+        </div>
+        <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" id="su_terms" class="w-4 h-4 accent-brand-600" /> I agree to CASPAA's Terms and Privacy Policy</label>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveSchoolSignup()">${icon('check','w-4 h-4')} Create account</button>`
+  });
+}
+
+function saveSchoolSignup() {
+  const name = document.getElementById('su_name').value.trim();
+  const proprietor = document.getElementById('su_prop').value.trim();
+  const phone = document.getElementById('su_phone').value.trim();
+  const email = document.getElementById('su_email').value.trim();
+  const plan = document.getElementById('su_plan').value;
+  const pw = document.getElementById('su_pw').value;
+  const pw2 = document.getElementById('su_pw2').value;
+  const terms = document.getElementById('su_terms').checked;
+  const docFile = (document.getElementById('su_doc') || {}).files && document.getElementById('su_doc').files[0];
+  if (!name || !proprietor || !phone || !email) { toast('Please fill all required fields', 'danger'); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Enter a valid official school email', 'danger'); return; }
+  if (!docFile) { toast('Please attach a school verification document', 'danger'); return; }
+  if (pw.length < 8) { toast('Password must be at least 8 characters', 'danger'); return; }
+  if (pw !== pw2) { toast('Passwords do not match', 'danger'); return; }
+  if (!terms) { toast('Please accept the Terms to continue', 'danger'); return; }
+  // Email must be unique across every account source
+  if (resolveLogin(email, '').user) { toast('An account with that email already exists — try signing in', 'danger'); return; }
+
+  const planFees = { Essential: 45000, Professional: 95000, Enterprise: 250000 };
+  const emailDomain = email.split('@')[1] || '';
+  const school = {
+    id: uid('sch'),
+    name, proprietor, email, phone, address: '', emailDomain,
+    students: 0, teachers: 0,
+    subscriptionPlan: plan, monthlyFee: planFees[plan],
+    status: 'trial', joinedAt: today(), nextRenewal: daysAhead(14),
+    autoRenew: false, signupSource: 'self', password: pw,
+    // Gated onboarding: no dashboard access until CASPAA verifies the school.
+    // status 'pending' is what the Super Admin review queue surfaces.
+    verification: { status: 'pending', submittedAt: now(), officialEmail: email, docs: [{ name: docFile.name, uploadedAt: now() }] },
+    kyc: { regNumber: 'Pending', ownerNIN: '', cacUploaded: true, accreditation: 'Pending' },
+    branding: null
+  };
+  DB.insert('schools', school);
+  DB.insert('auditLog', { id: uid('aud'), schoolId: 'platform', actor: school.id, action: 'school_signup_pending', target: name, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  // Sign them in so a session exists — but render() gates them to the
+  // verification-pending holding screen until CASPAA approves.
+  AUTH.login({ id: school.id, role: 'schooladmin', name: proprietor, email, schoolId: school.id });
+  APP.render();
+  toast(`Thanks ${proprietor.split(' ')[0]} — your school has been submitted for verification.`, 'success');
+}
+
+/* ---------- Verification gate (hybrid-gated onboarding) ----------
+   A self-registered school proprietor gets NO dashboard access until the
+   CASPAA team verifies their documents. Seeded/established schools have no
+   `verification` field and are never gated; approved schools pass through. */
+function pendingVerificationGate() {
+  const u = AUTH.current;
+  if (!u || u.role !== 'schooladmin') return null;
+  const school = DB.find('schools', u.schoolId || u.id);
+  if (!school || !school.verification) return null;
+  const s = school.verification.status;
+  return (s === 'pending' || s === 'rejected' || s === 'unverified') ? school : null;
+}
+
+function renderVerificationPending(school) {
+  const v = school.verification || {};
+  const rejected = v.status === 'rejected';
+  const docs = v.docs || [];
+  return `
+    <div class="login-bg min-h-screen flex items-center justify-center p-4">
+      <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl p-8 text-center">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full ${rejected ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'} flex items-center justify-center">
+          ${icon(rejected ? 'x' : 'bell', 'w-8 h-8')}
+        </div>
+        <h2 class="text-2xl font-extrabold text-slate-900 mb-1">${rejected ? 'Verification needs attention' : 'Your school is being verified'}</h2>
+        <p class="text-sm text-slate-500 mb-5 max-w-sm mx-auto">
+          ${rejected
+            ? 'We could not verify your school with the document provided. Please review the note below and re-submit.'
+            : `Thanks, ${(school.proprietor || '').split(' ')[0]}. Our team is reviewing <strong>${school.name}</strong>. You'll get full access as soon as it's approved — usually within 1 business day.`}
+        </p>
+
+        ${rejected && v.reason ? `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-800 text-left mb-4"><strong>Reviewer note:</strong> ${v.reason}</div>` : ''}
+
+        <div class="bg-slate-50 rounded-xl p-4 text-left mb-5">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold uppercase text-slate-500">Status</span>
+            <span class="badge ${rejected ? 'badge-danger' : 'badge-warn'}">${rejected ? 'Rejected' : 'Under review'}</span>
+          </div>
+          <div class="text-sm text-slate-600"><span class="text-slate-400">School:</span> ${school.name}</div>
+          <div class="text-sm text-slate-600"><span class="text-slate-400">Official email:</span> ${school.email}</div>
+          <div class="text-sm text-slate-600"><span class="text-slate-400">Documents:</span> ${docs.length ? docs.map(d => d.name).join(', ') : '—'}</div>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <button class="btn btn-primary w-full" onclick="addVerificationDoc()">${icon('paperclip','w-4 h-4')} ${rejected ? 'Re-submit document' : 'Add another document'}</button>
+          <button class="btn btn-secondary w-full" onclick="AUTH.logout()">${icon('logout','w-4 h-4')} Sign out</button>
+        </div>
+        <p class="text-xs text-slate-400 mt-4">Need help? Contact the CASPAA team at support@caspaa.com</p>
+      </div>
+    </div>
+  `;
+}
+
+function addVerificationDoc() {
+  modal({
+    title: 'Submit verification document',
+    body: `
+      <div class="space-y-3">
+        <p class="text-sm text-slate-500">Upload your CAC certificate, Ministry of Education approval, or similar proof that your school is legitimate.</p>
+        <input id="vd_doc" type="file" class="input" accept=".pdf,.jpg,.jpeg,.png" />
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveVerificationDoc()">${icon('check','w-4 h-4')} Submit for review</button>`
+  });
+}
+
+function saveVerificationDoc() {
+  const el = document.getElementById('vd_doc');
+  const file = el && el.files && el.files[0];
+  if (!file) { toast('Please choose a document', 'danger'); return; }
+  const school = DB.find('schools', AUTH.current.schoolId || AUTH.current.id);
+  if (!school) return;
+  const docs = [ ...((school.verification && school.verification.docs) || []), { name: file.name, uploadedAt: now() } ];
+  DB.update('schools', school.id, {
+    verification: { ...(school.verification || {}), status: 'pending', docs, resubmittedAt: now(), reason: null }
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: 'platform', actor: school.id, action: 'verification_resubmitted', target: school.name, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  toast('Document submitted — your school is back in the review queue', 'success');
+  APP.render();
 }
 
 function togglePwVisibility(inputId, btn) {

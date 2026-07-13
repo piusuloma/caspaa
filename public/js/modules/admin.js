@@ -2296,6 +2296,7 @@ function exportSchemePDF(schemeId) {
 }
 
 function view_adm_finance_hub() {
+  if (!schoolVerified()) return financeLockedPanel();
   return buildHub('Finance', 'Fees, invoices, expenses, payroll, reports', [
     { key: 'overview',  label: 'Overview',      view: 'view_fin_cost_center' },
     { key: 'fees',      label: 'Fee Structure', view: 'view_fin_fees' },
@@ -2890,6 +2891,110 @@ function view_adm_onboarding() {
   </div>`;
 }
 
+/* ============================================================
+   SCHOOL VERIFICATION GATE (self-signup schools)
+   Established/seeded schools have no `verification` field and are
+   always treated as verified. Self-signup schools start 'unverified';
+   money features stay locked until the CASPAA team approves KYC.
+   ============================================================ */
+function schoolVerification() {
+  const s = DB.find('schools', currentSchoolId());
+  return s && s.verification ? s.verification : null;
+}
+function schoolVerified() {
+  const v = schoolVerification();
+  return !v || v.status === 'verified';
+}
+
+function verificationBanner() {
+  if (!['schooladmin', 'principal'].includes(AUTH.current.role)) return '';
+  const v = schoolVerification();
+  if (!v || v.status === 'verified') return '';
+
+  if (v.status === 'pending') {
+    return `<div class="rounded-2xl border border-blue-200 bg-blue-50 p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">${icon('search', 'w-5 h-5')}</div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-blue-900">Verification under review</div>
+        <div class="text-sm text-blue-700">We're reviewing your documents. Payments and fee financing unlock once approved — usually within 1 business day.</div>
+      </div>
+    </div>`;
+  }
+
+  const rejected = v.status === 'rejected';
+  const tone = rejected ? 'rose' : 'amber';
+  return `<div class="rounded-2xl border border-${tone}-200 bg-${tone}-50 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-${tone}-100 text-${tone}-700 flex items-center justify-center flex-shrink-0">${icon('bell', 'w-5 h-5')}</div>
+    <div class="flex-1 min-w-0">
+      <div class="font-bold text-${tone}-900">${rejected ? 'Verification needs attention' : 'Verify your school to go live'}</div>
+      <div class="text-sm text-${tone}-800">${rejected
+        ? (v.reason ? 'Reason: ' + v.reason : 'Your submission was declined. Please review and resubmit.')
+        : 'You are on a trial. Submit your CAC, ID and bank details to unlock parent payments and fee financing.'}</div>
+    </div>
+    <button class="btn btn-primary flex-shrink-0" onclick="startVerificationModal()">${rejected ? 'Resubmit' : 'Start verification'}</button>
+  </div>`;
+}
+
+function startVerificationModal() {
+  const s = DB.find('schools', currentSchoolId()) || {};
+  const k = s.kyc || {};
+  const b = s.bank || {};
+  modal({
+    title: 'Verify your school',
+    size: 'lg',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">Verification unlocks parent payments, remittances and fee financing. Your details are reviewed by the CASPAA team.</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">CAC Registration No. *</label><input id="vf_reg" class="input" value="${k.regNumber && k.regNumber !== 'Pending' ? k.regNumber : ''}" placeholder="e.g. RC-228491" /></div>
+          <div><label class="input-label">Proprietor NIN *</label><input id="vf_nin" class="input" value="${k.ownerNIN || ''}" placeholder="11-digit NIN" /></div>
+        </div>
+        <div><label class="input-label">Accreditation Body</label><input id="vf_accred" class="input" value="${k.accreditation && k.accreditation !== 'Pending' ? k.accreditation : ''}" placeholder="e.g. Lagos State Ministry of Education" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Settlement Bank *</label><input id="vf_bank" class="input" value="${b.name || ''}" placeholder="e.g. GTBank" /></div>
+          <div><label class="input-label">Account Number *</label><input id="vf_acct" class="input" value="${b.account || ''}" placeholder="10-digit NUBAN" /></div>
+        </div>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="vf_cac" ${k.cacUploaded ? 'checked' : ''} /> CAC certificate uploaded (simulated)</label>
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveVerification()">${icon('check', 'w-4 h-4')} Submit for review</button>`
+  });
+}
+
+function saveVerification() {
+  const sid = currentSchoolId();
+  const reg = document.getElementById('vf_reg').value.trim();
+  const nin = document.getElementById('vf_nin').value.trim();
+  const bank = document.getElementById('vf_bank').value.trim();
+  const acct = document.getElementById('vf_acct').value.trim();
+  if (!reg || !nin || !bank || !acct) { toast('CAC number, NIN, bank and account are required', 'danger'); return; }
+  const s = DB.find('schools', sid) || {};
+  DB.update('schools', sid, {
+    kyc: { ...(s.kyc || {}), regNumber: reg, ownerNIN: nin, accreditation: document.getElementById('vf_accred').value.trim() || 'Pending', cacUploaded: document.getElementById('vf_cac').checked },
+    bank: { name: bank, account: acct },
+    verification: { status: 'pending', submittedAt: now() }
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: sid, actor: AUTH.current.id, action: 'verification_submitted', target: s.name || sid, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  toast("Submitted for review — we'll notify you once approved", 'success');
+  APP.render();
+}
+
+// Lock screen shown in place of the Finance hub until the school is verified.
+function financeLockedPanel() {
+  const v = schoolVerification();
+  const pending = v && v.status === 'pending';
+  return `${pageHeader({ title: 'Finance', subtitle: 'Fees, invoices, expenses, payroll, reports' })}
+    <div class="card p-8 text-center max-w-xl mx-auto">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-${pending ? 'blue' : 'amber'}-100 text-${pending ? 'blue' : 'amber'}-700 flex items-center justify-center mb-4">${icon(pending ? 'search' : 'fees', 'w-8 h-8')}</div>
+      <h3 class="text-lg font-bold text-slate-900">${pending ? 'Verification under review' : 'Payments locked until you verify'}</h3>
+      <p class="text-sm text-slate-500 mt-2 max-w-md mx-auto">${pending
+        ? 'Your documents are being reviewed. Finance, payments and fee financing unlock once your school is approved.'
+        : 'To collect parent payments, remit funds and access fee financing, verify your school with CASPAA. It only takes a minute.'}</p>
+      ${pending ? '' : `<button class="btn btn-primary mt-4" onclick="startVerificationModal()">${icon('check', 'w-4 h-4')} Start verification</button>`}
+    </div>`;
+}
+
 function view_adm_dashboard() {
   const schoolId = currentSchoolId();
   const students = DB.query('students', s => s.schoolId === schoolId);
@@ -2948,7 +3053,9 @@ function view_adm_dashboard() {
 
   return `
     <div class="space-y-5">
+      ${verificationBanner()}
       ${onboardingBanner()}
+      ${typeof enquiriesBanner === 'function' ? enquiriesBanner() : ''}
       <div class="bg-gradient-to-br from-brand-700 to-brand-800 rounded-2xl p-5 lg:p-6 text-white">
         <div class="flex items-center justify-between">
           <div>
