@@ -184,7 +184,21 @@ select.input option { color: #0f172a; }
 
 /* Login screen — hero image (left) + form card (right) */
 .login-bg { background: var(--soft-white); }
+/* Hero panel — CASPAA Green field with the texture blended over it.
+   The image is decorative: it is tinted by the green beneath rather than
+   shown on its own. object-position:left keeps the source's watermarked
+   right edge outside the crop. The scrim holds white text at >=4.5:1 over
+   the image's bright highlight streaks. */
 .login-hero { background: var(--brand-800); }
+.login-hero-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: left center;
+  mix-blend-mode: overlay; opacity: 0.7;
+}
+.login-hero-scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(165deg, rgba(0, 122, 91, 0.35) 0%, rgba(0, 94, 70, 0.78) 100%);
+}
 .login-card .input:focus { border-color: var(--brand-600); box-shadow: 0 0 0 3px var(--brand-ring); }
 
 /* Spinner */
