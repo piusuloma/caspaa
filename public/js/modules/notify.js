@@ -17,7 +17,7 @@ function view_adm_bulk_notify(params) {
   const tabBar = tabs.map(t => {
     const isActive = tab === t.key;
     return `<button
-      class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
+      class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-navy-800 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
       onclick="APP.params.notifyTab='${t.key}';APP.render()">
       ${t.label}
     </button>`;
@@ -102,7 +102,7 @@ function notify_composeEmailTab() {
       <!-- Live preview -->
       <div class="flex flex-col gap-3">
         <div class="card p-0 overflow-hidden">
-          <div class="bg-brand-700 text-white text-center py-4 px-6">
+          <div class="bg-navy-800 text-white text-center py-4 px-6">
             <div class="font-bold text-lg tracking-wide">${schoolName}</div>
             <div class="text-brand-200 text-xs mt-0.5">Official Communication</div>
           </div>
@@ -311,7 +311,7 @@ function notify_previewEmail() {
           </div>
         </div>
         <div class="border border-slate-200 rounded-xl overflow-hidden text-sm">
-          <div class="bg-brand-700 text-white text-center py-3 px-4">
+          <div class="bg-navy-800 text-white text-center py-3 px-4">
             <div class="font-bold">${schoolName}</div>
           </div>
           <div class="p-4 bg-white space-y-2">

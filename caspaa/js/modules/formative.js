@@ -99,7 +99,7 @@ function view_tch_formative(params) {
           const count = allTests.filter(x => x.status === t.key).length;
           const isActive = activeTab === t.key;
           return `<button
-            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
+            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-navy-800 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
             onclick="APP.params.ftTab = '${t.key}'; APP.render()">
             ${t.label} <span class="ml-1 opacity-70">${count}</span>
           </button>`;
@@ -570,7 +570,7 @@ function view_stu_formative(params) {
         ${[{ key: 'pending', label: 'Pending', count: pendingTests.length + overdueTests.length }, { key: 'completed', label: 'Completed', count: completedTests.length }].map(t => {
           const isActive = activeTab === t.key;
           return `<button
-            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
+            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-navy-800 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
             onclick="APP.params.stuFtTab = '${t.key}'; APP.render()">
             ${t.label} <span class="ml-1 opacity-70">${t.count}</span>
           </button>`;

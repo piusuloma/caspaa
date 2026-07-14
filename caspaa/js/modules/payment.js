@@ -274,12 +274,12 @@ function pay_downloadReceipt(invoiceId, amount) {
       <title>Payment Receipt — ${ref}</title>
       <style>
         body{font-family:system-ui,sans-serif;max-width:480px;margin:40px auto;padding:24px;color:#1e293b;}
-        .logo{background:#fd5f54;color:#fff;text-align:center;padding:16px;border-radius:12px 12px 0 0;font-size:20px;font-weight:700;}
+        .logo{background:#00b386;color:#fff;text-align:center;padding:16px;border-radius:12px 12px 0 0;font-size:20px;font-weight:700;}
         .body{border:1px solid #e2e8f0;border-top:none;padding:24px;border-radius:0 0 12px 12px;}
         .row{display:flex;justify-content:space-between;margin-bottom:12px;font-size:14px;}
         .label{color:#64748b;}
         .val{font-weight:600;text-align:right;}
-        .amount{font-size:28px;font-weight:800;color:#fd5f54;text-align:center;margin:20px 0;padding:16px;background:#ecfdf5;border-radius:8px;}
+        .amount{font-size:28px;font-weight:800;color:#00b386;text-align:center;margin:20px 0;padding:16px;background:#ecfdf5;border-radius:8px;}
         .ref{font-family:'Figtree',system-ui,sans-serif;font-size:12px;color:#94a3b8;text-align:center;margin-top:16px;}
         .badge{display:inline-block;background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
         @media print{button{display:none;}}
@@ -300,7 +300,7 @@ function pay_downloadReceipt(invoiceId, amount) {
         <div class="row"><span class="label">Date & Time</span><span class="val">${new Date().toLocaleString('en-NG')}</span></div>
         <div class="ref">Reference: ${ref}</div>
         <div style="text-align:center;margin-top:20px;">
-          <button onclick="window.print()" style="background:#fd5f54;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;">Print Receipt</button>
+          <button onclick="window.print()" style="background:#00b386;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;">Print Receipt</button>
         </div>
         <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:16px;">
           Keep this receipt as proof of payment.<br>

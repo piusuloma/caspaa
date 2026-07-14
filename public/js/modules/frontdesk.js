@@ -56,7 +56,7 @@ function view_adm_frontdesk() {
   const c = frontdeskCounts();
 
   const tabBtn = (key, label, count) => `
-    <button class="chip ${tab === key ? 'active' : ''}" onclick="APP.params.fdTab='${key}'; APP.render()">${label}${count ? ` <span class="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[11px] rounded-full bg-brand-600 text-white px-1">${count}</span>` : ''}</button>`;
+    <button class="chip ${tab === key ? 'active' : ''}" onclick="APP.params.fdTab='${key}'; APP.render()">${label}${count ? ` <span class="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[11px] rounded-full bg-brand-600 text-navy-800 px-1">${count}</span>` : ''}</button>`;
 
   return `
     ${pageHeader({ title: 'Front Desk', subtitle: 'Tour requests and career enquiries from your public portal' })}
@@ -71,7 +71,7 @@ function view_adm_frontdesk() {
     <div class="flex gap-2 mb-4 flex-wrap items-center">
       ${tabBtn('tours', 'Tour Requests', c.tours)}
       ${tabBtn('careers', 'Careers', c.careers)}
-      <button class="chip" onclick="APP.go('adm_admissions')">Admissions ${c.admissions ? `<span class="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[11px] rounded-full bg-brand-600 text-white px-1">${c.admissions}</span>` : ''} &rarr;</button>
+      <button class="chip" onclick="APP.go('adm_admissions')">Admissions ${c.admissions ? `<span class="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[11px] rounded-full bg-brand-600 text-navy-800 px-1">${c.admissions}</span>` : ''} &rarr;</button>
     </div>
 
     ${tab === 'tours' ? renderTourTable(tours) : renderCareerTable(careers)}

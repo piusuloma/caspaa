@@ -20,7 +20,7 @@ function view_fin_dashboard() {
         type: 'doughnut',
         data: {
           labels: ['Collected', 'Outstanding'],
-          datasets: [{ data: [collected, outstanding], backgroundColor: ['#fd5f54', '#fbbf24'], borderWidth: 0 }]
+          datasets: [{ data: [collected, outstanding], backgroundColor: ['#00b386', '#fbbf24'], borderWidth: 0 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
       });
@@ -715,8 +715,8 @@ function exportFeeStructurePDF() {
   const classes = DB.get('classes');
   const html = `
     <div style="max-width:800px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #fd5f54;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#fd5f54">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#00b386">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:18px">FEE STRUCTURE — ${DB.settings().currentTerm}</h2>
       </div>
       <table border="1" cellpadding="10" style="border-collapse:collapse;width:100%;font-size:13px">
@@ -2033,7 +2033,7 @@ function renderPayrollStepper(run) {
         ${stages.map((s, i) => {
           const done = i < currentIdx;
           const active = i === currentIdx;
-          const bg = done ? 'bg-emerald-500 text-white' : active ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-500';
+          const bg = done ? 'bg-emerald-500 text-white' : active ? 'bg-brand-600 text-navy-800' : 'bg-slate-200 text-slate-500';
           const lineBg = done ? 'bg-emerald-500' : 'bg-slate-200';
           return `<div class="text-center">
             <div class="flex items-center mb-1.5">
@@ -2292,8 +2292,8 @@ function downloadPayrollSummary(runId) {
   const teachers = DB.query('teachers', t => t.schoolId === run.schoolId);
   const html = `
     <div style="max-width:800px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #fd5f54;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#fd5f54">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#00b386">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:18px">PAYROLL SUMMARY — ${run.period}</h2>
       </div>
       <table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-size:13px">
@@ -2466,7 +2466,7 @@ function view_fin_cost_center() {
     }
     new Chart(ctx, {
       type: 'bar',
-      data: { labels, datasets: [{ label: 'Collected (₦)', data, backgroundColor: '#fd5f54', borderRadius: 6, maxBarThickness: 60 }] },
+      data: { labels, datasets: [{ label: 'Collected (₦)', data, backgroundColor: '#00b386', borderRadius: 6, maxBarThickness: 60 }] },
       options: {
         responsive: true, maintainAspectRatio: false, animation: { duration: 0 },
         plugins: { legend: { display: false } },
@@ -2509,9 +2509,9 @@ function view_fin_cost_center() {
         <div class="flex items-center justify-between mb-3 gap-2">
           <h3 class="font-bold text-slate-900">Revenue · <span class="text-brand-700">${revenueView === 'monthly' ? 'Monthly' : revenueView === 'annually' ? 'Annual' : 'Per Term'}</span></h3>
           <div class="flex rounded-lg border border-slate-200 overflow-hidden text-xs">
-            <button class="px-2.5 py-1.5 ${revenueView==='monthly'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='monthly';APP.render()">Monthly</button>
-            <button class="px-2.5 py-1.5 border-l border-r border-slate-200 ${revenueView==='termly'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='termly';APP.render()">Termly</button>
-            <button class="px-2.5 py-1.5 ${revenueView==='annually'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='annually';APP.render()">Annually</button>
+            <button class="px-2.5 py-1.5 ${revenueView==='monthly'?'bg-brand-600 text-navy-800 font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='monthly';APP.render()">Monthly</button>
+            <button class="px-2.5 py-1.5 border-l border-r border-slate-200 ${revenueView==='termly'?'bg-brand-600 text-navy-800 font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='termly';APP.render()">Termly</button>
+            <button class="px-2.5 py-1.5 ${revenueView==='annually'?'bg-brand-600 text-navy-800 font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='annually';APP.render()">Annually</button>
           </div>
         </div>
         <div style="height:200px"><canvas id="costCenterChart"></canvas></div>

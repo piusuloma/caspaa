@@ -520,7 +520,7 @@ function view_par_health(params) {
       ${children.length > 1 ? `
         <div class="flex gap-2 flex-wrap">
           ${children.map(c => `<button onclick="APP.go('par_health',{studentId:'${c.id}'})"
-            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
+            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-navy-800 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
         </div>
       ` : ''}
 

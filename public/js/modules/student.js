@@ -33,7 +33,7 @@ function view_stu_dashboard() {
   return `
     <div class="space-y-5">
       <!-- Hero + gamification -->
-      <div class="bg-brand-700 rounded-2xl p-5 lg:p-6 text-white">
+      <div class="bg-navy-800 rounded-2xl p-5 lg:p-6 text-white">
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <p class="text-brand-200 text-sm">Welcome back,</p>
@@ -216,7 +216,7 @@ function view_stu_learning(params) {
                 <div class="absolute inset-0 flex items-center justify-center">
                   <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-lg">${icon('classes','w-6 h-6 text-white')}</div>
                 </div>
-                ${viewed ? '' : '<div class="absolute top-2 right-2 bg-brand-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">NEW</div>'}
+                ${viewed ? '' : '<div class="absolute top-2 right-2 bg-brand-600 text-navy-800 text-xs font-bold px-2 py-0.5 rounded-full">NEW</div>'}
               </div>
               <div class="p-3">
                 <span class="badge badge-neutral text-xs">${subjName(m.subjectId)}</span>
@@ -240,7 +240,7 @@ function view_stu_learning(params) {
     ${pageHeader({ title: 'Learning Hub', subtitle: 'Interactive science and maths simulations' })}
     ${tabBar}
     <div class="flex gap-2 mb-4 flex-wrap">
-      ${subjects.map(sub => `<button onclick="APP.go('stu_learning',{tab:'sims',simFilter:'${sub}'})" class="px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors ${filter===sub?'bg-brand-700 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${sub}</button>`).join('')}
+      ${subjects.map(sub => `<button onclick="APP.go('stu_learning',{tab:'sims',simFilter:'${sub}'})" class="px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors ${filter===sub?'bg-navy-800 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${sub}</button>`).join('')}
     </div>
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       ${filtered.map(sim => `<div class="card p-4 hover:shadow-md transition-shadow">
@@ -768,7 +768,7 @@ function stu_viewCbtResult(subId) {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-brand-700 text-white rounded-xl p-4 text-center">
+        <div class="bg-navy-800 text-white rounded-xl p-4 text-center">
           <div class="text-4xl font-extrabold">${sub.totalScore}<span class="text-xl opacity-70">/${sub.maxScore}</span></div>
           <div class="text-sm text-brand-200 mt-1">${sub.status === 'graded' ? 'Final score' : 'Objective score (theory pending review)'}</div>
         </div>

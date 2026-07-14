@@ -22,7 +22,7 @@ function view_tch_diary(params) {
     ${pageHeader({ title: 'Communication Diary', subtitle: 'Write structured notes to parents — per student, per day' })}
 
     <div class="flex gap-2 mb-4 flex-wrap">
-      ${classes.map(c => `<button onclick="APP.go('tch_diary',{classId:'${c.id}'})" class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeClassId ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
+      ${classes.map(c => `<button onclick="APP.go('tch_diary',{classId:'${c.id}'})" class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeClassId ? 'bg-navy-800 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
     </div>
 
     ${students.length === 0 ? emptyState({ title: 'No students in this class', body: 'Enrol students to start writing diary entries.', icon: 'students' }) : `
@@ -175,7 +175,7 @@ function view_par_diary(params) {
     ${pageHeader({ title: 'Diary', subtitle: 'Structured notes from your child\'s teachers' })}
 
     ${children.length > 1 ? `<div class="flex gap-2 mb-4 flex-wrap">
-      ${children.map(c => `<button onclick="APP.go('par_diary',{studentId:'${c.id}'})" class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
+      ${children.map(c => `<button onclick="APP.go('par_diary',{studentId:'${c.id}'})" class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-navy-800 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
     </div>` : ''}
 
     ${unread > 0 ? `<div class="mb-4 bg-amber-50 rounded-xl p-3 text-sm text-amber-800 font-medium">

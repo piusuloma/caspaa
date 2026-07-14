@@ -75,7 +75,7 @@ function adm_renderRoutesTab(routes, schoolId) {
 
   const chartRows = routes.map((r, i) => {
     const count = DB.query('busAssignments', a => a.routeId === r.id && a.schoolId === schoolId).length;
-    return { name: r.name, count, color: ['#fd7d71','#10b981','#f59e0b','#ef4444','#fd7d71','#ec4899','#fd5f54','#f97316'][i % 8] };
+    return { name: r.name, count, color: ['#fd7d71','#10b981','#f59e0b','#ef4444','#fd7d71','#ec4899','#00b386','#f97316'][i % 8] };
   }).filter(d => d.count > 0);
 
   const totalAssigned = chartRows.reduce((s, d) => s + d.count, 0);
@@ -756,7 +756,7 @@ function adm_renderBusStatusTab(routes, schoolId) {
                     ${manifest.filter(m => m.pickupOrder !== 999).map((m, i) => `
                       <div class="flex gap-3 items-start">
                         <div class="flex flex-col items-center flex-shrink-0">
-                          <div class="w-7 h-7 rounded-full bg-brand-700 text-white flex items-center justify-center font-bold text-xs">${m.pickupOrder}</div>
+                          <div class="w-7 h-7 rounded-full bg-navy-800 text-white flex items-center justify-center font-bold text-xs">${m.pickupOrder}</div>
                           ${i < manifest.filter(x=>x.pickupOrder!==999).length - 1 ? `<div class="w-px flex-1 bg-slate-200 mt-0.5" style="min-height:16px"></div>` : ''}
                         </div>
                         <div class="flex-1 pb-2 min-w-0">
@@ -926,7 +926,7 @@ function view_par_transport(params) {
       ${children.length > 1 ? `
         <div class="flex gap-2 flex-wrap">
           ${children.map(c => `<button onclick="APP.params.studentId = '${c.id}'; APP.render();"
-            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
+            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-navy-800 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
         </div>
       ` : ''}
 
@@ -1337,7 +1337,7 @@ function printRouteSheet(routeId) {
 
   const stopRows = manifest.map((m, i) => `
     <tr style="${i % 2 === 0 ? '' : 'background:#f1f5f9'}">
-      <td style="padding:7px 10px;font-size:13px;font-weight:700;color:#9e2a22;text-align:center">${m.pickupOrder === 999 ? '—' : m.pickupOrder}</td>
+      <td style="padding:7px 10px;font-size:13px;font-weight:700;color:#005e46;text-align:center">${m.pickupOrder === 999 ? '—' : m.pickupOrder}</td>
       <td style="padding:7px 10px;font-size:12px;font-weight:600">${m.name}</td>
       <td style="padding:7px 10px;font-size:12px;color:#475569">${m.className}</td>
       <td style="padding:7px 10px;font-size:12px;color:#0f172a">${m.parentPhone || '—'}</td>

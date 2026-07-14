@@ -282,8 +282,8 @@ function exportPermissionsReport() {
   const allPerms = ['students','staff','admissions','classes','curriculum','timetable','attendance','results','assignments','lessonPlans','discipline','fees','invoices','payments','reconciliation','reports','inventory','communications','messaging'];
   const html = `
     <div style="max-width:900px;margin:0 auto;font-family:system-ui;font-size:12px">
-      <div style="text-align:center;border-bottom:3px solid #fd5f54;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#fd5f54">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#00b386">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:16px">STAFF PERMISSIONS REPORT</h2>
         <p style="margin:0;color:#666">${DB.settings().currentTerm} · Generated ${fdate(today(), { long: true })}</p>
       </div>
@@ -428,7 +428,7 @@ function _renderCycleDetail(cycleId) {
           const statuses = [['self_pending'],['manager_pending'],['principal_pending'],['outcome_pending'],['ack_pending','completed']];
           const allDone = aprs.length > 0 && aprs.every(a => !statuses[i].includes(a.status));
           const anyHere = aprs.some(a => statuses[i].includes(a.status));
-          const color = allDone ? 'bg-brand-600 text-white' : anyHere ? 'bg-amber-400 text-white' : 'bg-slate-100 text-slate-400';
+          const color = allDone ? 'bg-brand-600 text-navy-800' : anyHere ? 'bg-amber-400 text-white' : 'bg-slate-100 text-slate-400';
           return `<div class="flex items-center flex-shrink-0">
             <div class="flex flex-col items-center">
               <div class="w-8 h-8 rounded-full ${color} flex items-center justify-center text-xs font-bold">${allDone ? '✓' : i+1}</div>
@@ -1323,7 +1323,7 @@ function view_adm_curriculum() {
     ? '<div class="flex flex-wrap gap-1.5 mb-4">'
       + allTerms.map(t =>
           '<button class="text-xs font-semibold px-3 py-1 rounded-full border transition-all '
-          + (t === displayTerm ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400')
+          + (t === displayTerm ? 'bg-brand-600 text-navy-800 border-brand-600' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400')
           + '" onclick="APP.params.schTermFilter=\'' + t.replace(/'/g, "\\'") + '\';APP.render()">' + t + '</button>'
         ).join('')
       + '</div>'
@@ -2268,8 +2268,8 @@ function exportSchemePDF(schemeId) {
   const sub = DB.find('subjects', sch.subjectId);
   const html = `
     <div style="max-width:800px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #fd5f54;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#fd5f54">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#00b386">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:20px">SCHEME OF WORK</h2>
         <p style="margin:4px 0">${sub.name} · ${cls.name} · ${sch.term}</p>
         <p style="margin:4px 0;color:#666;font-size:13px">${sch.source} aligned</p>
@@ -2804,7 +2804,7 @@ function view_adm_onboarding() {
   return `
   <div class="max-w-4xl mx-auto space-y-5">
 
-    <div class="bg-gradient-to-br from-brand-700 to-brand-900 rounded-2xl p-6 lg:p-8 text-white">
+    <div class="bg-gradient-to-br from-navy-800 to-navy-900 rounded-2xl p-6 lg:p-8 text-white">
       <div class="flex flex-col sm:flex-row sm:items-center gap-5">
         ${onbRing(pct, 84, 'dark')}
         <div class="flex-1 min-w-0">
@@ -3032,7 +3032,7 @@ function view_adm_dashboard() {
           labels: ['Boys', 'Girls'],
           datasets: [{
             data: [maleCount, femaleCount],
-            backgroundColor: ['#fd5f54', '#db2777'],
+            backgroundColor: ['#00b386', '#db2777'],
             borderColor: ['#ffffff', '#ffffff'],
             borderWidth: 3,
             hoverOffset: 6
@@ -3056,7 +3056,7 @@ function view_adm_dashboard() {
       ${verificationBanner()}
       ${onboardingBanner()}
       ${typeof enquiriesBanner === 'function' ? enquiriesBanner() : ''}
-      <div class="bg-brand-700 rounded-2xl p-5 lg:p-6 text-white">
+      <div class="bg-navy-800 rounded-2xl p-5 lg:p-6 text-white">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-brand-200 text-sm">Welcome back,</p>
@@ -3992,12 +3992,12 @@ function printStudentID(studentId) {
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
     body { background: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
     .card { width: 86mm; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
-    .header { background: #fd5f54; color: white; padding: 16px; text-align: center; }
+    .header { background: #00b386; color: white; padding: 16px; text-align: center; }
     .school-name { font-size: 13px; font-weight: bold; letter-spacing: 0.5px; }
     .school-sub { font-size: 9px; opacity: 0.8; margin-top: 2px; text-transform: uppercase; }
     .id-label { font-size: 10px; font-weight: bold; background: rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 8px; margin-top: 8px; display: inline-block; letter-spacing: 1px; }
     .body { padding: 16px; }
-    .avatar { width: 64px; height: 64px; border-radius: 50%; background: #ffdedb; color: #e8483d; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 12px; border: 3px solid #fd5f54; }
+    .avatar { width: 64px; height: 64px; border-radius: 50%; background: #c3f0e2; color: #00966f; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 12px; border: 3px solid #00b386; }
     .name { font-size: 16px; font-weight: bold; color: #0f172a; text-align: center; }
     .class { font-size: 11px; color: #64748b; text-align: center; margin-top: 2px; }
     .adm { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px; font-family: 'Figtree', system-ui, sans-serif; }
@@ -4287,7 +4287,7 @@ function addStudentModal(editingId) {
     size: 'lg',
     body: `
       <div class="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
-        <div id="sf_photoPreview" class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center bg-brand-600 text-white font-bold text-2xl">
+        <div id="sf_photoPreview" class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center bg-brand-600 text-navy-800 font-bold text-2xl">
           ${_studentPhotoBuffer ? `<img src="${_studentPhotoBuffer}" class="w-full h-full object-cover" />` : (existing ? initials(existing.name) : '?')}
         </div>
         <div class="flex-1">
@@ -5031,9 +5031,9 @@ function printTransferCertificate(studentId, destSchool, reason) {
   const s = DB.find('students', studentId);
   const cls = DB.find('classes', s.classId);
   const html = `
-    <div style="max-width:780px;margin:0 auto;font-family:system-ui;padding:32px;border:3px solid #fd5f54">
-      <div style="text-align:center;border-bottom:2px solid #fd5f54;padding-bottom:16px;margin-bottom:24px">
-        <h1 style="margin:0;color:#fd5f54">BRIGHT LIGHTS ACADEMY</h1>
+    <div style="max-width:780px;margin:0 auto;font-family:system-ui;padding:32px;border:3px solid #00b386">
+      <div style="text-align:center;border-bottom:2px solid #00b386;padding-bottom:16px;margin-bottom:24px">
+        <h1 style="margin:0;color:#00b386">BRIGHT LIGHTS ACADEMY</h1>
         <p style="margin:4px 0;color:#666;font-size:13px">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:18px 0 4px;font-size:22px">TRANSFER CERTIFICATE</h2>
         <p style="color:#666">Certificate No: TC-${Date.now().toString(36).toUpperCase()}</p>
@@ -5726,7 +5726,7 @@ function adm_printTranscript(alumniId) {
     const exL  = _esTypes.length > 2 ? _esTypes[_esTypes.length - 1].label : 'Exam';
     const rows = termResults.map(r => {
       const sub = subjects.find(s => s.id === r.subjectId);
-      const gc  = r.grade === 'A' ? '#059669' : r.grade === 'F' ? '#dc2626' : '#e8483d';
+      const gc  = r.grade === 'A' ? '#059669' : r.grade === 'F' ? '#dc2626' : '#00966f';
       return '<tr>'
         + '<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6">' + (sub ? sub.name : '—') + '</td>'
         + '<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:center">' + (r.ca1 ?? '—') + '</td>'
@@ -5737,7 +5737,7 @@ function adm_printTranscript(alumniId) {
         + '</tr>';
     }).join('');
     return '<div style="margin-bottom:20px">'
-      + '<div style="background:#f3f4f6;padding:6px 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #e8483d;margin-bottom:4px">'
+      + '<div style="background:#f3f4f6;padding:6px 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #00966f;margin-bottom:4px">'
       + term + ' &nbsp;—&nbsp; Class Average: ' + avg + '%</div>'
       + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
       + '<thead><tr style="background:#f9fafb">'
@@ -5751,7 +5751,7 @@ function adm_printTranscript(alumniId) {
   }).join('');
 
   const html = '<!DOCTYPE html><html><head><title>Transcript — ' + a.name + '</title>'
-    + '<style>body{font-family:Georgia,serif;margin:40px;color:#1a1a1a}h1{text-align:center;font-size:22px;margin-bottom:4px}.sub{text-align:center;color:#555;font-size:13px;margin-bottom:4px}.doc-title{text-align:center;font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:20px;color:#c2352b}.info{border:1px solid #ddd;border-radius:6px;padding:14px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px}.lbl{color:#777;font-size:11px;text-transform:uppercase;letter-spacing:.05em}.footer{margin-top:40px;border-top:1px solid #ddd;padding-top:14px;font-size:11px;color:#999;text-align:center}@media print{body{margin:20px}}</style>'
+    + '<style>body{font-family:Georgia,serif;margin:40px;color:#1a1a1a}h1{text-align:center;font-size:22px;margin-bottom:4px}.sub{text-align:center;color:#555;font-size:13px;margin-bottom:4px}.doc-title{text-align:center;font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:20px;color:#007a5b}.info{border:1px solid #ddd;border-radius:6px;padding:14px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px}.lbl{color:#777;font-size:11px;text-transform:uppercase;letter-spacing:.05em}.footer{margin-top:40px;border-top:1px solid #ddd;padding-top:14px;font-size:11px;color:#999;text-align:center}@media print{body{margin:20px}}</style>'
     + '</head><body>'
     + '<h1>' + (school ? school.name : 'School') + '</h1>'
     + (school && school.address ? '<div class="sub">' + school.address + '</div>' : '')
@@ -6400,7 +6400,7 @@ function view_adm_former_staff() {
         const cnt = key === 'all' ? former.length : (counts[key] || 0);
         if (key !== 'all' && cnt === 0) return '';
         return '<button class="text-xs font-semibold px-3 py-1 rounded-full border transition-all '
-          + (filterCat === key ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400')
+          + (filterCat === key ? 'bg-brand-600 text-navy-800 border-brand-600' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400')
           + '" onclick="APP.params.formerCat=\'' + key + '\';APP.render()">' + lbl + (key !== 'all' ? ' (' + cnt + ')' : '') + '</button>';
       }).join('')}
     </div>
@@ -9901,7 +9901,7 @@ function roleEditorModal(roleId) {
     { group: 'Communications', perms: [['communications','Announcements'],['messaging','Direct Messaging']] },
     { group: 'Parent-only', perms: [['own_children','View Own Children'],['own_fees','View Own Fees']] }
   ];
-  const colors = ['#e8483d','#fd5f54','#fd5f54','#f59e0b','#10b981','#22c55e','#a855f7','#ef4444','#6b7280','#e8483d','#ec4899','#84cc16'];
+  const colors = ['#00966f','#00b386','#00b386','#f59e0b','#10b981','#22c55e','#a855f7','#ef4444','#6b7280','#00966f','#ec4899','#84cc16'];
   const has = (k) => existing ? existing.permissions.includes(k) : false;
 
   modal({
@@ -10202,7 +10202,7 @@ function renderBrandingSettings() {
           <div><label class="input-label">Motto</label><input id="br_motto" class="input" value="${branding.motto || ''}" /></div>
           <div class="grid grid-cols-2 gap-2">
             <div><label class="input-label">Primary Color</label>
-              <input id="br_color" type="color" class="input h-12" value="${branding.primaryColor || '#fd5f54'}" />
+              <input id="br_color" type="color" class="input h-12" value="${branding.primaryColor || '#00b386'}" />
             </div>
             <div><label class="input-label">Logo Text (fallback)</label>
               <input id="br_logoText" class="input" maxlength="3" value="${branding.logoText || ''}" />
@@ -10212,7 +10212,7 @@ function renderBrandingSettings() {
             <label class="input-label">School Logo</label>
             <input type="file" id="br_logoFile" accept="image/*" class="hidden" onchange="onLogoPick(event)" />
             <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-              <div class="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-extrabold" id="br_logoPreview" style="background:${branding.primaryColor || '#fd5f54'}">
+              <div class="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-extrabold" id="br_logoPreview" style="background:${branding.primaryColor || '#00b386'}">
                 ${branding.logoImage ? `<img src="${branding.logoImage}" class="w-full h-full object-cover rounded-xl"/>` : (branding.logoText || '?')}
               </div>
               <button type="button" class="btn btn-secondary text-sm" onclick="document.getElementById('br_logoFile').click()">${icon('upload','w-4 h-4')} Choose</button>
@@ -10238,7 +10238,7 @@ function renderBrandingSettings() {
       </div>
       <div class="card p-5">
         <h3 class="font-bold text-slate-900 mb-3">Preview</h3>
-        <div class="rounded-2xl p-5 text-white" style="background: ${branding.primaryColor || '#fd5f54'}">
+        <div class="rounded-2xl p-5 text-white" style="background: ${branding.primaryColor || '#00b386'}">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center text-xl font-extrabold backdrop-blur">
               ${branding.logoImage ? `<img src="${branding.logoImage}" class="w-full h-full object-cover rounded-xl"/>` : (branding.logoText || school.name.charAt(0))}
@@ -11191,7 +11191,7 @@ function view_adm_admissions() {
                <button class="btn btn-primary" onclick="newApplicationModal()">${icon('plus','w-4 h-4')} New Application</button>`
     })}
 
-    <div class="card bg-brand-700 text-white p-4 mb-4">
+    <div class="card bg-navy-800 text-white p-4 mb-4">
       <div class="text-xs text-brand-200 uppercase font-semibold">Your public admission link</div>
       <div class="flex items-center gap-3 mt-1">
         <code class="bg-white/20 px-3 py-1.5 rounded-lg text-sm font-mono flex-1">${publicLink}</code>
@@ -11401,7 +11401,7 @@ function viewApplication(appId) {
             statusOrder.map((s, i) => {
               const done = i <= currentIdx, active = i === currentIdx;
               return '<div class="flex flex-col items-center gap-1 text-center flex-1 relative z-10">' +
-                '<div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ' + (done ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400') + (active ? ' ring-2 ring-brand-300 ring-offset-1' : '') + '">' +
+                '<div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ' + (done ? 'bg-brand-600 text-navy-800' : 'bg-slate-100 text-slate-400') + (active ? ' ring-2 ring-brand-300 ring-offset-1' : '') + '">' +
                 (done ? icon('check','w-3.5 h-3.5') : String(i + 1)) +
                 '</div><div class="text-xs leading-tight max-w-[3.5rem] ' + (active ? 'text-brand-700 font-semibold' : done ? 'text-slate-600' : 'text-slate-400') + '">' + stepLabels[s] + '</div></div>';
             }).join('') +
@@ -12255,7 +12255,7 @@ function renderLiveChat() {
       <div class="flex-1 overflow-y-auto p-4 space-y-3 scroll-area" id="liveChatBody">
         ${msgs.map(m => m.from === 'agent'
           ? `<div class="flex gap-2 items-end"><span class="avatar sm">CS</span><div class="bg-slate-100 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[75%]"><div class="text-xs text-slate-400 mb-0.5">${m.agentName || 'Support'}</div><div class="text-sm">${m.text}</div></div></div>`
-          : `<div class="flex justify-end"><div class="bg-brand-600 text-white rounded-2xl rounded-br-sm px-3 py-2 max-w-[75%] text-sm">${m.text}</div></div>`
+          : `<div class="flex justify-end"><div class="bg-brand-600 text-navy-800 rounded-2xl rounded-br-sm px-3 py-2 max-w-[75%] text-sm">${m.text}</div></div>`
         ).join('')}
       </div>
       <div class="border-t border-slate-100 p-3 flex gap-2">
@@ -12436,8 +12436,8 @@ function _rptHead(title, subtitle) {
   const term = DB.settings().currentTerm || '';
   const date = new Date().toLocaleDateString('en-NG', { day:'numeric', month:'long', year:'numeric' });
   return `
-    <div style="text-align:center;border-bottom:3px solid #fd5f54;padding-bottom:16px;margin-bottom:28px">
-      <h1 style="margin:0 0 4px;font-size:22px;color:#fd5f54;letter-spacing:.5px">${(sc.name||'School').toUpperCase()}</h1>
+    <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:28px">
+      <h1 style="margin:0 0 4px;font-size:22px;color:#00b386;letter-spacing:.5px">${(sc.name||'School').toUpperCase()}</h1>
       ${sc.address ? `<p style="margin:2px 0;color:#555;font-size:12px">${sc.address}</p>` : ''}
       ${sc.phone ? `<p style="margin:2px 0;color:#555;font-size:12px">Tel: ${sc.phone}</p>` : ''}
       <h2 style="margin:16px 0 4px;font-size:18px;font-weight:700">${title}</h2>

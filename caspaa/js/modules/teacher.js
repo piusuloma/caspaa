@@ -256,7 +256,7 @@ function view_tch_dashboard() {
 
   return `
     <div class="space-y-5">
-      <div class="bg-brand-700 rounded-2xl p-5 lg:p-6 text-white">
+      <div class="bg-navy-800 rounded-2xl p-5 lg:p-6 text-white">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <p class="text-brand-200 text-sm">Welcome,</p>
@@ -1327,7 +1327,7 @@ function mkvRenderPins() {
       const idx = pins.indexOf(p);
       return `<div style="position:absolute;left:${p.x}%;top:${p.y}%;transform:translate(-50%,-50%);z-index:8;pointer-events:auto">
         <div onclick="mkvTogglePin('${p.id}',event)"
-          style="width:22px;height:22px;border-radius:50%;background:#fd5f54;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(253,95,84,.55);border:2px solid #fff;cursor:pointer">
+          style="width:22px;height:22px;border-radius:50%;background:#00b386;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0, 179, 134,.55);border:2px solid #fff;cursor:pointer">
           ${idx + 1}
         </div>
         <div id="mkv_tip_${p.id}" style="display:none;position:absolute;left:26px;top:-6px;width:190px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.14);padding:10px;z-index:20">
@@ -1345,7 +1345,7 @@ function mkvRenderPins() {
       ? `<p style="font-size:11px;color:#94a3b8;font-style:italic">${_mkv._hasImage ? 'Select 📍 then click anywhere on the image.' : 'Click "Add" to add a comment.'}</p>`
       : pins.map((p, i) => `
         <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9">
-          <span style="flex-shrink:0;width:18px;height:18px;border-radius:50%;background:${p.x!=null?'#fd5f54':'#94a3b8'};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">${p.x!=null?i+1:'✎'}</span>
+          <span style="flex-shrink:0;width:18px;height:18px;border-radius:50%;background:${p.x!=null?'#00b386':'#94a3b8'};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">${p.x!=null?i+1:'✎'}</span>
           <span style="font-size:12px;color:#334155;flex:1;word-break:break-word">${p.text || '<em style="color:#94a3b8">empty</em>'}</span>
           <button onclick="mkvDeletePin('${p.id}')" style="color:#cbd5e1;background:none;border:none;cursor:pointer;font-size:13px;flex-shrink:0" title="Delete">✕</button>
         </div>`).join('');
@@ -1410,7 +1410,7 @@ function mkvShowBubble(pinId, cx, cy, below) {
     <textarea id="mkv_bubble_txt" rows="3" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 8px;font-size:12px;resize:none;box-sizing:border-box;outline:none;font-family:inherit" placeholder="Type your comment…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();mkvSaveBubble('${pinId}')}"></textarea>
     <div style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end">
       <button onclick="mkvCancelBubble('${pinId}')" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit">Cancel</button>
-      <button onclick="mkvSaveBubble('${pinId}')" style="background:#fd5f54;color:#fff;border:none;border-radius:8px;padding:4px 14px;font-size:12px;cursor:pointer;font-weight:600;font-family:inherit">Save</button>
+      <button onclick="mkvSaveBubble('${pinId}')" style="background:#00b386;color:#fff;border:none;border-radius:8px;padding:4px 14px;font-size:12px;cursor:pointer;font-weight:600;font-family:inherit">Save</button>
     </div>`;
   document.body.appendChild(div);
   setTimeout(() => div.querySelector('textarea')?.focus(), 30);
@@ -2932,7 +2932,7 @@ function view_tch_appraisal() {
                 { label: 'Acknowledged', done: !!apr.ackedAt, active: apr.status === 'ack_pending' }
               ].map((step, i, arr) => `<div class="flex items-center flex-shrink-0">
                 <div class="flex flex-col items-center">
-                  <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold ${step.done ? 'bg-brand-600 text-white' : step.active ? 'bg-amber-400 text-white animate-pulse' : 'bg-slate-100 text-slate-400'}">${step.done ? '✓' : i+1}</div>
+                  <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold ${step.done ? 'bg-brand-600 text-navy-800' : step.active ? 'bg-amber-400 text-white animate-pulse' : 'bg-slate-100 text-slate-400'}">${step.done ? '✓' : i+1}</div>
                   <div class="text-[10px] mt-0.5 w-16 text-center ${step.active ? 'text-amber-700 font-semibold' : step.done ? 'text-brand-600' : 'text-slate-400'}">${step.label}</div>
                 </div>
                 ${i < arr.length - 1 ? `<div class="w-6 h-0.5 ${step.done ? 'bg-brand-400' : 'bg-slate-200'} mb-4 flex-shrink-0"></div>` : ''}
@@ -3087,7 +3087,7 @@ function tch_acknowledgeModal(aprId) {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-brand-700 text-white rounded-xl p-5 text-center">
+        <div class="bg-navy-800 text-white rounded-xl p-5 text-center">
           <div class="text-4xl font-extrabold">${apr.finalOverall}%</div>
           <div class="text-brand-200 text-sm mt-1">${cycle?.title || 'Appraisal'}</div>
         </div>

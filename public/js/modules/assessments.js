@@ -35,7 +35,7 @@ function view_tch_assessments(params) {
     ${pageHeader({ title: 'Assessments', subtitle: 'Assignments, CBT exams, and formative quick tests in one place', actions })}
     <div class="flex gap-2 mb-5 flex-wrap">
       ${tabDefs.map(t => `<button onclick="APP.params.assessTab='${t.key}';APP.render()"
-        class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${tab===t.key?'bg-brand-700 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">
+        class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${tab===t.key?'bg-navy-800 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">
         ${t.label}
       </button>`).join('')}
     </div>
@@ -166,7 +166,7 @@ function view_stu_assessments(params) {
       ${tabDefs.map(t => {
         const n = badges[t.key];
         return `<button onclick="APP.params.stuAssessTab='${t.key}';APP.render()"
-          class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${tab===t.key?'bg-brand-700 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">
+          class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${tab===t.key?'bg-navy-800 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">
           ${t.label}${n ? ` <span class="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${tab===t.key?'bg-white text-brand-700':'bg-rose-500 text-white'}">${n}</span>` : ''}
         </button>`;
       }).join('')}

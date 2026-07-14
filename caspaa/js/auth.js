@@ -342,7 +342,7 @@ function renderLogin() {
       <!-- Hero panel (left) — public portal over the brand hero image -->
       <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12">
         <img src="logo/login-hero.png" alt="" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
-        <div class="absolute inset-0 bg-brand-700/80"></div>
+        <div class="absolute inset-0 bg-navy-800/80"></div>
 
         <div class="relative text-white">
           <div class="flex items-center gap-3 mb-8">
@@ -373,7 +373,7 @@ function renderLogin() {
       <!-- Form area (right) -->
       <div class="flex-1 flex items-center justify-center p-6 sm:p-10">
         <div class="login-card w-full max-w-md">
-          <img src="logo/caspaa-coral.svg" alt="CASPAA" class="lg:hidden h-8 w-auto mx-auto mb-8" onerror="this.remove()" />
+          <img src="logo/caspaa-green.svg" alt="CASPAA" class="lg:hidden h-8 w-auto mx-auto mb-8" onerror="this.remove()" />
 
         <!-- Login card (identifier-first, two-step) -->
         <div class="bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-6 sm:p-8">

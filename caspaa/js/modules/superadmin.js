@@ -45,10 +45,10 @@ function view_sa_dashboard() {
         new ApexCharts(el1, {
           chart: { type: 'area', height: 250, width: '100%', parentHeightOffset: 0, toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'Figtree, system-ui, sans-serif', animations: { enabled: true, easing: 'easeinout', speed: 700 } },
           series: [{ name: 'MRR', data: [1500000, 1800000, 2100000, 2500000, 2900000, mrr] }],
-          colors: ['#fd5f54'],
+          colors: ['#00b386'],
           stroke: { curve: 'smooth', width: 3, lineCap: 'round' },
           fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.02, stops: [0, 95, 100] } },
-          markers: { size: 0, colors: ['#fd5f54'], strokeColors: '#fff', strokeWidth: 2, hover: { size: 6 } },
+          markers: { size: 0, colors: ['#00b386'], strokeColors: '#fff', strokeWidth: 2, hover: { size: 6 } },
           dataLabels: { enabled: false },
           grid: { borderColor: '#eef2f6', strokeDashArray: 4, xaxis: { lines: { show: false } }, padding: { top: 4, right: 14, bottom: 0, left: 6 } },
           xaxis: { categories: ['Jul','Aug','Sep','Oct','Nov','Dec'], axisBorder: { show: false }, axisTicks: { show: false }, tooltip: { enabled: false }, labels: { style: { colors: '#94a3b8', fontSize: '12px', fontWeight: 500 } } },
@@ -108,7 +108,7 @@ function view_sa_dashboard() {
   return `
     <div class="space-y-5">
       <!-- HERO: single big metric, everything else secondary -->
-      <div class="bg-brand-900 rounded-2xl p-6 lg:p-8 text-white">
+      <div class="bg-navy-900 rounded-2xl p-6 lg:p-8 text-white">
         <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
             <p class="text-brand-200 text-sm">Welcome back, ${AUTH.current.name.split(' ')[0]}</p>
@@ -332,7 +332,7 @@ function viewSchoolDetail(schoolId) {
 
   const subscriptionTab = `
     <div class="space-y-4">
-      <div class="bg-brand-700 text-white rounded-2xl p-4">
+      <div class="bg-navy-800 text-white rounded-2xl p-4">
         <div class="flex items-center justify-between">
           <div>
             <div class="text-xs text-brand-200 uppercase font-semibold">Current Plan</div>
@@ -815,8 +815,8 @@ function downloadSchoolInvoice(invoiceId) {
   const s = DB.find('schools', inv.schoolId);
   const html = `
     <div style="max-width:680px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #fd5f54;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#fd5f54">CASPAA</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#00b386">CASPAA</h1>
         <p style="margin:4px 0;color:#666;font-size:13px">School Operating System · Lagos, Nigeria</p>
         <h2 style="margin:14px 0 4px;font-size:18px">SUBSCRIPTION INVOICE</h2>
       </div>
@@ -1056,7 +1056,7 @@ function renderLoanAnalyticsTab() {
     const c1 = document.getElementById('loanAnaChart1');
     if (c1) new Chart(c1, {
       type: 'doughnut',
-      data: { labels: Object.keys(buckets), datasets: [{ data: Object.values(buckets), backgroundColor: ['#fd5f54', '#10b981', '#f59e0b', '#dc2626'], borderWidth: 0 }] },
+      data: { labels: Object.keys(buckets), datasets: [{ data: Object.values(buckets), backgroundColor: ['#00b386', '#10b981', '#f59e0b', '#dc2626'], borderWidth: 0 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
     });
     const c2 = document.getElementById('loanAnaChart2');
@@ -1192,7 +1192,7 @@ function renderBusinessTab(dateFrom, dateTo) {
       type: 'bar',
       data: {
         labels: ['Lekki', 'Ikoyi', 'Ikeja', 'VI', 'Magodo', 'Festac'],
-        datasets: [{ label: 'Schools', data: [3, 2, 2, 1, 1, 1], backgroundColor: '#fd5f54', borderRadius: 6 }]
+        datasets: [{ label: 'Schools', data: [3, 2, 2, 1, 1, 1], backgroundColor: '#00b386', borderRadius: 6 }]
       },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
@@ -1290,7 +1290,7 @@ function renderUsageTab(dateFrom, dateTo) {
     const c1 = document.getElementById('usageChart1');
     if (c1) new Chart(c1, {
       type: 'line',
-      data: { labels: days.map(d => fdate(d, { short: true })), datasets: [{ label: 'DAU', data: dauByDay, borderColor: '#fd5f54', backgroundColor: 'rgba(253,95,84,0.15)', tension: 0.35, fill: true, borderWidth: 2 }] },
+      data: { labels: days.map(d => fdate(d, { short: true })), datasets: [{ label: 'DAU', data: dauByDay, borderColor: '#00b386', backgroundColor: 'rgba(0, 179, 134,0.15)', tension: 0.35, fill: true, borderWidth: 2 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
     const c2 = document.getElementById('usageChart2');
