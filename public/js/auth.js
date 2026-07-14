@@ -339,11 +339,8 @@ function renderLogin() {
   return `
     <div class="login-bg min-h-screen flex">
 
-      <!-- Hero panel (left) — public portal over the brand hero image -->
+      <!-- Hero panel (left) — public portal on a solid CASPAA Green field -->
       <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12">
-        <img src="logo/login-hero.png" alt="" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
-        <div class="absolute inset-0 bg-navy-800/80"></div>
-
         <div class="relative text-white">
           <div class="flex items-center gap-3 mb-8">
             <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-8 w-auto" onerror="this.remove()" />
@@ -916,9 +913,9 @@ function showOTPScreen(account) {
   document.getElementById('app').innerHTML = `
     <div class="login-bg min-h-screen flex">
 
-      <!-- Hero image panel (left) -->
-      <div class="login-hero hidden lg:block lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0">
-        <img src="logo/login-hero.png" alt="CASPAA" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />
+      <!-- Hero panel (left) — solid CASPAA Green -->
+      <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12">
+        <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-8 w-auto" onerror="this.remove()" />
       </div>
 
       <!-- Verification card (right) -->

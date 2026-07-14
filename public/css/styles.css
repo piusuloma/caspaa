@@ -184,7 +184,7 @@ select.input option { color: #0f172a; }
 
 /* Login screen — hero image (left) + form card (right) */
 .login-bg { background: var(--soft-white); }
-.login-hero { background: var(--navy-800); }
+.login-hero { background: var(--brand-800); }
 .login-card .input:focus { border-color: var(--brand-600); box-shadow: 0 0 0 3px var(--brand-ring); }
 
 /* Spinner */
