@@ -2296,6 +2296,7 @@ function exportSchemePDF(schemeId) {
 }
 
 function view_adm_finance_hub() {
+  if (!schoolVerified()) return financeLockedPanel();
   return buildHub('Finance', 'Fees, invoices, expenses, payroll, reports', [
     { key: 'overview',  label: 'Overview',      view: 'view_fin_cost_center' },
     { key: 'fees',      label: 'Fee Structure', view: 'view_fin_fees' },
@@ -2541,6 +2542,459 @@ function viewConsentResponses(formId) {
 }
 
 /* ---------- Dashboard ---------- */
+/* ============================================================
+   SCHOOL ONBOARDING / GETTING-STARTED WIZARD
+   Industry-standard setup checklist a school completes after
+   being onboarded on the platform: branding → classes →
+   INVITE STAFF → fees → students. Reachable at view key
+   'adm_onboarding'; surfaced via a dashboard banner until done.
+   ============================================================ */
+
+// The setup steps + live "done" state derived from real DB data.
+function schoolOnboardingSteps() {
+  const sid = currentSchoolId();
+  const school = DB.find('schools', sid) || {};
+  const branding = school.branding || {};
+  return [
+    {
+      key: 'profile', icon: 'building',
+      title: 'School profile & branding',
+      desc: 'Add your school name, logo initials, colours and motto so CASPAA looks like your school.',
+      done: !!branding.logoText,
+      cta: 'Set up branding', action: 'onbBrandingModal()'
+    },
+    {
+      key: 'academic', icon: 'classes',
+      title: 'Set up classes & terms',
+      desc: 'Create your class arms and confirm the current academic term.',
+      done: DB.query('classes', c => c.schoolId === sid).length > 0,
+      cta: 'Go to Academic', action: "APP.go('adm_academic')"
+    },
+    {
+      key: 'staff', icon: 'teacher', primary: true,
+      title: 'Invite your staff',
+      desc: 'Send email invitations to teachers and administrators. Each sets their own password on first login.',
+      done: DB.query('teachers', t => t.schoolId === sid).length > 0,
+      cta: 'Invite staff', action: 'onbScrollToInvite()'
+    },
+    {
+      key: 'fees', icon: 'fees',
+      title: 'Create your fee structure',
+      desc: 'Define tuition and other charges per class so invoices can be generated.',
+      done: DB.query('feeStructures', f => f.schoolId === sid).length > 0,
+      cta: 'Set up fees', action: "APP.go('adm_finance_hub')"
+    },
+    {
+      key: 'students', icon: 'students',
+      title: 'Add students & families',
+      desc: "Enrol students to start tracking attendance, results and fees. Enrolling a child automatically creates the parent's login and sends their welcome message — students sign in with their admission number.",
+      done: DB.query('students', s => s.schoolId === sid).length > 0,
+      cta: 'Add students', action: "APP.go('adm_people')"
+    }
+  ];
+}
+
+// Progress ring (SVG). theme 'dark' for coloured hero, 'light' for cards.
+function onbRing(pct, size = 72, theme = 'light') {
+  const r = (size / 2) - 6;
+  const c = 2 * Math.PI * r;
+  const off = c * (1 - pct / 100);
+  const track = theme === 'dark' ? 'rgba(255,255,255,0.25)' : '#e2e8f0';
+  const fill  = theme === 'dark' ? '#ffffff' : '#059669';
+  const txt   = theme === 'dark' ? '#ffffff' : '#0f172a';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="flex-shrink-0">
+    <g transform="rotate(-90 ${size / 2} ${size / 2})">
+      <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${track}" stroke-width="6"/>
+      <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${fill}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>
+    </g>
+    <text x="${size / 2}" y="${size / 2}" text-anchor="middle" dominant-baseline="central" style="font-size:${(size * 0.26).toFixed(0)}px;font-weight:800;fill:${txt}">${pct}%</text>
+  </svg>`;
+}
+
+// One editable invite row. Uses classes (not ids) so rows can repeat.
+function onbInviteRowHtml() {
+  const roles = DB.query('schoolRoles', r => r.schoolId === currentSchoolId() && r.name !== 'Proprietor' && r.name !== 'Parent');
+  const types = ['Academic', 'Finance', 'Administration', 'Operations', 'ICT', 'Transport'];
+  return `<div class="onb-invite-row grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+    <input class="onb-name input sm:col-span-3" placeholder="Full name" />
+    <input class="onb-email input sm:col-span-4" type="email" placeholder="email@school.ng" />
+    <select class="onb-type input sm:col-span-2">${types.map(t => `<option>${t}</option>`).join('')}</select>
+    <select class="onb-role input sm:col-span-2">${roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('')}</select>
+    <button type="button" class="btn btn-ghost sm:col-span-1 !p-2 text-slate-400 hover:text-rose-600" title="Remove row" onclick="onbRemoveRow(this)">${icon('x', 'w-4 h-4')}</button>
+  </div>`;
+}
+
+function onbAddInviteRow() {
+  document.getElementById('onbInviteRows').insertAdjacentHTML('beforeend', onbInviteRowHtml());
+}
+
+function onbRemoveRow(btn) {
+  const rows = document.querySelectorAll('#onbInviteRows .onb-invite-row');
+  const row = btn.closest('.onb-invite-row');
+  if (rows.length > 1) { row.remove(); }
+  else { row.querySelectorAll('input').forEach(i => i.value = ''); }
+}
+
+function onbScrollToInvite() {
+  const el = document.getElementById('onbInvitePanel');
+  if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); el.querySelector('.onb-name')?.focus(); }
+}
+
+// Paste "Name, email" lines → prefilled rows for review.
+function onbParseBulk() {
+  const ta = document.getElementById('onbBulkText');
+  const lines = (ta.value || '').split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) { toast('Paste at least one line first', 'danger'); return; }
+  const container = document.getElementById('onbInviteRows');
+  let added = 0;
+  lines.forEach(line => {
+    const parts = line.split(/[,\t;]+/).map(p => p.trim()).filter(Boolean);
+    const name = parts[0] || '';
+    const email = parts.find(p => p.includes('@')) || parts[1] || '';
+    if (!name) return;
+    container.insertAdjacentHTML('beforeend', onbInviteRowHtml());
+    const row = container.lastElementChild;
+    row.querySelector('.onb-name').value = name;
+    row.querySelector('.onb-email').value = email;
+    added++;
+  });
+  ta.value = '';
+  if (added) toast(`${added} row${added > 1 ? 's' : ''} added — review and send`, 'success');
+}
+
+function onbSendInvites() {
+  const sid = currentSchoolId();
+  const roles = DB.query('schoolRoles', r => r.schoolId === sid);
+  const rows = Array.from(document.querySelectorAll('#onbInviteRows .onb-invite-row'));
+  const filled = rows.filter(r => r.querySelector('.onb-name').value.trim() || r.querySelector('.onb-email').value.trim());
+  if (!filled.length) { toast('Add at least one teammate to invite', 'danger'); return; }
+
+  const invites = [];
+  for (const row of filled) {
+    const name = row.querySelector('.onb-name').value.trim();
+    const email = row.querySelector('.onb-email').value.trim();
+    if (!name || !email) { toast('Each invite needs both a name and an email', 'danger'); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast(`"${email}" is not a valid email`, 'danger'); return; }
+    invites.push({ name, email, staffType: row.querySelector('.onb-type').value, roleId: row.querySelector('.onb-role').value });
+  }
+
+  invites.forEach(inv => {
+    const roleObj = roles.find(r => r.id === inv.roleId);
+    const roleName = roleObj ? roleObj.name : (inv.staffType === 'Academic' ? 'Teacher' : inv.staffType);
+    const tempPassword = 'Caspaa' + Math.floor(Math.random() * 9000 + 1000);
+    DB.insert('teachers', {
+      id: uid('tch'), schoolId: sid,
+      name: inv.name, email: inv.email, phone: '',
+      staffType: inv.staffType, role: roleName, roleId: inv.roleId || null,
+      subjects: [], subjectsManual: [], classes: [],
+      salary: 0, hireDate: today(), dob: '',
+      bank: null, documents: {},
+      permissions: ['attendance', 'results', 'assignments', 'messaging', 'lesson_plans'],
+      invitation: { username: inv.email, tempPassword, sentAt: now(), accepted: false, channels: ['email'] }
+    });
+    DB.insert('auditLog', { id: uid('aud'), schoolId: sid, actor: AUTH.current.id, action: 'staff_invited', target: inv.name, timestamp: now() });
+  });
+  toast(`${invites.length} invitation${invites.length > 1 ? 's' : ''} sent`, 'success');
+  APP.render();
+}
+
+function onbResend(staffId) {
+  const t = DB.find('teachers', staffId);
+  if (!t) return;
+  DB.update('teachers', staffId, { invitation: { ...(t.invitation || {}), sentAt: now(), accepted: false } });
+  toast(`Invitation resent to ${t.name.split(' ')[0]}`, 'success');
+}
+
+function onbBrandingModal() {
+  const sid = currentSchoolId();
+  const school = DB.find('schools', sid) || {};
+  const b = school.branding || {};
+  modal({
+    title: 'School Profile & Branding',
+    size: 'lg',
+    body: `
+      <div class="space-y-3">
+        <div><label class="input-label">School Name *</label><input id="ob_name" class="input" value="${school.name || DB.settings().schoolName || ''}" placeholder="e.g. Bright Lights Academy" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Logo Initials</label><input id="ob_logo" class="input uppercase" maxlength="4" value="${b.logoText || ''}" placeholder="e.g. BLA" /></div>
+          <div><label class="input-label">Primary Colour</label><input id="ob_color" type="color" class="input h-11 p-1" value="${b.primaryColor || '#047857'}" /></div>
+        </div>
+        <div><label class="input-label">Motto</label><input id="ob_motto" class="input" value="${b.motto || ''}" placeholder="e.g. Light the way to knowledge" /></div>
+        <div><label class="input-label">Address</label><input id="ob_addr" class="input" value="${school.address || ''}" placeholder="School address" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Phone</label><input id="ob_phone" class="input" value="${school.phone || ''}" /></div>
+          <div><label class="input-label">Contact Email</label><input id="ob_email" type="email" class="input" value="${school.email || ''}" /></div>
+        </div>
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="onbSaveBranding()">${icon('check', 'w-4 h-4')} Save</button>`
+  });
+}
+
+function onbSaveBranding() {
+  const sid = currentSchoolId();
+  const school = DB.find('schools', sid);
+  const name = document.getElementById('ob_name').value.trim();
+  if (!name) { toast('School name is required', 'danger'); return; }
+  const patch = {
+    name,
+    address: document.getElementById('ob_addr').value.trim(),
+    phone: document.getElementById('ob_phone').value.trim(),
+    email: document.getElementById('ob_email').value.trim(),
+    branding: {
+      ...(school && school.branding ? school.branding : {}),
+      logoText: document.getElementById('ob_logo').value.trim().toUpperCase(),
+      primaryColor: document.getElementById('ob_color').value,
+      motto: document.getElementById('ob_motto').value.trim()
+    }
+  };
+  if (school) DB.update('schools', sid, patch);
+  DB.settings({ schoolName: name });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: sid, actor: AUTH.current.id, action: 'branding_updated', target: name, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  toast('School profile saved', 'success');
+  APP.render();
+}
+
+// Dashboard banner / slim resume bar. Returns '' when complete.
+function onboardingBanner() {
+  if (!['schooladmin', 'principal'].includes(AUTH.current.role)) return '';
+  const steps = schoolOnboardingSteps();
+  const done = steps.filter(s => s.done).length;
+  const pct = Math.round(done / steps.length * 100);
+  if (pct === 100) return '';
+  if (DB.settings().onboardingDismissed) {
+    return `<div class="flex items-center justify-between gap-2 text-sm bg-white border border-slate-200 rounded-xl px-4 py-2">
+      <span class="text-slate-500">School setup ${pct}% complete</span>
+      <button class="text-brand-700 font-semibold" onclick="onbReopen()">Resume setup →</button>
+    </div>`;
+  }
+  const next = steps.find(s => !s.done);
+  return `<div class="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-white p-4 lg:p-5">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+      <div class="flex items-center gap-3 flex-1 min-w-0">
+        ${onbRing(pct, 56)}
+        <div class="min-w-0">
+          <div class="font-bold text-slate-900">Finish setting up your school</div>
+          <div class="text-sm text-slate-500">${done} of ${steps.length} steps done${next ? ` · Next: <span class="font-semibold text-slate-700">${next.title}</span>` : ''}</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-primary" onclick="APP.go('adm_onboarding')">Continue setup ${icon('arrow_left', 'w-4 h-4 rotate-180')}</button>
+        <button class="btn btn-ghost !px-2 text-slate-400" title="Hide setup guide" onclick="onbDismiss()">${icon('x', 'w-4 h-4')}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function onbDismiss() { DB.settings({ onboardingDismissed: true }); APP.render(); }
+function onbReopen() { DB.settings({ onboardingDismissed: false }); APP.go('adm_onboarding'); }
+
+// The full-page wizard.
+function view_adm_onboarding() {
+  const sid = currentSchoolId();
+  const school = DB.find('schools', sid) || {};
+  const schoolName = school.name || DB.settings().schoolName || 'your school';
+  const steps = schoolOnboardingSteps();
+  const done = steps.filter(s => s.done).length;
+  const pct = Math.round(done / steps.length * 100);
+  const complete = done === steps.length;
+  const invited = DB.query('teachers', t => t.schoolId === sid && t.invitation);
+
+  return `
+  <div class="max-w-4xl mx-auto space-y-5">
+
+    <div class="bg-gradient-to-br from-brand-700 to-brand-900 rounded-2xl p-6 lg:p-8 text-white">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-5">
+        ${onbRing(pct, 84, 'dark')}
+        <div class="flex-1 min-w-0">
+          <p class="text-brand-200 text-sm">Getting started</p>
+          <h1 class="text-2xl lg:text-3xl font-extrabold mt-0.5">${complete ? `${schoolName} is ready 🎉` : `Set up ${schoolName}`}</h1>
+          <p class="text-brand-100 text-sm mt-1">${complete ? 'Every step is complete. You can revisit any of these settings anytime.' : `${done} of ${steps.length} steps complete — finish these to go live.`}</p>
+        </div>
+        <button class="btn btn-secondary bg-white/10 border-white/30 text-white hover:bg-white/20 flex-shrink-0" onclick="APP.go('adm_dashboard')">${complete ? 'Go to dashboard' : 'Skip for now'}</button>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      ${steps.map((s, i) => `
+        <div class="card p-4 flex items-start gap-4 ${s.primary && !s.done ? 'ring-2 ring-brand-300' : ''}">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${s.done ? 'bg-emerald-100 text-emerald-600' : 'bg-brand-50 text-brand-700'}">
+            ${s.done ? icon('check', 'w-5 h-5') : icon(s.icon, 'w-5 h-5')}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-400">STEP ${i + 1}</span>
+              ${s.done ? '<span class="badge badge-success">Done</span>' : (s.primary ? '<span class="badge badge-info">Recommended next</span>' : '')}
+            </div>
+            <div class="font-bold text-slate-900 mt-0.5">${s.title}</div>
+            <div class="text-sm text-slate-500">${s.desc}</div>
+          </div>
+          <button class="btn ${s.done ? 'btn-secondary' : 'btn-primary'} flex-shrink-0 self-center" onclick="${s.action}">${s.done ? 'Review' : s.cta}</button>
+        </div>
+      `).join('')}
+    </div>
+
+    <div id="onbInvitePanel" class="card p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center flex-shrink-0">${icon('teacher', 'w-5 h-5')}</div>
+        <div>
+          <h3 class="font-bold text-slate-900">Invite your team</h3>
+          <p class="text-xs text-slate-500">Each teammate gets an email invite and sets their own password on first login.</p>
+        </div>
+      </div>
+
+      <div class="hidden sm:grid sm:grid-cols-12 gap-2 mt-4 px-1 text-xs font-semibold uppercase text-slate-400">
+        <div class="sm:col-span-3">Full name</div>
+        <div class="sm:col-span-4">Email</div>
+        <div class="sm:col-span-2">Staff type</div>
+        <div class="sm:col-span-2">Role</div>
+        <div class="sm:col-span-1"></div>
+      </div>
+      <div id="onbInviteRows" class="space-y-2 mt-2">
+        ${onbInviteRowHtml()}
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 mt-3">
+        <button class="btn btn-secondary !py-1.5" onclick="onbAddInviteRow()">${icon('plus', 'w-4 h-4')} Add another</button>
+        <button class="btn btn-primary !py-1.5 ml-auto" onclick="onbSendInvites()">${icon('send', 'w-4 h-4')} Send invitations</button>
+      </div>
+
+      <details class="mt-3 bg-slate-50 rounded-xl">
+        <summary class="cursor-pointer p-3 text-sm font-semibold text-slate-700">Bulk invite — paste a list</summary>
+        <div class="p-3 pt-0 space-y-2">
+          <p class="text-xs text-slate-500">One per line: <code>Full name, email</code></p>
+          <textarea id="onbBulkText" rows="4" class="input font-mono text-xs" placeholder="Funke Adeyemi, funke@school.ng&#10;John Okoro, john@school.ng"></textarea>
+          <button class="btn btn-secondary !py-1.5" onclick="onbParseBulk()">${icon('plus', 'w-4 h-4')} Add these rows</button>
+        </div>
+      </details>
+
+      ${invited.length ? `
+        <div class="mt-5 border-t border-slate-100 pt-4">
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-2">${invited.length} on your team</div>
+          <div class="space-y-2">
+            ${invited.map(t => `
+              <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl">
+                ${avatar(t.name, 'sm')}
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm text-slate-900 truncate">${t.name}</div>
+                  <div class="text-xs text-slate-500 truncate">${t.email || 'No email'} · ${t.role || t.staffType || 'Staff'}</div>
+                </div>
+                ${t.invitation && t.invitation.accepted
+                  ? '<span class="badge badge-success">Joined</span>'
+                  : `<span class="badge badge-warn">Invite sent</span><button class="btn btn-ghost !p-1.5 text-brand-700" title="Resend invitation" onclick="onbResend('${t.id}')">${icon('send', 'w-4 h-4')}</button>`}
+              </div>`).join('')}
+          </div>
+        </div>` : ''}
+    </div>
+
+  </div>`;
+}
+
+/* ============================================================
+   SCHOOL VERIFICATION GATE (self-signup schools)
+   Established/seeded schools have no `verification` field and are
+   always treated as verified. Self-signup schools start 'unverified';
+   money features stay locked until the CASPAA team approves KYC.
+   ============================================================ */
+function schoolVerification() {
+  const s = DB.find('schools', currentSchoolId());
+  return s && s.verification ? s.verification : null;
+}
+function schoolVerified() {
+  const v = schoolVerification();
+  return !v || v.status === 'verified';
+}
+
+function verificationBanner() {
+  if (!['schooladmin', 'principal'].includes(AUTH.current.role)) return '';
+  const v = schoolVerification();
+  if (!v || v.status === 'verified') return '';
+
+  if (v.status === 'pending') {
+    return `<div class="rounded-2xl border border-blue-200 bg-blue-50 p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">${icon('search', 'w-5 h-5')}</div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-blue-900">Verification under review</div>
+        <div class="text-sm text-blue-700">We're reviewing your documents. Payments and fee financing unlock once approved — usually within 1 business day.</div>
+      </div>
+    </div>`;
+  }
+
+  const rejected = v.status === 'rejected';
+  const tone = rejected ? 'rose' : 'amber';
+  return `<div class="rounded-2xl border border-${tone}-200 bg-${tone}-50 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-${tone}-100 text-${tone}-700 flex items-center justify-center flex-shrink-0">${icon('bell', 'w-5 h-5')}</div>
+    <div class="flex-1 min-w-0">
+      <div class="font-bold text-${tone}-900">${rejected ? 'Verification needs attention' : 'Verify your school to go live'}</div>
+      <div class="text-sm text-${tone}-800">${rejected
+        ? (v.reason ? 'Reason: ' + v.reason : 'Your submission was declined. Please review and resubmit.')
+        : 'You are on a trial. Submit your CAC, ID and bank details to unlock parent payments and fee financing.'}</div>
+    </div>
+    <button class="btn btn-primary flex-shrink-0" onclick="startVerificationModal()">${rejected ? 'Resubmit' : 'Start verification'}</button>
+  </div>`;
+}
+
+function startVerificationModal() {
+  const s = DB.find('schools', currentSchoolId()) || {};
+  const k = s.kyc || {};
+  const b = s.bank || {};
+  modal({
+    title: 'Verify your school',
+    size: 'lg',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">Verification unlocks parent payments, remittances and fee financing. Your details are reviewed by the CASPAA team.</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">CAC Registration No. *</label><input id="vf_reg" class="input" value="${k.regNumber && k.regNumber !== 'Pending' ? k.regNumber : ''}" placeholder="e.g. RC-228491" /></div>
+          <div><label class="input-label">Proprietor NIN *</label><input id="vf_nin" class="input" value="${k.ownerNIN || ''}" placeholder="11-digit NIN" /></div>
+        </div>
+        <div><label class="input-label">Accreditation Body</label><input id="vf_accred" class="input" value="${k.accreditation && k.accreditation !== 'Pending' ? k.accreditation : ''}" placeholder="e.g. Lagos State Ministry of Education" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label">Settlement Bank *</label><input id="vf_bank" class="input" value="${b.name || ''}" placeholder="e.g. GTBank" /></div>
+          <div><label class="input-label">Account Number *</label><input id="vf_acct" class="input" value="${b.account || ''}" placeholder="10-digit NUBAN" /></div>
+        </div>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="vf_cac" ${k.cacUploaded ? 'checked' : ''} /> CAC certificate uploaded (simulated)</label>
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveVerification()">${icon('check', 'w-4 h-4')} Submit for review</button>`
+  });
+}
+
+function saveVerification() {
+  const sid = currentSchoolId();
+  const reg = document.getElementById('vf_reg').value.trim();
+  const nin = document.getElementById('vf_nin').value.trim();
+  const bank = document.getElementById('vf_bank').value.trim();
+  const acct = document.getElementById('vf_acct').value.trim();
+  if (!reg || !nin || !bank || !acct) { toast('CAC number, NIN, bank and account are required', 'danger'); return; }
+  const s = DB.find('schools', sid) || {};
+  DB.update('schools', sid, {
+    kyc: { ...(s.kyc || {}), regNumber: reg, ownerNIN: nin, accreditation: document.getElementById('vf_accred').value.trim() || 'Pending', cacUploaded: document.getElementById('vf_cac').checked },
+    bank: { name: bank, account: acct },
+    verification: { status: 'pending', submittedAt: now() }
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: sid, actor: AUTH.current.id, action: 'verification_submitted', target: s.name || sid, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  toast("Submitted for review — we'll notify you once approved", 'success');
+  APP.render();
+}
+
+// Lock screen shown in place of the Finance hub until the school is verified.
+function financeLockedPanel() {
+  const v = schoolVerification();
+  const pending = v && v.status === 'pending';
+  return `${pageHeader({ title: 'Finance', subtitle: 'Fees, invoices, expenses, payroll, reports' })}
+    <div class="card p-8 text-center max-w-xl mx-auto">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-${pending ? 'blue' : 'amber'}-100 text-${pending ? 'blue' : 'amber'}-700 flex items-center justify-center mb-4">${icon(pending ? 'search' : 'fees', 'w-8 h-8')}</div>
+      <h3 class="text-lg font-bold text-slate-900">${pending ? 'Verification under review' : 'Payments locked until you verify'}</h3>
+      <p class="text-sm text-slate-500 mt-2 max-w-md mx-auto">${pending
+        ? 'Your documents are being reviewed. Finance, payments and fee financing unlock once your school is approved.'
+        : 'To collect parent payments, remit funds and access fee financing, verify your school with CASPAA. It only takes a minute.'}</p>
+      ${pending ? '' : `<button class="btn btn-primary mt-4" onclick="startVerificationModal()">${icon('check', 'w-4 h-4')} Start verification</button>`}
+    </div>`;
+}
+
 function view_adm_dashboard() {
   const schoolId = currentSchoolId();
   const students = DB.query('students', s => s.schoolId === schoolId);
@@ -2599,6 +3053,9 @@ function view_adm_dashboard() {
 
   return `
     <div class="space-y-5">
+      ${verificationBanner()}
+      ${onboardingBanner()}
+      ${typeof enquiriesBanner === 'function' ? enquiriesBanner() : ''}
       <div class="bg-brand-700 rounded-2xl p-5 lg:p-6 text-white">
         <div class="flex items-center justify-between">
           <div>

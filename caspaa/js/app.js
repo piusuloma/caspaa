@@ -26,6 +26,8 @@ const APP = {
       schooladmin: [
         { key: 'adm_dashboard',     label: 'Dashboard',         icon: 'dashboard' },
         { key: 'adm_people',        label: 'Students',          icon: 'students' },
+        { key: 'adm_admissions',    label: 'Admissions',        icon: 'students' },
+        { key: 'adm_frontdesk',     label: 'Front Desk',        icon: 'bell' },
         { key: 'adm_workforce',     label: 'Staff & HR',        icon: 'teacher' },
         { key: 'adm_academic',      label: 'Academic',          icon: 'classes' },
         { key: 'adm_finance_hub',   label: 'Finance',           icon: 'fees' },
@@ -45,6 +47,8 @@ const APP = {
       principal: [
         { key: 'adm_dashboard',  label: 'Dashboard',      icon: 'dashboard' },
         { key: 'adm_people',     label: 'Students',       icon: 'students' },
+        { key: 'adm_admissions', label: 'Admissions',     icon: 'students' },
+        { key: 'adm_frontdesk',  label: 'Front Desk',     icon: 'bell' },
         { key: 'adm_workforce',  label: 'Staff & HR',     icon: 'teacher' },
         { key: 'adm_academic',   label: 'Academic',       icon: 'classes' },
         { key: 'adm_reports',    label: 'Reports',        icon: 'reports' },
@@ -154,6 +158,16 @@ const APP = {
       bindLoginHandlers();
       initDatePickers();
       return;
+    }
+
+    // Gate: a self-registered school proprietor gets no dashboard access
+    // until CASPAA verifies their documents (hybrid-gated onboarding).
+    if (typeof pendingVerificationGate === 'function') {
+      const gated = pendingVerificationGate();
+      if (gated) {
+        document.getElementById('app').innerHTML = renderVerificationPending(gated);
+        return;
+      }
     }
 
     // Default view if none set
@@ -388,7 +402,9 @@ function showProfile() {
       </div>
 
       <div class="space-y-2 mt-3 pt-3 border-t border-slate-100">
+        ${['schooladmin','principal'].includes(u.role) ? `<button class="btn btn-secondary w-full justify-start" onclick="document.getElementById('modalBackdrop')?.click(); APP.go('adm_onboarding')">${icon('check','w-4 h-4')} School setup guide</button>` : ''}
         <button class="btn btn-secondary w-full justify-start" onclick="showLoginSessions()">${icon('user','w-4 h-4')} Active sessions &amp; security</button>
+        <button class="btn btn-secondary w-full justify-start" onclick="caspaaInstallApp()">${icon('package', 'w-4 h-4')} Install CASPAA app</button>
         <button class="btn btn-secondary w-full justify-start" onclick="resetDemo()">${icon('settings', 'w-4 h-4')} Reset demo data</button>
         <button class="btn btn-danger w-full justify-start" onclick="document.getElementById('modalBackdrop')?.click(); AUTH.logout()">${icon('logout', 'w-4 h-4')} Sign out</button>
       </div>
@@ -651,6 +667,26 @@ function showMobileMore() {
         </button>`).join('')}
       </div>
     `
+  });
+}
+
+/* ---------- PWA install (uses the beforeinstallprompt captured in pages/index.js) ---------- */
+function caspaaInstallApp() {
+  const promptEvent = window.__caspaaInstallPrompt;
+  if (!promptEvent) {
+    // Already installed, unsupported browser, or criteria not yet met.
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+      toast('CASPAA is already installed on this device.', 'info');
+    } else {
+      toast('Install isn\'t available yet — use your browser\'s "Install app" / "Add to Home screen" option.', 'info');
+    }
+    return;
+  }
+  document.getElementById('modalBackdrop')?.click();
+  promptEvent.prompt();
+  promptEvent.userChoice.then((choice) => {
+    if (choice && choice.outcome === 'accepted') toast('Installing CASPAA…', 'success');
+    window.__caspaaInstallPrompt = null;
   });
 }
 

@@ -100,6 +100,8 @@ function view_sa_dashboard() {
   if (slaBreaching) needsAttention.push({ count: slaBreaching, label: `${slaBreaching} tickets at SLA risk`, sub: 'Escalate or reassign', view: 'sa_support', params: {}, tone: 'rose' });
   const kycPending = schools.filter(s => s.kyc && !s.kyc.cacUploaded).length;
   if (kycPending) needsAttention.push({ count: kycPending, label: `${kycPending} schools missing KYC docs`, sub: 'CAC certificate pending', view: 'sa_schools', params: {}, tone: 'amber' });
+  const pendingVerif = schools.filter(s => s.verification && s.verification.status === 'pending').length;
+  if (pendingVerif) needsAttention.push({ count: pendingVerif, label: `${pendingVerif} school${pendingVerif !== 1 ? 's' : ''} awaiting verification`, sub: 'Review KYC and approve to unlock payments', view: 'sa_schools', params: {}, tone: 'amber' });
 
   const platformRevenue = mrr + platformFees + interestRev;
 
@@ -317,6 +319,15 @@ function viewSchoolDetail(schoolId) {
         <div><div class="text-xs text-slate-500">Accreditation</div><div>${s.kyc.accreditation || '—'}</div></div>
       </div>
     </div>` : ''}
+    ${s.verification ? `<div class="mt-4 pt-4 border-t border-slate-100">
+      <h3 class="text-xs uppercase text-slate-500 font-semibold mb-2">Verification</h3>
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <span class="badge ${s.verification.status === 'verified' ? 'badge-success' : s.verification.status === 'pending' ? 'badge-info' : s.verification.status === 'rejected' ? 'badge-danger' : 'badge-warn'}">${s.verification.status}</span>
+        ${s.signupSource === 'self' ? '<span class="badge badge-neutral">Self-signup</span>' : ''}
+        ${s.bank ? `<span class="text-xs text-slate-500">${s.bank.name} · ${s.bank.account}</span>` : ''}
+      </div>
+      ${s.verification.reason ? `<div class="text-xs text-slate-500 mt-1">Reason: ${s.verification.reason}</div>` : ''}
+    </div>` : ''}
   `;
 
   const subscriptionTab = `
@@ -426,6 +437,10 @@ function viewSchoolDetail(schoolId) {
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click(); APP.params.schoolTab=null">Close</button>
+             ${s.verification && s.verification.status === 'pending'
+               ? `<button class="btn btn-danger" onclick="rejectSchoolVerification('${s.id}')">Reject</button>
+                  <button class="btn btn-primary" onclick="approveSchoolVerification('${s.id}')">${icon('check','w-4 h-4')} Approve &amp; Verify</button>`
+               : ''}
              ${s.status === 'suspended'
                ? `<button class="btn btn-primary" onclick="toggleSchoolStatus('${s.id}', 'active'); document.getElementById('modalBackdrop').click(); APP.params.schoolTab=null">Reactivate</button>`
                : `<button class="btn btn-danger" onclick="toggleSchoolStatus('${s.id}', 'suspended'); document.getElementById('modalBackdrop').click(); APP.params.schoolTab=null">Suspend</button>`}`
@@ -488,6 +503,48 @@ function toggleSchoolStatus(schoolId, status) {
   DB.update('schools', schoolId, { status });
   toast(`School ${status === 'active' ? 'reactivated' : 'suspended'}`);
   APP.render();
+}
+
+/* ---------- School verification review (approve / reject KYC) ---------- */
+function approveSchoolVerification(schoolId) {
+  const s = DB.find('schools', schoolId);
+  if (!s) return;
+  DB.update('schools', schoolId, {
+    verification: { ...(s.verification || {}), status: 'verified', verifiedAt: now(), verifiedBy: AUTH.current.id, reason: null }
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: 'platform', actor: AUTH.current.id, action: 'verified_school', target: s.name, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  APP.params.schoolTab = null;
+  APP.render();
+  toast(`${s.name} verified — payments & financing unlocked`, 'success');
+}
+
+function rejectSchoolVerification(schoolId) {
+  const s = DB.find('schools', schoolId);
+  if (!s) return;
+  modal({
+    title: 'Reject verification',
+    body: `<div class="space-y-2">
+      <p class="text-sm text-slate-600">Tell ${s.name} what needs fixing. They can resubmit.</p>
+      <textarea id="vrej_reason" rows="3" class="input" placeholder="e.g. CAC number does not match the uploaded certificate."></textarea>
+    </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-danger" onclick="confirmRejectVerification('${schoolId}')">Reject</button>`
+  });
+}
+
+function confirmRejectVerification(schoolId) {
+  const s = DB.find('schools', schoolId);
+  if (!s) return;
+  const reason = document.getElementById('vrej_reason').value.trim();
+  DB.update('schools', schoolId, {
+    verification: { ...(s.verification || {}), status: 'rejected', reason: reason || 'Details could not be verified.', reviewedAt: now() }
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: 'platform', actor: AUTH.current.id, action: 'rejected_verification', target: s.name, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  APP.params.schoolTab = null;
+  APP.render();
+  toast(`${s.name} verification rejected`, 'warn');
 }
 
 function onboardSchoolModal() {
