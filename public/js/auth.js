@@ -339,11 +339,8 @@ function renderLogin() {
   return `
     <div class="login-bg min-h-screen flex">
 
-      <!-- Hero panel (left) — public portal over the texture, tinted CASPAA Green -->
+      <!-- Hero panel (left) — public portal on a deep CASPAA Green field -->
       <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12">
-        <img src="logo/hero-texture.jpg" alt="" class="login-hero-img" onerror="this.remove()" />
-        <div class="login-hero-scrim"></div>
-
         <div class="relative text-white">
           <div class="flex items-center gap-3 mb-8">
             <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-8 w-auto" onerror="this.remove()" />
@@ -916,10 +913,8 @@ function showOTPScreen(account) {
   document.getElementById('app').innerHTML = `
     <div class="login-bg min-h-screen flex">
 
-      <!-- Hero panel (left) — texture tinted CASPAA Green -->
+      <!-- Hero panel (left) — deep CASPAA Green -->
       <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12">
-        <img src="logo/hero-texture.jpg" alt="" class="login-hero-img" onerror="this.remove()" />
-        <div class="login-hero-scrim"></div>
         <img src="logo/caspaa-white.svg" alt="CASPAA" class="relative h-8 w-auto" onerror="this.remove()" />
       </div>
 
