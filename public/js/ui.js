@@ -64,6 +64,7 @@ function initDatePickers() {
     window.flatpickr(el, {
       dateFormat: 'Y-m-d',
       altInput: true,
+      altInputClass: 'input fp-alt',
       altFormat: 'M j, Y',
       allowInput: true,
       disableMobile: true
