@@ -177,6 +177,112 @@ function saveTourBooking() {
   publicSuccess('Tour requested!', ref, `We've received your request for ${date} at ${time}. The school will confirm shortly by email or phone.`);
 }
 
+/* ---------- Book a Tour — full page (opened from the portal, not a modal) ---------- */
+function openTourPage() {
+  document.getElementById('modalBackdrop')?.click(); // close any open modal first
+  APP.publicView = 'tour';
+  APP.render();
+}
+
+function closeTourPage() {
+  APP.publicView = null;
+  APP.render();
+}
+
+function renderTourPage() {
+  const { schoolName } = publicSchoolContext();
+  const displayName = (typeof APP !== 'undefined' && APP.portalSchoolId && schoolName) ? schoolName : 'CASPAA';
+  return `
+    <div class="login-bg min-h-screen flex">
+
+      <!-- Hero panel (left) — CASPAA Blue field -->
+      <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12">
+        <div class="relative text-white">
+          <div class="flex items-center gap-3 mb-8">
+            <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-8 w-auto" onerror="this.remove()" />
+            ${displayName === 'CASPAA' ? '' : `<div class="pl-3 border-l border-white/25">
+              <h1 class="text-lg font-extrabold tracking-tight leading-tight">${displayName}</h1>
+              <p class="text-white/70 text-xs">Powered by CASPAA</p>
+            </div>`}
+          </div>
+
+          <h2 class="text-3xl xl:text-4xl font-extrabold leading-tight mb-2">
+            Come and see the school for yourself
+          </h2>
+          <p class="text-white/80 text-sm max-w-md mb-7">Book a visit at a time that suits you. Meet the team, walk the grounds and see how ${displayName === 'CASPAA' ? 'the school' : displayName} runs day to day. We'll confirm your slot and share directions.</p>
+
+          <div class="grid grid-cols-2 gap-3">
+            ${PORTAL_FEATURES.map(portalFeatureCard).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Form area (right) -->
+      <div class="flex-1 flex items-center justify-center p-6 sm:p-10 overflow-y-auto">
+        <div class="login-card w-full max-w-md">
+          <img src="logo/caspaa-navy.svg" alt="CASPAA" class="lg:hidden h-8 w-auto mx-auto mb-8" onerror="this.remove()" />
+
+          <button type="button" onclick="closeTourPage()" class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-4">
+            <span class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">${icon('arrow_left', 'w-4 h-4')}</span>
+            <span class="font-semibold text-slate-700">Back to sign in</span>
+          </button>
+
+          <div class="bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-6 sm:p-8">
+            <h3 class="text-2xl font-bold text-slate-900 leading-tight mb-1">Book a Tour${displayName === 'CASPAA' ? '' : ' · ' + displayName}</h3>
+            <p class="text-sm text-slate-500 mb-5">Pick a day and time to visit. All fields marked * are required.</p>
+
+            <div class="space-y-3">
+              <div><label class="input-label">Parent / Guardian Name *</label><input id="tr_name" class="input" placeholder="e.g. Mrs. Grace Bello" /></div>
+              <div><label class="input-label">Phone *</label><input id="tr_phone" class="input" placeholder="+234…" /></div>
+              <div><label class="input-label">Email *</label><input id="tr_email" type="email" class="input" placeholder="you@email.com" autocomplete="email" /></div>
+              <div class="grid grid-cols-2 gap-3">
+                <div><label class="input-label">Child's Name</label><input id="tr_child" class="input" placeholder="Optional" /></div>
+                <div><label class="input-label">Class of Interest</label>
+                  <select id="tr_class" class="input">${CLASS_LEVELS.map(c => `<option>${c}</option>`).join('')}</select>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div><label class="input-label">Preferred Date *</label><input id="tr_date" type="date" class="input" min="${today()}" /></div>
+                <div><label class="input-label">Preferred Time *</label>
+                  <select id="tr_time" class="input">${TOUR_SLOTS.map(s => `<option>${s}</option>`).join('')}</select>
+                </div>
+              </div>
+              <div><label class="input-label">Anything we should know?</label><textarea id="tr_note" class="input" rows="2" placeholder="Optional"></textarea></div>
+              <button class="btn btn-primary w-full !py-2.5" onclick="saveTourBookingPage()">${icon('calendar','w-4 h-4')} Request Tour</button>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-400 text-center mt-5">Prefer to talk first? Your school will confirm the slot by email or phone.</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveTourBookingPage() {
+  const g = id => (document.getElementById(id).value || '').trim();
+  const name = g('tr_name'), phone = g('tr_phone'), email = g('tr_email');
+  const date = g('tr_date'), time = g('tr_time');
+  if (!name || !phone || !email) { toast('Please fill your name, phone and email', 'danger'); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Enter a valid email', 'danger'); return; }
+  if (!date) { toast('Please choose a preferred date', 'danger'); return; }
+
+  const { schoolId } = publicSchoolContext();
+  const ref = publicRef('TOUR');
+  DB.insert('tourBookings', {
+    id: uid('tour'), ref, schoolId,
+    parentName: name, phone, email,
+    childName: g('tr_child'), classOfInterest: g('tr_class'),
+    date, time, note: g('tr_note'),
+    status: 'requested', createdAt: now()
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId, actor: email, action: 'tour_requested', target: name, timestamp: now() });
+  // Return to sign-in, then confirm.
+  APP.publicView = null;
+  APP.render();
+  publicSuccess('Tour requested!', ref, `We've received your request for ${date} at ${time}. The school will confirm shortly by email or phone.`);
+}
+
 /* ---------- Admissions application ---------- */
 function admissionsModal() {
   const { schoolName } = publicSchoolContext();
@@ -362,7 +468,7 @@ function renderLogin() {
           <div class="flex flex-wrap gap-2 mt-7">
             ${portalActionBtn('Admissions', 'students', 'admissionsModal()')}
             ${portalActionBtn('Careers', 'teacher', 'careersModal()')}
-            ${portalActionBtn('Book a Tour', 'calendar', 'bookTourModal()')}
+            ${portalActionBtn('Book a Tour', 'calendar', 'openTourPage()')}
           </div>
         </div>
       </div>
@@ -399,7 +505,7 @@ function renderLogin() {
               <div class="grid grid-cols-3 gap-2">
                 ${quickAccessBtn('Students', 'students', "selectLoginRole('student')")}
                 ${quickAccessBtn('Parents', 'user', "selectLoginRole('parent')")}
-                ${quickAccessBtn('Book Tour', 'calendar', 'bookTourModal()')}
+                ${quickAccessBtn('Book Tour', 'calendar', 'openTourPage()')}
               </div>
             </div>
 

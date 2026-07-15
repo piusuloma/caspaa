@@ -8,6 +8,8 @@ const APP = {
   view: 'dashboard',
   params: {},
   sidebarOpen: false,
+  // Public (logged-out) full-page view: null = sign-in, 'tour' = Book a Tour.
+  publicView: null,
 
   /* ---------- Navigation menus per role ---------- */
   navFor(role) {
@@ -154,6 +156,13 @@ const APP = {
   /* ---------- Master render ---------- */
   render() {
     if (!AUTH.isLoggedIn()) {
+      // Public full-page routes (no account needed) render instead of sign-in.
+      if (this.publicView === 'tour') {
+        document.getElementById('app').innerHTML = renderTourPage();
+        initDatePickers();
+        window.scrollTo(0, 0);
+        return;
+      }
       document.getElementById('app').innerHTML = renderLogin();
       bindLoginHandlers();
       initDatePickers();
