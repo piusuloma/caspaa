@@ -15,7 +15,7 @@
    Bump CACHE_VERSION on any deploy that must invalidate the old cache.
    ============================================================ */
 
-const CACHE_VERSION = 'caspaa-v2';
+const CACHE_VERSION = 'caspaa-v3';
 const SHELL_URL = '/';
 
 // Best-effort precache of the app shell so the very first offline load works.
@@ -63,12 +63,13 @@ self.addEventListener('fetch', (event) => {
   // Never cache Next.js HMR / dev websockets or API-ish calls.
   if (url.pathname.startsWith('/_next/webpack-hmr') || url.pathname.startsWith('/api/')) return;
 
-  // 0) Next.js build assets (/_next/…) → NETWORK-FIRST.
-  //    These filenames change every build (and every dev restart). Serving a
-  //    stale, cache-first copy across builds boots the wrong bundle and leaves
-  //    a blank page. Network-first keeps the current build correct online while
-  //    still falling back to cache when genuinely offline.
-  if (url.pathname.startsWith('/_next/')) {
+  // 0) Code that changes on every deploy → NETWORK-FIRST.
+  //    Covers Next.js build assets (/_next/…) AND the app's own /js and /css.
+  //    Cache-first here serves stale code after a deploy (old dashboards, old
+  //    login), so we go to the network first and only fall back to cache when
+  //    genuinely offline. The offline fallback ignores the ?v= cache-bust query
+  //    so a previously-cached copy still serves with no connection.
+  if (url.pathname.startsWith('/_next/') || url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/')) {
     event.respondWith(
       fetch(request)
         .then((res) => {
@@ -78,7 +79,7 @@ self.addEventListener('fetch', (event) => {
           }
           return res;
         })
-        .catch(() => caches.match(request))
+        .catch(() => caches.match(request, { ignoreSearch: true }))
     );
     return;
   }
