@@ -75,7 +75,7 @@ function Nav() {
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-3">
-          <a href="/login" className="text-sm font-semibold text-slate-600 hover:text-brand-700">
+          <a href="/signin" className="text-sm font-semibold text-slate-600 hover:text-brand-700">
             Sign in
           </a>
           <PrimaryButton href="/contact" className="px-4 py-2.5">Book a Demo</PrimaryButton>
@@ -95,7 +95,7 @@ function Nav() {
               {l.label}
             </Link>
           ))}
-          <a href="/login" className="py-1.5 font-semibold text-slate-700" onClick={() => setOpen(false)}>
+          <a href="/signin" className="py-1.5 font-semibold text-slate-700" onClick={() => setOpen(false)}>
             Sign in
           </a>
           <PrimaryButton href="/contact" className="mt-2">Book a Demo</PrimaryButton>
@@ -123,7 +123,7 @@ function Footer() {
         { label: 'Features', href: '/home#features' },
         { label: 'Security', href: '/home#security' },
         { label: 'FAQ', href: '/home#faq' },
-        { label: 'Sign in', href: '/login' },
+        { label: 'Sign in', href: '/signin' },
       ],
     },
   ]
@@ -144,7 +144,7 @@ function Footer() {
             <ul className="space-y-2 text-sm">
               {c.links.map((l) => (
                 <li key={l.label}>
-                  {l.href === '/login' ? (
+                  {l.href === '/signin' ? (
                     <a href={l.href} className="hover:text-white transition">{l.label}</a>
                   ) : (
                     <Link href={l.href} className="hover:text-white transition">{l.label}</Link>
