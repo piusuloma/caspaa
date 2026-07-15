@@ -75,7 +75,7 @@ function Nav() {
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-3">
-          <Link href="/" className="text-sm font-semibold text-slate-600 hover:text-brand-700">
+          <Link href="/login" className="text-sm font-semibold text-slate-600 hover:text-brand-700">
             Sign in
           </Link>
           <PrimaryButton href="/contact" className="px-4 py-2.5">Book a Demo</PrimaryButton>
@@ -95,6 +95,9 @@ function Nav() {
               {l.label}
             </Link>
           ))}
+          <Link href="/login" className="py-1.5 font-semibold text-slate-700" onClick={() => setOpen(false)}>
+            Sign in
+          </Link>
           <PrimaryButton href="/contact" className="mt-2">Book a Demo</PrimaryButton>
         </div>
       )}
@@ -120,7 +123,7 @@ function Footer() {
         { label: 'Features', href: '/home#features' },
         { label: 'Security', href: '/home#security' },
         { label: 'FAQ', href: '/home#faq' },
-        { label: 'Sign in', href: '/' },
+        { label: 'Sign in', href: '/login' },
       ],
     },
   ]
