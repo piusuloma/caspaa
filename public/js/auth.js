@@ -397,10 +397,7 @@ function renderLogin() {
               </div>
             </div>
 
-            <div class="mt-4 pt-4 border-t border-slate-100 text-center space-y-1.5">
-              <p class="text-sm text-slate-500">New school?
-                <button type="button" class="text-brand-700 font-semibold hover:text-brand-800" onclick="signupSchoolModal()">Sign up your school &rarr;</button>
-              </p>
+            <div class="mt-4 pt-4 border-t border-slate-100 text-center">
               <p class="text-xs text-slate-400">Prospective parent?
                 <button type="button" class="text-slate-500 font-medium hover:text-slate-700 underline" onclick="bookTourModal()">Book a tour</button>
                 or
