@@ -679,7 +679,7 @@ function signupSchoolModal() {
     title: 'Sign up your school',
     size: 'lg',
     body: `
-      <div class="space-y-3">
+      <div class="signup-form space-y-4">
         <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Register your school with your <strong>official school email</strong> and upload a verification document. To keep the platform secure, our team reviews every school before the dashboard is unlocked — usually within 1 business day.
         </div>
@@ -709,11 +709,11 @@ function signupSchoolModal() {
           </div>
           <div><label class="input-label">Confirm Password *</label><input id="su_pw2" type="password" class="input" placeholder="Repeat password" /></div>
         </div>
-        <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" id="su_terms" class="w-4 h-4 accent-brand-600" /> I agree to CASPAA's Terms and Privacy Policy</label>
+        <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" id="su_terms" class="w-5 h-5 accent-brand-600" /> I agree to CASPAA's Terms and Privacy Policy</label>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
-             <button class="btn btn-primary" onclick="saveSchoolSignup()">${icon('check','w-4 h-4')} Create account</button>`
+    footer: `<button class="btn btn-lg btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-lg btn-primary" onclick="saveSchoolSignup()">${icon('check','w-5 h-5')} Create account</button>`
   });
 }
 

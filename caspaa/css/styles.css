@@ -98,6 +98,16 @@ body { min-height: 100vh; font-size: 1rem; line-height: 1.5; -webkit-font-smooth
 .input:focus { outline: none; border-color: var(--brand-500); box-shadow: 0 0 0 3px var(--brand-ring); }
 .input-label { display: block; font-size: 0.8rem; font-weight: 600; color: #334155; margin-bottom: var(--s-1); }
 
+/* Larger button variant — bigger tap target and label */
+.btn-lg { padding: 12px 24px; font-size: 1rem; line-height: 1.5rem; }
+
+/* Sign-up form — roomier fields, buttons and type than the compact default */
+.signup-form .input { padding: 12px 14px; font-size: 1rem; }
+.signup-form select.input { padding-right: 44px; }
+.signup-form .input-label { font-size: 0.9rem; margin-bottom: 6px; }
+.signup-form .text-sm { font-size: 0.95rem; }
+.signup-form .text-xs { font-size: 0.8rem; }
+
 /* Professional dropdowns — custom chevron, no native OS styling */
 select.input {
   -webkit-appearance: none; -moz-appearance: none; appearance: none;
