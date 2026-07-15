@@ -15,7 +15,7 @@
    Bump CACHE_VERSION on any deploy that must invalidate the old cache.
    ============================================================ */
 
-const CACHE_VERSION = 'caspaa-v1';
+const CACHE_VERSION = 'caspaa-v2';
 const SHELL_URL = '/';
 
 // Best-effort precache of the app shell so the very first offline load works.
@@ -77,8 +77,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2) Everything else (JS, CSS, fonts, CDN, images) → cache-first,
-  //    ignoring the query string so "?v=…" cache-busted assets still hit.
+  // 2a) Same-origin app code (our own JS/CSS) → NETWORK-FIRST so a fresh
+  //     deploy is always picked up when online; fall back to cache offline.
+  //     (Cache-first here served stale JS after every deploy: index.js
+  //     cache-busts with "?v=…", but ignoreSearch matched the old copy.)
+  if (url.origin === self.location.origin &&
+      (url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/'))) {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE_VERSION).then((c) => c.put(request, copy)).catch(() => {});
+          }
+          return res;
+        })
+        .catch(() => caches.match(request, { ignoreSearch: true }))
+    );
+    return;
+  }
+
+  // 2b) Everything else (fonts, CDN libs, images) → cache-first,
+  //     ignoring the query string so "?v=…" cache-busted assets still hit.
   event.respondWith(
     caches.match(request, { ignoreSearch: true }).then((cached) => {
       const network = fetch(request)
