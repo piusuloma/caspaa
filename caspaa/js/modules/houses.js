@@ -410,7 +410,7 @@ function hp_awardModal(studentId, context) {
         <label class="input-label">Action</label>
         <div class="flex gap-2">
           <button id="ha_btn_award" type="button" onclick="hp_setAction('award')"
-            class="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors bg-brand-600 text-navy-800 border-brand-600">
+            class="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors bg-brand-600 text-white border-brand-600">
             ➕ Award Points
           </button>
           <button id="ha_btn_deduct" type="button" onclick="hp_setAction('deduct')"
@@ -444,7 +444,7 @@ function hp_setAction(action) {
   const deductBtn = document.getElementById('ha_btn_deduct');
   const submitBtn = document.getElementById('ha_submit_btn');
   if (action === 'award') {
-    awardBtn.className  = 'flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors bg-brand-600 text-navy-800 border-brand-600';
+    awardBtn.className  = 'flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors bg-brand-600 text-white border-brand-600';
     deductBtn.className = 'flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors bg-white text-slate-600 border-slate-300 hover:border-rose-400 hover:text-rose-600';
     submitBtn.textContent = 'Award Points';
     submitBtn.className = 'btn btn-primary';

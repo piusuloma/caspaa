@@ -370,7 +370,7 @@ function renderLogin() {
       <!-- Form area (right) -->
       <div class="flex-1 flex items-center justify-center p-6 sm:p-10">
         <div class="login-card w-full max-w-md">
-          <img src="logo/caspaa-green.svg" alt="CASPAA" class="lg:hidden h-8 w-auto mx-auto mb-8" onerror="this.remove()" />
+          <img src="logo/caspaa-navy.svg" alt="CASPAA" class="lg:hidden h-8 w-auto mx-auto mb-8" onerror="this.remove()" />
 
         <!-- Login card (identifier-first, two-step) -->
         <div class="bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-6 sm:p-8">

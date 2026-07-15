@@ -2932,7 +2932,7 @@ function view_tch_appraisal() {
                 { label: 'Acknowledged', done: !!apr.ackedAt, active: apr.status === 'ack_pending' }
               ].map((step, i, arr) => `<div class="flex items-center flex-shrink-0">
                 <div class="flex flex-col items-center">
-                  <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold ${step.done ? 'bg-brand-600 text-navy-800' : step.active ? 'bg-amber-400 text-white animate-pulse' : 'bg-slate-100 text-slate-400'}">${step.done ? '✓' : i+1}</div>
+                  <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold ${step.done ? 'bg-brand-600 text-white' : step.active ? 'bg-amber-400 text-white animate-pulse' : 'bg-slate-100 text-slate-400'}">${step.done ? '✓' : i+1}</div>
                   <div class="text-[10px] mt-0.5 w-16 text-center ${step.active ? 'text-amber-700 font-semibold' : step.done ? 'text-brand-600' : 'text-slate-400'}">${step.label}</div>
                 </div>
                 ${i < arr.length - 1 ? `<div class="w-6 h-0.5 ${step.done ? 'bg-brand-400' : 'bg-slate-200'} mb-4 flex-shrink-0"></div>` : ''}

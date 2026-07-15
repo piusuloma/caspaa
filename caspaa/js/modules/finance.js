@@ -2033,7 +2033,7 @@ function renderPayrollStepper(run) {
         ${stages.map((s, i) => {
           const done = i < currentIdx;
           const active = i === currentIdx;
-          const bg = done ? 'bg-emerald-500 text-white' : active ? 'bg-brand-600 text-navy-800' : 'bg-slate-200 text-slate-500';
+          const bg = done ? 'bg-emerald-500 text-white' : active ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-500';
           const lineBg = done ? 'bg-emerald-500' : 'bg-slate-200';
           return `<div class="text-center">
             <div class="flex items-center mb-1.5">
@@ -2509,9 +2509,9 @@ function view_fin_cost_center() {
         <div class="flex items-center justify-between mb-3 gap-2">
           <h3 class="font-bold text-slate-900">Revenue · <span class="text-brand-700">${revenueView === 'monthly' ? 'Monthly' : revenueView === 'annually' ? 'Annual' : 'Per Term'}</span></h3>
           <div class="flex rounded-lg border border-slate-200 overflow-hidden text-xs">
-            <button class="px-2.5 py-1.5 ${revenueView==='monthly'?'bg-brand-600 text-navy-800 font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='monthly';APP.render()">Monthly</button>
-            <button class="px-2.5 py-1.5 border-l border-r border-slate-200 ${revenueView==='termly'?'bg-brand-600 text-navy-800 font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='termly';APP.render()">Termly</button>
-            <button class="px-2.5 py-1.5 ${revenueView==='annually'?'bg-brand-600 text-navy-800 font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='annually';APP.render()">Annually</button>
+            <button class="px-2.5 py-1.5 ${revenueView==='monthly'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='monthly';APP.render()">Monthly</button>
+            <button class="px-2.5 py-1.5 border-l border-r border-slate-200 ${revenueView==='termly'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='termly';APP.render()">Termly</button>
+            <button class="px-2.5 py-1.5 ${revenueView==='annually'?'bg-brand-600 text-white font-semibold':'bg-white hover:bg-slate-50 text-slate-700'}" onclick="APP.params.revenueView='annually';APP.render()">Annually</button>
           </div>
         </div>
         <div style="height:200px"><canvas id="costCenterChart"></canvas></div>

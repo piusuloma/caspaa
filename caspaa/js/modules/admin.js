@@ -428,7 +428,7 @@ function _renderCycleDetail(cycleId) {
           const statuses = [['self_pending'],['manager_pending'],['principal_pending'],['outcome_pending'],['ack_pending','completed']];
           const allDone = aprs.length > 0 && aprs.every(a => !statuses[i].includes(a.status));
           const anyHere = aprs.some(a => statuses[i].includes(a.status));
-          const color = allDone ? 'bg-brand-600 text-navy-800' : anyHere ? 'bg-amber-400 text-white' : 'bg-slate-100 text-slate-400';
+          const color = allDone ? 'bg-brand-600 text-white' : anyHere ? 'bg-amber-400 text-white' : 'bg-slate-100 text-slate-400';
           return `<div class="flex items-center flex-shrink-0">
             <div class="flex flex-col items-center">
               <div class="w-8 h-8 rounded-full ${color} flex items-center justify-center text-xs font-bold">${allDone ? '✓' : i+1}</div>
@@ -1323,7 +1323,7 @@ function view_adm_curriculum() {
     ? '<div class="flex flex-wrap gap-1.5 mb-4">'
       + allTerms.map(t =>
           '<button class="text-xs font-semibold px-3 py-1 rounded-full border transition-all '
-          + (t === displayTerm ? 'bg-brand-600 text-navy-800 border-brand-600' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400')
+          + (t === displayTerm ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400')
           + '" onclick="APP.params.schTermFilter=\'' + t.replace(/'/g, "\\'") + '\';APP.render()">' + t + '</button>'
         ).join('')
       + '</div>'
@@ -4287,7 +4287,7 @@ function addStudentModal(editingId) {
     size: 'lg',
     body: `
       <div class="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
-        <div id="sf_photoPreview" class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center bg-brand-600 text-navy-800 font-bold text-2xl">
+        <div id="sf_photoPreview" class="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center bg-brand-600 text-white font-bold text-2xl">
           ${_studentPhotoBuffer ? `<img src="${_studentPhotoBuffer}" class="w-full h-full object-cover" />` : (existing ? initials(existing.name) : '?')}
         </div>
         <div class="flex-1">
@@ -6400,7 +6400,7 @@ function view_adm_former_staff() {
         const cnt = key === 'all' ? former.length : (counts[key] || 0);
         if (key !== 'all' && cnt === 0) return '';
         return '<button class="text-xs font-semibold px-3 py-1 rounded-full border transition-all '
-          + (filterCat === key ? 'bg-brand-600 text-navy-800 border-brand-600' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400')
+          + (filterCat === key ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400')
           + '" onclick="APP.params.formerCat=\'' + key + '\';APP.render()">' + lbl + (key !== 'all' ? ' (' + cnt + ')' : '') + '</button>';
       }).join('')}
     </div>
@@ -11401,7 +11401,7 @@ function viewApplication(appId) {
             statusOrder.map((s, i) => {
               const done = i <= currentIdx, active = i === currentIdx;
               return '<div class="flex flex-col items-center gap-1 text-center flex-1 relative z-10">' +
-                '<div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ' + (done ? 'bg-brand-600 text-navy-800' : 'bg-slate-100 text-slate-400') + (active ? ' ring-2 ring-brand-300 ring-offset-1' : '') + '">' +
+                '<div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ' + (done ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400') + (active ? ' ring-2 ring-brand-300 ring-offset-1' : '') + '">' +
                 (done ? icon('check','w-3.5 h-3.5') : String(i + 1)) +
                 '</div><div class="text-xs leading-tight max-w-[3.5rem] ' + (active ? 'text-brand-700 font-semibold' : done ? 'text-slate-600' : 'text-slate-400') + '">' + stepLabels[s] + '</div></div>';
             }).join('') +
@@ -12255,7 +12255,7 @@ function renderLiveChat() {
       <div class="flex-1 overflow-y-auto p-4 space-y-3 scroll-area" id="liveChatBody">
         ${msgs.map(m => m.from === 'agent'
           ? `<div class="flex gap-2 items-end"><span class="avatar sm">CS</span><div class="bg-slate-100 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[75%]"><div class="text-xs text-slate-400 mb-0.5">${m.agentName || 'Support'}</div><div class="text-sm">${m.text}</div></div></div>`
-          : `<div class="flex justify-end"><div class="bg-brand-600 text-navy-800 rounded-2xl rounded-br-sm px-3 py-2 max-w-[75%] text-sm">${m.text}</div></div>`
+          : `<div class="flex justify-end"><div class="bg-brand-600 text-white rounded-2xl rounded-br-sm px-3 py-2 max-w-[75%] text-sm">${m.text}</div></div>`
         ).join('')}
       </div>
       <div class="border-t border-slate-100 p-3 flex gap-2">

@@ -88,7 +88,7 @@ function cal_renderCalendar(params) {
               const isToday = ds === todayStr;
               const isPast  = ds < todayStr;
               return `<div class="bg-white min-h-[64px] p-1.5 ${isPast ? 'opacity-60' : ''} hover:bg-slate-50 transition-colors cursor-default" onclick="cal_showDay('${ds}')">
-                <div class="text-xs font-bold mb-1 ${isToday ? 'w-5 h-5 bg-brand-600 text-navy-800 rounded-full flex items-center justify-center' : 'text-slate-600'}">${parseInt(ds.slice(8))}</div>
+                <div class="text-xs font-bold mb-1 ${isToday ? 'w-5 h-5 bg-brand-600 text-white rounded-full flex items-center justify-center' : 'text-slate-600'}">${parseInt(ds.slice(8))}</div>
                 ${dayEvents.slice(0,2).map(e => {
                   const t = CAL_TYPES[e.type] || CAL_TYPES.other;
                   return `<div class="text-xs truncate px-1 py-0.5 rounded mb-0.5 border ${t.color} leading-tight">${e.title}</div>`;

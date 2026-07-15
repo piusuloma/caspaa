@@ -216,7 +216,7 @@ function view_stu_learning(params) {
                 <div class="absolute inset-0 flex items-center justify-center">
                   <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-lg">${icon('classes','w-6 h-6 text-white')}</div>
                 </div>
-                ${viewed ? '' : '<div class="absolute top-2 right-2 bg-brand-600 text-navy-800 text-xs font-bold px-2 py-0.5 rounded-full">NEW</div>'}
+                ${viewed ? '' : '<div class="absolute top-2 right-2 bg-brand-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">NEW</div>'}
               </div>
               <div class="p-3">
                 <span class="badge badge-neutral text-xs">${subjName(m.subjectId)}</span>

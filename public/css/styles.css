@@ -8,26 +8,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Brand — CASPAA Green (#00B386): actions, CTAs, active states */
-  --brand-50:  #e6f8f3;
-  --brand-100: #c3f0e2;
-  --brand-200: #8ae4c9;
-  --brand-300: #4fd6ae;
-  --brand-400: #1ec79a;
-  --brand-500: #00c08f;
-  --brand-600: #00b386;
-  --brand-700: #00966f;
-  --brand-800: #007a5b;
-  --brand-900: #005e46;
-  /* Text on CASPAA Green — navy, 5.77:1 (white would be 2.69:1, fails AA) */
-  --on-brand: #0a2540;
-  /* Focus ring — CASPAA Green at 16% */
-  --brand-ring: rgba(0, 179, 134, 0.16);
-  /* CASPAA Blue (#0A2540): dark surfaces, hero banners, headers */
-  --navy-500:  #1d4266;
-  --navy-700:  #0d2c49;
+  /* Brand — CASPAA Blue (#0A2540): actions, CTAs, active states */
+  --brand-50:  #e8ecf1;
+  --brand-100: #c5d0dd;
+  --brand-200: #94a7bf;
+  --brand-300: #5d7a9c;
+  --brand-400: #315479;
+  --brand-500: #143a5c;
+  --brand-600: #0a2540;
+  --brand-700: #081d33;
+  --brand-800: #061627;
+  --brand-900: #04101c;
+  /* Text on CASPAA Blue — white, 15.5:1 */
+  --on-brand: #ffffff;
+  /* Focus ring — CASPAA Blue at 16% */
+  --brand-ring: rgba(10, 37, 64, 0.16);
+  /* Accent — CASPAA Green (#00B386): highlights, active tabs, chart pops */
+  --accent-50:  #e6f8f3;
+  --accent-100: #c3f0e2;
+  --accent-500: #00c08f;
+  --accent-600: #00b386;
+  --accent-700: #00966f;
+  /* CASPAA Blue tints — dark surfaces alias the brand now */
+  --navy-500:  #143a5c;
+  --navy-700:  #081d33;
   --navy-800:  #0a2540;
-  --navy-900:  #071b30;
+  --navy-900:  #04101c;
   /* Accent Gold (#F4B400) */
   --gold-500:  #f4b400;
   --gold-600:  #d69e00;
@@ -74,8 +80,8 @@ body { min-height: 100vh; font-size: 1rem; line-height: 1.5; -webkit-font-smooth
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2); padding: var(--s-2) var(--s-3); border-radius: var(--r-sm); font-weight: 600; transition: background 0.15s, color 0.15s, box-shadow 0.15s; cursor: pointer; font-size: 0.875rem; line-height: 1.25rem; }
 .btn-primary { background: var(--brand-600); color: var(--on-brand); }
 .btn-primary:hover { background: var(--brand-700); color: #fff; }
-.btn-accent { background: var(--brand-600); color: var(--on-brand); }
-.btn-accent:hover { background: var(--brand-700); color: #fff; }
+.btn-accent { background: var(--accent-600); color: #0a2540; }
+.btn-accent:hover { background: var(--accent-700); color: #fff; }
 .btn-secondary { background: #eef2f6; color: var(--ink); border: 1px solid var(--line); }
 .btn-secondary:hover { background: #e2e8f0; }
 .btn-ghost { background: transparent; color: #475569; }
@@ -185,7 +191,7 @@ select.input option { color: #0f172a; }
 /* Login screen — hero image (left) + form card (right) */
 .login-bg { background: var(--soft-white); }
 /* Hero panel — deep CASPAA Green. White portal copy sits on this at 7.81:1. */
-.login-hero { background: var(--brand-900); }
+.login-hero { background: var(--brand-600); }
 .login-card .input:focus { border-color: var(--brand-600); box-shadow: 0 0 0 3px var(--brand-ring); }
 
 /* Spinner */
@@ -200,7 +206,7 @@ select.input option { color: #0f172a; }
 /* Tabs */
 .tabs { display: flex; gap: var(--s-1); border-bottom: 1.5px solid var(--line); overflow-x: auto; }
 .tab { padding: var(--s-2) var(--s-3); font-size: 0.875rem; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; white-space: nowrap; }
-.tab.active { color: var(--brand-600); border-bottom-color: var(--brand-600); }
+.tab.active { color: var(--brand-600); border-bottom-color: var(--accent-600); }
 
 /* Print styles for receipts */
 @media print {

@@ -237,7 +237,7 @@ function parentWelcomeWizard() {
     <div class="flex items-center gap-2 mb-4">
       ${[1,2,3].map(n => `
         <div class="flex-1 flex items-center gap-2">
-          <div class="w-7 h-7 rounded-full ${n < step ? 'bg-emerald-500 text-white' : n === step ? 'bg-brand-600 text-navy-800' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-xs font-bold">${n < step ? icon('check','w-3 h-3') : n}</div>
+          <div class="w-7 h-7 rounded-full ${n < step ? 'bg-emerald-500 text-white' : n === step ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-xs font-bold">${n < step ? icon('check','w-3 h-3') : n}</div>
           ${n < 3 ? `<div class="flex-1 h-0.5 ${n < step ? 'bg-emerald-500' : 'bg-slate-200'}"></div>` : ''}
         </div>
       `).join('')}
@@ -841,7 +841,7 @@ function renderProspectFeeGate(app) {
           const done = i <= currentIdx;
           const active = i === currentIdx;
           return `<div class="flex flex-col items-center gap-1.5 text-center flex-1 relative z-10">
-            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${done ? 'bg-brand-600 text-navy-800' : 'bg-slate-100 text-slate-400'} ${active ? 'ring-2 ring-brand-300 ring-offset-1' : ''}">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${done ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400'} ${active ? 'ring-2 ring-brand-300 ring-offset-1' : ''}">
               ${done ? icon('check','w-4 h-4') : (i + 1)}
             </div>
             <div class="text-xs leading-tight max-w-[4.5rem] ${done ? 'text-brand-700 font-semibold' : 'text-slate-400'}">${step.label}</div>

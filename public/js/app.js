@@ -184,7 +184,7 @@ const APP = {
         <!-- Sidebar (desktop) -->
         <aside class="hidden lg:flex w-64 bg-white border-r border-slate-200 flex-col fixed h-screen">
           <div class="px-5 py-5 border-b border-slate-200">
-            <img src="logo/caspaa-green.svg" alt="CASPAA" class="h-6 w-auto" />
+            <img src="logo/caspaa-navy.svg" alt="CASPAA" class="h-6 w-auto" />
             <div class="text-xs text-slate-500 mt-2">${roleLabel(user.role)}</div>
           </div>
           <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scroll-area">
@@ -209,7 +209,7 @@ const APP = {
             <div class="absolute inset-0 bg-slate-900/60" onclick="APP.sidebarOpen=false; APP.render()"></div>
             <aside class="absolute left-0 top-0 bottom-0 w-72 bg-white flex flex-col">
               <div class="px-5 py-5 border-b border-slate-200">
-                <img src="logo/caspaa-green.svg" alt="CASPAA" class="h-6 w-auto" />
+                <img src="logo/caspaa-navy.svg" alt="CASPAA" class="h-6 w-auto" />
                 <div class="text-xs text-slate-500 mt-2">${roleLabel(user.role)}</div>
               </div>
               <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scroll-area">
