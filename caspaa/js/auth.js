@@ -462,31 +462,15 @@ function renderLogin() {
   return `
     <div class="login-bg min-h-screen flex">
 
-      <!-- Hero panel (left) — per-role background image (swapped by applyHeroImage) -->
-      <div id="loginHero" class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12" style="background-image:url('logo/hero-default.jpg')">
-        <div class="relative text-white">
-          <div class="flex items-center gap-3 mb-8">
-            <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-8 w-auto" onerror="this.remove()" />
-            ${displayName === 'CASPAA' ? '' : `<div class="pl-3 border-l border-white/25">
-              <h1 class="text-lg font-extrabold tracking-tight leading-tight">${displayName}</h1>
-              <p class="text-white/70 text-xs">Powered by CASPAA</p>
-            </div>`}
-          </div>
-
-          <h2 class="text-3xl xl:text-4xl font-extrabold leading-tight mb-2">
-            Your whole school, one platform
-          </h2>
-          <p class="text-white/80 text-sm max-w-md mb-7">From admissions and learning to attendance, results and fees — CASPAA brings everything your school runs on into one secure place for students, parents and staff.</p>
-
-          <div class="grid grid-cols-2 gap-3">
-            ${PORTAL_FEATURES.map(portalFeatureCard).join('')}
-          </div>
-
-          <div class="flex flex-wrap gap-2 mt-7">
-            ${portalActionBtn('Admissions', 'students', 'admissionsModal()')}
-            ${portalActionBtn('Careers', 'teacher', 'careersModal()')}
-            ${portalActionBtn('Book a Tour', 'calendar', 'openTourPage()')}
-          </div>
+      <!-- Hero panel (left) — per-role background image (swapped by applyHeroImage).
+           Logo only, centred at the top; portal actions live in the form column. -->
+      <div id="loginHero" class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col items-center justify-start p-10 xl:p-12" style="background-image:url('logo/hero-default.jpg')">
+        <div class="relative text-white flex flex-col items-center text-center">
+          <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-16 xl:h-20 w-auto" onerror="this.remove()" />
+          ${displayName === 'CASPAA' ? '' : `<div class="mt-3">
+            <h1 class="text-xl font-extrabold tracking-tight leading-tight">${displayName}</h1>
+            <p class="text-white/70 text-xs">Powered by CASPAA</p>
+          </div>`}
         </div>
       </div>
 
@@ -529,8 +513,8 @@ function renderLogin() {
               </div>
             </div>
 
-            <!-- Portal actions — desktop shows these in the hero panel -->
-            <div class="mt-4 grid grid-cols-2 gap-2 lg:hidden">
+            <!-- Portal actions — moved here from the hero (logo-only) panel -->
+            <div class="mt-4 grid grid-cols-2 gap-2">
               ${quickAccessBtn('Admissions', 'students', 'admissionsModal()')}
               ${quickAccessBtn('Careers', 'teacher', 'careersModal()')}
             </div>
