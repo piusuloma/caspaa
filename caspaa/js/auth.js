@@ -430,6 +430,23 @@ function portalFeatureCard(f) {
     </div>`;
 }
 
+/* ---------- Per-role sign-in hero image ----------
+   Drop images at these paths (relative to the page, works in both the Next
+   app and the standalone build). Missing files fall back to the navy panel. */
+function heroImageFor(roleKey) {
+  const map = {
+    student:  'logo/hero-student.jpg',
+    parent:   'logo/hero-parent.jpg',
+    educator: 'logo/hero-educator.jpg'
+  };
+  return map[roleKey] || 'logo/hero-default.jpg';
+}
+
+function applyHeroImage(roleKey) {
+  const el = document.getElementById('loginHero');
+  if (el) el.style.backgroundImage = `url("${heroImageFor(roleKey)}")`;
+}
+
 function portalActionBtn(label, iconName, onclick) {
   return `<button type="button" onclick="${onclick}" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 border border-white/15 text-white text-sm font-semibold hover:bg-white/20 transition">${icon(iconName, 'w-4 h-4')}${label}</button>`;
 }
@@ -445,8 +462,8 @@ function renderLogin() {
   return `
     <div class="login-bg min-h-screen flex">
 
-      <!-- Hero panel (left) — public portal on a deep CASPAA Green field -->
-      <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12">
+      <!-- Hero panel (left) — per-role background image (swapped by applyHeroImage) -->
+      <div id="loginHero" class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12" style="background-image:url('logo/hero-default.jpg')">
         <div class="relative text-white">
           <div class="flex items-center gap-3 mb-8">
             <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-8 w-auto" onerror="this.remove()" />
@@ -499,13 +516,16 @@ function renderLogin() {
               <p class="text-xs text-slate-400 text-center" id="loginFieldHint">Staff &amp; parents use email · students use their admission number</p>
             </div>
 
-            <!-- Quick access -->
+            <!-- Quick access — role picker (each swaps the hero image) -->
             <div class="mt-5 pt-5 border-t border-slate-100">
               <div class="text-xs font-semibold uppercase text-slate-400 text-center mb-2.5">Quick Access</div>
               <div class="grid grid-cols-3 gap-2">
                 ${quickAccessBtn('Students', 'students', "selectLoginRole('student')")}
                 ${quickAccessBtn('Parents', 'user', "selectLoginRole('parent')")}
-                ${quickAccessBtn('Book Tour', 'calendar', 'openTourPage()')}
+                ${quickAccessBtn('Educator', 'teacher', "selectLoginRole('educator')")}
+              </div>
+              <div class="mt-2">
+                ${quickAccessBtn('Book a Tour', 'calendar', 'openTourPage()')}
               </div>
             </div>
 
@@ -577,6 +597,9 @@ function selectLoginRole(roleKey) {
     t.classList.toggle('text-brand-700', active);
     t.classList.toggle('text-slate-500', !active);
   });
+
+  // Swap the hero background to match the chosen role (default when neutral).
+  applyHeroImage(_loginRole);
 
   if (input) setTimeout(() => input.focus(), 0);
 }
