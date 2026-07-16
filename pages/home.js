@@ -6,6 +6,7 @@ import SiteLayout, {
   PrimaryButton,
   GhostButton,
 } from '../components/SiteLayout'
+import SlotImage, { SlotBackdrop } from '../components/SlotImage'
 import {
   HERO,
   METRICS,
@@ -79,6 +80,7 @@ function Section({ id, className = '', children }) {
 function Hero() {
   return (
     <section className="relative overflow-hidden bg-navy-600 text-white">
+      <SlotBackdrop src="/images/hero-backdrop.jpg" opacity="opacity-15" />
       <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-navy-400/30 blur-3xl" />
       <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-accent-600/10 blur-3xl" />
       <div className="relative max-w-7xl mx-auto px-5 pt-36 pb-20 md:pt-44 md:pb-28 grid lg:grid-cols-2 gap-12 items-center">
@@ -122,6 +124,21 @@ function TrustBar() {
               <p className="text-3xl font-extrabold text-navy-600">{m.value}</p>
               <p className="text-xs text-slate-500 mt-1">{m.label}</p>
             </div>
+          ))}
+        </div>
+        <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 items-center">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <SlotImage
+              key={i}
+              src={`/images/schools/school-${i}.png`}
+              alt={`Partner school ${i}`}
+              label={`School logo ${i}`}
+              size="400×200 · PNG, transparent"
+              ratio="aspect-[2/1]"
+              rounded="rounded-xl"
+              imgClassName="object-contain p-2 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition duration-300"
+              data-reveal
+            />
           ))}
         </div>
         <p className="text-center text-sm text-slate-500 mt-8 max-w-2xl mx-auto">
@@ -174,6 +191,15 @@ function Solution() {
             unified operating system that replaces the many different tools your school is using right now.
           </p>
           <PrimaryButton href="/solutions/proprietors" className="mt-8">Explore the platform →</PrimaryButton>
+          <SlotImage
+            src="/images/solution.jpg"
+            alt="CASPAA in use at a school"
+            label="Solution — wide shot"
+            size="1200×800 · school office or classroom"
+            ratio="aspect-[3/2]"
+            className="mt-8 shadow-lg mkt-lift"
+            data-reveal
+          />
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           {PLATFORM_TILES.map((t, i) => (
@@ -227,6 +253,17 @@ function Roles() {
             Learn more →
           </GhostButton>
         </div>
+        <div>
+          <SlotImage
+            key={role.slug}
+            src={`/images/roles/${role.slug}.jpg`}
+            alt={role.name}
+            label={`Role — ${role.tab}`}
+            size="900×600 · person in context"
+            ratio="aspect-[3/2]"
+            dark
+            className="mb-4 shadow-xl"
+          />
         <ul className="grid gap-3">
           {role.bullets.map((b) => (
             <li key={b} className="flex items-start gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/10">
@@ -235,6 +272,7 @@ function Roles() {
             </li>
           ))}
         </ul>
+        </div>
       </div>
     </Section>
   )
@@ -255,6 +293,15 @@ function FeatureDeepDives() {
               </div>
             </div>
             <div className="grid gap-3">
+              <SlotImage
+                src={`/images/features/feature-${i + 1}.jpg`}
+                alt={f.title}
+                label={`Feature ${i + 1} — ${f.eyebrow}`}
+                size="1000×640"
+                ratio="aspect-[25/16]"
+                className="mb-2 shadow-lg mkt-lift"
+                data-reveal={i % 2 ? "left" : "right"}
+              />
               {f.points.map((p, j) => (
                 <div key={p} className="flex items-center gap-3 bg-white rounded-2xl p-5 ring-1 ring-slate-100 shadow-sm mkt-card" data-reveal={i % 2 ? "left" : "right"} data-reveal-delay={String((j % 5) + 1)}>
                   <span className="w-9 h-9 rounded-lg bg-brand-600 text-white grid place-items-center"><Check className="text-white" /></span>
@@ -373,8 +420,9 @@ function Onboarding() {
 function Security() {
   return (
     <Section id="security">
-      <div className="rounded-3xl bg-navy-600 text-white p-8 md:p-12" data-reveal="scale">
-        <div className="max-w-2xl">
+      <div className="relative overflow-hidden rounded-3xl bg-navy-600 text-white p-8 md:p-12" data-reveal="scale">
+        <SlotBackdrop src="/images/security.jpg" opacity="opacity-20" />
+        <div className="relative max-w-2xl">
           <Eyebrow light>BUILT ON TRUST</Eyebrow>
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
             Bank-grade security for your school’s most sensitive data.
@@ -384,7 +432,7 @@ function Security() {
             encrypted data handling, and role-based access so the right people see the right things — and nothing more.
           </p>
         </div>
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="relative mt-8 flex flex-wrap gap-3">
           {SECURITY.map((s) => (
             <span key={s.label} className="inline-flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-4 py-2 text-sm font-semibold">
               <span>{s.icon}</span> {s.label}
@@ -428,8 +476,9 @@ function Faq() {
 
 function FinalCta() {
   return (
-    <section className="bg-navy-600 text-white">
-      <div className="max-w-5xl mx-auto px-5 py-20 text-center">
+    <section className="relative overflow-hidden bg-navy-600 text-white">
+      <SlotBackdrop src="/images/cta-backdrop.jpg" opacity="opacity-15" />
+      <div className="relative max-w-5xl mx-auto px-5 py-20 text-center">
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight" data-reveal>
           Ready to run your school the modern way?
         </h2>
