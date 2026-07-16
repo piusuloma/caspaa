@@ -26,7 +26,7 @@ function view_tch_formative(params) {
     const qCount      = (test.questions || []).length;
 
     return `
-      <div class="card p-4 flex flex-col gap-3">
+      <div class="card p-5 flex flex-col gap-3">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <div class="font-bold text-slate-900 truncate">${test.title}</div>
@@ -136,14 +136,14 @@ function tch_createTestModal() {
       <div class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Class *</label>
+            <label class="input-label" for="ft_class">Class *</label>
             <select id="ft_class" class="input">
               <option value="">— Select class —</option>
               ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
             </select>
           </div>
           <div>
-            <label class="input-label">Subject *</label>
+            <label class="input-label" for="ft_subject">Subject *</label>
             <select id="ft_subject" class="input">
               <option value="">— Select subject —</option>
               ${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
@@ -152,17 +152,17 @@ function tch_createTestModal() {
         </div>
 
         <div>
-          <label class="input-label">Test Title *</label>
+          <label class="input-label" for="ft_title">Test Title *</label>
           <input id="ft_title" class="input" placeholder="e.g. Chapter 3 — Motion Quiz" />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Duration (minutes)</label>
+            <label class="input-label" for="ft_duration">Duration (minutes)</label>
             <input id="ft_duration" type="number" class="input" value="15" min="1" />
           </div>
           <div>
-            <label class="input-label">Due Date *</label>
+            <label class="input-label" for="ft_due">Due Date *</label>
             <input id="ft_due" type="date" class="input" value="${daysAhead(3)}" />
           </div>
         </div>
@@ -335,7 +335,7 @@ function tch_publishTest(testId) {
 
 function tch_closeTest(testId) {
   const test = DB.find('formativeTests', testId);
-  confirm(`Close "${test.title}"? Students will no longer be able to submit answers.`, () => {
+  confirmDialog(`Close "${test.title}"? Students will no longer be able to submit answers.`, () => {
     DB.update('formativeTests', testId, { status: 'closed' });
     toast('Test closed', 'info');
     APP.render();
@@ -344,7 +344,7 @@ function tch_closeTest(testId) {
 
 function tch_deleteTest(testId) {
   const test = DB.find('formativeTests', testId);
-  confirm(`Delete "${test.title}"? This will also remove all student submissions.`, () => {
+  confirmDialog(`Delete "${test.title}"? This will also remove all student submissions.`, () => {
     DB.query('formativeSubmissions', s => s.testId === testId).forEach(s => DB.remove('formativeSubmissions', s.id));
     DB.remove('formativeTests', testId);
     toast('Test deleted', 'info');
@@ -409,13 +409,13 @@ function tch_viewTestResults(testId) {
 
         <div class="card overflow-hidden">
           <table class="w-full text-sm">
-            <thead>
+            <th scope="col"ead>
               <tr class="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                <th class="px-4 py-2.5 text-left font-semibold">Student</th>
-                <th class="px-4 py-2.5 text-center font-semibold">Score</th>
-                <th class="px-4 py-2.5 text-center font-semibold">Percentage</th>
-                <th class="px-4 py-2.5 text-center font-semibold">Grade</th>
-                <th class="px-4 py-2.5 text-right font-semibold">Submitted</th>
+                <th scope="col" class="px-4 py-2.5 text-left font-semibold">Student</th>
+                <th scope="col" class="px-4 py-2.5 text-center font-semibold">Score</th>
+                <th scope="col" class="px-4 py-2.5 text-center font-semibold">Percentage</th>
+                <th scope="col" class="px-4 py-2.5 text-center font-semibold">Grade</th>
+                <th scope="col" class="px-4 py-2.5 text-right font-semibold">Submitted</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -502,7 +502,7 @@ function view_stu_formative(params) {
     const cls  = classes.find(c => c.id === test.classId);
     const subj = subjects.find(s => s.id === test.subjectId);
     return `
-      <div class="card p-4 flex flex-col gap-3">
+      <div class="card p-5 flex flex-col gap-3">
         <div>
           <div class="font-bold text-slate-900">${test.title}</div>
           <div class="text-xs text-slate-500 mt-0.5">${cls ? cls.name : '—'} &middot; ${subj ? subj.name : '—'}</div>
@@ -532,7 +532,7 @@ function view_stu_formative(params) {
     const sub  = DB.query('formativeSubmissions', s => s.testId === test.id && s.studentId === studentId)[0];
     if (!sub) return '';
     return `
-      <div class="card p-4 flex flex-col gap-3">
+      <div class="card p-5 flex flex-col gap-3">
         <div>
           <div class="font-bold text-slate-900">${test.title}</div>
           <div class="text-xs text-slate-500 mt-0.5">${subj ? subj.name : '—'}</div>
@@ -591,7 +591,7 @@ function view_stu_formative(params) {
                     const cls  = classes.find(c => c.id === test.classId);
                     const subj = subjects.find(s => s.id === test.subjectId);
                     return `
-                      <div class="card p-4 flex flex-col gap-3 border-rose-300 bg-rose-50">
+                      <div class="card p-5 flex flex-col gap-3 border-rose-300 bg-rose-50">
                         <div class="flex items-start justify-between gap-2">
                           <div>
                             <div class="font-bold text-slate-900">${test.title}</div>
@@ -739,7 +739,7 @@ function stu_submitTest(testId) {
     const proceed = window._ftIgnoreUnanswered;
     if (!proceed) {
       // Show a confirm if there are unanswered questions
-      confirm(`${unanswered} question${unanswered > 1 ? 's are' : ' is'} unanswered. Submit anyway?`, () => {
+      confirmDialog(`${unanswered} question${unanswered > 1 ? 's are' : ' is'} unanswered. Submit anyway?`, () => {
         window._ftIgnoreUnanswered = true;
         stu_submitTest(testId);
         window._ftIgnoreUnanswered = false;

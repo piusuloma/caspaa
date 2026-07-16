@@ -15,7 +15,7 @@ const CAL_TYPES = {
 };
 
 function cal_eventsForRole(role) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const all = DB.query('schoolEvents', e => e.schoolId === schoolId);
   return all.filter(e => {
     if (e.audience === 'all') return true;
@@ -69,7 +69,7 @@ function cal_renderCalendar(params) {
     <div class="grid lg:grid-cols-3 gap-6">
       <!-- Calendar grid -->
       <div class="lg:col-span-2">
-        <div class="card p-4">
+        <div class="card p-5">
           <!-- Month nav -->
           <div class="flex items-center justify-between mb-4">
             <button onclick="APP.params.month=${prevMonth.month};APP.params.year=${prevMonth.year};APP.render()" class="btn btn-secondary px-3 py-1.5 text-sm">${icon('arrow_left','w-4 h-4')}</button>
@@ -107,7 +107,7 @@ function cal_renderCalendar(params) {
       <!-- Upcoming events sidebar -->
       <div class="space-y-3">
         <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">Upcoming</h3>
-        ${upcoming.length === 0 ? `<div class="card p-4 text-sm text-slate-400 text-center">No upcoming events in the next 90 days.</div>` :
+        ${upcoming.length === 0 ? `<div class="card p-5 text-sm text-slate-400 text-center">No upcoming events in the next 90 days.</div>` :
           upcoming.map(e => {
             const t = CAL_TYPES[e.type] || CAL_TYPES.other;
             const dateStr = e.endDate && e.endDate !== e.startDate
@@ -215,18 +215,18 @@ function cal_addEventModal() {
     title: 'Add School Event',
     size: 'lg',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Event Title *</label>
+      <div><label class="input-label" for="ce_title">Event Title *</label>
         <input id="ce_title" class="input" placeholder="e.g. PTA Meeting, Sports Day, Mid-Term Break"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Start Date *</label><input id="ce_start" type="date" class="input"></div>
-        <div><label class="input-label">End Date (for multi-day events)</label><input id="ce_end" type="date" class="input"></div>
+        <div><label class="input-label" for="ce_start">Start Date *</label><input id="ce_start" type="date" class="input"></div>
+        <div><label class="input-label" for="ce_end">End Date (for multi-day events)</label><input id="ce_end" type="date" class="input"></div>
       </div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Event Type</label>
+        <div><label class="input-label" for="ce_type">Event Type</label>
           <select id="ce_type" class="input">
             ${Object.entries(CAL_TYPES).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join('')}
           </select></div>
-        <div><label class="input-label">Audience</label>
+        <div><label class="input-label" for="ce_audience">Audience</label>
           <select id="ce_audience" class="input">
             <option value="all">Everyone</option>
             <option value="parents">Parents Only</option>
@@ -234,7 +234,7 @@ function cal_addEventModal() {
             <option value="teachers">Teachers Only</option>
           </select></div>
       </div>
-      <div><label class="input-label">Description (optional)</label>
+      <div><label class="input-label" for="ce_desc">Description (optional)</label>
         <textarea id="ce_desc" rows="3" class="input" placeholder="Additional details shown when staff or parents click on the event..."></textarea></div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -254,7 +254,7 @@ function cal_saveEvent() {
   const desc      = (document.getElementById('ce_desc')  || {}).value.trim();
   if (!title || !startDate) { toast('Title and start date are required', 'danger'); return; }
   if (endDate < startDate)  { toast('End date cannot be before start date', 'danger'); return; }
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   DB.insert('schoolEvents', { id: uid('evt'), schoolId, title, startDate, endDate, type, audience, description: desc, createdBy: AUTH.current.id, createdAt: now() });
   document.getElementById('modalBackdrop').click();
   APP.params.month = new Date(startDate).getMonth();
@@ -268,7 +268,7 @@ function cal_deleteEvent(id) {
     toast('Only admins can delete events', 'danger');
     return;
   }
-  confirm('Delete this event from the calendar?', () => {
+  confirmDialog('Delete this event from the calendar?', () => {
     DB.remove('schoolEvents', id);
     APP.render();
     toast('Event deleted', 'info');
@@ -282,22 +282,22 @@ function cal_editEventModal(id) {
     title: 'Edit Event',
     size: 'md',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Title *</label><input id="ce_edit_title" class="input" value="${ev.title || ''}"></div>
+      <div><label class="input-label" for="ce_edit_title">Title *</label><input id="ce_edit_title" class="input" value="${ev.title || ''}"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Start Date</label><input id="ce_edit_start" type="date" class="input" value="${ev.startDate || ev.date || ''}"></div>
-        <div><label class="input-label">End Date</label><input id="ce_edit_end" type="date" class="input" value="${ev.endDate || ev.date || ''}"></div>
+        <div><label class="input-label" for="ce_edit_start">Start Date</label><input id="ce_edit_start" type="date" class="input" value="${ev.startDate || ev.date || ''}"></div>
+        <div><label class="input-label" for="ce_edit_end">End Date</label><input id="ce_edit_end" type="date" class="input" value="${ev.endDate || ev.date || ''}"></div>
       </div>
-      <div><label class="input-label">Type</label>
+      <div><label class="input-label" for="ce_edit_type">Type</label>
         <select id="ce_edit_type" class="input">
           ${['Holiday','Academic','Sports','Meeting','Exam','Other'].map(t => '<option value="'+t+'"'+(ev.type===t?' selected':'')+'>'+t+'</option>').join('')}
         </select>
       </div>
-      <div><label class="input-label">Audience</label>
+      <div><label class="input-label" for="ce_edit_audience">Audience</label>
         <select id="ce_edit_audience" class="input">
           ${['all','students','parents','teachers'].map(a => '<option value="'+a+'"'+(ev.audience===a?' selected':'')+'>'+({all:'Everyone',students:'Students',parents:'Parents',teachers:'Teachers'}[a])+'</option>').join('')}
         </select>
       </div>
-      <div><label class="input-label">Description</label><textarea id="ce_edit_desc" class="input" rows="2">${ev.description || ''}</textarea></div>
+      <div><label class="input-label" for="ce_edit_desc">Description</label><textarea id="ce_edit_desc" class="input" rows="2">${ev.description || ''}</textarea></div>
     </div>`,
     footer: '<button class="btn btn-secondary" onclick="document.getElementById(\'modalBackdrop\').click()">Cancel</button><button class="btn btn-primary" onclick="cal_saveEdit(\''+id+'\')">Save Changes</button>'
   });
@@ -343,7 +343,7 @@ function cal_schoolDays(startDate, endDate, excludeRanges, holidayDates) {
 }
 
 function cal_renderAcademicYear() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const isAdmin = AUTH.current.role === 'schooladmin' || AUTH.current.role === 'principal';
   const s = DB.settings();
   const atd = s.academicTermDates;
@@ -404,11 +404,11 @@ function cal_renderAcademicYear() {
           ${atd.session ? `<div class="text-sm opacity-80">${atd.session}</div>` : ''}
         </div>
         <table class="w-full">
-          <thead>
+          <th scope="col"ead>
             <tr class="bg-slate-50 border-b border-slate-200">
-              <th class="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 text-left w-48">Description</th>
-              <th class="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 text-left">Date</th>
-              <th class="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 text-right">Duration</th>
+              <th scope="col" class="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 text-left w-48">Description</th>
+              <th scope="col" class="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 text-left">Date</th>
+              <th scope="col" class="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 text-right">Duration</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -462,7 +462,7 @@ function cal_renderAcademicYear() {
    ============================================================ */
 
 function cal_renderNoticeBoard() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const role = AUTH.current.role;
   const canPost = role === 'schooladmin' || role === 'principal';
 
@@ -489,7 +489,7 @@ function cal_renderNoticeBoard() {
          <p>No notices posted yet.</p>
        </div>`
     : notices.map(n => `
-      <div class="card p-4 border-l-4 border-sky-400">
+      <div class="card p-5 border-l-4 border-sky-400">
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
             <div class="flex items-center gap-2 mb-1">
@@ -499,7 +499,7 @@ function cal_renderNoticeBoard() {
             <p class="text-sm text-slate-600 whitespace-pre-line">${n.body || n.message || ''}</p>
             <p class="text-xs text-slate-400 mt-2">${n.authorName || 'School Admin'} · ${(n.createdAt || n.timestamp || '').slice(0, 10)}</p>
           </div>
-          ${canPost ? `<button onclick="cal_deleteNotice('${n.id}')" class="btn btn-sm text-slate-400 hover:text-rose-500" title="Delete"><i class="ph ph-trash"></i></button>` : ''}
+          ${canPost ? `<button onclick="cal_deleteNotice('${n.id}')" class="btn btn-sm text-slate-400 hover:text-rose-500" aria-label="Delete" title="Delete"><i class="ph ph-trash"></i></button>` : ''}
         </div>
       </div>`).join('');
 
@@ -520,9 +520,9 @@ function cal_newNoticeModal() {
     title: 'Post a Notice',
     size: 'md',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Title *</label><input id="cn_title" class="input" placeholder="e.g. School Closure Notice"></div>
-      <div><label class="input-label">Message *</label><textarea id="cn_body" class="input" rows="4" placeholder="Write the notice here..."></textarea></div>
-      <div><label class="input-label">Visible to</label>
+      <div><label class="input-label" for="cn_title">Title *</label><input id="cn_title" class="input" placeholder="e.g. School Closure Notice"></div>
+      <div><label class="input-label" for="cn_body">Message *</label><textarea id="cn_body" class="input" rows="4" placeholder="Write the notice here..."></textarea></div>
+      <div><label class="input-label" for="cn_audience">Visible to</label>
         <select id="cn_audience" class="input">
           <option value="all">Everyone</option>
           <option value="parents">Parents only</option>
@@ -540,7 +540,7 @@ function cal_saveNotice() {
   const title = (document.getElementById('cn_title') || {}).value.trim();
   const body = (document.getElementById('cn_body') || {}).value.trim();
   if (!title || !body) { toast('Title and message are required', 'danger'); return; }
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const audience = (document.getElementById('cn_audience') || {}).value || 'all';
   DB.insert('announcements', {
     id: uid('ann'),
@@ -559,8 +559,9 @@ function cal_saveNotice() {
 }
 
 function cal_deleteNotice(id) {
-  if (!confirm('Delete this notice?')) return;
-  DB.remove('announcements', id);
-  APP.render();
-  toast('Notice removed', 'info');
+  confirmDialog('Delete this notice?', () => {
+    DB.remove('announcements', id);
+    APP.render();
+    toast('Notice removed', 'info');
+  }, { yesLabel: 'Delete', danger: true });
 }

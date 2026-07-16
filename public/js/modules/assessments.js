@@ -54,7 +54,7 @@ function assess_tch_cbtList() {
       const subs = DB.query('cbtSubmissions', x => x.examId === e.id);
       const pending   = subs.filter(x => x.status === 'submitted').length;
       const classSize = COMPUTE.studentsByClass(e.classId).length;
-      return `<div class="card p-4 flex flex-col gap-2">
+      return `<div class="card p-5 flex flex-col gap-2">
         <div class="flex items-center gap-1.5 flex-wrap">
           <span class="badge badge-info">${cls ? cls.name : '—'}</span>
           <span class="badge badge-neutral">${subj ? subj.name : '—'}</span>
@@ -105,7 +105,7 @@ function assess_tch_formativeList() {
             const subj = subjects.find(s => s.id === test.subjectId);
             const subs = DB.query('formativeSubmissions', s => s.testId === test.id);
             const classSize = COMPUTE.studentsByClass(test.classId).length;
-            return `<div class="card p-4 flex flex-col gap-2">
+            return `<div class="card p-5 flex flex-col gap-2">
               <div class="flex items-start justify-between">
                 <div class="min-w-0">
                   <div class="font-bold text-slate-900 truncate">${test.title}</div>
@@ -185,7 +185,7 @@ function assess_stu_assignments(s, sName) {
       const overdue = !sub && new Date(a.dueDate) < new Date();
       const subj    = DB.find('subjects', a.subjectId);
       const teacher = DB.find('teachers', a.teacherId);
-      return `<div class="card p-4 flex items-start justify-between gap-3">
+      return `<div class="card p-5 flex items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2 mb-1 flex-wrap">
             <span class="badge badge-neutral">${subj ? subj.name : '—'}</span>
@@ -221,7 +221,7 @@ function assess_stu_cbt(s) {
       const subj = DB.find('subjects', e.subjectId);
       const objCount    = e.questions.filter(q => q.type === 'objective').length;
       const theoryCount = e.questions.filter(q => q.type === 'theory').length;
-      return `<div class="card p-4 flex items-start justify-between gap-3">
+      return `<div class="card p-5 flex items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2 mb-1 flex-wrap">
             <span class="badge badge-neutral">${subj ? subj.name : '—'}</span>
@@ -269,7 +269,7 @@ function assess_stu_formative(s, sName) {
           ${list.map(test => {
             const subj = subjects.find(s => s.id === test.subjectId);
             const sub  = DB.query('formativeSubmissions', x => x.testId === test.id && x.studentId === s.id)[0];
-            return `<div class="card p-4 flex flex-col gap-2">
+            return `<div class="card p-5 flex flex-col gap-2">
               <div class="font-bold text-slate-900">${test.title}</div>
               <div class="text-xs text-slate-500">${subj ? subj.name : '—'}</div>
               <div class="grid grid-cols-2 gap-1 text-xs text-center">
@@ -293,7 +293,7 @@ function assess_stu_formative(s, sName) {
 
 function assess_bulkUploadModal(targetType) {
   const isCbt = targetType === 'cbt';
-  const classes  = (typeof teacherClasses === 'function' ? teacherClasses() : DB.query('classes', c => c.schoolId === (AUTH.current.schoolId || 'sch_brightlights')));
+  const classes  = (typeof teacherClasses === 'function' ? teacherClasses() : DB.query('classes', c => c.schoolId === currentSchoolId()));
   const subjects = DB.get('subjects');
   const label    = isCbt ? 'CBT Exam' : 'Quick Test';
 
@@ -305,14 +305,14 @@ function assess_bulkUploadModal(targetType) {
         <!-- Meta fields -->
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Class *</label>
+            <label class="input-label" for="bu_class">Class *</label>
             <select id="bu_class" class="input">
               <option value="">— Select class —</option>
               ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
             </select>
           </div>
           <div>
-            <label class="input-label">Subject *</label>
+            <label class="input-label" for="bu_subject">Subject *</label>
             <select id="bu_subject" class="input">
               <option value="">— Select subject —</option>
               ${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
@@ -321,16 +321,16 @@ function assess_bulkUploadModal(targetType) {
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Title *</label>
+            <label class="input-label" for="bu_title">Title *</label>
             <input id="bu_title" class="input" placeholder="e.g. Chapter 5 — Forces Quiz" />
           </div>
           <div>
-            <label class="input-label">Duration (minutes)</label>
+            <label class="input-label" for="bu_duration">Duration (minutes)</label>
             <input id="bu_duration" type="number" class="input" value="${isCbt ? 30 : 15}" min="1" />
           </div>
         </div>
         <div>
-          <label class="input-label">Due Date *</label>
+          <label class="input-label" for="bu_due">Due Date *</label>
           <input id="bu_due" type="date" class="input" value="${daysAhead(7)}" />
         </div>
 
@@ -455,7 +455,7 @@ function assess_saveBulk(targetType) {
   const questions = assess_parseCsvQuestions(csv);
   if (!questions.length) { toast('No valid questions found in CSV — check the format', 'danger'); return; }
 
-  const schoolId  = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId  = currentSchoolId();
   const teacherId = AUTH.current.id;
 
   if (targetType === 'cbt') {

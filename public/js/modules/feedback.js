@@ -83,7 +83,7 @@ function fb_setYesNo(qid, val) {
    PARENT VIEW
    ============================================================ */
 function view_par_feedback(params) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const forms = DB.query('feedbackForms', f => f.schoolId === schoolId && f.status === 'active');
 
   return `
@@ -97,7 +97,7 @@ function view_par_feedback(params) {
         ? emptyState({ icon: 'chat', title: 'No active surveys right now', body: 'Check back soon — the school will post surveys here for parents to complete.' })
         : `<div class="space-y-3">
             ${forms.map(form => {
-              const myResponse = DB.query('feedbackResponses', r => r.formId === form.id && r.parentId === AUTH.current.id && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))[0];
+              const myResponse = DB.query('feedbackResponses', r => r.formId === form.id && r.parentId === AUTH.current.id && r.schoolId === currentSchoolId())[0];
               const qCount = (form.questions || []).length;
               return `
                 <div class="card p-5">
@@ -189,7 +189,7 @@ function par_submitFeedback(formId) {
   DB.insert('feedbackResponses', {
     id:          uid('fr'),
     formId,
-    schoolId:    AUTH.current.schoolId || 'sch_brightlights',
+    schoolId:    currentSchoolId(),
     parentId:    AUTH.current.id,
     answers,
     submittedAt: now()
@@ -204,7 +204,7 @@ function par_submitFeedback(formId) {
    ADMIN VIEW
    ============================================================ */
 function view_adm_feedback(params) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const tab = (params && params.fbTab) || APP.params.fbTab || 'active';
 
   const allForms = DB.query('feedbackForms', f => f.schoolId === schoolId)
@@ -236,7 +236,7 @@ function view_adm_feedback(params) {
           ? emptyState({ icon: 'chat', title: `No ${tab} surveys`, body: tab === 'active' ? 'Create a survey to collect parent feedback.' : 'Closed surveys will appear here.' })
           : displayed.map(form => {
               const qCount    = (form.questions || []).length;
-              const responses = DB.query('feedbackResponses', r => r.formId === form.id && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+              const responses = DB.query('feedbackResponses', r => r.formId === form.id && r.schoolId === currentSchoolId());
               return `
                 <div class="card p-5">
                   <div class="flex items-start justify-between gap-3 flex-wrap">
@@ -263,7 +263,7 @@ function view_adm_feedback(params) {
                           ${icon('x', 'w-4 h-4')} Close Survey
                         </button>
                       ` : ''}
-                      <button class="btn btn-ghost !p-1.5 text-rose-600" title="Delete survey" onclick="adm_deleteSurvey('${form.id}')">${icon('trash', 'w-4 h-4')}</button>
+                      <button class="btn btn-ghost !p-1.5 text-rose-600" aria-label="Delete survey" title="Delete survey" onclick="adm_deleteSurvey('${form.id}')">${icon('trash', 'w-4 h-4')}</button>
                     </div>
                   </div>
                 </div>
@@ -284,11 +284,11 @@ function adm_createSurveyModal() {
     body: `
       <div class="space-y-4">
         <div>
-          <label class="input-label">Survey Title *</label>
+          <label class="input-label" for="sv_title">Survey Title *</label>
           <input id="sv_title" class="input" placeholder="e.g. End of Term Parent Survey 2025/26" />
         </div>
         <div>
-          <label class="input-label">Deadline (optional)</label>
+          <label class="input-label" for="sv_deadline">Deadline (optional)</label>
           <input id="sv_deadline" type="date" class="input max-w-xs" value="${daysAhead(21)}" />
         </div>
 
@@ -363,7 +363,7 @@ function adm_renumberQuestions() {
 
 /* ---------- Save survey ---------- */
 function adm_saveSurvey() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const title    = document.getElementById('sv_title').value.trim();
   if (!title) { toast('Survey title is required', 'danger'); return; }
 
@@ -416,7 +416,7 @@ function adm_saveSurvey() {
 function adm_closeSurvey(formId) {
   const form = DB.find('feedbackForms', formId);
   if (!form) { toast('Survey not found', 'danger'); return; }
-  confirm(`Close "${form.title}"? Parents will no longer be able to submit new responses.`, () => {
+  confirmDialog(`Close "${form.title}"? Parents will no longer be able to submit new responses.`, () => {
     DB.update('feedbackForms', formId, { status: 'closed' });
     APP.render();
     toast('Survey closed', 'info');
@@ -427,10 +427,10 @@ function adm_closeSurvey(formId) {
 function adm_deleteSurvey(formId) {
   const form = DB.find('feedbackForms', formId);
   if (!form) { toast('Survey not found', 'danger'); return; }
-  const rCount = DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).length;
-  confirm(`Delete "${form.title}"?${rCount ? ` This will also remove ${rCount} response${rCount !== 1 ? 's' : ''}.` : ''} This cannot be undone.`, () => {
+  const rCount = DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === currentSchoolId()).length;
+  confirmDialog(`Delete "${form.title}"?${rCount ? ` This will also remove ${rCount} response${rCount !== 1 ? 's' : ''}.` : ''} This cannot be undone.`, () => {
     DB.remove('feedbackForms', formId);
-    DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).forEach(r => DB.remove('feedbackResponses', r.id));
+    DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === currentSchoolId()).forEach(r => DB.remove('feedbackResponses', r.id));
     APP.render();
     toast('Survey deleted', 'info');
   }, { yesLabel: 'Delete', danger: true });
@@ -441,7 +441,7 @@ function adm_viewFeedbackResults(formId) {
   const form = DB.find('feedbackForms', formId);
   if (!form) { toast('Survey not found', 'danger'); return; }
 
-  const responses = DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const responses = DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === currentSchoolId());
   const questions  = form.questions || [];
   const total      = responses.length;
 
