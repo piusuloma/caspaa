@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import SiteLayout, { Eyebrow, Check } from '../components/SiteLayout'
+import Icon from '../components/Icons'
 import { CONTACT, STEPS } from '../data/site'
 
 const PLANS = ['Standard', 'Premium', 'Ultimate', 'Not sure yet']
@@ -59,8 +60,14 @@ export default function ContactPage() {
               ))}
             </div>
             <div className="mt-8 text-sm text-brand-100 space-y-1">
-              <p>📧 <a className="underline hover:text-white" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></p>
-              <p>📞 {CONTACT.phones.join(' · ')}</p>
+              <p className="flex items-center gap-2">
+                <Icon name="mail" className="w-4 h-4 shrink-0 text-accent-400" />
+                <a className="underline hover:text-white" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+              </p>
+              <p className="flex items-center gap-2">
+                <Icon name="phone" className="w-4 h-4 shrink-0 text-accent-400" />
+                {CONTACT.phones.join(' · ')}
+              </p>
             </div>
           </div>
 

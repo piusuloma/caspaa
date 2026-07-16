@@ -318,3 +318,34 @@ span.flatpickr-weekday { color: var(--muted); }
                           box-shadow 0.25s ease, border-color 0.25s ease; }
   .mkt-card:hover { transform: translateY(-4px); }
 }
+
+/* ============================================================
+   MARQUEE — continuous horizontal scroll (platform tiles)
+   The track holds the list twice and travels exactly -50%, so the second
+   copy lands where the first began and the loop is seamless. Duplicating in
+   markup (rather than cloning in JS) keeps it working before hydration.
+   ============================================================ */
+.marquee {
+  overflow: hidden;
+  /* Fade both ends so cards enter and leave instead of being guillotined. */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+          mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: var(--s-3);
+  animation: marquee-scroll 45s linear infinite;
+}
+.marquee:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-50% - (var(--s-3) / 2))); }
+}
+
+/* Reduced motion: no auto-scroll. The strip becomes a normal swipeable
+   overflow region so the content stays reachable rather than frozen. */
+@media (prefers-reduced-motion: reduce) {
+  .marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+  .marquee-track { animation: none; }
+}

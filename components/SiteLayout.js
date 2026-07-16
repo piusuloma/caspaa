@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { NAV_LINKS, CONTACT, ROLES } from '../data/site'
+import Icon from './Icons'
 
 // Reveals [data-reveal] elements as they scroll in. One observer for the whole
 // page rather than one per element. Elements are unobserved once shown, so
@@ -153,7 +154,7 @@ function Nav() {
           aria-label="Toggle menu"
           aria-expanded={open}
         >
-          <span className="text-xl leading-none">{open ? '✕' : '☰'}</span>
+          <Icon name={open ? 'close' : 'menu'} className="w-5 h-5" />
         </button>
       </div>
       {open && (
@@ -202,8 +203,14 @@ function Footer() {
           <Logo light />
           <p className="mt-4 text-sm text-slate-400 max-w-xs">{CONTACT.tagline}</p>
           <div className="mt-5 text-sm space-y-1">
-            <p>📧 <a className="hover:text-white" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></p>
-            <p>📞 {CONTACT.phones.join(' · ')}</p>
+            <p className="flex items-center gap-2">
+              <Icon name="mail" className="w-4 h-4 shrink-0 text-accent-400" />
+              <a className="hover:text-white" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+            </p>
+            <p className="flex items-center gap-2">
+              <Icon name="phone" className="w-4 h-4 shrink-0 text-accent-400" />
+              {CONTACT.phones.join(' · ')}
+            </p>
           </div>
         </div>
         {cols.map((c) => (

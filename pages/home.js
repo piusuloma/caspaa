@@ -7,6 +7,7 @@ import SiteLayout, {
   GhostButton,
 } from '../components/SiteLayout'
 import SlotImage, { SlotBackdrop } from '../components/SlotImage'
+import Icon from '../components/Icons'
 import {
   HERO,
   METRICS,
@@ -71,7 +72,7 @@ function DashboardMock() {
 
 function Section({ id, className = '', children }) {
   return (
-    <section id={id} className={`py-20 md:py-24 scroll-mt-16 ${className}`}>
+    <section id={id} className={`py-24 md:py-32 scroll-mt-16 ${className}`}>
       <div className="max-w-7xl mx-auto px-5">{children}</div>
     </section>
   )
@@ -144,7 +145,9 @@ function Problem() {
       <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {PROBLEMS.map((p, i) => (
           <div key={p.title} className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm mkt-card" data-reveal data-reveal-delay={String((i % 4) + 1)}>
-            <div className="text-3xl">{p.icon}</div>
+            <div className="w-11 h-11 rounded-xl bg-brand-50 text-navy-600 grid place-items-center">
+              <Icon name={p.icon} className="w-5 h-5" />
+            </div>
             <h3 className="mt-3 font-bold text-slate-900">{p.title}</h3>
             <p className="mt-2 text-sm text-slate-600">{p.body}</p>
           </div>
@@ -158,8 +161,8 @@ function Problem() {
 function Solution() {
   return (
     <Section id="features" className="bg-slate-50">
-      <div className="grid lg:grid-cols-2 gap-12 items-start">
-        <div className="lg:sticky lg:top-24" data-reveal="left">
+      <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div data-reveal="left">
           <Eyebrow>THE SOLUTION</Eyebrow>
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
             One platform for every part of your school.
@@ -169,27 +172,50 @@ function Solution() {
             unified operating system that replaces the many different tools your school is using right now.
           </p>
           <PrimaryButton href="/solutions/proprietors" className="mt-8">Explore the platform →</PrimaryButton>
-          <SlotImage
-            src="/images/solution.jpg"
-            alt="CASPAA in use at a school"
-            label="Solution — wide shot"
-            size="1200×800 · school office or classroom"
-            ratio="aspect-[3/2]"
-            className="mt-8 shadow-lg mkt-lift"
-            data-reveal
-          />
         </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          {PLATFORM_TILES.map((t, i) => (
-            <div key={t.title} className="rounded-2xl bg-white p-5 ring-1 ring-slate-100 shadow-sm mkt-card" data-reveal data-reveal-delay={String((i % 4) + 1)}>
-              <div className="w-11 h-11 rounded-xl bg-brand-50 grid place-items-center text-xl">{t.icon}</div>
-              <h3 className="mt-3 font-bold text-slate-900">{t.title}</h3>
-              <p className="mt-1.5 text-sm text-slate-600">{t.body}</p>
-            </div>
-          ))}
-        </div>
+        <SlotImage
+          src="/images/solution.jpg"
+          alt="CASPAA in use at a school"
+          label="Solution — wide shot"
+          size="1200×800 · school office or classroom"
+          ratio="aspect-[3/2]"
+          className="shadow-lg mkt-lift"
+          data-reveal="right"
+        />
       </div>
     </Section>
+  )
+}
+
+function PlatformMarquee() {
+  // The list is rendered twice as ONE flat run of cards. The track shifts by
+  // exactly the width of the first copy, so copy two arrives where copy one
+  // began and the loop never seams. The halves must stay structurally
+  // identical — wrapping either one would break that measurement.
+  const run = [...PLATFORM_TILES, ...PLATFORM_TILES]
+  return (
+    <section className="py-16 md:py-20 bg-white overflow-hidden">
+      <div className="marquee">
+        <div className="marquee-track">
+          {run.map((t, i) => {
+            const dup = i >= PLATFORM_TILES.length
+            return (
+              <div
+                key={`${t.title}-${i}`}
+                aria-hidden={dup || undefined}
+                className="w-[280px] shrink-0 rounded-2xl bg-white p-5 ring-1 ring-slate-100 shadow-sm"
+              >
+                <div className="w-11 h-11 rounded-xl bg-brand-50 text-navy-600 grid place-items-center">
+                  <Icon name={t.icon} className="w-5 h-5" />
+                </div>
+                <h3 className="mt-3 font-bold text-slate-900">{t.title}</h3>
+                <p className="mt-1.5 text-sm text-slate-600">{t.body}</p>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -342,7 +368,9 @@ function Outcomes() {
       <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {OUTCOMES.map((o, i) => (
           <div key={o.title} className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm hover:shadow-md mkt-card" data-reveal data-reveal-delay={String((i % 3) + 1)}>
-            <div className="text-2xl">{o.icon}</div>
+            <div className="w-11 h-11 rounded-xl bg-brand-50 text-navy-600 grid place-items-center">
+              <Icon name={o.icon} className="w-5 h-5" />
+            </div>
             <h3 className="mt-3 font-bold text-slate-900">{o.title}</h3>
             <p className="mt-2 text-sm text-slate-600">{o.body}</p>
           </div>
@@ -395,7 +423,7 @@ function Security() {
         <div className="relative mt-8 flex flex-wrap gap-3">
           {SECURITY.map((s) => (
             <span key={s.label} className="inline-flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-4 py-2 text-sm font-semibold">
-              <span>{s.icon}</span> {s.label}
+              <Icon name={s.icon} className="w-4 h-4 text-accent-400" /> {s.label}
             </span>
           ))}
         </div>
@@ -463,6 +491,7 @@ export default function HomePage() {
       <TrustBar />
       <Problem />
       <Solution />
+      <PlatformMarquee />
       <Roles />
       <FeatureDeepDives />
       <Comparison />
