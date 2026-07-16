@@ -133,21 +133,6 @@ function TrustBar() {
             </div>
           ))}
         </div>
-        <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 items-center">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <SlotImage
-              key={i}
-              src={`/images/schools/school-${i}.png`}
-              alt={`Partner school ${i}`}
-              label={`School logo ${i}`}
-              size="400×200 · PNG, transparent"
-              ratio="aspect-[2/1]"
-              rounded="rounded-xl"
-              imgClassName="object-contain p-2 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition duration-300"
-              data-reveal
-            />
-          ))}
-        </div>
         <p className="text-center text-sm text-slate-500 mt-8 max-w-2xl mx-auto">
           Built by industry leaders in Education, Fintech, Information Technology, Risk Management and Business Operations.
         </p>
