@@ -49,7 +49,7 @@ function PlanCard({ plan }) {
       }`}
     >
       {highlight && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent-600 text-navy-600 text-xs font-extrabold px-3 py-1 rounded-full shadow">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent-600 text-white text-xs font-extrabold px-3 py-1 rounded-full shadow">
           MOST POPULAR
         </span>
       )}
