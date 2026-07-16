@@ -70,42 +70,66 @@ function DashboardMock() {
   )
 }
 
-// Types the headline out character by character.
+// Cycles the headline: types a phrase, holds, backspaces, moves to the next,
+// and loops back round to the first.
 //
-// Server-render and no-JS and reduced-motion all fall through to a plain <h1>
-// with the full text, so the headline is never missing from the markup.
+// The <h1>'s accessible name is the canonical HERO.title and never changes —
+// an <h1> whose text rewrites itself every few seconds is hostile to a screen
+// reader and gives a crawler no stable heading. The animated copy is therefore
+// aria-hidden and purely decorative. SSR, no-JS and prefers-reduced-motion all
+// render the canonical title as plain text.
 //
-// While typing, an invisible copy of the full string holds the block's final
-// size and the typed prefix is overlaid on top. Without that, the h1 would
-// grow from zero to two lines and shove the paragraph and buttons down the
-// page as it typed.
-function TypewriterTitle({ text, className }) {
+// An invisible copy of the LONGEST phrase reserves the block's height, so the
+// hero never re-wraps or shoves the page down mid-cycle.
+function TypewriterTitle({ titles, fallback, className }) {
   const [typed, setTyped] = useState(null)
+  const [i, setI] = useState(0)
+  const [deleting, setDeleting] = useState(false)
+
+  const TYPE_MS = 45
+  const DELETE_MS = 22
+  const HOLD_MS = 2000
+  const GAP_MS = 350
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    let i = 0
-    let timer
-    setTyped('')
-    // Let the hero settle before the first keystroke.
-    const start = setTimeout(() => {
-      timer = setInterval(() => {
-        i += 1
-        setTyped(text.slice(0, i))
-        if (i >= text.length) clearInterval(timer)
-      }, 45)
-    }, 350)
-    return () => { clearTimeout(start); clearInterval(timer) }
-  }, [text])
+    const t = setTimeout(() => setTyped(''), 350)
+    return () => clearTimeout(t)
+  }, [])
 
-  if (typed === null) return <h1 className={className}>{text}</h1>
+  useEffect(() => {
+    if (typed === null) return
+    const full = titles[i]
+
+    if (!deleting && typed === full) {
+      const t = setTimeout(() => setDeleting(true), HOLD_MS)
+      return () => clearTimeout(t)
+    }
+    if (deleting && typed === '') {
+      const t = setTimeout(() => {
+        setDeleting(false)
+        setI((n) => (n + 1) % titles.length)
+      }, GAP_MS)
+      return () => clearTimeout(t)
+    }
+    const t = setTimeout(
+      () => setTyped(full.slice(0, typed.length + (deleting ? -1 : 1))),
+      deleting ? DELETE_MS : TYPE_MS
+    )
+    return () => clearTimeout(t)
+  }, [typed, deleting, i, titles])
+
+  if (typed === null) return <h1 className={className}>{fallback}</h1>
+
+  const longest = titles.reduce((a, b) => (b.length > a.length ? b : a), '')
 
   return (
     <h1 className={`${className} relative`}>
-      <span className="invisible" aria-hidden="true">{text}</span>
-      <span className="absolute inset-0">
+      <span className="sr-only">{fallback}</span>
+      <span className="invisible" aria-hidden="true">{longest}</span>
+      <span className="absolute inset-0" aria-hidden="true">
         {typed}
-        <span className="tw-caret" aria-hidden="true" />
+        <span className="tw-caret" />
       </span>
     </h1>
   )
@@ -129,7 +153,8 @@ function Hero() {
         <div>
           <div data-reveal><Eyebrow light>{HERO.eyebrow}</Eyebrow></div>
           <TypewriterTitle
-            text={HERO.title}
+            titles={HERO.titles}
+            fallback={HERO.title}
             className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight"
           />
           <p data-reveal data-reveal-delay="2" className="mt-5 text-lg text-brand-100 max-w-xl">{HERO.subtitle}</p>

@@ -16,9 +16,22 @@ export const NAV_LINKS = [
 
 export const HERO = {
   eyebrow: 'THE SCHOOL OPERATING SYSTEM',
+  // title is the canonical headline: what SSR renders, what a crawler and a
+  // screen reader get, and the fallback when motion is off. It must stay first
+  // in titles below.
   title: 'Run your entire school on one platform.',
+  // Cycled by the hero typewriter. Every line restates a claim the site already
+  // makes elsewhere, so the headline never promises more than the product does.
+  // Kept to a similar length: a much longer line would re-wrap the block and
+  // jump the page on each pass.
+  titles: [
+    'Run your entire school on one platform.',
+    'Collect every fee without chasing a parent.',
+    "See your school's numbers in real time.",
+    "Keep running when the network doesn't.",
+  ],
   subtitle:
-    'CASPAA replaces the disconnected tools your school juggles today — admissions, fees, payments, attendance, results, communication and accounting — with a single Edu-Fintech operating system. Online or offline, you get complete visibility and control.',
+    'One Edu-Fintech operating system for admissions, fees, attendance, results and accounting. Online or offline, you keep complete visibility and control.',
   microtrust: 'No spreadsheets. No manual reconciliation. No waiting for reports.',
 }
 
