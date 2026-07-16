@@ -34,7 +34,7 @@ export default function ContactPage() {
 
   return (
     <SiteLayout title="Book a Demo" description="Book a free CASPAA demo or talk to our team about your school.">
-      <section className="bg-brand-900 text-white">
+      <section className="bg-navy-600 text-white">
         <div className="max-w-7xl mx-auto px-5 py-16 md:py-20 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <Eyebrow light>GET STARTED</Eyebrow>
@@ -48,7 +48,7 @@ export default function ContactPage() {
             <div className="mt-8 space-y-4">
               {STEPS.map((s) => (
                 <div key={s.n} className="flex items-start gap-3">
-                  <span className="w-7 h-7 rounded-full bg-gold-500 text-brand-900 grid place-items-center text-sm font-extrabold shrink-0">
+                  <span className="w-7 h-7 rounded-full bg-gold-500 text-navy-600 grid place-items-center text-sm font-extrabold shrink-0">
                     {s.n}
                   </span>
                   <div>
@@ -74,9 +74,9 @@ export default function ContactPage() {
                 <h2 className="mt-4 text-xl font-extrabold text-slate-900">Thanks — your request is ready to send.</h2>
                 <p className="mt-2 text-sm text-slate-600">
                   Your email app should have opened with the details filled in. If it didn’t, email us directly at{' '}
-                  <a className="text-brand-700 font-semibold" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>.
+                  <a className="text-navy-600 font-semibold" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>.
                 </p>
-                <button onClick={() => setSent(false)} className="mt-6 text-sm font-semibold text-brand-700 hover:underline">
+                <button onClick={() => setSent(false)} className="mt-6 text-sm font-semibold text-navy-600 hover:underline">
                   ← Edit your request
                 </button>
               </div>
@@ -119,7 +119,7 @@ export default function ContactPage() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-brand-900 font-bold text-sm shadow-lg transition"
+                  className="w-full py-3.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-navy-600 font-bold text-sm shadow-lg transition"
                 >
                   Request my demo
                 </button>

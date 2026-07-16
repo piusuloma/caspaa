@@ -44,8 +44,8 @@ export default function SignInFinder() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
 
-      <div className="min-h-screen relative overflow-hidden bg-brand-900 text-white flex flex-col">
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-brand-700/40 blur-3xl" />
+      <div className="min-h-screen relative overflow-hidden bg-navy-600 text-white flex flex-col">
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-navy-400/30 blur-3xl" />
         <div className="absolute bottom-0 -left-20 w-72 h-72 rounded-full bg-gold-500/10 blur-3xl" />
 
         <header className="relative z-10 max-w-6xl w-full mx-auto px-5 h-16 flex items-center justify-between">
@@ -79,12 +79,12 @@ export default function SignInFinder() {
                   </span>
                 </div>
                 <p className="mt-2 text-xs text-slate-400">
-                  You'll go to <span className="font-semibold text-brand-700">{preview}.caspaa.org</span>
+                  You'll go to <span className="font-semibold text-navy-600">{preview}.caspaa.org</span>
                 </p>
                 {err && <div className="mt-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-sm px-3 py-2">{err}</div>}
                 <button
                   type="submit"
-                  className="mt-4 w-full py-3.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-brand-900 font-bold text-sm shadow-lg transition"
+                  className="mt-4 w-full py-3.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-navy-600 font-bold text-sm shadow-lg transition"
                 >
                   Continue
                 </button>
@@ -97,7 +97,7 @@ export default function SignInFinder() {
                 </p>
                 <p className="text-sm text-slate-500">
                   New to CASPAA?{' '}
-                  <Link href="/contact" className="text-brand-700 font-semibold hover:underline">Sign up your school →</Link>
+                  <Link href="/contact" className="text-navy-600 font-semibold hover:underline">Sign up your school →</Link>
                 </p>
               </div>
             </div>

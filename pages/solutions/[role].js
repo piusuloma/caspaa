@@ -26,7 +26,7 @@ export default function RolePage({ index }) {
   return (
     <SiteLayout title={`For ${role.tab}`} description={`${role.headline} — ${role.body}`}>
       {/* Hero */}
-      <section className="bg-brand-900 text-white">
+      <section className="bg-navy-600 text-white">
         <div className="max-w-7xl mx-auto px-5 py-16 md:py-24 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <Eyebrow light>FOR {role.name.toUpperCase()}</Eyebrow>
@@ -39,7 +39,7 @@ export default function RolePage({ index }) {
             </div>
           </div>
           <div className="lg:pl-6">
-            <div className="rounded-3xl bg-gradient-to-br from-brand-700 to-brand-800 p-8 ring-1 ring-white/10">
+            <div className="rounded-3xl bg-navy-600 p-8 ring-1 ring-white/10">
               <p className="text-gold-400 font-bold text-sm mb-4">What {role.tab.toLowerCase()} get</p>
               <ul className="grid gap-3">
                 {role.bullets.map((b) => (
@@ -91,7 +91,7 @@ export default function RolePage({ index }) {
               >
                 <p className="font-bold text-slate-900">For {r.tab}</p>
                 <p className="mt-1 text-sm text-slate-500 line-clamp-2">{r.headline}</p>
-                <span className="mt-3 inline-block text-sm font-semibold text-brand-700">Learn more →</span>
+                <span className="mt-3 inline-block text-sm font-semibold text-navy-600">Learn more →</span>
               </Link>
             ))}
           </div>
@@ -99,7 +99,7 @@ export default function RolePage({ index }) {
       </section>
 
       {/* CTA */}
-      <section className="bg-gradient-to-br from-brand-700 to-brand-900 text-white">
+      <section className="bg-navy-600 text-white">
         <div className="max-w-5xl mx-auto px-5 py-16 text-center">
           <h2 className="text-3xl font-extrabold tracking-tight">Ready to see it in action?</h2>
           <p className="mt-3 text-brand-100">Book a free demo tailored to your school.</p>

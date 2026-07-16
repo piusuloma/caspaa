@@ -3,15 +3,15 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { NAV_LINKS, CONTACT, ROLES } from '../data/site'
 
-// Small, reusable brand mark (Africa-inspired ring).
+// Official CASPAA wordmark. `light` swaps to the white cut for dark surfaces.
 export function Logo({ light = false }) {
-  const text = light ? 'text-white' : 'text-brand-800'
   return (
-    <Link href="/home" className="flex items-center gap-2 shrink-0">
-      <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 text-white grid place-items-center font-extrabold shadow-md">
-        C
-      </span>
-      <span className={`text-xl font-extrabold tracking-tight ${text}`}>CASPAA</span>
+    <Link href="/home" className="flex items-center shrink-0" aria-label="CASPAA home">
+      <img
+        src={light ? '/logo/caspaa-white.svg' : '/logo/caspaa-navy.svg'}
+        alt="CASPAA"
+        className="h-8 w-auto"
+      />
     </Link>
   )
 }
@@ -20,7 +20,7 @@ export function PrimaryButton({ href, children, className = '' }) {
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gold-500 hover:bg-gold-600 text-brand-900 font-bold text-sm shadow-lg shadow-gold-500/20 transition ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gold-500 hover:bg-gold-600 text-navy-600 font-bold text-sm shadow-lg shadow-gold-500/20 transition ${className}`}
     >
       {children}
     </Link>
@@ -30,7 +30,7 @@ export function PrimaryButton({ href, children, className = '' }) {
 export function GhostButton({ href, children, light = false, className = '' }) {
   const base = light
     ? 'text-white border-white/30 hover:bg-white/10'
-    : 'text-brand-800 border-brand-200 hover:bg-brand-50'
+    : 'text-navy-600 border-brand-200 hover:bg-brand-50'
   return (
     <Link
       href={href}
@@ -69,13 +69,13 @@ function Nav() {
         <Logo />
         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
           {NAV_LINKS.map((l) => (
-            <Link key={l.href} href={l.href} className="hover:text-brand-700 transition">
+            <Link key={l.href} href={l.href} className="hover:text-navy-600 transition">
               {l.label}
             </Link>
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-3">
-          <a href="/signin" className="text-sm font-semibold text-slate-600 hover:text-brand-700">
+          <a href="/signin" className="text-sm font-semibold text-slate-600 hover:text-navy-600">
             Sign in
           </a>
           <PrimaryButton href="/contact" className="px-4 py-2.5">Book a Demo</PrimaryButton>
@@ -128,7 +128,7 @@ function Footer() {
     },
   ]
   return (
-    <footer className="bg-brand-900 text-slate-300">
+    <footer className="bg-navy-600 text-slate-300">
       <div className="max-w-7xl mx-auto px-5 py-14 grid gap-10 md:grid-cols-5">
         <div className="md:col-span-2">
           <Logo light />

@@ -13,33 +13,33 @@ function PlanCard({ plan }) {
     <div
       className={`relative rounded-3xl p-7 flex flex-col ${
         highlight
-          ? 'bg-brand-800 text-white ring-2 ring-brand-600 shadow-2xl lg:-translate-y-3'
+          ? 'bg-navy-600 text-white ring-2 ring-gold-500 shadow-2xl lg:-translate-y-3'
           : gold
-          ? 'bg-gradient-to-br from-gold-400 to-gold-600 text-brand-900 shadow-xl'
+          ? 'bg-gradient-to-br from-gold-400 to-gold-600 text-navy-600 shadow-xl'
           : 'bg-white text-slate-800 ring-1 ring-slate-200 shadow-sm'
       }`}
     >
       {highlight && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gold-500 text-brand-900 text-xs font-extrabold px-3 py-1 rounded-full shadow">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gold-500 text-navy-600 text-xs font-extrabold px-3 py-1 rounded-full shadow">
           MOST POPULAR
         </span>
       )}
-      <h3 className={`text-lg font-extrabold ${gold ? 'text-brand-900' : highlight ? 'text-white' : 'text-slate-900'}`}>
+      <h3 className={`text-lg font-extrabold ${gold ? 'text-navy-600' : highlight ? 'text-white' : 'text-slate-900'}`}>
         {plan.name}
       </h3>
       <div className="mt-2 flex items-end gap-1">
         <span className="text-4xl font-extrabold">{plan.price}</span>
       </div>
-      <p className={`text-sm mt-1 ${highlight ? 'text-brand-100' : gold ? 'text-brand-800' : 'text-slate-500'}`}>
+      <p className={`text-sm mt-1 ${highlight ? 'text-brand-100' : gold ? 'text-navy-600' : 'text-slate-500'}`}>
         {plan.unit}
       </p>
-      <p className={`mt-4 text-sm font-medium ${highlight ? 'text-brand-100' : gold ? 'text-brand-800' : 'text-slate-600'}`}>
+      <p className={`mt-4 text-sm font-medium ${highlight ? 'text-brand-100' : gold ? 'text-navy-600' : 'text-slate-600'}`}>
         {plan.tagline}
       </p>
 
       <div className="mt-6">
         {plan.cta === 'Talk to Sales' ? (
-          <GhostButton href="/contact" className={`w-full ${gold ? '!text-brand-900 !border-brand-900/30 hover:!bg-brand-900/10' : ''}`}>
+          <GhostButton href="/contact" className={`w-full ${gold ? '!text-navy-600 !border-navy-600/30 hover:!bg-navy-600/10' : ''}`}>
             {plan.cta}
           </GhostButton>
         ) : (
@@ -48,15 +48,15 @@ function PlanCard({ plan }) {
       </div>
 
       {plan.inherits && (
-        <p className={`mt-6 text-sm font-bold ${highlight ? 'text-gold-300' : gold ? 'text-brand-900' : 'text-brand-700'}`}>
+        <p className={`mt-6 text-sm font-bold ${highlight ? 'text-gold-300' : 'text-navy-600'}`}>
           {plan.inherits}
         </p>
       )}
       <ul className="mt-4 space-y-2.5 flex-1">
         {plan.features.map((f) => (
           <li key={f} className="flex items-start gap-2.5 text-sm">
-            <Check className={gold ? 'text-brand-900' : highlight ? 'text-gold-400' : 'text-brand-600'} />
-            <span className={highlight ? 'text-white/90' : gold ? 'text-brand-900' : 'text-slate-700'}>{f}</span>
+            <Check className={gold ? 'text-navy-600' : highlight ? 'text-gold-400' : 'text-brand-600'} />
+            <span className={highlight ? 'text-white/90' : gold ? 'text-navy-600' : 'text-slate-700'}>{f}</span>
           </li>
         ))}
       </ul>
@@ -75,7 +75,7 @@ export default function PricingPage() {
   return (
     <SiteLayout title="Pricing" description="Simple, per-student pricing that scales with your school. Standard, Premium and Ultimate plans.">
       {/* Header */}
-      <section className="bg-brand-900 text-white">
+      <section className="bg-navy-600 text-white">
         <div className="max-w-7xl mx-auto px-5 py-16 md:py-20 text-center">
           <Eyebrow light>SIMPLE, PER-STUDENT PRICING</Eyebrow>
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Pricing that scales with your school.</h1>
@@ -110,7 +110,7 @@ export default function PricingPage() {
             </ul>
             <p className="mt-5 text-sm text-slate-600">
               Need help choosing?{' '}
-              <a className="text-brand-700 font-semibold" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>{' '}
+              <a className="text-navy-600 font-semibold" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>{' '}
               · {CONTACT.phones.join(' · ')}
             </p>
           </div>
@@ -129,7 +129,7 @@ export default function PricingPage() {
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200">
             <div className="grid grid-cols-2 text-sm font-bold">
               <div className="p-4 bg-slate-100 text-slate-500">Regular SMS</div>
-              <div className="p-4 bg-brand-700 text-white">CASPAA</div>
+              <div className="p-4 bg-navy-600 text-white">CASPAA</div>
             </div>
             {COMPARISON.map((row, i) => (
               <div key={row[0]} className={`grid grid-cols-2 text-sm ${i % 2 ? 'bg-white' : 'bg-slate-50'}`}>

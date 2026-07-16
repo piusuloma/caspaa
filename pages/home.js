@@ -39,7 +39,7 @@ function DashboardMock() {
         <span className="ml-3 text-[11px] text-slate-400 font-medium">app.caspaa.org</span>
       </div>
       <div className="p-4 bg-slate-50">
-        <div className="rounded-xl bg-gradient-to-r from-brand-700 to-brand-800 text-white p-4 mb-3">
+        <div className="rounded-xl bg-navy-600 text-white p-4 mb-3">
           <p className="text-[11px] text-brand-100">Welcome back,</p>
           <p className="text-lg font-bold">Akande</p>
           <p className="text-[11px] text-brand-100">Bright Lights Academy · 1st Term 2025/26</p>
@@ -78,8 +78,8 @@ function Section({ id, className = '', children }) {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-brand-900 text-white">
-      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-brand-700/40 blur-3xl" />
+    <section className="relative overflow-hidden bg-navy-600 text-white">
+      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-navy-400/30 blur-3xl" />
       <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-gold-500/10 blur-3xl" />
       <div className="relative max-w-7xl mx-auto px-5 py-20 md:py-28 grid lg:grid-cols-2 gap-12 items-center">
         <div>
@@ -119,7 +119,7 @@ function TrustBar() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {METRICS.map((m) => (
             <div key={m.label} className="text-center">
-              <p className="text-3xl font-extrabold text-brand-800">{m.value}</p>
+              <p className="text-3xl font-extrabold text-navy-600">{m.value}</p>
               <p className="text-xs text-slate-500 mt-1">{m.label}</p>
             </div>
           ))}
@@ -155,7 +155,7 @@ function Problem() {
           </div>
         ))}
       </div>
-      <p className="mt-10 text-xl font-bold text-brand-700">There’s a better way to run a school.</p>
+      <p className="mt-10 text-xl font-bold text-navy-600">There’s a better way to run a school.</p>
     </Section>
   )
 }
@@ -210,14 +210,14 @@ function Roles() {
             key={r.slug}
             onClick={() => setActive(i)}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-              i === active ? 'bg-brand-700 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              i === active ? 'bg-navy-600 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
             {r.tab}
           </button>
         ))}
       </div>
-      <div className="mt-8 rounded-3xl bg-gradient-to-br from-brand-800 to-brand-900 text-white p-8 md:p-12 grid lg:grid-cols-2 gap-10 items-center">
+      <div className="mt-8 rounded-3xl bg-navy-600 text-white p-8 md:p-12 grid lg:grid-cols-2 gap-10 items-center">
         <div>
           <p className="text-gold-400 font-bold text-sm">{role.name}</p>
           <h3 className="mt-2 text-2xl md:text-3xl font-extrabold">{role.headline}</h3>
@@ -250,7 +250,7 @@ function FeatureDeepDives() {
               <Eyebrow>{f.eyebrow}</Eyebrow>
               <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">{f.title}</h3>
               <p className="mt-4 text-slate-600">{f.body}</p>
-              <div className="mt-5 inline-flex items-center gap-2 bg-brand-50 text-brand-800 rounded-full px-4 py-2 text-sm font-bold">
+              <div className="mt-5 inline-flex items-center gap-2 bg-brand-50 text-navy-600 rounded-full px-4 py-2 text-sm font-bold">
                 {f.stat}
               </div>
             </div>
@@ -281,7 +281,7 @@ function Comparison() {
       <div className="mt-10 max-w-4xl mx-auto overflow-hidden rounded-2xl ring-1 ring-slate-200">
         <div className="grid grid-cols-2 text-sm font-bold">
           <div className="p-4 bg-slate-100 text-slate-500">Regular School Management System</div>
-          <div className="p-4 bg-brand-700 text-white">CASPAA School Operating System</div>
+          <div className="p-4 bg-navy-600 text-white">CASPAA School Operating System</div>
         </div>
         {COMPARISON.map((row, i) => (
           <div key={row[0]} className={`grid grid-cols-2 text-sm ${i % 2 ? 'bg-white' : 'bg-slate-50'}`}>
@@ -301,7 +301,7 @@ function Comparison() {
 
 function Advantages() {
   return (
-    <Section className="bg-brand-900 text-white">
+    <Section className="bg-navy-600 text-white">
       <div className="text-center max-w-2xl mx-auto">
         <Eyebrow light>OUR UNIQUE ADVANTAGES</Eyebrow>
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
@@ -357,7 +357,7 @@ function Onboarding() {
       <div className="mt-12 grid gap-6 md:grid-cols-4">
         {STEPS.map((s) => (
           <div key={s.n} className="relative rounded-2xl bg-white p-6 ring-1 ring-slate-100">
-            <div className="w-10 h-10 rounded-full bg-brand-700 text-white grid place-items-center font-extrabold">{s.n}</div>
+            <div className="w-10 h-10 rounded-full bg-navy-600 text-white grid place-items-center font-extrabold">{s.n}</div>
             <h3 className="mt-4 font-bold text-slate-900">{s.title}</h3>
             <p className="mt-2 text-sm text-slate-600">{s.body}</p>
           </div>
@@ -373,7 +373,7 @@ function Onboarding() {
 function Security() {
   return (
     <Section id="security">
-      <div className="rounded-3xl bg-brand-900 text-white p-8 md:p-12">
+      <div className="rounded-3xl bg-navy-600 text-white p-8 md:p-12">
         <div className="max-w-2xl">
           <Eyebrow light>BUILT ON TRUST</Eyebrow>
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
@@ -428,7 +428,7 @@ function Faq() {
 
 function FinalCta() {
   return (
-    <section className="bg-gradient-to-br from-brand-700 to-brand-900 text-white">
+    <section className="bg-navy-600 text-white">
       <div className="max-w-5xl mx-auto px-5 py-20 text-center">
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
           Ready to run your school the modern way?
