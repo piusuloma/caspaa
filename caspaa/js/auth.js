@@ -50,34 +50,6 @@ const DEMO_ACCOUNTS = [
   { id: 'stu_002', role: 'student', name: 'Tobi Okafor', email: 'tobi@brightlights.ng',          title: 'Student',          subtitle: 'JSS 1 — Bright Lights Academy', schoolId: 'sch_brightlights' }
 ];
 
-/* ---------- Role-differentiated login presentation ----------
-   Each role tab only changes what the login card *says* (heading, field
-   label, placeholder, image). The identifier is still resolved by
-   routeLoginIdentifier / resolveLogin — nobody's type is trusted from the
-   tab they pick, so the security model is unchanged. This mirrors the
-   Edves model (Students / Parents / Educator / Tour / Admissions) while
-   keeping CASPAA's brand colours. */
-const LOGIN_ROLES = {
-  student: {
-    key: 'student', label: 'Students', icon: 'students',
-    heading: 'Student Login', subtitle: 'Access your learning dashboard',
-    fieldLabel: 'Admission Number', placeholder: 'e.g. BL/2025/001',
-    hint: 'Sign in with your admission number, then your date of birth.'
-  },
-  parent: {
-    key: 'parent', label: 'Parents', icon: 'user',
-    heading: 'Parent Login', subtitle: 'Follow your child\'s progress',
-    fieldLabel: 'Email or Phone', placeholder: 'you@email.com · +234…',
-    hint: 'Use the email or phone number your school has on record.'
-  },
-  educator: {
-    key: 'educator', label: 'School / Staff', icon: 'teacher',
-    heading: 'School & Staff Login', subtitle: 'Owners, admins & teachers',
-    fieldLabel: 'Work email', placeholder: 'you@yourschool.ng',
-    hint: 'School owners, admins and staff sign in with their work email.'
-  }
-};
-
 /* ============================================================
    PUBLIC PROSPECTIVE-PARENT FUNNEL (pre-account, no login required)
    - Book a Tour   → tourBookings
@@ -404,16 +376,6 @@ function saveCareerApplication() {
   publicSuccess('Interest registered!', ref, `Thanks ${name.split(' ')[0]} — we've saved your details and will reach out when a matching role opens.`);
 }
 
-// Module-level: which role tab is active (null = neutral / any).
-let _loginRole = null;
-
-function loginRoleTab(r) {
-  return `<button type="button" data-loginrole="${r.key}"
-      class="login-role-tab flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:text-brand-700 hover:bg-brand-50 transition whitespace-nowrap">
-      ${icon(r.icon, 'w-4 h-4')}<span>${r.label}</span>
-    </button>`;
-}
-
 /* ---------- Public portal feature cards (glass on brand gradient) ---------- */
 const PORTAL_FEATURES = [
   { icon: 'book',    title: 'Learning Assistant', desc: 'Personalised, curriculum-aligned help for every learner' },
@@ -430,29 +392,8 @@ function portalFeatureCard(f) {
     </div>`;
 }
 
-/* ---------- Per-role sign-in hero image ----------
-   Drop images at these paths (relative to the page, works in both the Next
-   app and the standalone build). Missing files fall back to the navy panel. */
-function heroImageFor(roleKey) {
-  const map = {
-    student:  'logo/hero-student.jpg',
-    parent:   'logo/hero-parent.jpg',
-    educator: 'logo/hero-educator.jpg'
-  };
-  return map[roleKey] || 'logo/hero-default.jpg';
-}
-
-function applyHeroImage(roleKey) {
-  const el = document.getElementById('loginHero');
-  if (el) el.style.backgroundImage = `url("${heroImageFor(roleKey)}")`;
-}
-
 function portalActionBtn(label, iconName, onclick) {
   return `<button type="button" onclick="${onclick}" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 border border-white/15 text-white text-sm font-semibold hover:bg-white/20 transition">${icon(iconName, 'w-4 h-4')}${label}</button>`;
-}
-
-function quickAccessBtn(label, iconName, onclick) {
-  return `<button type="button" onclick="${onclick}" class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:border-brand-400 hover:text-brand-700 hover:bg-brand-50 transition">${icon(iconName, 'w-4 h-4')}${label}</button>`;
 }
 
 /* ---------- Login screen (public portal) ---------- */
@@ -462,34 +403,27 @@ function renderLogin() {
   return `
     <div class="login-bg min-h-screen flex">
 
-      <!-- Hero panel (left) — per-role background image (swapped by applyHeroImage).
-           Logo only, centred at the top; portal actions live in the form column. -->
+      <!-- Hero panel (left) — image only; the wordmark now sits above the form heading. -->
       <div id="loginHero" class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col items-center justify-start p-10 xl:p-12" style="background-image:url('logo/hero-default.jpg')">
-        <div class="relative text-white flex flex-col items-center text-center">
-          <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-16 xl:h-20 w-auto" onerror="this.remove()" />
-          ${displayName === 'CASPAA' ? '' : `<div class="mt-3">
-            <h1 class="text-xl font-extrabold tracking-tight leading-tight">${displayName}</h1>
-            <p class="text-white/70 text-xs">Powered by CASPAA</p>
-          </div>`}
-        </div>
+        ${displayName === 'CASPAA' ? '' : `<div class="relative text-white text-center">
+          <h1 class="text-xl font-extrabold tracking-tight leading-tight">${displayName}</h1>
+          <p class="text-white/70 text-xs">Powered by CASPAA</p>
+        </div>`}
       </div>
 
       <!-- Form area (right) -->
       <div class="flex-1 flex items-center justify-center p-6 sm:p-10">
         <div class="login-card w-full max-w-md">
-          <img src="logo/caspaa-navy.svg" alt="CASPAA" class="lg:hidden h-8 w-auto mx-auto mb-8" onerror="this.remove()" />
 
         <!-- Login card (identifier-first, two-step) -->
         <div class="bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-6 sm:p-8">
 
           <!-- Step 1: who are you? -->
           <div id="loginStep1">
-            <div class="flex items-center gap-3 mb-1">
-              <div id="loginRoleImg" class="hidden w-11 h-11 rounded-2xl bg-brand-50 text-brand-700 flex-shrink-0 items-center justify-center"></div>
-              <div>
-                <h3 id="loginHeading" class="text-xl font-bold text-slate-900 leading-tight">Sign in to your dashboard</h3>
-                <p id="loginSubtitle" class="text-sm text-slate-500">Choose who you are, or just enter your details below.</p>
-              </div>
+            <img src="logo/caspaa-navy.svg" alt="CASPAA" class="h-6 w-auto mb-4" onerror="this.remove()" />
+            <div class="mb-1">
+              <h3 class="text-xl font-bold text-slate-900 leading-tight">Sign in to your dashboard</h3>
+              <p class="text-sm text-slate-500">Enter your details below to continue.</p>
             </div>
             <div class="space-y-3 mt-5">
               <div>
@@ -500,18 +434,7 @@ function renderLogin() {
               <p class="text-xs text-slate-400 text-center" id="loginFieldHint">Staff &amp; parents use email · students use their admission number</p>
             </div>
 
-            <!-- Sign in as — the three member roles of an onboarded school.
-                 Each also swaps the hero background image (via selectLoginRole). -->
-            <div class="mt-5 pt-5 border-t border-slate-100">
-              <div class="text-xs font-semibold uppercase text-slate-400 text-center mb-2.5">Sign in as</div>
-              <div class="grid grid-cols-3 gap-2">
-                ${quickAccessBtn('School / Staff', 'teacher', "selectLoginRole('educator')")}
-                ${quickAccessBtn('Parents', 'user', "selectLoginRole('parent')")}
-                ${quickAccessBtn('Students', 'students', "selectLoginRole('student')")}
-              </div>
-            </div>
-
-            <div class="mt-4 pt-4 border-t border-slate-100 text-center">
+            <div class="mt-5 pt-5 border-t border-slate-100 text-center">
               <p class="text-xs text-slate-400">Prospective parent?
                 <button type="button" class="text-slate-500 font-medium hover:text-slate-700 underline" onclick="openTourPage()">Book a tour</button>
                 or
@@ -537,49 +460,6 @@ function renderLogin() {
       </div>
     </div>
   `;
-}
-
-/* ---------- Apply a role tab's presentation (does not change auth logic) ---------- */
-function selectLoginRole(roleKey) {
-  const r = LOGIN_ROLES[roleKey] || null;
-  _loginRole = r ? r.key : null;
-
-  const heading = document.getElementById('loginHeading');
-  const subtitle = document.getElementById('loginSubtitle');
-  const fieldLabel = document.getElementById('loginFieldLabel');
-  const hint = document.getElementById('loginFieldHint');
-  const input = document.getElementById('loginIdentifier');
-  const img = document.getElementById('loginRoleImg');
-
-  if (r) {
-    heading.textContent = r.heading;
-    subtitle.textContent = r.subtitle;
-    fieldLabel.textContent = r.fieldLabel;
-    hint.textContent = r.hint;
-    input.placeholder = r.placeholder;
-    img.innerHTML = icon(r.icon, 'w-6 h-6');
-    img.classList.remove('hidden'); img.classList.add('flex');
-  } else {
-    heading.textContent = 'Sign in to your dashboard';
-    subtitle.textContent = 'Choose who you are, or just enter your details below.';
-    fieldLabel.textContent = 'Email or Admission Number';
-    hint.textContent = 'Staff & parents use email · students use their admission number';
-    input.placeholder = 'you@school.ng  ·  BL/2025/001';
-    img.classList.add('hidden'); img.classList.remove('flex');
-  }
-
-  // Active-tab styling
-  document.querySelectorAll('.login-role-tab').forEach(t => {
-    const active = t.dataset.loginrole === _loginRole;
-    t.classList.toggle('bg-brand-50', active);
-    t.classList.toggle('text-brand-700', active);
-    t.classList.toggle('text-slate-500', !active);
-  });
-
-  // Swap the hero background to match the chosen role (default when neutral).
-  applyHeroImage(_loginRole);
-
-  if (input) setTimeout(() => input.focus(), 0);
 }
 
 /* ---------- Resolve an email + password against every account source ----------
@@ -762,15 +642,6 @@ function bindLoginHandlers() {
   document.getElementById('loginContinueBtn').onclick = goToStep2;
   idInput.addEventListener('keydown', e => { if (e.key === 'Enter') goToStep2(); });
   document.getElementById('loginBackBtn').onclick = goToStep1;
-
-  // Role tabs: presentation only — toggling off a re-clicked tab returns to neutral.
-  _loginRole = null;
-  document.querySelectorAll('.login-role-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const key = tab.dataset.loginrole;
-      selectLoginRole(_loginRole === key ? null : key);
-    });
-  });
 
   setTimeout(() => idInput.focus(), 0);
 }
