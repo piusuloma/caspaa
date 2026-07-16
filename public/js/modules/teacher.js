@@ -74,12 +74,12 @@ function staffClockIn() {
   // Anything after 08:00 counts as late (configurable in real product)
   const status = (h >= 8 && m > 0) || h >= 9 ? 'late' : 'present';
   DB.insert('staffAttendance', {
-    id: uid('satt'), schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    id: uid('satt'), schoolId: currentSchoolId(),
     staffId, date: today(),
     clockIn, clockOut: null,
     status, source: 'self'
   });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: AUTH.current.schoolId || 'sch_brightlights', actor: staffId, action: 'staff_clock_in', target: `${clockIn}${status === 'late' ? ' (late)' : ''}`, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: staffId, action: 'staff_clock_in', target: `${clockIn}${status === 'late' ? ' (late)' : ''}`, timestamp: now() });
   toast(`Clocked in at ${clockIn}${status === 'late' ? ' · marked late' : ''}`, status === 'late' ? 'warn' : 'success');
   APP.render();
 }
@@ -173,17 +173,17 @@ function requestLeaveModal() {
           Your request goes to the proprietor / HR for approval. They'll typically respond within 24 hours. You'll be notified on the bell icon.
         </div>
         <div>
-          <label class="input-label">Leave Type</label>
+          <label class="input-label" for="lvreq_type">Leave Type</label>
           <select id="lvreq_type" class="input">
             ${(DB.settings().leaveTypes || ['Annual','Casual','Sick','Maternity','Paternity','Bereavement','Study','Compassionate']).map(t => `<option>${t}</option>`).join('')}
           </select>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">From</label><input id="lvreq_from" type="date" class="input" value="${daysAhead(7)}" /></div>
-          <div><label class="input-label">To</label><input id="lvreq_to" type="date" class="input" value="${daysAhead(8)}" /></div>
+          <div><label class="input-label" for="lvreq_from">From</label><input id="lvreq_from" type="date" class="input" value="${daysAhead(7)}" /></div>
+          <div><label class="input-label" for="lvreq_to">To</label><input id="lvreq_to" type="date" class="input" value="${daysAhead(8)}" /></div>
         </div>
         <div>
-          <label class="input-label">Reason</label>
+          <label class="input-label" for="lvreq_reason">Reason</label>
           <textarea id="lvreq_reason" rows="3" class="input" placeholder="A brief note for the approver…"></textarea>
         </div>
         <div class="bg-slate-50 rounded-xl p-3 text-xs text-slate-600">
@@ -445,7 +445,7 @@ function view_tch_attendance() {
       subtitle: `${cls.name} · ${fdate(date, { long: true })}${isOffline() ? ' · <span class="badge badge-warn ml-1">Offline</span>' : ''}`
     })}
 
-    <div class="card p-4 mb-4 grid sm:grid-cols-2 gap-3">
+    <div class="card p-5 mb-4 grid sm:grid-cols-2 gap-3">
       <div><label class="input-label">Class</label>
         <select class="input" onchange="APP.go('tch_attendance', { classId: this.value, date: '${date}' })">
           ${classes.map(c => `<option value="${c.id}" ${classId===c.id?'selected':''}>${c.name}</option>`).join('')}
@@ -456,7 +456,7 @@ function view_tch_attendance() {
       </div>
     </div>
 
-    <div class="card p-4 mb-4 flex items-center justify-between flex-wrap gap-2">
+    <div class="card p-5 mb-4 flex items-center justify-between flex-wrap gap-2">
       <div class="text-sm text-slate-600">${existing.length}/${students.length} marked</div>
       <div class="flex gap-2">
         <button class="btn btn-ghost text-sm" onclick="bulkMarkAttendance('${classId}', '${date}', 'present')">${icon('check','w-3 h-3')} All Present</button>
@@ -522,7 +522,7 @@ function saveAttendance(classId, date) {
     const timeStamp = new Date().toTimeString().slice(0, 5); // HH:MM in 24h
     if (cur) DB.update('attendance', cur.id, { status, markedAt: timeStamp, markedAtFull: now() });
     else {
-      DB.insert('attendance', { id: uid('att'), schoolId: AUTH.current.schoolId || 'sch_brightlights', studentId: s.id, classId, date, status, recordedBy: AUTH.current.id, markedAt: timeStamp, markedAtFull: now() });
+      DB.insert('attendance', { id: uid('att'), schoolId: currentSchoolId(), studentId: s.id, classId, date, status, recordedBy: AUTH.current.id, markedAt: timeStamp, markedAtFull: now() });
     }
     added++;
     // Real notification record for absent / late students (sent via WhatsApp + in-app)
@@ -602,7 +602,7 @@ function view_tch_results() {
       title: 'Enter Results',
       subtitle: typeSubtitle
     })}
-    <div class="card p-4 mb-4 grid sm:grid-cols-2 gap-3">
+    <div class="card p-5 mb-4 grid sm:grid-cols-2 gap-3">
       <div><label class="input-label">Class</label>
         <select class="input" onchange="APP.go('tch_results', { classId: this.value, subjectId: '${subjectId}' })">
           ${classes.map(c => `<option value="${c.id}" ${classId===c.id?'selected':''}>${c.name}</option>`).join('')}
@@ -617,10 +617,10 @@ function view_tch_results() {
 
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr>
-          <th>Student</th>
-          ${types.map(t => `<th class="text-center">${t.label} <span class="text-slate-400 font-normal">/${t.weight}</span></th>`).join('')}
-          <th class="text-center">Total</th><th class="text-center">Grade</th><th>Comment</th>
+        <th scope="col"ead><tr>
+          <th scope="col">Student</th>
+          ${types.map(t => `<th scope="col" class="text-center">${t.label} <span class="text-slate-400 font-normal">/${t.weight}</span></th>`).join('')}
+          <th scope="col" class="text-center">Total</th><th scope="col" class="text-center">Grade</th><th scope="col">Comment</th>
         </tr></thead>
         <tbody>
           ${students.map(s => {
@@ -637,7 +637,7 @@ function view_tch_results() {
               <td>
                 <div class="flex gap-1">
                   <input class="input flex-1 text-sm" id="res_cmt_${s.id}" value="${r ? r.comment : ''}" placeholder="Teacher comment…" />
-                  <button class="btn btn-gold !p-1.5" title="AI suggest comment" onclick="aiSuggestComment('${s.id}', '${subjectId}')">${icon('ai','w-4 h-4')}</button>
+                  <button class="btn btn-gold !p-1.5" aria-label="AI suggest comment" title="AI suggest comment" onclick="aiSuggestComment('${s.id}', '${subjectId}')">${icon('ai','w-4 h-4')}</button>
                 </div>
               </td>
             </tr>`;
@@ -691,7 +691,7 @@ function saveResults(classId, subjectId) {
     const existing = DB.query('results', r => r.studentId === s.id && r.subjectId === subjectId && r.classId === classId)[0];
     const record = Object.assign({ total, grade, comment, approved: false }, scores);
     if (existing) DB.update('results', existing.id, record);
-    else DB.insert('results', Object.assign({ id: uid('res'), schoolId: AUTH.current.schoolId || 'sch_brightlights', studentId: s.id, classId, subjectId, term: DB.settings().currentTerm }, record));
+    else DB.insert('results', Object.assign({ id: uid('res'), schoolId: currentSchoolId(), studentId: s.id, classId, subjectId, term: DB.settings().currentTerm }, record));
     if (s.parentId) {
       const scoreStr = types.map((t, i) => `${t.label}: ${scores[termTypeKey(types, i)]}`).join(' · ');
       DB.insert('notifications', {
@@ -792,13 +792,13 @@ function tch_renderAssignments() {
           const classSize = COMPUTE.studentsByClass(a.classId).length;
           const submissionRate = classSize ? Math.round((a.submissions.length / classSize) * 100) : 0;
           const overdue = new Date(a.dueDate) < new Date();
-          return `<div class="card card-hover p-4 cursor-pointer" onclick="openAssignment('${a.id}')">
+          return `<div class="card card-hover p-5 cursor-pointer" onclick="openAssignment('${a.id}')">
             <div class="flex items-start justify-between gap-2 mb-2">
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="badge badge-info">${cls ? cls.name : ''}</span>
                 <span class="badge badge-neutral">${sub ? sub.name : ''}</span>
               </div>
-              <button class="btn btn-ghost !p-1" onclick="event.stopPropagation(); editAssignmentModal('${a.id}')" title="Edit">${icon('edit', 'w-4 h-4')}</button>
+              <button class="btn btn-ghost !p-1" onclick="event.stopPropagation(); editAssignmentModal('${a.id}')" aria-label="Edit" title="Edit">${icon('edit', 'w-4 h-4')}</button>
             </div>
             <h3 class="font-bold text-slate-900 mb-1">${a.title}</h3>
             <p class="text-sm text-slate-500 line-clamp-2 mb-3">${a.description}</p>
@@ -832,13 +832,13 @@ function tch_renderMaterials() {
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         ${materials.map(m => {
           const cls = DB.find('classes', m.classId);
-          return `<div class="card p-4">
+          return `<div class="card p-5">
             <div class="flex items-start justify-between gap-2 mb-2">
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="badge ${m.type === 'video' ? 'badge-danger' : 'badge-info'}">${m.type === 'video' ? 'Video' : 'Note'}</span>
                 <span class="badge badge-neutral">${cls ? cls.name : ''}</span>
               </div>
-              <button class="btn btn-ghost !p-1 text-rose-600" title="Delete" onclick="deleteMaterial('${m.id}')">${icon('trash','w-4 h-4')}</button>
+              <button class="btn btn-ghost !p-1 text-rose-600" aria-label="Delete" title="Delete" onclick="deleteMaterial('${m.id}')">${icon('trash','w-4 h-4')}</button>
             </div>
             <h3 class="font-bold text-slate-900 text-sm mb-1">${m.title}</h3>
             <p class="text-xs text-slate-500 line-clamp-2 mb-2">${m.description || ''}</p>
@@ -873,21 +873,21 @@ function createMaterialModal() {
     title: 'Upload Learning Material',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Title</label><input id="mat_title" class="input" placeholder="e.g. Photosynthesis — Class Notes" /></div>
+        <div><label class="input-label" for="mat_title">Title</label><input id="mat_title" class="input" placeholder="e.g. Photosynthesis — Class Notes" /></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Class</label><select id="mat_class" class="input">${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
-          <div><label class="input-label">Subject</label><select id="mat_subject" class="input">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+          <div><label class="input-label" for="mat_class">Class</label><select id="mat_class" class="input">${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+          <div><label class="input-label" for="mat_subject">Subject</label><select id="mat_subject" class="input">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
         </div>
-        <div><label class="input-label">Type</label>
+        <div><label class="input-label" for="mat_type">Type</label>
           <select id="mat_type" class="input" onchange="document.getElementById('mat_urlRow').classList.toggle('hidden', this.value!=='video')">
             <option value="note">Note / Document</option>
             <option value="video">Video (link)</option>
           </select>
         </div>
-        <div id="mat_urlRow" class="hidden"><label class="input-label">Video URL (YouTube, etc.)</label><input id="mat_url" class="input" placeholder="https://…" /></div>
-        <div><label class="input-label">Description</label><textarea id="mat_desc" rows="3" class="input" placeholder="What is this material about?"></textarea></div>
+        <div id="mat_urlRow" class="hidden"><label class="input-label" for="mat_url">Video URL (YouTube, etc.)</label><input id="mat_url" class="input" placeholder="https://…" /></div>
+        <div><label class="input-label" for="mat_desc">Description</label><textarea id="mat_desc" rows="3" class="input" placeholder="What is this material about?"></textarea></div>
         <div>
-          <label class="input-label">Attach file (optional — PDF / Word / image, max 3MB)</label>
+          <label class="input-label" for="mat_file">Attach file (optional — PDF / Word / image, max 3MB)</label>
           <input type="file" id="mat_file" class="hidden" accept="application/pdf,.doc,.docx,image/*" onchange="onMaterialFile(event)" />
           <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('mat_file').click()">
             ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}<div class="text-xs text-slate-500">Click to attach a file</div>
@@ -908,7 +908,7 @@ function saveMaterial() {
   const type = document.getElementById('mat_type').value;
   const url = document.getElementById('mat_url') ? document.getElementById('mat_url').value.trim() : '';
   const m = {
-    id: uid('lm'), schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    id: uid('lm'), schoolId: currentSchoolId(),
     classId, subjectId: document.getElementById('mat_subject').value, teacherId: AUTH.current.id,
     title, type, description: document.getElementById('mat_desc').value.trim(),
     url, file: _materialFile || null, createdAt: now()
@@ -926,7 +926,7 @@ function saveMaterial() {
 
 function deleteMaterial(id) {
   const m = DB.find('learningMaterials', id);
-  confirm(`Delete "${m.title}"? Students will no longer see it.`, () => {
+  confirmDialog(`Delete "${m.title}"? Students will no longer see it.`, () => {
     DB.remove('learningMaterials', id);
     APP.render();
     toast('Material deleted', 'info');
@@ -1039,7 +1039,7 @@ function gradeSubmission(assignmentId, studentId) {
 
 function deleteAssignmentConfirm(assignmentId) {
   const a = DB.find('assignments', assignmentId);
-  confirm(`Delete "${a.title}"? This cannot be undone. Any submissions will also be removed.`, () => {
+  confirmDialog(`Delete "${a.title}"? This cannot be undone. Any submissions will also be removed.`, () => {
     DB.remove('assignments', assignmentId);
     document.getElementById('modalBackdrop')?.click();
     APP.render();
@@ -1084,7 +1084,7 @@ function tch_openMarkingView(assignmentId, studentId) {
       <button id="mkv_pen" class="btn btn-secondary !py-1 !px-3 text-xs active-tool" onclick="mkvSetTool('pen')">✏️ Pen</button>
       <button id="mkv_highlight" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('highlight')">🖊 Highlight</button>
       <button id="mkv_eraser" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('eraser')">⬜ Eraser</button>
-      <button id="mkv_pin" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('pin')" title="Click on image to place a comment pin">📍 Comment</button>
+      <button id="mkv_pin" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('pin')" aria-label="Click on image to place a comment pin" title="Click on image to place a comment pin">📍 Comment</button>
       <span class="text-xs text-slate-500 font-semibold ml-2">Colour:</span>
       ${['#ef4444','#fd7d71','#10b981','#f59e0b','#fd7d71','#000000'].map(c =>
         `<button class="w-6 h-6 rounded-full border-2 ${c === '#ef4444' ? 'border-slate-700 scale-110' : 'border-transparent'} transition-all" style="background:${c}" onclick="mkvSetColor('${c}',this)"></button>`
@@ -1121,9 +1121,9 @@ function tch_openMarkingView(assignmentId, studentId) {
               </div>
             </div>
             <div class="flex items-center gap-1">
-              ${navPrev ? `<button class="btn btn-secondary !py-1 !px-2 text-xs" onclick="tch_openMarkingView('${assignmentId}','${navPrev}')" title="Previous student">← Prev</button>` : ''}
+              ${navPrev ? `<button class="btn btn-secondary !py-1 !px-2 text-xs" onclick="tch_openMarkingView('${assignmentId}','${navPrev}')" aria-label="Previous student" title="Previous student">← Prev</button>` : ''}
               <span class="text-xs text-slate-500 px-1">${idx+1} / ${allSubmitted.length}</span>
-              ${navNext ? `<button class="btn btn-secondary !py-1 !px-2 text-xs" onclick="tch_openMarkingView('${assignmentId}','${navNext}')" title="Next student">Next →</button>` : ''}
+              ${navNext ? `<button class="btn btn-secondary !py-1 !px-2 text-xs" onclick="tch_openMarkingView('${assignmentId}','${navNext}')" aria-label="Next student" title="Next student">Next →</button>` : ''}
             </div>
           </div>
           ${submissionArea}
@@ -1158,7 +1158,7 @@ function tch_openMarkingView(assignmentId, studentId) {
             <input id="mkv_grade" type="hidden" value="${graded ? sub.grade : ''}" />
           </div>` : `
           <div>
-            <label class="input-label">Score / 100</label>
+            <label class="input-label" for="mkv_grade">Score / 100</label>
             <input id="mkv_grade" type="number" min="0" max="100" class="input !text-2xl !font-extrabold !text-brand-700 text-center" placeholder="—" value="${graded ? sub.grade : ''}" />
           </div>`}
 
@@ -1186,7 +1186,7 @@ function tch_openMarkingView(assignmentId, studentId) {
 
           <!-- General Feedback -->
           <div>
-            <label class="input-label">General Feedback</label>
+            <label class="input-label" for="mkv_feedback">General Feedback</label>
             <textarea id="mkv_feedback" rows="3" class="input text-sm" placeholder="Overall feedback, corrections, suggestions…">${graded && sub.feedback ? sub.feedback : ''}</textarea>
           </div>
 
@@ -1347,7 +1347,7 @@ function mkvRenderPins() {
         <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9">
           <span style="flex-shrink:0;width:18px;height:18px;border-radius:50%;background:${p.x!=null?'#00b386':'#94a3b8'};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">${p.x!=null?i+1:'✎'}</span>
           <span style="font-size:12px;color:#334155;flex:1;word-break:break-word">${p.text || '<em style="color:#94a3b8">empty</em>'}</span>
-          <button onclick="mkvDeletePin('${p.id}')" style="color:#cbd5e1;background:none;border:none;cursor:pointer;font-size:13px;flex-shrink:0" title="Delete">✕</button>
+          <button onclick="mkvDeletePin('${p.id}')" style="color:#cbd5e1;background:none;border:none;cursor:pointer;font-size:13px;flex-shrink:0" aria-label="Delete" title="Delete">✕</button>
         </div>`).join('');
   }
 }
@@ -1590,17 +1590,17 @@ function createAssignmentModal(editingId) {
     title: isEdit ? 'Edit Assignment' : 'Create Assignment',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Title</label><input id="as_title" class="input" placeholder="e.g. Algebra Practice Set 4" value="${existing ? existing.title.replace(/"/g, '&quot;') : ''}" /></div>
+        <div><label class="input-label" for="as_title">Title</label><input id="as_title" class="input" placeholder="e.g. Algebra Practice Set 4" value="${existing ? existing.title.replace(/"/g, '&quot;') : ''}" /></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Class</label>
+          <div><label class="input-label" for="as_class">Class</label>
             <select id="as_class" class="input">${classes.map(c => `<option value="${c.id}" ${existing && existing.classId === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select>
           </div>
-          <div><label class="input-label">Subject</label>
+          <div><label class="input-label" for="as_subject">Subject</label>
             <select id="as_subject" class="input">${subjects.map(s => `<option value="${s.id}" ${existing && existing.subjectId === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select>
           </div>
         </div>
-        <div><label class="input-label">Description / Instructions</label><textarea id="as_desc" rows="4" class="input" placeholder="What students need to do…">${existing ? existing.description : ''}</textarea></div>
-        <div><label class="input-label">Due Date</label><input id="as_due" type="date" class="input" value="${existing ? existing.dueDate : daysAhead(7)}" /></div>
+        <div><label class="input-label" for="as_desc">Description / Instructions</label><textarea id="as_desc" rows="4" class="input" placeholder="What students need to do…">${existing ? existing.description : ''}</textarea></div>
+        <div><label class="input-label" for="as_due">Due Date</label><input id="as_due" type="date" class="input" value="${existing ? existing.dueDate : daysAhead(7)}" /></div>
         <div>
           <div class="flex items-center justify-between mb-2">
             <label class="input-label !mb-0">Rubric Criteria <span class="text-slate-400 font-normal text-xs">(optional)</span></label>
@@ -1638,7 +1638,7 @@ function saveAssignment(editingId) {
   }
 
   DB.insert('assignments', {
-    id: uid('asn'), schoolId: AUTH.current.schoolId || 'sch_brightlights', classId, subjectId, teacherId: AUTH.current.id,
+    id: uid('asn'), schoolId: currentSchoolId(), classId, subjectId, teacherId: AUTH.current.id,
     title, description, dueDate, rubric, createdAt: now(), submissions: []
   });
   // Notify all parents in the class
@@ -1676,7 +1676,7 @@ function view_tch_lessons(params) {
           ${lessons.map(l => {
             const cls = DB.find('classes', l.classId);
             const sub = subjects.find(s => s.id === l.subjectId);
-            return `<div class="card p-4">
+            return `<div class="card p-5">
               ${(() => {
                 let schemeBadge = '';
                 if (l.schemeRef) {
@@ -1695,7 +1695,7 @@ function view_tch_lessons(params) {
                 </div>
                 <div class="flex items-center gap-1">
                   <span class="text-xs text-slate-400">${fdate(l.createdAt, { short: true })}</span>
-                  <button class="btn btn-ghost !p-1.5" onclick="editLessonModal('${l.id}')" title="Edit lesson plan">${icon('edit','w-3.5 h-3.5')}</button>
+                  <button class="btn btn-ghost !p-1.5" onclick="editLessonModal('${l.id}')" aria-label="Edit lesson plan" title="Edit lesson plan">${icon('edit','w-3.5 h-3.5')}</button>
                 </div>
               </div>`;
               })()}
@@ -1744,7 +1744,7 @@ function view_tch_lessons(params) {
             const sub = DB.find('subjects', m.subjectId);
             const readViews = DB.query('materialViews', v => v.materialId === m.id);
             const classStudents = cls ? COMPUTE.studentsByClass(cls.id) : [];
-            return `<div class="card p-4">
+            return `<div class="card p-5">
               <div class="flex items-start justify-between gap-3">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-2 flex-wrap">
@@ -1763,8 +1763,8 @@ function view_tch_lessons(params) {
                   <div class="text-xs text-slate-400">${fdate(m.createdAt, { short: true })}${m.updatedAt ? ' · edited' : ''}</div>
                   ${classStudents.length ? `<div class="mt-1 text-xs font-semibold ${readViews.length >= classStudents.length ? 'text-emerald-600' : 'text-amber-600'}">${readViews.length}/${classStudents.length} read</div>` : ''}
                   <div class="flex gap-1 justify-end mt-2">
-                    <button class="btn btn-ghost !p-1.5" onclick="tch_editNoteModal('${m.id}')" title="Edit note">${icon('edit','w-3.5 h-3.5')}</button>
-                    <button class="btn btn-ghost !p-1.5 text-red-500" onclick="tch_deleteNote('${m.id}')" title="Delete note">${icon('trash','w-3.5 h-3.5')}</button>
+                    <button class="btn btn-ghost !p-1.5" onclick="tch_editNoteModal('${m.id}')" aria-label="Edit note" title="Edit note">${icon('edit','w-3.5 h-3.5')}</button>
+                    <button class="btn btn-ghost !p-1.5 text-red-500" onclick="tch_deleteNote('${m.id}')" aria-label="Delete note" title="Delete note">${icon('trash','w-3.5 h-3.5')}</button>
                   </div>
                 </div>
               </div>
@@ -1830,21 +1830,21 @@ function tch_postNoteModal() {
     size: 'lg',
     body: `<div class="space-y-3">
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Class</label>
+        <div><label class="input-label" for="cn_class">Class</label>
           <select id="cn_class" class="input">${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
-        <div><label class="input-label">Subject</label>
+        <div><label class="input-label" for="cn_subject">Subject</label>
           <select id="cn_subject" class="input">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
       </div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Week (optional)</label><input id="cn_week" class="input" placeholder="e.g. Week 8"></div>
-        <div><label class="input-label">Note Title</label><input id="cn_title" class="input" placeholder="e.g. Quadratic Equations — Notes"></div>
+        <div><label class="input-label" for="cn_week">Week (optional)</label><input id="cn_week" class="input" placeholder="e.g. Week 8"></div>
+        <div><label class="input-label" for="cn_title">Note Title</label><input id="cn_title" class="input" placeholder="e.g. Quadratic Equations — Notes"></div>
       </div>
-      <div><label class="input-label">Note Content</label>
+      <div><label class="input-label" for="cn_content">Note Content</label>
         <textarea id="cn_content" rows="6" class="input" placeholder="Type the full note here. Students will read this directly...&#10;&#10;Tip: you can paste content copied from Word — text and basic structure are preserved."></textarea></div>
-      <div><label class="input-label">Description / Summary (shown on card)</label>
+      <div><label class="input-label" for="cn_desc">Description / Summary (shown on card)</label>
         <input id="cn_desc" class="input" placeholder="One-line summary for students"></div>
       <div>
-        <label class="input-label">Attach File (PDF / Image — optional, max 5MB)</label>
+        <label class="input-label" for="cn_fileInput">Attach File (PDF / Image — optional, max 5MB)</label>
         <input type="file" id="cn_fileInput" accept="application/pdf,image/*" class="hidden" onchange="onNoteFilePick(event)">
         <div class="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('cn_fileInput').click()">
           ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}<div class="text-xs text-slate-500">Click to attach a PDF or image</div>
@@ -1876,7 +1876,7 @@ function tch_saveNote() {
   const subjectId = (document.getElementById('cn_subject') || {}).value;
   if (!title || !classId) { toast('Title and class required', 'danger'); return; }
   const mat = {
-    id: uid('lm'), schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    id: uid('lm'), schoolId: currentSchoolId(),
     classId, subjectId, teacherId: AUTH.current.id,
     title, type: 'note',
     week: (document.getElementById('cn_week') || {}).value.trim() || null,
@@ -1906,22 +1906,22 @@ function tch_editNoteModal(noteId) {
     body: `
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Class</label>
+          <div><label class="input-label" for="en_class">Class</label>
             <select id="en_class" class="input">${classes.map(c => `<option value="${c.id}" ${c.id === m.classId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>
           </div>
-          <div><label class="input-label">Subject</label>
+          <div><label class="input-label" for="en_subject">Subject</label>
             <select id="en_subject" class="input">${subjects.map(s => `<option value="${s.id}" ${s.id === m.subjectId ? 'selected' : ''}>${s.name}</option>`).join('')}</select>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Week (optional)</label><input id="en_week" class="input" value="${m.week || ''}"></div>
-          <div><label class="input-label">Note Title</label><input id="en_title" class="input" value="${m.title}"></div>
+          <div><label class="input-label" for="en_week">Week (optional)</label><input id="en_week" class="input" value="${m.week || ''}"></div>
+          <div><label class="input-label" for="en_title">Note Title</label><input id="en_title" class="input" value="${m.title}"></div>
         </div>
-        <div><label class="input-label">Note Content</label>
+        <div><label class="input-label" for="en_content">Note Content</label>
           <textarea id="en_content" rows="8" class="input">${m.content || ''}</textarea>
           <p class="text-xs text-slate-400 mt-1">You can paste content copied from Word — text structure is preserved.</p>
         </div>
-        <div><label class="input-label">Description / Summary</label>
+        <div><label class="input-label" for="en_desc">Description / Summary</label>
           <input id="en_desc" class="input" value="${m.description || ''}"></div>
       </div>
     `,
@@ -1950,10 +1950,11 @@ function tch_updateNote(noteId) {
 function tch_deleteNote(noteId) {
   const m = DB.find('learningMaterials', noteId);
   if (!m) return;
-  if (!confirm(`Delete "${m.title}"? Students will lose access to this note.`)) return;
-  DB.remove('learningMaterials', noteId);
-  APP.go('tch_lessons', { tab: 'notes' });
-  toast('Note deleted', 'success');
+  confirmDialog(`Delete "${m.title}"? Students will lose access to this note.`, () => {
+    DB.remove('learningMaterials', noteId);
+    APP.go('tch_lessons', { tab: 'notes' });
+    toast('Note deleted', 'success');
+  }, { yesLabel: 'Delete', danger: true });
 }
 
 function tch_returnToStudent(assignmentId, studentId) {
@@ -2001,7 +2002,7 @@ function tch_pushToResultsModal(assignmentId) {
           const types = getTermAssessmentTypes();
           const caSlots = types.slice(0, -1);
           return `<div class="grid grid-cols-2 gap-3">
-            <div><label class="input-label">Assessment Slot</label>
+            <div><label class="input-label" for="pr_slot">Assessment Slot</label>
               <select id="pr_slot" class="input" onchange="document.getElementById('pr_scaled_info').textContent=this.options[this.selectedIndex].dataset.max">
                 ${caSlots.map((t, i) => {
                   const key = termTypeKey(types, i);
@@ -2009,12 +2010,12 @@ function tch_pushToResultsModal(assignmentId) {
                 }).join('')}
               </select>
             </div>
-            <div><label class="input-label">Term</label>
+            <div><label class="input-label" for="pr_term">Term</label>
               <input id="pr_term" class="input" value="${DB.settings().currentTerm || ''}"></div>
           </div>
           <div class="card overflow-hidden">
             <table class="tbl text-sm">
-              <thead><tr><th>Student</th><th>Score</th><th>→ Scaled (<span id="pr_scaled_info">${caSlots[0] ? caSlots[0].weight : 20}</span> marks)</th></tr></thead>
+              <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Score</th><th scope="col">→ Scaled (<span id="pr_scaled_info">${caSlots[0] ? caSlots[0].weight : 20}</span> marks)</th></tr></thead>
               <tbody>
                 ${gradedSubs.map(sub => {
                   const st = DB.find('students', sub.studentId);
@@ -2051,7 +2052,7 @@ function tch_confirmPushToResults(assignmentId) {
       const { grade } = COMPUTE.gradeFromScore(total);
       DB.update('results', existing.id, Object.assign(patch, { total, grade }));
     } else {
-      const rec = { id: uid('res'), schoolId: AUTH.current.schoolId || 'sch_brightlights', studentId: sub.studentId, classId: a.classId, subjectId: a.subjectId, term, [slot]: caScore, exam: 0, total: caScore, grade: COMPUTE.gradeFromScore(caScore).grade, comment: '', approved: false };
+      const rec = { id: uid('res'), schoolId: currentSchoolId(), studentId: sub.studentId, classId: a.classId, subjectId: a.subjectId, term, [slot]: caScore, exam: 0, total: caScore, grade: COMPUTE.gradeFromScore(caScore).grade, comment: '', approved: false };
       DB.insert('results', rec);
     }
     synced++;
@@ -2068,18 +2069,18 @@ function tch_postVideoModal() {
     size: 'lg',
     body: `<div class="space-y-3">
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Class</label>
+        <div><label class="input-label" for="vid_class">Class</label>
           <select id="vid_class" class="input">${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
-        <div><label class="input-label">Subject</label>
+        <div><label class="input-label" for="vid_subject">Subject</label>
           <select id="vid_subject" class="input">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
       </div>
-      <div><label class="input-label">Video Title</label><input id="vid_title" class="input" placeholder="e.g. Solving Quadratic Equations — Khan Academy"></div>
-      <div><label class="input-label">YouTube or Vimeo URL</label>
+      <div><label class="input-label" for="vid_title">Video Title</label><input id="vid_title" class="input" placeholder="e.g. Solving Quadratic Equations — Khan Academy"></div>
+      <div><label class="input-label" for="vid_url">YouTube or Vimeo URL</label>
         <input id="vid_url" class="input" placeholder="https://www.youtube.com/watch?v=..." oninput="tch_previewYT()"></div>
       <div id="vid_preview" class="hidden rounded-xl overflow-hidden bg-black aspect-video">
         <iframe id="vid_iframe" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
       </div>
-      <div><label class="input-label">Description (optional)</label><input id="vid_desc" class="input" placeholder="What will students learn from this video?"></div>
+      <div><label class="input-label" for="vid_desc">Description (optional)</label><input id="vid_desc" class="input" placeholder="What will students learn from this video?"></div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="tch_saveVideo()">Save Video</button>`
@@ -2106,7 +2107,7 @@ function tch_saveVideo() {
   const subjectId = (document.getElementById('vid_subject') || {}).value;
   if (!title || !url) { toast('Title and URL required', 'danger'); return; }
   const mat = {
-    id: uid('lm'), schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    id: uid('lm'), schoolId: currentSchoolId(),
     classId, subjectId, teacherId: AUTH.current.id,
     title, type: 'video', url,
     description: (document.getElementById('vid_desc') || {}).value.trim(),
@@ -2137,7 +2138,7 @@ function tch_playVideo(id) {
 }
 
 function tch_deleteVideo(id) {
-  confirm('Delete this video? Students will no longer see it.', () => {
+  confirmDialog('Delete this video? Students will no longer see it.', () => {
     DB.remove('learningMaterials', id);
     APP.go('tch_lessons', { tab: 'videos' });
     toast('Video removed', 'info');
@@ -2232,12 +2233,12 @@ function tch_renderSchemeTab(tabBar) {
         </div>
       </div>
       <table class="w-full text-sm">
-        <thead><tr class="bg-slate-50 text-xs uppercase text-slate-400 border-b border-slate-100">
-          <th class="px-3 py-2 text-left w-14">Week</th>
-          <th class="px-3 py-2 text-left">Topic</th>
-          <th class="px-3 py-2 text-left hidden sm:table-cell">Duration</th>
-          <th class="px-3 py-2 text-center">Status</th>
-          <th class="px-3 py-2 text-right">Lesson Plan</th>
+        <th scope="col"ead><tr class="bg-slate-50 text-xs uppercase text-slate-400 border-b border-slate-100">
+          <th scope="col" class="px-3 py-2 text-left w-14">Week</th>
+          <th scope="col" class="px-3 py-2 text-left">Topic</th>
+          <th scope="col" class="px-3 py-2 text-left hidden sm:table-cell">Duration</th>
+          <th scope="col" class="px-3 py-2 text-center">Status</th>
+          <th scope="col" class="px-3 py-2 text-right">Lesson Plan</th>
         </tr></thead>
         <tbody class="divide-y divide-slate-100">${weekRows}</tbody>
       </table>
@@ -2271,12 +2272,12 @@ function tch_quickPlanFromScheme(schemeId, weekIdx) {
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label">Class</label><input class="input" value="${cls ? cls.name : ''}" readonly /></div>
-          <div><label class="input-label">Week</label><input id="qp_week" class="input" value="Week ${w.week}" /></div>
+          <div><label class="input-label" for="qp_week">Week</label><input id="qp_week" class="input" value="Week ${w.week}" /></div>
         </div>
-        <div><label class="input-label">Topic</label><input id="qp_topic" class="input" value="${w.topic}" /></div>
-        <div><label class="input-label">Objectives</label><textarea id="qp_obj" rows="2" class="input">${w.objectives || ''}</textarea></div>
-        <div><label class="input-label">Activities</label><textarea id="qp_act" rows="2" class="input" placeholder="e.g. Group work, guided practice, board examples"></textarea></div>
-        <div><label class="input-label">Resources</label><input id="qp_res" class="input" value="${w.resources || ''}" /></div>
+        <div><label class="input-label" for="qp_topic">Topic</label><input id="qp_topic" class="input" value="${w.topic}" /></div>
+        <div><label class="input-label" for="qp_obj">Objectives</label><textarea id="qp_obj" rows="2" class="input">${w.objectives || ''}</textarea></div>
+        <div><label class="input-label" for="qp_act">Activities</label><textarea id="qp_act" rows="2" class="input" placeholder="e.g. Group work, guided practice, board examples"></textarea></div>
+        <div><label class="input-label" for="qp_res">Resources</label><input id="qp_res" class="input" value="${w.resources || ''}" /></div>
       </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="tch_saveQuickPlan('${schemeId}',${weekIdx},'${sc.classId}','${sc.subjectId}')">Save Lesson Plan</button>`
@@ -2318,28 +2319,28 @@ function createLessonModal() {
     body: `
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Class</label>
+          <div><label class="input-label" for="lp_class">Class</label>
             <select id="lp_class" class="input" onchange="refreshLessonSchemes()">${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select>
           </div>
-          <div><label class="input-label">Subject</label>
+          <div><label class="input-label" for="lp_subject">Subject</label>
             <select id="lp_subject" class="input" onchange="refreshLessonSchemes()">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
           </div>
         </div>
         <div id="lp_schemeRow">
-          <label class="input-label">Tie to Scheme of Work (auto-fills week + topic)</label>
+          <label class="input-label" for="lp_scheme">Tie to Scheme of Work (auto-fills week + topic)</label>
           <select id="lp_scheme" class="input" onchange="onLessonSchemeChange()">
             <option value="">— None (manual entry) —</option>
           </select>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Week</label><input id="lp_week" class="input" placeholder="e.g. Week 7" /></div>
-          <div><label class="input-label">Topic</label><input id="lp_topic" class="input" placeholder="e.g. Quadratic Equations" /></div>
+          <div><label class="input-label" for="lp_week">Week</label><input id="lp_week" class="input" placeholder="e.g. Week 7" /></div>
+          <div><label class="input-label" for="lp_topic">Topic</label><input id="lp_topic" class="input" placeholder="e.g. Quadratic Equations" /></div>
         </div>
-        <div><label class="input-label">Objectives</label><textarea id="lp_obj" rows="2" class="input" placeholder="e.g. Students will be able to solve quadratic equations using the factorisation method"></textarea></div>
-        <div><label class="input-label">Activities</label><textarea id="lp_act" rows="2" class="input" placeholder="e.g. Group work, think-pair-share, guided practice on the board"></textarea></div>
-        <div><label class="input-label">Resources / Materials</label><input id="lp_res" class="input" placeholder="e.g. Textbook p.55, graph paper, coloured markers" /></div>
+        <div><label class="input-label" for="lp_obj">Objectives</label><textarea id="lp_obj" rows="2" class="input" placeholder="e.g. Students will be able to solve quadratic equations using the factorisation method"></textarea></div>
+        <div><label class="input-label" for="lp_act">Activities</label><textarea id="lp_act" rows="2" class="input" placeholder="e.g. Group work, think-pair-share, guided practice on the board"></textarea></div>
+        <div><label class="input-label" for="lp_res">Resources / Materials</label><input id="lp_res" class="input" placeholder="e.g. Textbook p.55, graph paper, coloured markers" /></div>
         <div>
-          <label class="input-label">Attach Lesson Plan File (PDF / Word / Image — optional)</label>
+          <label class="input-label" for="lp_fileInput">Attach Lesson Plan File (PDF / Word / Image — optional)</label>
           <input type="file" id="lp_fileInput" accept="application/pdf,.doc,.docx,image/*" class="hidden" onchange="onLessonFilePick(event)" />
           <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('lp_fileInput').click()">
             ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}
@@ -2430,22 +2431,22 @@ function editLessonModal(planId) {
     body: `
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Class</label>
+          <div><label class="input-label" for="lp_class">Class</label>
             <select id="lp_class" class="input" onchange="refreshLessonSchemes()">${classes.map(c => `<option value="${c.id}" ${c.id === plan.classId ? 'selected' : ''}>${c.name}</option>`).join('')}</select>
           </div>
-          <div><label class="input-label">Subject</label>
+          <div><label class="input-label" for="lp_subject">Subject</label>
             <select id="lp_subject" class="input" onchange="refreshLessonSchemes()">${subjects.map(s => `<option value="${s.id}" ${s.id === plan.subjectId ? 'selected' : ''}>${s.name}</option>`).join('')}</select>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Week</label><input id="lp_week" class="input" placeholder="e.g. Week 7" value="${(plan.week || '').replace(/"/g, '&quot;')}" /></div>
-          <div><label class="input-label">Topic</label><input id="lp_topic" class="input" placeholder="e.g. Quadratic Equations" value="${(plan.topic || '').replace(/"/g, '&quot;')}" /></div>
+          <div><label class="input-label" for="lp_week">Week</label><input id="lp_week" class="input" placeholder="e.g. Week 7" value="${(plan.week || '').replace(/"/g, '&quot;')}" /></div>
+          <div><label class="input-label" for="lp_topic">Topic</label><input id="lp_topic" class="input" placeholder="e.g. Quadratic Equations" value="${(plan.topic || '').replace(/"/g, '&quot;')}" /></div>
         </div>
-        <div><label class="input-label">Objectives</label><textarea id="lp_obj" rows="2" class="input" placeholder="e.g. Students will be able to solve quadratic equations using the factorisation method">${plan.objectives || ''}</textarea></div>
-        <div><label class="input-label">Activities</label><textarea id="lp_act" rows="2" class="input" placeholder="e.g. Group work, think-pair-share, guided practice on the board">${plan.activities || ''}</textarea></div>
-        <div><label class="input-label">Resources / Materials</label><input id="lp_res" class="input" placeholder="e.g. Textbook p.55, graph paper, coloured markers" value="${(plan.resources || '').replace(/"/g, '&quot;')}" /></div>
+        <div><label class="input-label" for="lp_obj">Objectives</label><textarea id="lp_obj" rows="2" class="input" placeholder="e.g. Students will be able to solve quadratic equations using the factorisation method">${plan.objectives || ''}</textarea></div>
+        <div><label class="input-label" for="lp_act">Activities</label><textarea id="lp_act" rows="2" class="input" placeholder="e.g. Group work, think-pair-share, guided practice on the board">${plan.activities || ''}</textarea></div>
+        <div><label class="input-label" for="lp_res">Resources / Materials</label><input id="lp_res" class="input" placeholder="e.g. Textbook p.55, graph paper, coloured markers" value="${(plan.resources || '').replace(/"/g, '&quot;')}" /></div>
         <div>
-          <label class="input-label">Attach Lesson Plan File (PDF / Word / Image — optional)</label>
+          <label class="input-label" for="lp_fileInput">Attach Lesson Plan File (PDF / Word / Image — optional)</label>
           <input type="file" id="lp_fileInput" accept="application/pdf,.doc,.docx,image/*" class="hidden" onchange="onLessonFilePick(event)" />
           <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('lp_fileInput').click()">
             ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}
@@ -2518,7 +2519,7 @@ function renderTeacherWeekView() {
     <div class="card overflow-hidden">
       <div class="overflow-x-auto">
         <table class="tbl">
-          <thead><tr><th>Period</th>${days.map(d => '<th>' + d + '</th>').join('')}</tr></thead>
+          <th scope="col"ead><tr><th scope="col">Period</th>${days.map(d => '<th scope="col">' + d + '</th>').join('')}</tr></thead>
           <tbody>
             ${periods.map(p => {
               const entries = days.map(d => tt.find(x => x.day === d && x.period === p));
@@ -2650,7 +2651,7 @@ function view_tch_cbt() {
           const subs = DB.query('cbtSubmissions', x => x.examId === e.id);
           const pending = subs.filter(x => x.status === 'submitted').length;
           const classSize = COMPUTE.studentsByClass(e.classId).length;
-          return `<div class="card p-4">
+          return `<div class="card p-5">
             <div class="flex items-center gap-1.5 flex-wrap mb-2">
               <span class="badge badge-info">${cls ? cls.name : ''}</span>
               <span class="badge badge-neutral">${DB.find('subjects', e.subjectId) ? DB.find('subjects', e.subjectId).name : ''}</span>
@@ -2696,14 +2697,14 @@ function renderCbtBuilder() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div><label class="input-label">Exam Title</label><input id="cbt_title" class="input" value="${(d.title || '').replace(/"/g,'&quot;')}" placeholder="e.g. Mathematics Mid-Term CBT" /></div>
+        <div><label class="input-label" for="cbt_title">Exam Title</label><input id="cbt_title" class="input" value="${(d.title || '').replace(/"/g,'&quot;')}" placeholder="e.g. Mathematics Mid-Term CBT" /></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Class</label><select id="cbt_class" class="input">${classes.map(c => `<option value="${c.id}" ${d.classId === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select></div>
-          <div><label class="input-label">Subject</label><select id="cbt_subject" class="input">${subjects.map(s => `<option value="${s.id}" ${d.subjectId === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select></div>
+          <div><label class="input-label" for="cbt_class">Class</label><select id="cbt_class" class="input">${classes.map(c => `<option value="${c.id}" ${d.classId === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select></div>
+          <div><label class="input-label" for="cbt_subject">Subject</label><select id="cbt_subject" class="input">${subjects.map(s => `<option value="${s.id}" ${d.subjectId === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select></div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Duration (minutes)</label><input id="cbt_duration" type="number" class="input" value="${d.duration}" /></div>
-          <div><label class="input-label">Rules</label><input id="cbt_rules" class="input" value="${(d.rules || '').replace(/"/g,'&quot;')}" /></div>
+          <div><label class="input-label" for="cbt_duration">Duration (minutes)</label><input id="cbt_duration" type="number" class="input" value="${d.duration}" /></div>
+          <div><label class="input-label" for="cbt_rules">Rules</label><input id="cbt_rules" class="input" value="${(d.rules || '').replace(/"/g,'&quot;')}" /></div>
         </div>
 
         <div class="border-t border-slate-100 pt-3">
@@ -2783,7 +2784,7 @@ function saveCbtExam() {
   if (!d.title.trim()) { toast('Exam title is required', 'danger'); return; }
   if (!d.questions.length) { toast('Add at least one question', 'danger'); return; }
   const exam = {
-    id: uid('cbt'), schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    id: uid('cbt'), schoolId: currentSchoolId(),
     classId: d.classId, subjectId: d.subjectId, teacherId: AUTH.current.id,
     title: d.title.trim(), durationMins: parseInt(d.duration) || 20, status: 'published',
     dueDate: daysAhead(7), createdAt: now(), rules: d.rules.trim(), questions: d.questions
@@ -3015,7 +3016,7 @@ function tch_selfAssessmentModal(aprId) {
           <span class="font-semibold text-brand-800">Your Overall Score</span>
           <span class="text-xl font-extrabold text-brand-700" id="self_overall">75%</span>
         </div>
-        <div><label class="input-label">Your Comment <span class="text-slate-400 font-normal">(achievements, challenges, goals)</span></label>
+        <div><label class="input-label" for="self_comment">Your Comment <span class="text-slate-400 font-normal">(achievements, challenges, goals)</span></label>
           <textarea id="self_comment" rows="4" class="input" placeholder="What went well this term? What are your development goals?"></textarea>
         </div>
       </div>
@@ -3102,7 +3103,7 @@ function tch_acknowledgeModal(aprId) {
           <div class="text-xs mt-1">${apr.outcome.note}</div>
         </div>` : ''}
         ${apr.principalComment ? `<div class="border-l-4 border-brand-400 pl-3 py-1"><div class="text-xs font-semibold text-slate-500 mb-0.5">Principal's Comment</div><div class="text-sm text-slate-700">${apr.principalComment}</div></div>` : ''}
-        <div><label class="input-label">Your Response <span class="text-slate-400 font-normal">(optional)</span></label>
+        <div><label class="input-label" for="ack_response">Your Response <span class="text-slate-400 font-normal">(optional)</span></label>
           <textarea id="ack_response" rows="3" class="input" placeholder="Any comments, queries or concerns about this appraisal…"></textarea>
         </div>
         <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
@@ -3122,7 +3123,7 @@ function tch_confirmAcknowledge(aprId) {
   const cycle = DB.find('appraisalCycles', apr.cycleId);
   // Notify admin the cycle is done for this staff member
   DB.insert('notifications', { id: uid('not'), userId: cycle?.createdBy || 'sch_brightlights', title: 'Appraisal Acknowledged', body: `${AUTH.current.name} has acknowledged their appraisal (${apr.finalOverall}%). The cycle is complete for this staff member.`, type: 'success', read: false, timestamp: now() });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: AUTH.current.schoolId || 'sch_brightlights', actor: AUTH.current.id, action: 'appraisal_acknowledged', target: `${AUTH.current.name} · ${apr.finalOverall}%`, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'appraisal_acknowledged', target: `${AUTH.current.name} · ${apr.finalOverall}%`, timestamp: now() });
   document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Appraisal acknowledged · process complete', 'success');
@@ -3182,7 +3183,7 @@ function view_tch_profile() {
           ${t.department ? `<span class="badge badge-info mt-2">${t.department}</span>` : ''}
           ${t.staffId ? `<div class="text-xs text-slate-400 mt-2">Staff ID: <strong>${t.staffId}</strong></div>` : ''}
         </div>
-        <div class="card p-4 space-y-2 text-sm">
+        <div class="card p-5 space-y-2 text-sm">
           <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wide mb-3">Contact</h4>
           <div class="flex items-center gap-2 text-slate-700">${icon('phone','w-4 h-4 text-slate-400')} ${t.phone || '—'}</div>
           <div class="flex items-center gap-2 text-slate-700">${icon('edit','w-4 h-4 text-slate-400')} ${t.email || '—'}</div>
@@ -3198,7 +3199,7 @@ function view_tch_profile() {
           ${statCard({ label: 'Absent (30d)', value: absentDays, icon: 'attendance', color: absentDays > 3 ? 'rose' : 'blue' })}
         </div>
 
-        <div class="card p-4">
+        <div class="card p-5">
           <h4 class="font-bold text-slate-900 mb-3">Teaching Assignments</h4>
           ${classes.length === 0 ? `<p class="text-sm text-slate-400">No classes assigned.</p>` : `
             <div class="space-y-2">
@@ -3217,7 +3218,7 @@ function view_tch_profile() {
         </div>
 
         ${latestAppraisal ? `
-        <div class="card p-4">
+        <div class="card p-5">
           <div class="flex items-center justify-between mb-3">
             <h4 class="font-bold text-slate-900">Latest Appraisal</h4>
             ${_aprStatusBadge(latestAppraisal.status)}
@@ -3233,7 +3234,7 @@ function view_tch_profile() {
             <span class="text-xs text-slate-400">Last ${Math.min(attRecs.length, 10)} records</span>
           </div>
           <table class="tbl">
-            <thead><tr><th>Date</th><th class="text-center">Status</th><th>Note</th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Date</th><th scope="col" class="text-center">Status</th><th scope="col">Note</th></tr></thead>
             <tbody>
               ${attRecs.slice(0,10).map(a => `<tr>
                 <td class="text-sm">${fdate(a.date, { short: true })}</td>
@@ -3255,10 +3256,10 @@ function tch_editProfileModal() {
     title: 'Edit My Profile',
     body: `<div class="space-y-3">
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Phone</label><input id="tp_phone" class="input" value="${t.phone || ''}" /></div>
-        <div><label class="input-label">Email</label><input id="tp_email" class="input" type="email" value="${t.email || ''}" /></div>
+        <div><label class="input-label" for="tp_phone">Phone</label><input id="tp_phone" class="input" value="${t.phone || ''}" /></div>
+        <div><label class="input-label" for="tp_email">Email</label><input id="tp_email" class="input" type="email" value="${t.email || ''}" /></div>
       </div>
-      <div><label class="input-label">Address</label><textarea id="tp_address" class="input" rows="2">${t.address || ''}</textarea></div>
+      <div><label class="input-label" for="tp_address">Address</label><textarea id="tp_address" class="input" rows="2">${t.address || ''}</textarea></div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="tch_saveProfile()">Save</button>`

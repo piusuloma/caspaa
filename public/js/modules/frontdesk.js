@@ -91,7 +91,7 @@ function renderTourTable(tours) {
       <div class="text-sm mt-1">When a parent books a tour from your portal, it appears here.</div>
     </div>`;
   return `<div class="card overflow-hidden"><table class="tbl">
-      <thead><tr><th>Parent</th><th>Child · Class</th><th>Requested Slot</th><th>Ref</th><th>Status</th><th class="text-right">Action</th></tr></thead>
+      <th scope="col"ead><tr><th scope="col">Parent</th><th scope="col">Child · Class</th><th scope="col">Requested Slot</th><th scope="col">Ref</th><th scope="col">Status</th><th scope="col" class="text-right">Action</th></tr></thead>
       <tbody>
         ${tours.map(t => `<tr class="cursor-pointer" onclick="viewTourBooking('${t.id}')">
           <td><div class="font-medium text-sm">${t.parentName}</div><div class="text-xs text-slate-500">${t.phone} · ${t.email}</div></td>
@@ -142,8 +142,8 @@ function viewTourBooking(id) {
           <div class="text-xs uppercase font-semibold text-slate-500 mb-2">Confirm the visit</div>
           <p class="text-xs text-slate-500 mb-3">Keep the requested slot, or set a new one. Confirming notifies the parent by email &amp; SMS (simulated).</p>
           <div class="grid grid-cols-2 gap-3">
-            <div><label class="input-label">Date</label><input id="tv_date" type="date" class="input" value="${t.confirmedDate || t.date}" min="${today()}" /></div>
-            <div><label class="input-label">Time</label>
+            <div><label class="input-label" for="tv_date">Date</label><input id="tv_date" type="date" class="input" value="${t.confirmedDate || t.date}" min="${today()}" /></div>
+            <div><label class="input-label" for="tv_time">Time</label>
               <select id="tv_time" class="input">${TOUR_SLOTS.map(s => `<option ${s === (t.confirmedTime || t.time) ? 'selected' : ''}>${s}</option>`).join('')}</select>
             </div>
           </div>
@@ -191,7 +191,7 @@ function renderCareerTable(careers) {
       <div class="text-sm mt-1">Interest submitted from your portal's Careers form appears here.</div>
     </div>`;
   return `<div class="card overflow-hidden"><table class="tbl">
-      <thead><tr><th>Candidate</th><th>Role · Experience</th><th>Links</th><th>Ref</th><th>Status</th><th class="text-right">Action</th></tr></thead>
+      <th scope="col"ead><tr><th scope="col">Candidate</th><th scope="col">Role · Experience</th><th scope="col">Links</th><th scope="col">Ref</th><th scope="col">Status</th><th scope="col" class="text-right">Action</th></tr></thead>
       <tbody>
         ${careers.map(c => `<tr>
           <td><div class="font-medium text-sm">${c.name}</div><div class="text-xs text-slate-500">${c.phone} · ${c.email}</div></td>

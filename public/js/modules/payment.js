@@ -43,7 +43,7 @@ function processPayment(invoiceId) {
       document.getElementById('modalBackdrop').click();
       const student = DB.find('students', inv.studentId);
       const studentName = student ? student.name : inv.studentId;
-      const schoolName = (DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School';
+      const schoolName = (DB.find('schools', currentSchoolId()) || {}).name || 'School';
       modal({
         title: 'Pay via Bank Transfer',
         body: `<div class="space-y-4">
@@ -52,7 +52,7 @@ function processPayment(invoiceId) {
             <div class="text-3xl font-extrabold text-brand-700">${money(amount)}</div>
             <div class="text-xs text-slate-400 mt-1">to this dedicated account</div>
           </div>
-          <div class="card p-4 space-y-3">
+          <div class="card p-5 space-y-3">
             <div class="flex justify-between text-sm">
               <span class="text-slate-500">Bank</span>
               <span class="font-semibold text-slate-900">Wema Bank</span>
@@ -95,7 +95,7 @@ function processPayment(invoiceId) {
 // ── Card input step ──────────────────────────────────────────────────────────
 
 function pay_showCardInput(invoiceId, amount, txFee, charged) {
-  const schoolName = (DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School';
+  const schoolName = (DB.find('schools', currentSchoolId()) || {}).name || 'School';
   modal({
     size: 'sm',
     title: '',
@@ -266,7 +266,7 @@ function pay_downloadReceipt(invoiceId, amount) {
   const inv = DB.find('invoices', invoiceId);
   const student = inv ? DB.find('students', inv.studentId) : null;
   const ref = 'CSP-' + Date.now().toString(36).toUpperCase().slice(-8);
-  const schoolName = (DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School';
+  const schoolName = (DB.find('schools', currentSchoolId()) || {}).name || 'School';
   const receiptHtml = `
     <!DOCTYPE html>
     <html>

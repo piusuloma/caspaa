@@ -21,7 +21,7 @@ function health_outcomeBadge(outcome) {
 ────────────────────────────────────────────────────────────── */
 
 function view_adm_health(params) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const tab = (params && params.tab) || 'log';
 
   const visits   = DB.query('sickbayVisits', v => v.schoolId === schoolId);
@@ -65,7 +65,7 @@ function adm_renderLogVisitTab(students) {
         <div class="space-y-4" id="healthLogForm">
 
           <div>
-            <label class="input-label">Student *</label>
+            <label class="input-label" for="hv_student">Student *</label>
             <select id="hv_student" class="input">
               <option value="">— Select student —</option>
               ${students.map(s => {
@@ -76,28 +76,28 @@ function adm_renderLogVisitTab(students) {
             </select>
           </div>
 
-          <div id="hv_allergyWarning" class="hidden bg-rose-50 rounded-xl p-3 text-sm text-rose-900">
+          <div id="hv_allergyWarning" class="hidden bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-900">
             ${icon('bell','w-4 h-4 inline mr-1')} <strong>Known Allergies:</strong> <span id="hv_allergyText"></span>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="input-label">Date *</label>
+              <label class="input-label" for="hv_date">Date *</label>
               <input id="hv_date" type="date" class="input" value="${today()}" />
             </div>
             <div>
-              <label class="input-label">Temperature (°C)</label>
+              <label class="input-label" for="hv_temp">Temperature (°C)</label>
               <input id="hv_temp" type="number" step="0.1" min="34" max="42" class="input" placeholder="e.g. 37.5" />
             </div>
           </div>
 
           <div>
-            <label class="input-label">Complaint / Symptoms *</label>
+            <label class="input-label" for="hv_complaint">Complaint / Symptoms *</label>
             <textarea id="hv_complaint" class="input" rows="3" placeholder="Describe the student's complaint or observed symptoms..."></textarea>
           </div>
 
           <div>
-            <label class="input-label">Treatment / Action Taken</label>
+            <label class="input-label" for="hv_treatment">Treatment / Action Taken</label>
             <textarea id="hv_treatment" class="input" rows="3" placeholder="Medication given, first aid, observations..."></textarea>
           </div>
 
@@ -174,7 +174,7 @@ function adm_saveVisit() {
   if (!studentId) { toast('Please select a student', 'danger'); return; }
   if (!complaint) { toast('Complaint / symptoms are required', 'danger'); return; }
 
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
 
   DB.insert('sickbayVisits', {
     id: uid('hv'), schoolId, studentId,
@@ -232,15 +232,15 @@ function adm_renderVisitHistoryTab(visits, schoolId) {
 
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead>
+        <th scope="col"ead>
           <tr>
-            <th>Date</th>
-            <th>Student</th>
-            <th>Complaint</th>
-            <th>Temp</th>
-            <th>Outcome</th>
-            <th>Parent Notified</th>
-            <th class="text-right">Actions</th>
+            <th scope="col">Date</th>
+            <th scope="col">Student</th>
+            <th scope="col">Complaint</th>
+            <th scope="col">Temp</th>
+            <th scope="col">Outcome</th>
+            <th scope="col">Parent Notified</th>
+            <th scope="col" class="text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -269,7 +269,7 @@ function adm_renderVisitHistoryTab(visits, schoolId) {
                   : `<span class="text-xs text-slate-400">No</span>`}
               </td>
               <td class="text-right">
-                <button class="btn btn-ghost !p-1.5 text-brand-600 hover:bg-brand-50" title="View full details"
+                <button class="btn btn-ghost !p-1.5 text-brand-600 hover:bg-brand-50" aria-label="View full details" title="View full details"
                   onclick="event.stopPropagation(); adm_viewVisit('${v.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
               </td>
             </tr>`;
@@ -319,13 +319,13 @@ function adm_viewVisit(visitId) {
 
         <div>
           <div class="text-xs font-semibold text-slate-400 uppercase mb-1">Complaint / Symptoms</div>
-          <div class="bg-rose-50 rounded-xl p-3 text-sm text-slate-800">${v.complaint || '—'}</div>
+          <div class="bg-rose-50 border border-rose-100 rounded-xl p-3 text-sm text-slate-800">${v.complaint || '—'}</div>
         </div>
 
         ${v.treatment ? `
           <div>
             <div class="text-xs font-semibold text-slate-400 uppercase mb-1">Treatment / Action</div>
-            <div class="bg-emerald-50 rounded-xl p-3 text-sm text-slate-800">${v.treatment}</div>
+            <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-sm text-slate-800">${v.treatment}</div>
           </div>
         ` : ''}
 
@@ -356,7 +356,7 @@ function adm_renderHealthProfilesTab(students, visits) {
 
   return `
     ${withAllergies.length > 0 ? `
-      <div class="mb-4 card p-3 bg-rose-50 flex items-center gap-3">
+      <div class="mb-4 card p-3 bg-rose-50 border border-rose-200 flex items-center gap-3">
         <div class="text-rose-600">${icon('bell','w-5 h-5')}</div>
         <div class="text-sm text-rose-800">
           <strong>${withAllergies.length} student${withAllergies.length !== 1 ? 's' : ''}</strong> have known allergies — shown first below.
@@ -366,13 +366,13 @@ function adm_renderHealthProfilesTab(students, visits) {
 
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead>
+        <th scope="col"ead>
           <tr>
-            <th>Student</th>
-            <th>Class</th>
-            <th>Allergies</th>
-            <th>Sickbay Visits</th>
-            <th class="text-right">Actions</th>
+            <th scope="col">Student</th>
+            <th scope="col">Class</th>
+            <th scope="col">Allergies</th>
+            <th scope="col">Sickbay Visits</th>
+            <th scope="col" class="text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -390,7 +390,7 @@ function adm_renderHealthProfilesTab(students, visits) {
               <td class="text-sm text-slate-500">${cls ? cls.name : '—'}</td>
               <td>
                 ${hasAllergies
-                  ? `<span class="inline-flex items-center gap-1 text-xs bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-semibold">${icon('bell','w-3 h-3')} ${s.allergies}</span>`
+                  ? `<span class="inline-flex items-center gap-1 text-xs bg-rose-100 text-rose-800 border border-rose-200 px-2 py-0.5 rounded-full font-semibold">${icon('bell','w-3 h-3')} ${s.allergies}</span>`
                   : `<span class="text-xs text-slate-400">None known</span>`}
               </td>
               <td>
@@ -435,7 +435,7 @@ function adm_viewStudentHealth(studentId) {
 
         <!-- Allergies card -->
         ${hasAllergies ? `
-          <div class="bg-rose-50 rounded-xl p-4 flex items-start gap-3">
+          <div class="bg-rose-50 border-2 border-rose-300 rounded-xl p-4 flex items-start gap-3">
             <div class="text-rose-600 flex-shrink-0">${icon('bell','w-5 h-5 mt-0.5')}</div>
             <div>
               <div class="font-bold text-rose-800 mb-1">Known Allergies</div>
@@ -443,7 +443,7 @@ function adm_viewStudentHealth(studentId) {
             </div>
           </div>
         ` : `
-          <div class="bg-emerald-50 rounded-xl p-3 flex items-center gap-3">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-3">
             <div class="text-emerald-600">${icon('check','w-4 h-4')}</div>
             <div class="text-sm text-emerald-800 font-medium">No known allergies</div>
           </div>
@@ -508,7 +508,7 @@ function view_par_health(params) {
 
   const activeId = (params && params.studentId) || children[0].id;
   const child    = DB.find('students', activeId);
-  const visits   = DB.query('sickbayVisits', v => v.studentId === activeId && v.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
+  const visits   = DB.query('sickbayVisits', v => v.studentId === activeId && v.schoolId === currentSchoolId())
                      .sort((a, b) => b.date.localeCompare(a.date));
 
   const hasAllergies = child && child.allergies && child.allergies.toLowerCase() !== 'none' && child.allergies.trim() !== '';
@@ -520,7 +520,7 @@ function view_par_health(params) {
       ${children.length > 1 ? `
         <div class="flex gap-2 flex-wrap">
           ${children.map(c => `<button onclick="APP.go('par_health',{studentId:'${c.id}'})"
-            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-navy-800 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
+            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
         </div>
       ` : ''}
 
@@ -528,7 +528,7 @@ function view_par_health(params) {
       <div>
         <h3 class="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wide">Allergy Information</h3>
         ${hasAllergies ? `
-          <div class="card p-4 bg-rose-50 flex items-start gap-3">
+          <div class="card p-5 bg-rose-50 border-2 border-rose-300 flex items-start gap-3">
             <div class="text-rose-600 flex-shrink-0 mt-0.5">${icon('bell','w-5 h-5')}</div>
             <div>
               <div class="font-bold text-rose-800">Known Allergies</div>
@@ -537,7 +537,7 @@ function view_par_health(params) {
             </div>
           </div>
         ` : `
-          <div class="card p-4 bg-emerald-50 flex items-center gap-3">
+          <div class="card p-5 bg-emerald-50 border border-emerald-200 flex items-center gap-3">
             <div class="text-emerald-600">${icon('check','w-5 h-5')}</div>
             <div>
               <div class="font-semibold text-emerald-800">No known allergies</div>
@@ -561,7 +561,7 @@ function view_par_health(params) {
             ${visits.map(v => {
               const outcomeInfo = HEALTH_OUTCOMES[v.outcome] || {};
               return `
-                <div class="card p-4">
+                <div class="card p-5">
                   <div class="flex items-start justify-between gap-3 flex-wrap mb-3">
                     <div>
                       <div class="font-semibold text-slate-900">${fdate(v.date, { long: true })}</div>
@@ -582,7 +582,7 @@ function view_par_health(params) {
                     ` : ''}
                   </div>
                   ${v.outcome === 'referred_hospital' ? `
-                    <div class="mt-3 bg-rose-50 rounded-xl p-3 text-xs text-rose-800">
+                    <div class="mt-3 bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-800">
                       ${icon('bell','w-3.5 h-3.5 inline mr-1')} ${child ? child.name : 'Your child'} was referred to hospital. Contact the school for details.
                     </div>
                   ` : ''}

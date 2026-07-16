@@ -3,7 +3,7 @@
    ============================================================ */
 
 function view_fin_dashboard() {
-  const schoolId = 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const invoices = DB.query('invoices', i => i.schoolId === schoolId);
   const txns = DB.query('transactions', t => t.schoolId === schoolId && t.status === 'successful');
   const expenses = DB.query('expenses', e => e.schoolId === schoolId);
@@ -20,7 +20,7 @@ function view_fin_dashboard() {
         type: 'doughnut',
         data: {
           labels: ['Collected', 'Outstanding'],
-          datasets: [{ data: [collected, outstanding], backgroundColor: ['#00b386', '#fbbf24'], borderWidth: 0 }]
+          datasets: [{ data: [collected, outstanding], backgroundColor: ['#047857', '#fbbf24'], borderWidth: 0 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
       });
@@ -49,10 +49,10 @@ function view_fin_dashboard() {
         ${statCard({ label: 'Total Collected', value: money(collected), icon: 'fees', color: 'brand', trend: { direction: 'up', label: '+18% MoM' } })}
         ${statCard({ label: 'Outstanding', value: money(outstanding), icon: 'bell', color: 'gold' })}
         ${statCard({ label: 'Expenses', value: money(expense), icon: 'trending_down', color: 'rose' })}
-        ${statCard({ label: 'Net Cashflow', value: money(netCash), icon: 'trending_up', color: 'brand' })}
+        ${statCard({ label: 'Net Cashflow', value: money(netCash), icon: 'trending_up', color: 'blue' })}
       </div>
 
-      ${unreconciled ? `<div class="card bg-amber-50 p-3 flex items-center justify-between">
+      ${unreconciled ? `<div class="card bg-amber-50 border border-amber-200 p-3 flex items-center justify-between">
         <div class="flex items-center gap-3"><div class="text-amber-700">${icon('bell','w-5 h-5')}</div>
           <div><div class="font-semibold text-amber-900">${unreconciled} transaction${unreconciled>1?'s':''} unreconciled</div>
           <div class="text-sm text-amber-800">Review and confirm to update student balances.</div></div>
@@ -65,19 +65,19 @@ function view_fin_dashboard() {
                            .sort((a, b) => b.computedAt.localeCompare(a.computedAt))[0];
         if (!activeRun || activeRun.stage === 'draft') return '';
         if (activeRun.stage === 'pending_approval') {
-          return `<div class="card bg-brand-50 p-4 flex items-center justify-between gap-4">
+          return `<div class="card bg-blue-50 border border-blue-200 p-4 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-brand-200 text-brand-800 flex items-center justify-center flex-shrink-0">${icon('bell','w-5 h-5')}</div>
+              <div class="w-10 h-10 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center flex-shrink-0">${icon('bell','w-5 h-5')}</div>
               <div>
-                <div class="font-bold text-brand-900">Payroll awaiting your authorization — ${activeRun.period}</div>
-                <div class="text-sm text-brand-800 mt-0.5">HR has submitted the payroll run. ${activeRun.staffCount} staff · Net ${money(activeRun.netTotal)}. Confirm fund availability and authorize disbursement.</div>
+                <div class="font-bold text-blue-900">Payroll awaiting your authorization — ${activeRun.period}</div>
+                <div class="text-sm text-blue-800 mt-0.5">HR has submitted the payroll run. ${activeRun.staffCount} staff · Net ${money(activeRun.netTotal)}. Confirm fund availability and authorize disbursement.</div>
               </div>
             </div>
             <button class="btn btn-primary flex-shrink-0" onclick="APP.go('fin_payroll')">${icon('check','w-4 h-4')} Review &amp; Authorize →</button>
           </div>`;
         }
         if (activeRun.stage === 'approved') {
-          return `<div class="card bg-emerald-50 p-4 flex items-center justify-between gap-4">
+          return `<div class="card bg-emerald-50 border border-emerald-200 p-4 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-emerald-200 text-emerald-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
               <div>
@@ -159,18 +159,18 @@ function view_fin_dashboard() {
         </div>
         <div class="overflow-x-auto">
           <table class="tbl">
-            <thead>
+            <th scope="col"ead>
               <tr>
-                <th>Student</th><th>Student ID</th><th>Class</th>
-                <th class="text-right">Total Billed</th>
-                <th class="text-right">Paid</th>
-                <th class="text-right">Balance</th>
-                <th class="text-center">Status</th>
+                <th scope="col">Student</th><th scope="col">Student ID</th><th scope="col">Class</th>
+                <th scope="col" class="text-right">Total Billed</th>
+                <th scope="col" class="text-right">Paid</th>
+                <th scope="col" class="text-right">Balance</th>
+                <th scope="col" class="text-center">Status</th>
               </tr>
             </thead>
             <tbody>
               ${(() => {
-                const allStudents = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && s.status === 'active');
+                const allStudents = DB.query('students', s => s.schoolId === currentSchoolId() && s.status === 'active');
                 return allStudents.slice(0, 20).map(s => {
                   const inv = COMPUTE.studentInvoice(s.id);
                   const cls = DB.find('classes', s.classId);
@@ -209,22 +209,22 @@ function sendManualReminder(invoiceId) {
     body: `Dear Parent, the outstanding balance of ${money(inv.balance)} for ${s.name} (Student ID: ${studentRef}) for ${DB.settings().currentTerm} is due. Please log in to pay or contact the school.`,
     type: 'warn', read: false, timestamp: now(), link: { view: 'par_fees' }
   });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: AUTH.current.schoolId || 'sch_brightlights', actor: AUTH.current.id, action: 'manual_reminder_sent', target: `${s.name} · ${money(inv.balance)}`, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'manual_reminder_sent', target: `${s.name} · ${money(inv.balance)}`, timestamp: now() });
   toast(`Reminder sent for ${s.name} (ID: ${studentRef})`, 'success');
 }
 
 function sendBulkReminders() {
-  const invoices = DB.query('invoices', i => i.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && i.balance > 0);
+  const invoices = DB.query('invoices', i => i.schoolId === currentSchoolId() && i.balance > 0);
   if (invoices.length === 0) { toast('No outstanding invoices to remind', 'info'); return; }
   modal({
     title: 'Send Bulk Reminders',
     body: `
       <div class="space-y-3">
-        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
           ${icon('bell','w-4 h-4 inline')} This will send a payment reminder to <strong>${invoices.length} parent(s)</strong> with outstanding balances. Each reminder includes the student's unique ID for reference.
         </div>
         <div>
-          <label class="input-label">Custom Message (optional)</label>
+          <label class="input-label" for="bulk_reminder_msg">Custom Message (optional)</label>
           <textarea id="bulk_reminder_msg" class="input" rows="3" placeholder="Dear Parent, please be reminded that your child's school fees are due…"></textarea>
         </div>
       </div>
@@ -238,7 +238,7 @@ function sendBulkReminders() {
 
 function confirmBulkReminders() {
   const customMsg = document.getElementById('bulk_reminder_msg') ? document.getElementById('bulk_reminder_msg').value.trim() : '';
-  const invoices = DB.query('invoices', i => i.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && i.balance > 0);
+  const invoices = DB.query('invoices', i => i.schoolId === currentSchoolId() && i.balance > 0);
   let sent = 0;
   invoices.forEach(inv => {
     const s = DB.find('students', inv.studentId);
@@ -249,7 +249,7 @@ function confirmBulkReminders() {
     sent++;
   });
   document.getElementById('modalBackdrop')?.click();
-  DB.insert('auditLog', { id: uid('aud'), schoolId: AUTH.current.schoolId || 'sch_brightlights', actor: AUTH.current.id, action: 'bulk_reminders_sent', target: `${sent} parents notified`, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'bulk_reminders_sent', target: `${sent} parents notified`, timestamp: now() });
   toast(`${sent} reminder${sent !== 1 ? 's' : ''} sent to parents`, 'success');
   APP.render();
 }
@@ -262,10 +262,10 @@ function invoiceReminderSettingsModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
           ${icon('info','w-4 h-4 inline')} These settings are saved for reference. Automated sending requires a server-side scheduler — use the <strong>Manual Reminder Trigger</strong> below to send reminders now.
         </div>
-        <div class="card p-4 space-y-3">
+        <div class="card p-5 space-y-3">
           <h4 class="font-bold text-slate-900">Automated Reminders</h4>
           <div class="flex items-center gap-3">
             <input type="checkbox" id="rem_auto" class="w-4 h-4" ${reminderCfg.autoEnabled ? 'checked' : ''} />
@@ -273,15 +273,15 @@ function invoiceReminderSettingsModal() {
           </div>
           <div class="grid sm:grid-cols-3 gap-3">
             <div>
-              <label class="input-label">Days before due</label>
+              <label class="input-label" for="rem_before">Days before due</label>
               <input type="number" id="rem_before" class="input" value="${reminderCfg.daysBeforeDue}" min="1" max="30" />
             </div>
             <div>
-              <label class="input-label">Days after due (overdue)</label>
+              <label class="input-label" for="rem_after">Days after due (overdue)</label>
               <input type="number" id="rem_after" class="input" value="${reminderCfg.daysAfterDue}" min="1" max="90" />
             </div>
             <div>
-              <label class="input-label">Frequency</label>
+              <label class="input-label" for="rem_freq">Frequency</label>
               <select id="rem_freq" class="input">
                 <option ${reminderCfg.frequency==='daily'?'selected':''}>daily</option>
                 <option ${reminderCfg.frequency==='weekly'?'selected':''}>weekly</option>
@@ -294,7 +294,7 @@ function invoiceReminderSettingsModal() {
             <label for="rem_sid" class="text-sm">Include Student ID in reminder message</label>
           </div>
         </div>
-        <div class="card p-4">
+        <div class="card p-5">
           <h4 class="font-bold text-slate-900 mb-2">Manual Reminder Trigger</h4>
           <p class="text-sm text-slate-600 mb-2">You can send manual reminders any time from the Invoices page using the <strong>"Send reminder"</strong> button per student, or <strong>"Remind All"</strong> to notify all parents with outstanding balances.</p>
           <button class="btn btn-secondary text-sm" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(sendBulkReminders, 300)">${icon('send','w-4 h-4')} Open Bulk Reminder Trigger</button>
@@ -320,7 +320,7 @@ function saveInvoiceReminderSettings() {
 }
 
 function bulkGenerateInvoicesModal() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const students = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
   const feeStructures = DB.get('feeStructures');
   const currentTerm = DB.settings().currentTerm;
@@ -341,7 +341,7 @@ function bulkGenerateInvoicesModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
           Generate invoices for all returning students who don't yet have one for <strong>${currentTerm}</strong>. New enrollments are excluded — their invoices are created during student registration.
         </div>
         <div class="grid grid-cols-3 gap-3 text-center">
@@ -358,7 +358,7 @@ function bulkGenerateInvoicesModal() {
             <div class="text-xs text-emerald-600">Will be invoiced</div>
           </div>
         </div>
-        ${noInvoiceYet.length === 0 ? `<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">All returning students already have invoices for this term. Nothing to generate.</div>` : `
+        ${noInvoiceYet.length === 0 ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">All returning students already have invoices for this term. Nothing to generate.</div>` : `
         <div class="bg-slate-50 rounded-xl p-3 text-sm space-y-1 max-h-48 overflow-y-auto">
           <div class="font-semibold text-slate-700 mb-2">Students to be invoiced:</div>
           ${noInvoiceYet.map(s => {
@@ -371,7 +371,7 @@ function bulkGenerateInvoicesModal() {
             </div>`;
           }).join('')}
         </div>
-        <div class="text-xs text-slate-500 bg-amber-50 rounded-xl p-3">
+        <div class="text-xs text-slate-500 bg-amber-50 border border-amber-200 rounded-xl p-3">
           Students without a matching fee structure for ${currentTerm} will be skipped. Set up fee structures under <strong>Fee Structure → New Structure</strong>.
         </div>`}
       </div>
@@ -382,7 +382,7 @@ function bulkGenerateInvoicesModal() {
 }
 
 function confirmBulkGenerateInvoices() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const students = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
   const feeStructures = DB.get('feeStructures');
   const currentTerm = DB.settings().currentTerm;
@@ -434,8 +434,8 @@ function confirmBulkGenerateInvoices() {
 }
 
 function exportPerChildReport() {
-  const students = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && s.status === 'active');
-  const expenses = DB.query('expenses', e => e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const students = DB.query('students', s => s.schoolId === currentSchoolId() && s.status === 'active');
+  const expenses = DB.query('expenses', e => e.schoolId === currentSchoolId());
   const totalExp = expenses.reduce((s, e) => s + e.amount, 0);
   const perCap = students.length > 0 ? totalExp / students.length : 0;
   let csv = `Student,Student ID,Class,Total Billed,Paid,Balance,Per-Child Expenses,Net Income,Status\n`;
@@ -485,7 +485,7 @@ function renderFeeStructuresTab() {
   return `
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Class</th><th>Term</th><th>Tuition</th><th>Books</th><th>Uniform</th><th>PTA</th><th>Total</th><th>Due</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Class</th><th scope="col">Term</th><th scope="col">Tuition</th><th scope="col">Books</th><th scope="col">Uniform</th><th scope="col">PTA</th><th scope="col">Total</th><th scope="col">Due</th><th scope="col"></th></tr></thead>
         <tbody>
           ${structures.map(f => {
             const cls = classes.find(c => c.id === f.classId);
@@ -500,23 +500,23 @@ function renderFeeStructuresTab() {
               <td class="font-mono font-bold">${money(total)}</td>
               <td class="text-sm text-slate-500">${fdate(f.dueDate, { short: true })}</td>
               <td class="text-right whitespace-nowrap">
-                <button class="btn btn-ghost !p-1.5" title="Edit" onclick="feeStructureModal('${f.id}')">${icon('edit','w-4 h-4')}</button>
-                <button class="btn btn-ghost !p-1.5 text-rose-600" title="Delete" onclick="deleteFeeStructure('${f.id}')">${icon('trash','w-4 h-4')}</button>
+                <button class="btn btn-ghost !p-1.5" aria-label="Edit" title="Edit" onclick="feeStructureModal('${f.id}')">${icon('edit','w-4 h-4')}</button>
+                <button class="btn btn-ghost !p-1.5 text-rose-600" aria-label="Delete" title="Delete" onclick="deleteFeeStructure('${f.id}')">${icon('trash','w-4 h-4')}</button>
               </td>
             </tr>`;
           }).join('')}
         </tbody>
       </table>
     </div>
-    <div class="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-brand-50 rounded-xl px-4 py-3">
-      ${icon('info','w-3.5 h-3.5 flex-shrink-0 text-brand-500')}
+    <div class="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+      ${icon('info','w-3.5 h-3.5 flex-shrink-0 text-blue-500')}
       <span>Extracurricular fees (swimming, ballet, music, etc.) are charged <strong>per student</strong> — manage them under the <button class="text-brand-700 font-semibold underline" onclick="APP.params.feeTab='activities'; APP.render()">Activities tab</button> and assign from each student's profile.</span>
     </div>
   `;
 }
 
 function renderActivitiesTab() {
-  const acts = DB.query('activities', a => a.schoolId === 'sch_brightlights');
+  const acts = DB.query('activities', a => a.schoolId === currentSchoolId());
   const totalEnrolled = acts.reduce((sum, a) => sum + DB.query('studentActivities', sa => sa.activityId === a.id).length, 0);
   const totalRevenue = acts.reduce((sum, a) => {
     const cnt = DB.query('studentActivities', sa => sa.activityId === a.id).length;
@@ -531,7 +531,7 @@ function renderActivitiesTab() {
         <div class="text-2xl font-extrabold text-slate-900">${acts.length}</div>
       </div>
       <div class="bg-white border border-slate-200 rounded-2xl p-4">
-        <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">Total Enrolments</div>
+        <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">Total Enrollments</div>
         <div class="text-2xl font-extrabold text-slate-900">${totalEnrolled}</div>
         <div class="text-xs text-slate-400 mt-0.5">across all activities</div>
       </div>
@@ -545,14 +545,14 @@ function renderActivitiesTab() {
     <div class="card overflow-hidden">
       ${acts.length === 0 ? `<div class="p-8">${emptyState({ title: 'No activities yet', body: 'Add swimming, ballet, music or any other extracurricular activity.', icon: 'book' })}</div>` : `
         <table class="w-full text-sm">
-          <thead>
+          <th scope="col"ead>
             <tr class="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-              <th class="px-5 py-3 text-left font-semibold">Activity</th>
-              <th class="px-5 py-3 text-left font-semibold hidden sm:table-cell">Description</th>
-              <th class="px-5 py-3 text-right font-semibold">Fee / Term</th>
-              <th class="px-5 py-3 text-right font-semibold">Enrolled</th>
-              <th class="px-5 py-3 text-right font-semibold text-brand-700">Revenue</th>
-              <th class="px-5 py-3"></th>
+              <th scope="col" class="px-5 py-3 text-left font-semibold">Activity</th>
+              <th scope="col" class="px-5 py-3 text-left font-semibold hidden sm:table-cell">Description</th>
+              <th scope="col" class="px-5 py-3 text-right font-semibold">Fee / Term</th>
+              <th scope="col" class="px-5 py-3 text-right font-semibold">Enrolled</th>
+              <th scope="col" class="px-5 py-3 text-right font-semibold text-brand-700">Revenue</th>
+              <th scope="col" class="px-5 py-3"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -571,13 +571,13 @@ function renderActivitiesTab() {
                 <td class="px-5 py-4 text-right font-mono font-semibold text-slate-900">${money(a.price)}</td>
                 <td class="px-5 py-4 text-right">
                   ${enrolled > 0
-                    ? `<button class="inline-flex items-center gap-1.5 text-brand-700 hover:underline font-semibold" onclick="viewActivityEnrolments('${a.id}')">${icon('students','w-3.5 h-3.5')} ${enrolled}</button>`
+                    ? `<button class="inline-flex items-center gap-1.5 text-brand-700 hover:underline font-semibold" onclick="viewActivityEnrollments('${a.id}')">${icon('students','w-3.5 h-3.5')} ${enrolled}</button>`
                     : `<span class="text-slate-400">0</span>`}
                 </td>
                 <td class="px-5 py-4 text-right font-mono font-semibold ${revenue > 0 ? 'text-brand-700' : 'text-slate-400'}">${money(revenue)}</td>
                 <td class="px-5 py-4 text-right whitespace-nowrap">
-                  <button class="btn btn-ghost !p-1.5 hover:bg-slate-100 rounded-lg" title="Edit" onclick="editActivityModal('${a.id}')">${icon('edit','w-4 h-4 text-slate-500')}</button>
-                  <button class="btn btn-ghost !p-1.5 hover:bg-rose-50 rounded-lg" title="Delete" onclick="deleteActivity('${a.id}')">${icon('trash','w-4 h-4 text-rose-400')}</button>
+                  <button class="btn btn-ghost !p-1.5 hover:bg-slate-100 rounded-lg" aria-label="Edit" title="Edit" onclick="editActivityModal('${a.id}')">${icon('edit','w-4 h-4 text-slate-500')}</button>
+                  <button class="btn btn-ghost !p-1.5 hover:bg-rose-50 rounded-lg" aria-label="Delete" title="Delete" onclick="deleteActivity('${a.id}')">${icon('trash','w-4 h-4 text-rose-400')}</button>
                 </td>
               </tr>`;
             }).join('')}
@@ -600,7 +600,7 @@ function renderActivitiesTab() {
   `;
 }
 
-function viewActivityEnrolments(actId) {
+function viewActivityEnrollments(actId) {
   const a = DB.find('activities', actId);
   const enrolments = DB.query('studentActivities', sa => sa.activityId === actId);
   const students = enrolments.map(sa => ({ sa, s: DB.find('students', sa.studentId) })).filter(x => x.s);
@@ -620,7 +620,7 @@ function viewActivityEnrolments(actId) {
               <div class="font-semibold text-sm">${s.name}</div>
               <div class="text-xs text-slate-500">${cls ? cls.name : '—'} · Enrolled ${fdate(sa.enrolledAt, { short: true })}</div>
             </div>
-            <button class="btn btn-ghost !p-1.5 text-slate-400 hover:text-slate-700" title="View student" onclick="document.getElementById('modalBackdrop')?.click(); viewStudent('${s.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
+            <button class="btn btn-ghost !p-1.5 text-slate-400 hover:text-slate-700" aria-label="View student" title="View student" onclick="document.getElementById('modalBackdrop')?.click(); viewStudent('${s.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
           </div>`;
         }).join('')}
         ${students.length === 0 ? `<p class="text-sm text-slate-400 text-center py-4">No students enrolled yet.</p>` : ''}
@@ -639,23 +639,23 @@ function editActivityModal(actId) {
       <div class="space-y-3">
         <div class="grid grid-cols-4 gap-3">
           <div>
-            <label class="input-label">Icon / Emoji</label>
+            <label class="input-label" for="act_icon">Icon / Emoji</label>
             <input id="act_icon" class="input text-2xl text-center" value="${existing ? existing.icon : '🏃'}" maxlength="4" />
           </div>
           <div class="col-span-3">
-            <label class="input-label">Activity Name *</label>
+            <label class="input-label" for="act_name">Activity Name *</label>
             <input id="act_name" class="input" placeholder="e.g. Swimming" value="${existing ? existing.name.replace(/"/g,'&quot;') : ''}" />
           </div>
         </div>
         <div>
-          <label class="input-label">Description</label>
+          <label class="input-label" for="act_desc">Description</label>
           <input id="act_desc" class="input" placeholder="Brief description shown to parents" value="${existing ? (existing.description || '').replace(/"/g,'&quot;') : ''}" />
         </div>
         <div>
-          <label class="input-label">Fee per term (₦) *</label>
+          <label class="input-label" for="act_price">Fee per term (₦) *</label>
           <input id="act_price" type="number" class="input" placeholder="e.g. 15000" value="${existing ? existing.price : ''}" />
         </div>
-        <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
           ${icon('info','w-4 h-4 inline mr-1')} This fee is charged <strong>per student</strong> who enrolls. Enroll students from their profile (Students → open student → Activities tab).
         </div>
       </div>
@@ -670,7 +670,7 @@ function saveActivity(actId) {
   const price = parseInt(document.getElementById('act_price').value) || 0;
   if (!name) { toast('Activity name is required', 'danger'); return; }
   if (price <= 0) { toast('Enter a valid fee', 'danger'); return; }
-  const data = { schoolId: 'sch_brightlights', name, icon: document.getElementById('act_icon').value.trim() || '🏃', description: document.getElementById('act_desc').value.trim(), price };
+  const data = { schoolId: currentSchoolId(), name, icon: document.getElementById('act_icon').value.trim() || '🏃', description: document.getElementById('act_desc').value.trim(), price };
   if (actId) DB.update('activities', actId, data);
   else DB.insert('activities', { id: uid('act'), ...data });
   document.getElementById('modalBackdrop')?.click();
@@ -681,7 +681,7 @@ function saveActivity(actId) {
 function deleteActivity(actId) {
   const a = DB.find('activities', actId);
   const enrolled = DB.query('studentActivities', sa => sa.activityId === actId).length;
-  confirm(`Delete "${a.name}"?${enrolled ? ` ${enrolled} student(s) are enrolled and will be removed from this activity.` : ''}`, () => {
+  confirmDialog(`Delete "${a.name}"?${enrolled ? ` ${enrolled} student(s) are enrolled and will be removed from this activity.` : ''}`, () => {
     DB.remove('activities', actId);
     DB.query('studentActivities', sa => sa.activityId === actId).forEach(sa => DB.remove('studentActivities', sa.id));
     APP.render();
@@ -715,13 +715,13 @@ function exportFeeStructurePDF() {
   const classes = DB.get('classes');
   const html = `
     <div style="max-width:800px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#00b386">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:18px">FEE STRUCTURE — ${DB.settings().currentTerm}</h2>
       </div>
       <table border="1" cellpadding="10" style="border-collapse:collapse;width:100%;font-size:13px">
-        <thead style="background:#f3f4f6">
-          <tr><th align="left">Class</th><th align="right">Tuition</th><th align="right">Books</th><th align="right">Uniform</th><th align="right">PTA</th><th align="right">Total</th><th align="right">Due</th></tr>
+        <th scope="col"ead style="background:#f3f4f6">
+          <tr><th scope="col" align="left">Class</th><th scope="col" align="right">Tuition</th><th scope="col" align="right">Books</th><th scope="col" align="right">Uniform</th><th scope="col" align="right">PTA</th><th scope="col" align="right">Total</th><th scope="col" align="right">Due</th></tr>
         </thead>
         <tbody>
           ${structures.map(f => {
@@ -747,29 +747,29 @@ function feeStructureModal(editingId) {
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Class *</label>
+            <label class="input-label" for="fs_class">Class *</label>
             <select id="fs_class" class="input">${classes.map(c => `<option value="${c.id}" ${existing && existing.classId === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select>
           </div>
           <div>
-            <label class="input-label">Term *</label>
+            <label class="input-label" for="fs_term">Term *</label>
             <input id="fs_term" class="input" value="${existing ? existing.term : DB.settings().currentTerm}" />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Tuition</label>
+            <label class="input-label" for="fs_tuition">Tuition</label>
             <input id="fs_tuition" type="number" class="input" value="${existing ? existing.tuition : 200000}" oninput="updateFeeTotal()" />
           </div>
           <div>
-            <label class="input-label">Books &amp; Materials</label>
+            <label class="input-label" for="fs_books">Books &amp; Materials</label>
             <input id="fs_books" type="number" class="input" value="${existing ? existing.books : 25000}" oninput="updateFeeTotal()" />
           </div>
           <div>
-            <label class="input-label">Uniform</label>
+            <label class="input-label" for="fs_uniform">Uniform</label>
             <input id="fs_uniform" type="number" class="input" value="${existing ? existing.uniform : 20000}" oninput="updateFeeTotal()" />
           </div>
           <div>
-            <label class="input-label">PTA Levy</label>
+            <label class="input-label" for="fs_pta">PTA Levy</label>
             <input id="fs_pta" type="number" class="input" value="${existing ? existing.pta : 5000}" oninput="updateFeeTotal()" />
           </div>
         </div>
@@ -783,22 +783,22 @@ function feeStructureModal(editingId) {
               <div class="flex items-center gap-2 fs-extra-row" data-idx="${i}">
                 <input class="input flex-1" placeholder="e.g. Lab Fee, ICT Levy…" id="fs_ei_name_${i}" value="${item.name || ''}">
                 <input type="number" class="input w-32" placeholder="0" id="fs_ei_amt_${i}" value="${item.amount || 0}" oninput="updateFeeTotal()">
-                <button type="button" class="text-rose-500 hover:text-rose-700 flex-shrink-0 p-1" onclick="this.closest('.fs-extra-row').remove(); updateFeeTotal()" title="Remove">${icon('x','w-4 h-4')}</button>
+                <button type="button" class="text-rose-500 hover:text-rose-700 flex-shrink-0 p-1" onclick="this.closest('.fs-extra-row').remove(); updateFeeTotal()" aria-label="Remove" title="Remove">${icon('x','w-4 h-4')}</button>
               </div>
             `).join('')}
           </div>
           ${!(existing && existing.extraItems && existing.extraItems.length) ? '<p id="fs_extra_hint" class="text-xs text-slate-400 mt-1">No additional fees — add rows for items like Lab Fee, ICT Levy, etc.</p>' : ''}
         </div>
-        <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-900">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
           ${icon('info','w-4 h-4 inline mr-1')} Extracurricular fees (swimming, ballet, music, etc.) are <strong>per student</strong> — set them under the <strong>Activities tab</strong> and assign to each student from their profile.
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Fee Due Date</label>
+            <label class="input-label" for="fs_due">Fee Due Date</label>
             <input id="fs_due" type="date" class="input" value="${existing ? existing.dueDate : daysAhead(15)}" />
           </div>
           <div>
-            <label class="input-label">Prompt Payment Discount Deadline</label>
+            <label class="input-label" for="fs_discountDeadline">Prompt Payment Discount Deadline</label>
             <input id="fs_discountDeadline" type="date" class="input" value="${existing ? (existing.discountDeadline || '') : ''}" />
             <p class="text-xs text-slate-400 mt-1">Prompt payment discounts expire after this date</p>
           </div>
@@ -835,7 +835,7 @@ function feeStructureModal(editingId) {
             </div>
           </div>
         </div>
-        ${isEdit ? `<div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
+        ${isEdit ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
           <strong>Note:</strong> Editing this structure does not retroactively change existing invoices. New invoices generated from this point will use the updated amounts.
         </div>` : ''}
       </div>
@@ -867,14 +867,14 @@ function addFeeExtraItem() {
   const row = document.createElement('div');
   row.className = 'flex items-center gap-2 fs-extra-row';
   row.setAttribute('data-idx', i);
-  row.innerHTML = `<input class="input flex-1" placeholder="e.g. Lab Fee, ICT Levy…" id="fs_ei_name_${i}"><input type="number" class="input w-32" placeholder="0" id="fs_ei_amt_${i}" value="0" oninput="updateFeeTotal()"><button type="button" class="text-rose-500 hover:text-rose-700 flex-shrink-0 p-1" onclick="this.closest('.fs-extra-row').remove(); updateFeeTotal()" title="Remove">${icon('x','w-4 h-4')}</button>`;
+  row.innerHTML = `<input class="input flex-1" placeholder="e.g. Lab Fee, ICT Levy…" id="fs_ei_name_${i}"><input type="number" class="input w-32" placeholder="0" id="fs_ei_amt_${i}" value="0" oninput="updateFeeTotal()"><button type="button" class="text-rose-500 hover:text-rose-700 flex-shrink-0 p-1" onclick="this.closest('.fs-extra-row').remove(); updateFeeTotal()" aria-label="Remove" title="Remove">${icon('x','w-4 h-4')}</button>`;
   container.appendChild(row);
 }
 
 function saveFeeStructure(editingId) {
   const installmentEnabled = (document.getElementById('fs_installment') || {}).checked || false;
   const data = {
-    schoolId: 'sch_brightlights',
+    schoolId: currentSchoolId(),
     classId: document.getElementById('fs_class').value,
     term: document.getElementById('fs_term').value.trim(),
     tuition: parseInt(document.getElementById('fs_tuition').value) || 0,
@@ -906,72 +906,233 @@ function saveFeeStructure(editingId) {
 function deleteFeeStructure(id) {
   const f = DB.find('feeStructures', id);
   const cls = DB.find('classes', f.classId);
-  confirm(`Delete the fee structure for ${cls ? cls.name : 'this class'}? Existing invoices are not affected.`, () => {
+  confirmDialog(`Delete the fee structure for ${cls ? cls.name : 'this class'}? Existing invoices are not affected.`, () => {
     DB.remove('feeStructures', id);
     APP.render();
     toast('Fee structure deleted', 'info');
   }, { yesLabel: 'Delete', danger: true });
 }
 
-/* ---------- Invoices ---------- */
+/* ---------- Invoices — the school's accounts-receivable ledger ----------
+   One page, one definition of "who owes us". Merges what used to be split across
+   Invoices (parent-facing documents) and Fee Ledger (accounting view).
+
+   Two AR conventions this leans on:
+   - A receivable survives the student leaving. Debt is only removed by payment or
+     an explicit write-off, never by an enrolment status changing underneath it.
+     Scope defaults to everyone; narrow it deliberately via the scope filter.
+   - Payment state and aging are derived from the numbers, never from the stored
+     `status` string, which conflates the two ('outstanding' vs 'partial').
+*/
+function arPaymentState(inv) {
+  if (!(inv.balance > 0)) return 'paid';
+  return inv.paid > 0 ? 'partial' : 'unpaid';
+}
+
+function arDaysPastDue(inv) {
+  if (!(inv.balance > 0) || !inv.dueDate) return 0;
+  const days = Math.floor((new Date(today()) - new Date(inv.dueDate)) / 86400000);
+  return days > 0 ? days : 0;
+}
+
+// Badge reads from the derived payment state, not the stored `status` string, so the
+// wording always matches the filter chips. Overdue is shown on the Due column instead —
+// an invoice can be part-paid *and* overdue, and those are two different facts.
+function arStateBadge(state) {
+  const map = {
+    paid:    { cls: 'badge-success', label: 'Paid' },
+    partial: { cls: 'badge-warn',    label: 'Part-paid' },
+    unpaid:  { cls: 'badge-danger',  label: 'Unpaid' }
+  };
+  const b = map[state] || map.unpaid;
+  return `<span class="badge ${b.cls}">${b.label}</span>`;
+}
+
+// Standard AR aging buckets, oldest debt first.
+function arAgingBucket(days) {
+  if (days <= 0)  return 'current';
+  if (days <= 30) return '1-30';
+  if (days <= 60) return '31-60';
+  if (days <= 90) return '61-90';
+  return '90+';
+}
+
+// Every row the invoices page works from, with the student/class joined on.
+// Guards against an invoice whose student was hard-deleted — the row is kept and
+// flagged rather than dropped, so the money never silently leaves the totals.
+function arRows(schoolId) {
+  return DB.query('invoices', i => i.schoolId === schoolId).map(inv => {
+    const s = DB.find('students', inv.studentId);
+    const cls = s ? DB.find('classes', s.classId) : null;
+    const days = arDaysPastDue(inv);
+    return {
+      inv, s, cls, days,
+      state: arPaymentState(inv),
+      bucket: arAgingBucket(days),
+      orphaned: !s,
+      leaver: !!s && s.status !== 'active',
+      credit: s ? (DB.query('studentCredits', c => c.studentId === s.id)[0] || { balance: 0 }).balance : 0
+    };
+  });
+}
+
 function view_fin_invoices() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
-  const invoices = DB.query('invoices', i => i.schoolId === schoolId);
+  const schoolId = currentSchoolId();
+  const all = arRows(schoolId);
   const filter = APP.params.invStatus || 'all';
+  const scope = APP.params.invScope || 'all';
+  const filterClass = APP.params.invClass || 'all';
   const q = (APP.params.invQ || '').toLowerCase();
-  const byStatus = filter === 'all' ? invoices : invoices.filter(i => i.status === filter);
-  const filtered = q ? byStatus.filter(i => {
-    const s = DB.find('students', i.studentId);
-    return s && (s.name.toLowerCase().includes(q) || (s.studentId || '').toLowerCase().includes(q));
-  }) : byStatus;
-  const overdueCount = invoices.filter(i => i.balance > 0 && i.dueDate && i.dueDate < today()).length;
+  const classes = DB.get('classes').filter(c => c.schoolId === schoolId).sort((a, b) => a.name.localeCompare(b.name));
+
+  const inScope = scope === 'current' ? all.filter(r => !r.leaver && !r.orphaned) : all;
+  const matchState = (r, f) => f === 'all' ? true
+    : f === 'owing'   ? r.inv.balance > 0
+    : f === 'overdue' ? r.days > 0
+    : r.state === f;
+
+  let rows = inScope.filter(r => matchState(r, filter));
+  if (filterClass !== 'all') rows = rows.filter(r => r.s && r.s.classId === filterClass);
+  if (q) rows = rows.filter(r => r.s && (r.s.name.toLowerCase().includes(q) || (r.s.admissionNo || '').toLowerCase().includes(q)));
+  // Oldest debt first — the collections worklist order.
+  rows.sort((a, b) => b.days - a.days || b.inv.balance - a.inv.balance || (a.s?.name || '').localeCompare(b.s?.name || ''));
+
+  const sum = (list, fn) => list.reduce((t, r) => t + fn(r), 0);
+  const billed = sum(rows, r => r.inv.total);
+  const collected = sum(rows, r => r.inv.paid);
+  const outstanding = sum(rows, r => r.inv.balance);
+  const overdueRows = rows.filter(r => r.days > 0);
+  const overdueAmt = sum(overdueRows, r => r.inv.balance);
+  const count = f => inScope.filter(r => matchState(r, f)).length;
+  const leaverDebt = sum(all.filter(r => r.leaver || r.orphaned), r => r.inv.balance);
+
+  const chip = (key, label) => `<button class="chip ${filter === key ? 'active' : ''}" aria-pressed="${filter === key}" onclick="APP.params.invStatus='${key}'; APP.render()">${label} ${count(key)}</button>`;
 
   return `
     ${pageHeader({
       title: 'Invoices',
-      subtitle: `${invoices.length} invoices for ${DB.settings().currentTerm}`,
+      subtitle: `${DB.settings().currentTerm} · ${rows.length} of ${all.length} invoice${all.length === 1 ? '' : 's'}`,
       actions: `
         <button class="btn btn-secondary" onclick="invoiceReminderSettingsModal()">${icon('settings','w-4 h-4')} Reminder Settings</button>
-        <button class="btn btn-secondary" onclick="bulkGenerateInvoicesModal()">${icon('plus','w-4 h-4')} Bulk Generate</button>
-        ${overdueCount > 0 ? `<button class="btn btn-primary" onclick="sendBulkReminders()">${icon('send','w-4 h-4')} Remind ${overdueCount} Overdue</button>` : ''}
+        <button class="btn btn-secondary" onclick="exportLedgerCSV()">${icon('download','w-4 h-4')} Export CSV</button>
+        <button class="btn btn-secondary" onclick="bulkGenerateInvoicesModal()">${icon('plus','w-4 h-4')} Generate Invoices</button>
+        ${count('owing') > 0 ? `<button class="btn btn-secondary" onclick="sendBulkReminders()">${icon('send','w-4 h-4')} Remind ${count('owing')} Owing</button>` : ''}
+        <button class="btn btn-primary" onclick="recordCashPaymentModal()">${icon('fees','w-4 h-4')} Record Payment</button>
       `
     })}
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      ${statCard({ label: 'Total Billed', value: money(billed), icon: 'fees', color: 'blue', tooltip: 'Sum of every invoice matching the current filters.' })}
+      ${statCard({ label: 'Collected', value: money(collected), icon: 'check', color: 'brand', tooltip: 'Payments received against these invoices.' })}
+      ${statCard({ label: 'Outstanding', value: money(outstanding), icon: 'trending_down', color: 'rose', tooltip: 'Balance still owed across these invoices, regardless of due date.' })}
+      ${statCard({ label: 'Overdue', value: money(overdueAmt), icon: 'bell', color: 'gold',
+        trend: overdueRows.length ? { direction: 'down', label: `${overdueRows.length} invoice${overdueRows.length === 1 ? '' : 's'} past due` } : { direction: 'up', label: 'Nothing past due' },
+        tooltip: 'Balance owed on invoices whose due date has already passed. This is the money to chase first.' })}
+    </div>
+
+    ${scope === 'all' && leaverDebt > 0 ? `
+      <div class="flex items-start gap-2 text-xs text-slate-600 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3">
+        ${icon('info','w-4 h-4 flex-shrink-0 text-amber-600')}
+        <span><strong>${money(leaverDebt)}</strong> of the balance above is owed by students who have left (alumni, transferred or withdrawn). It stays on the books until paid or written off — switch scope to <em>Current students</em> to exclude it.</span>
+      </div>` : ''}
+
     <div class="card p-3 mb-3">
-      <div class="relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${icon('search','w-4 h-4')}</span>
-        <input type="text" class="input pl-9" placeholder="Search by student name…" value="${q}" oninput="APP.params.invQ = this.value; APP.render()" />
+      <div class="flex flex-wrap gap-2 items-center">
+        <div class="relative flex-1 min-w-[200px]">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${icon('search','w-4 h-4')}</span>
+          <label for="inv_search" class="sr-only">Search invoices by student name or admission number</label>
+          <input id="inv_search" type="search" class="input pl-9" placeholder="Name or admission no…" value="${q}"
+                 oninput="APP.params.invQ = this.value; APP.render()" />
+        </div>
+        <label for="inv_class" class="sr-only">Filter by class</label>
+        <select id="inv_class" class="input !w-auto text-sm" onchange="APP.params.invClass = this.value; APP.render()">
+          <option value="all" ${filterClass === 'all' ? 'selected' : ''}>All Classes</option>
+          ${classes.map(c => `<option value="${c.id}" ${filterClass === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+        </select>
+        <label for="inv_scope" class="sr-only">Filter by enrollment scope</label>
+        <select id="inv_scope" class="input !w-auto text-sm" onchange="APP.params.invScope = this.value; APP.render()">
+          <option value="all" ${scope === 'all' ? 'selected' : ''}>Everyone who owes</option>
+          <option value="current" ${scope === 'current' ? 'selected' : ''}>Current students only</option>
+        </select>
+      </div>
+      <div class="flex gap-2 mt-3 flex-wrap">
+        ${chip('all', 'All')}
+        ${chip('owing', 'Owing')}
+        ${chip('overdue', 'Overdue')}
+        ${chip('partial', 'Part-paid')}
+        ${chip('unpaid', 'Unpaid')}
+        ${chip('paid', 'Paid')}
       </div>
     </div>
-    <div class="flex gap-2 mb-4 flex-wrap">
-      <button class="chip ${filter==='all'?'active':''}" onclick="APP.go('fin_invoices', { invStatus: 'all' })">All ${invoices.length}</button>
-      <button class="chip ${filter==='paid'?'active':''}" onclick="APP.go('fin_invoices', { invStatus: 'paid' })">Paid ${invoices.filter(i=>i.status==='paid').length}</button>
-      <button class="chip ${filter==='partial'?'active':''}" onclick="APP.go('fin_invoices', { invStatus: 'partial' })">Partial ${invoices.filter(i=>i.status==='partial').length}</button>
-      <button class="chip ${filter==='outstanding'?'active':''}" onclick="APP.go('fin_invoices', { invStatus: 'outstanding' })">Outstanding ${invoices.filter(i=>i.status==='outstanding').length}</button>
-    </div>
     <div class="card overflow-hidden">
-      <table class="tbl">
-        <thead><tr><th>Student</th><th>Class</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Due</th><th class="text-right">Actions</th></tr></thead>
-        <tbody>
-          ${filtered.map(inv => {
-            const s = DB.find('students', inv.studentId);
-            const cls = DB.find('classes', s.classId);
-            return `<tr>
-              <td><div class="flex items-center gap-2">${avatar(s.name, 'sm')}<div><div class="font-medium">${s.name}</div>${s.admissionNo ? `<div class="text-xs text-slate-400">${s.admissionNo}</div>` : ''}</div></div></td>
-              <td>${cls ? cls.name : '—'}</td>
-              <td class="font-mono">${money(inv.total)}</td>
-              <td class="font-mono text-emerald-700">${money(inv.paid)}</td>
-              <td class="font-mono ${inv.balance > 0 ? 'text-rose-700 font-bold' : 'text-slate-400'}">${money(inv.balance)}</td>
-              <td>${statusBadge(inv.status)}</td>
-              <td class="text-sm text-slate-500">${fdate(inv.dueDate, { short: true })}</td>
-              <td class="text-right whitespace-nowrap">
-                <button class="btn btn-ghost !p-1.5 text-brand-700 hover:bg-brand-50 rounded-lg" title="Send invoice to parent (WhatsApp + email)" onclick="sendInvoiceToParent('${inv.id}')">${icon('send','w-4 h-4')}</button>
-                ${inv.paid > 0 ? `<button class="btn btn-ghost !p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg" title="Generate receipt & send to parent" onclick="sendReceiptToParent('${inv.id}')">${icon('download','w-4 h-4')}</button>` : ''}
-                <button class="btn btn-ghost !p-1.5 hover:bg-slate-100 rounded-lg" title="View invoice" onclick="viewInvoice('${inv.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
-              </td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
+      ${rows.length === 0 ? emptyState({
+        icon: 'fees',
+        title: 'No invoices match these filters',
+        body: 'Try a different status, class or search term.',
+        action: `<button class="btn btn-secondary" onclick="APP.params.invStatus='all'; APP.params.invClass='all'; APP.params.invScope='all'; APP.params.invQ=''; APP.render()">Clear filters</button>`
+      }) : `
+      <div class="overflow-x-auto">
+        <table class="tbl">
+          <caption class="sr-only">Fee invoices for ${DB.settings().currentTerm}, sorted by how far past due they are</caption>
+          <th scope="col"ead>
+            <tr>
+              <th scope="col">Student</th>
+              <th scope="col">Class</th>
+              <th scope="col">Due</th>
+              <th scope="col" class="text-right">Billed</th>
+              <th scope="col" class="text-right">Paid</th>
+              <th scope="col" class="text-right">Balance</th>
+              <th scope="col" class="text-right">Advance</th>
+              <th scope="col">Status</th>
+              <th scope="col"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(({ inv, s, cls, days, credit, leaver, orphaned, state }) => {
+              const name = orphaned ? 'Deleted student' : s.name;
+              return `<tr class="${days > 0 ? 'bg-rose-50/40' : ''}">
+                <td>
+                  <div class="flex items-center gap-2">
+                    ${orphaned ? avatar('?', 'sm') : avatar({ name: s.name, photo: s.photo }, 'sm')}
+                    <div class="min-w-0">
+                      <div class="font-medium flex items-center gap-1.5">
+                        <span class="truncate">${name}</span>
+                        ${leaver ? `<span class="badge badge-neutral text-[10px] flex-shrink-0">${(s.status || '').charAt(0).toUpperCase() + (s.status || '').slice(1)}</span>` : ''}
+                        ${orphaned ? `<span class="badge badge-danger text-[10px] flex-shrink-0">Orphaned</span>` : ''}
+                      </div>
+                      <div class="text-xs text-slate-400">${orphaned ? inv.studentId : (s.admissionNo || s.id.slice(-6).toUpperCase())}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-sm text-slate-600">${cls ? cls.name : '—'}</td>
+                <td class="text-sm whitespace-nowrap">
+                  <div class="text-slate-500">${fdate(inv.dueDate, { short: true })}</div>
+                  ${days > 0 ? `<div class="text-xs font-semibold text-rose-700">${days} day${days === 1 ? '' : 's'} overdue</div>` : ''}
+                </td>
+                <td class="text-right font-mono tabular-nums">${money(inv.total)}</td>
+                <td class="text-right font-mono tabular-nums text-emerald-700">${money(inv.paid)}</td>
+                <td class="text-right font-mono tabular-nums font-semibold ${inv.balance > 0 ? 'text-rose-700' : 'text-slate-400'}">${money(inv.balance)}</td>
+                <td class="text-right font-mono tabular-nums ${credit > 0 ? 'text-blue-700 font-semibold' : 'text-slate-300'}">${credit > 0 ? money(credit) : '—'}</td>
+                <td>${arStateBadge(state)}</td>
+                <td class="text-right pr-2">
+                  <button class="btn btn-ghost !p-1.5 text-slate-400 hover:text-slate-700"
+                          aria-label="Actions for ${name}'s invoice"
+                          onclick="openLedgerMenu(this,'${inv.id}',${inv.balance > 0},${inv.paid > 0},${credit > 0 && inv.balance > 0})">${icon('more','w-4 h-4')}</button>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+          <tfoot>
+            <tr class="bg-slate-50 border-t-2 border-slate-200">
+              <td colspan="3" class="font-bold text-slate-700 px-4 py-3">Totals — ${rows.length} invoice${rows.length === 1 ? '' : 's'}</td>
+              <td class="text-right font-mono tabular-nums font-bold px-4 py-3">${money(billed)}</td>
+              <td class="text-right font-mono tabular-nums font-bold text-emerald-700 px-4 py-3">${money(collected)}</td>
+              <td class="text-right font-mono tabular-nums font-bold text-rose-700 px-4 py-3">${money(outstanding)}</td>
+              <td colspan="3"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>`}
     </div>
   `;
 }
@@ -988,7 +1149,7 @@ function sendInvoiceToParent(invoiceId) {
       type: inv.balance > 0 ? 'warn' : 'info', channel: 'whatsapp+email', read: false, timestamp: now(), link: { view: 'par_fees' }
     });
   }
-  DB.insert('auditLog', { id: uid('aud'), schoolId: 'sch_brightlights', actor: AUTH.current.id, action: 'sent_invoice', target: `${s.name} · ${money(inv.total)}`, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'sent_invoice', target: `${s.name} · ${money(inv.total)}`, timestamp: now() });
   toast(`Invoice for ${s.name} sent to parent via WhatsApp + email`, 'success');
 }
 
@@ -1007,113 +1168,17 @@ function sendReceiptToParent(invoiceId) {
       type: 'success', channel: 'whatsapp+email', read: false, timestamp: now(), link: { view: 'par_fees' }
     });
   }
-  DB.insert('auditLog', { id: uid('aud'), schoolId: 'sch_brightlights', actor: AUTH.current.id, action: 'sent_receipt', target: `${s.name} · ${money(inv.paid)}`, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: currentSchoolId(), actor: AUTH.current.id, action: 'sent_receipt', target: `${s.name} · ${money(inv.paid)}`, timestamp: now() });
   toast(`Receipt for ${s.name} generated & sent to parent via WhatsApp + email`, 'success');
 }
 
-/* ---------- Fee Ledger ---------- */
+/* ---------- Fee Ledger ----------
+   Retired: the ledger and the invoices list were two views of the same
+   `invoices` collection that disagreed on who counted. Kept as an alias so
+   existing links and the old `fin_ledger` route keep working.
+*/
 function view_fin_ledger() {
-  const schoolId = currentSchoolId();
-  const allInvoices = DB.query('invoices', i => i.schoolId === schoolId);
-  const classes = DB.get('classes').filter(c => c.schoolId === schoolId);
-  const filterClass  = APP.params.ledgerClass  || 'all';
-  const filterStatus = APP.params.ledgerStatus || 'all';
-  const q = (APP.params.ledgerQ || '').toLowerCase();
-
-  let rows = allInvoices.map(inv => {
-    const s = DB.find('students', inv.studentId);
-    if (!s || s.status !== 'active') return null;
-    const cls = DB.find('classes', s.classId);
-    return { inv, s, cls };
-  }).filter(Boolean);
-
-  if (filterClass  !== 'all') rows = rows.filter(r => r.s.classId === filterClass);
-  if (filterStatus !== 'all') rows = rows.filter(r => r.inv.status === filterStatus);
-  if (q) rows = rows.filter(r => r.s.name.toLowerCase().includes(q) || (r.s.admissionNo || '').toLowerCase().includes(q));
-  rows.sort((a, b) => (a.cls?.name || '').localeCompare(b.cls?.name || '') || a.s.name.localeCompare(b.s.name));
-
-  const totalBilled      = rows.reduce((s, r) => s + r.inv.total,   0);
-  const totalCollected   = rows.reduce((s, r) => s + r.inv.paid,    0);
-  const totalOutstanding = rows.reduce((s, r) => s + r.inv.balance, 0);
-
-  const statusCounts = { all: rows.length };
-  rows.forEach(r => { statusCounts[r.inv.status] = (statusCounts[r.inv.status] || 0) + 1; });
-
-  return `
-    ${pageHeader({
-      title: 'Fee Ledger',
-      subtitle: `${DB.settings().currentTerm} · ${rows.length} student${rows.length !== 1 ? 's' : ''}`,
-      actions: `
-        <button class="btn btn-secondary" onclick="exportLedgerCSV()">${icon('download','w-4 h-4')} Export CSV</button>
-        <button class="btn btn-secondary" onclick="sendBulkReminders()">${icon('bell','w-4 h-4')} Remind Overdue</button>
-        <button class="btn btn-secondary" onclick="bulkGenerateInvoicesModal()">${icon('plus','w-4 h-4')} Generate Invoices</button>
-        <button class="btn btn-primary" onclick="recordCashPaymentModal()">${icon('fees','w-4 h-4')} Record Payment</button>
-      `
-    })}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-      ${statCard({ label: 'Students', value: rows.length, icon: 'students', color: 'brand' })}
-      ${statCard({ label: 'Total Billed', value: money(totalBilled), icon: 'fees', color: 'slate' })}
-      ${statCard({ label: 'Collected', value: money(totalCollected), icon: 'check', color: 'green' })}
-      ${statCard({ label: 'Outstanding', value: money(totalOutstanding), icon: 'alert', color: 'red' })}
-    </div>
-    <div class="card overflow-hidden">
-      <div class="p-4 border-b border-slate-100 flex flex-wrap gap-2 items-center">
-        <select class="input !w-auto text-sm" onchange="APP.go('fin_ledger',{...APP.params, ledgerClass: this.value})">
-          <option value="all" ${filterClass==='all'?'selected':''}>All Classes</option>
-          ${classes.sort((a,b)=>a.name.localeCompare(b.name)).map(c => `<option value="${c.id}" ${filterClass===c.id?'selected':''}>${c.name}</option>`).join('')}
-        </select>
-        <div class="flex gap-1 flex-wrap">
-          ${['all','paid','partial','outstanding'].map(st => `<button class="chip ${filterStatus===st?'active':''}" onclick="APP.go('fin_ledger',{...APP.params, ledgerStatus:'${st}'})">${st==='all'?`All (${statusCounts.all||0})`:st[0].toUpperCase()+st.slice(1)+` (${statusCounts[st]||0})`}</button>`).join('')}
-        </div>
-        <input type="search" class="input !w-44 ml-auto text-sm" placeholder="Name or Adm. No…" value="${APP.params.ledgerQ||''}" oninput="APP.go('fin_ledger',{...APP.params, ledgerQ: this.value})">
-      </div>
-      ${rows.length === 0 ? emptyState({ icon: 'fees', title: 'No records', sub: 'Try adjusting the filters above' }) : `
-      <div class="overflow-x-auto">
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>Adm. No</th>
-              <th>Student Name</th>
-              <th>Class</th>
-              <th class="text-right">Fee Amount</th>
-              <th class="text-right">Received</th>
-              <th class="text-right">Outstanding</th>
-              <th class="text-right">Advance Paid</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(({ inv, s, cls }) => {
-              const credit = (DB.query('studentCredits', c => c.studentId === s.id)[0] || { balance: 0 }).balance;
-              return `<tr class="group">
-                <td class="font-mono text-xs text-slate-500">${s.admissionNo || s.id.slice(-6).toUpperCase()}</td>
-                <td><div class="flex items-center gap-2">${avatar(s.name, 'sm')}<span class="font-medium">${s.name}</span></div></td>
-                <td class="text-sm text-slate-600">${cls ? cls.name : '—'}</td>
-                <td class="text-right font-mono">${money(inv.total)}</td>
-                <td class="text-right font-mono text-emerald-700">${money(inv.paid)}</td>
-                <td class="text-right font-mono font-semibold ${inv.balance > 0 ? 'text-rose-700' : 'text-slate-400'}">${money(inv.balance)}</td>
-                <td class="text-right font-mono ${credit > 0 ? 'text-brand-700 font-semibold' : 'text-slate-300'}">${credit > 0 ? money(credit) : '—'}</td>
-                <td>${statusBadge(inv.status)}</td>
-                <td class="text-right pr-2">
-                  <button class="btn btn-ghost !p-1.5 text-slate-400 hover:text-slate-700" title="Actions" onclick="openLedgerMenu(this,'${inv.id}',${inv.balance > 0},${inv.paid > 0},${credit > 0 && inv.balance > 0})">${icon('more','w-4 h-4')}</button>
-                </td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-          <tfoot>
-            <tr class="bg-slate-50 border-t-2 border-slate-200">
-              <td colspan="3" class="font-bold text-slate-700 px-4 py-3">Totals — ${rows.length} student${rows.length !== 1 ? 's' : ''}</td>
-              <td class="text-right font-mono font-bold px-4 py-3">${money(totalBilled)}</td>
-              <td class="text-right font-mono font-bold text-emerald-700 px-4 py-3">${money(totalCollected)}</td>
-              <td class="text-right font-mono font-bold text-rose-700 px-4 py-3">${money(totalOutstanding)}</td>
-              <td colspan="3"></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>`}
-    </div>
-  `;
+  return view_fin_invoices();
 }
 
 function ledgerQuickPay(invoiceId) {
@@ -1130,9 +1195,9 @@ function ledgerQuickPay(invoiceId) {
           <div class="text-xs text-slate-500">${s ? (s.admissionNo || s.id.slice(-6).toUpperCase()) : ''} · ${cls ? cls.name : ''}</div>
           <div class="mt-1 text-sm">Balance due: <span class="font-bold text-rose-700">${money(inv.balance)}</span></div>
         </div>
-        <div><label class="input-label">Amount (₦)</label><input type="number" id="qpay_amount" class="input" value="${inv.balance}" /></div>
-        <div><label class="input-label">Date</label><input type="date" id="qpay_date" class="input" value="${today()}" /></div>
-        <div><label class="input-label">Note</label><input type="text" id="qpay_note" class="input" placeholder="School fees — ${DB.settings().currentTerm}" /></div>
+        <div><label class="input-label" for="qpay_amount">Amount (₦)</label><input type="number" id="qpay_amount" class="input" value="${inv.balance}" /></div>
+        <div><label class="input-label" for="qpay_date">Date</label><input type="date" id="qpay_date" class="input" value="${today()}" /></div>
+        <div><label class="input-label" for="qpay_note">Note</label><input type="text" id="qpay_note" class="input" placeholder="School fees — ${DB.settings().currentTerm}" /></div>
       </div>
     `,
     footer: `
@@ -1204,7 +1269,7 @@ function openLedgerMenu(btn, invoiceId, hasBalance, hasPaid, hasCredit) {
   const rect = btn.getBoundingClientRect();
   const items = [
     hasBalance ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 font-medium text-brand-700" onclick="document.getElementById('_ledgerMenu')?.remove();ledgerQuickPay('${invoiceId}')">Record Payment</button>` : '',
-    hasCredit  ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-brand-600" onclick="document.getElementById('_ledgerMenu')?.remove();ledgerApplyCredit('${invoiceId}')">Apply Advance Payment</button>` : '',
+    hasCredit  ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-blue-600" onclick="document.getElementById('_ledgerMenu')?.remove();ledgerApplyCredit('${invoiceId}')">Apply Advance Payment</button>` : '',
     `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50" onclick="document.getElementById('_ledgerMenu')?.remove();sendInvoiceToParent('${invoiceId}')">Send Invoice</button>`,
     hasPaid    ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-emerald-600" onclick="document.getElementById('_ledgerMenu')?.remove();sendReceiptToParent('${invoiceId}')">Send Receipt</button>` : '',
     hasBalance ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-amber-600" onclick="document.getElementById('_ledgerMenu')?.remove();sendManualReminder('${invoiceId}')">Send Reminder</button>` : '',
@@ -1220,28 +1285,35 @@ function openLedgerMenu(btn, invoiceId, hasBalance, hasPaid, hasCredit) {
   setTimeout(() => document.addEventListener('click', () => document.getElementById('_ledgerMenu')?.remove(), { once: true }), 0);
 }
 
+// Exports exactly the enrolment scope the page is showing, so the CSV totals
+// reconcile with the on-screen totals rather than quietly dropping leaver debt.
 function exportLedgerCSV() {
-  const schoolId = currentSchoolId();
-  const invoices = DB.query('invoices', i => i.schoolId === schoolId);
-  const rows = invoices.map(inv => {
-    const s = DB.find('students', inv.studentId);
-    if (!s || s.status !== 'active') return null;
-    const cls = DB.find('classes', s.classId);
-    return [s.admissionNo || '', cls ? cls.name : '', s.name, inv.total, inv.paid, inv.balance, inv.status, inv.term || ''];
-  }).filter(Boolean);
-  rows.sort((a, b) => a[1].localeCompare(b[1]) || a[2].localeCompare(b[2]));
-  const headers = ['Admission No', 'Class', 'Student Name', 'Fee Amount', 'Total Received', 'Outstanding', 'Status', 'Term'];
-  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const scope = APP.params.invScope || 'all';
+  const rows = arRows(currentSchoolId())
+    .filter(r => scope === 'current' ? (!r.leaver && !r.orphaned) : true)
+    .sort((a, b) => b.days - a.days || (a.s?.name || '').localeCompare(b.s?.name || ''))
+    .map(r => [
+      r.orphaned ? r.inv.studentId : (r.s.admissionNo || ''),
+      r.cls ? r.cls.name : '',
+      r.orphaned ? 'Deleted student' : r.s.name,
+      r.orphaned ? 'orphaned' : r.s.status,
+      r.inv.total, r.inv.paid, r.inv.balance, r.credit,
+      r.inv.status, r.inv.dueDate || '', r.days, r.bucket, r.inv.term || ''
+    ]);
+  const headers = ['Admission No', 'Class', 'Student Name', 'Enrollment', 'Fee Amount', 'Total Received', 'Outstanding', 'Advance Paid', 'Status', 'Due Date', 'Days Overdue', 'Aging Bucket', 'Term'];
+  // Escape embedded quotes so a name like O"Brien can't break the column layout.
+  const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map(r => r.map(esc).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `fee_ledger_${today()}.csv`; a.click();
+  a.href = url; a.download = `invoices_${scope}_${today()}.csv`; a.click();
   URL.revokeObjectURL(url);
 }
 
 /* ---------- Payments ---------- */
 function view_fin_payments() {
-  const txns = DB.query('transactions', t => t.schoolId === 'sch_brightlights').sort((a,b) => b.timestamp.localeCompare(a.timestamp));
+  const txns = DB.query('transactions', t => t.schoolId === currentSchoolId()).sort((a,b) => b.timestamp.localeCompare(a.timestamp));
   const total = txns.filter(t => t.status === 'successful').reduce((s, t) => s + t.amount, 0);
   const q = (APP.params.payQ || '').toLowerCase();
   const filtered = q ? txns.filter(t => {
@@ -1266,7 +1338,7 @@ function view_fin_payments() {
     </div>
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Reference</th><th>Student</th><th>Amount</th><th>Method</th><th>Status</th><th>Reconciled</th><th>Date</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Reference</th><th scope="col">Student</th><th scope="col">Amount</th><th scope="col">Method</th><th scope="col">Status</th><th scope="col">Reconciled</th><th scope="col">Date</th></tr></thead>
         <tbody>
           ${filtered.map(t => {
             const s = DB.find('students', t.studentId);
@@ -1287,16 +1359,16 @@ function view_fin_payments() {
 }
 
 function manualPaymentModal() {
-  const students = DB.query('students', s => s.schoolId === 'sch_brightlights' && s.status === 'active');
+  const students = DB.query('students', s => s.schoolId === currentSchoolId() && s.status === 'active');
   modal({
     title: 'Record Manual Payment',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
           Use for <strong>cash</strong>, <strong>cheque</strong>, or <strong>bank transfer</strong> payments received at the school. These post directly to the student's invoice with no Paystack involved.
         </div>
         <div>
-          <label class="input-label">Student</label>
+          <label class="input-label" for="mp_student">Student</label>
           <select id="mp_student" class="input" onchange="updateManualPaymentBalance()">
             <option value="">— Select student —</option>
             ${students.map(s => {
@@ -1305,10 +1377,10 @@ function manualPaymentModal() {
             }).join('')}
           </select>
         </div>
-        <div id="mp_balanceHint" class="hidden bg-amber-50 rounded-xl p-2.5 text-xs text-amber-900"></div>
+        <div id="mp_balanceHint" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-900"></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Amount (NGN)</label><input id="mp_amount" type="number" class="input" /></div>
-          <div><label class="input-label">Method</label>
+          <div><label class="input-label" for="mp_amount">Amount (NGN)</label><input id="mp_amount" type="number" class="input" /></div>
+          <div><label class="input-label" for="mp_method">Method</label>
             <select id="mp_method" class="input">
               <option value="cash">Cash</option>
               <option value="cheque">Cheque</option>
@@ -1319,10 +1391,10 @@ function manualPaymentModal() {
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Date received</label><input id="mp_date" type="date" class="input" value="${today()}" /></div>
-          <div><label class="input-label">Reference / Cheque No. (optional)</label><input id="mp_ref" class="input" placeholder="e.g. CHQ-021435" /></div>
+          <div><label class="input-label" for="mp_date">Date received</label><input id="mp_date" type="date" class="input" value="${today()}" /></div>
+          <div><label class="input-label" for="mp_ref">Reference / Cheque No. (optional)</label><input id="mp_ref" class="input" placeholder="e.g. CHQ-021435" /></div>
         </div>
-        <div><label class="input-label">Notes (optional)</label><textarea id="mp_notes" rows="2" class="input" placeholder="e.g. Cash collected at the gate by Mr. Adebayo"></textarea></div>
+        <div><label class="input-label" for="mp_notes">Notes (optional)</label><textarea id="mp_notes" rows="2" class="input" placeholder="e.g. Cash collected at the gate by Mr. Adebayo"></textarea></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -1338,7 +1410,7 @@ function updateManualPaymentBalance() {
   const amount = document.getElementById('mp_amount');
   if (balance > 0) {
     hint.classList.remove('hidden');
-    hint.innerHTML = `Outstanding balance: <strong>${money(balance)}</strong>. <button class="text-brand-700 underline" onclick="document.getElementById('mp_amount').value=${balance}">Pay in full</button>`;
+    hint.innerHTML = `Outstanding balance: <strong>${money(balance)}</strong>. <button class="text-blue-700 underline" onclick="document.getElementById('mp_amount').value=${balance}">Pay in full</button>`;
     amount.placeholder = `up to ${money(balance)}`;
   } else {
     hint.classList.add('hidden');
@@ -1387,7 +1459,7 @@ function saveManualPayment() {
 }
 
 function exportPayments() {
-  const txns = DB.query('transactions', t => t.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const txns = DB.query('transactions', t => t.schoolId === currentSchoolId());
   const csv = 'Reference,Student,Amount,Method,Status,Reconciled,Date\n' +
     txns.map(t => {
       const s = DB.find('students', t.studentId);
@@ -1401,19 +1473,10 @@ function exportPayments() {
 
 /* ---------- Reconciliation ---------- */
 function view_fin_recon() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
-  const unrec = DB.query('transactions', t => t.schoolId === schoolId && !t.reconciled);
-  if (unrec.length === 0) {
-    DB.insert('transactions', {
-      id: uid('txn'), schoolId,
-      invoiceId: null, studentId: null,
-      amount: 280000, method: 'transfer',
-      reference: 'TRF-' + Math.floor(Math.random()*99999999).toString(16).toUpperCase(),
-      status: 'successful', gateway: 'Paystack',
-      timestamp: now(), reconciled: false,
-      narration: 'TRSF/OKAFOR/SCH FEES JSS1', studentRef: ''
-    });
-  }
+  const schoolId = currentSchoolId();
+  // Was: if the queue was empty this inserted a fake ₦280,000 'successful' transaction,
+  // so every visit fabricated revenue that flowed into the P&L and payroll balance.
+  // A render function must never write to the ledger.
   const unreconciled = DB.query('transactions', t => t.schoolId === schoolId && !t.reconciled);
   const allStudents = DB.query('students', s => s.schoolId === schoolId);
   return `
@@ -1425,13 +1488,13 @@ function view_fin_recon() {
         <button class="btn btn-secondary" onclick="autoMatchAllTransactions()">${icon('ai','w-4 h-4')} Auto-Match All</button>
       `
     })}
-    <div class="card bg-brand-50 p-3 mb-4 text-sm text-brand-900">
+    <div class="card bg-blue-50 border border-blue-200 p-3 mb-4 text-sm text-blue-900">
       ${icon('info','w-4 h-4 inline mr-1')} <strong>${unreconciled.length}</strong> payment${unreconciled.length!==1?'s':''} need${unreconciled.length===1?'s':''} matching. Primary match: <strong>Student ID</strong> in payment narration or reference. Fallback: name-based matching. You can also enter the Student ID manually.
     </div>
     <div class="card overflow-hidden">
       <div class="overflow-x-auto">
         <table class="tbl">
-          <thead><tr><th>Reference</th><th>Narration</th><th>Amount</th><th>Method</th><th>Student ID Match</th><th>Suggested Student</th><th></th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Reference</th><th scope="col">Narration</th><th scope="col">Amount</th><th scope="col">Method</th><th scope="col">Student ID Match</th><th scope="col">Suggested Student</th><th scope="col"></th></tr></thead>
           <tbody>
             ${unreconciled.map(t => {
               // Primary match: student ID in narration or reference
@@ -1468,7 +1531,7 @@ function lookupStudentId(txnId) {
   const input = document.getElementById(`sid_${txnId}`);
   if (!input) return;
   const sid = input.value.trim().toUpperCase();
-  const allStudents = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const allStudents = DB.query('students', s => s.schoolId === currentSchoolId());
   const found = allStudents.find(s => (s.studentId || '').toUpperCase() === sid || s.id.slice(-6).toUpperCase() === sid);
   if (found) {
     toast(`Found: ${found.name} — click Match to confirm`, 'success');
@@ -1479,7 +1542,7 @@ function lookupStudentId(txnId) {
 }
 
 function autoMatchAllTransactions() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const unreconciled = DB.query('transactions', t => t.schoolId === schoolId && !t.reconciled);
   const allStudents = DB.query('students', s => s.schoolId === schoolId);
   let matched = 0;
@@ -1510,38 +1573,52 @@ function reconcileTxn(txnId, studentId) {
     if (!sid) { toast('Enter a Student ID to match manually', 'warn'); return; }
     lookupStudentId(txnId); return;
   }
-  const inv = DB.query('invoices', i => i.studentId === studentId)[0];
+  // Post to the oldest invoice the student still owes on, not whichever row was
+  // created first — a settled Term 1 used to swallow a Term 2 payment.
+  const inv = COMPUTE.studentOwingInvoice(studentId) || COMPUTE.studentInvoice(studentId);
   const txn = DB.find('transactions', txnId);
-  if (inv && txn) {
-    DB.update('invoices', inv.id, { paid: inv.paid + txn.amount, balance: Math.max(0, inv.balance - txn.amount), status: (inv.balance - txn.amount <= 0) ? 'paid' : 'partial' });
-    DB.update('transactions', txnId, { reconciled: true, studentId, invoiceId: inv.id });
-    const s = DB.find('students', studentId);
-    toast(`Matched: ${s ? s.name : 'Student'} — balance updated`, 'success');
-    APP.render();
-  } else {
-    toast('Could not complete match — check student invoice', 'warn');
-  }
+  if (!inv || !txn) { toast('Could not complete match — check student invoice', 'warn'); return; }
+
+  // `paid` was unclamped while `balance` was clamped at 0, so an overpayment broke the
+  // total = paid + balance invariant (₦480k paid against a ₦250k bill) and drove the
+  // 192% collection rate downstream. Never apply more than is actually owed.
+  const applied = Math.min(txn.amount, inv.balance);
+  if (applied <= 0) { toast('That invoice is already settled — match to another student or term', 'warn'); return; }
+  const balance = inv.balance - applied;
+  DB.update('invoices', inv.id, {
+    paid: inv.paid + applied,
+    balance,
+    status: balance <= 0 ? 'paid' : 'partial'
+  });
+  DB.update('transactions', txnId, { reconciled: true, studentId, invoiceId: inv.id });
+
+  const s = DB.find('students', studentId);
+  const over = txn.amount - applied;
+  toast(over > 0
+    ? `Matched: ${s ? s.name : 'Student'} — ${money(applied)} applied, ${money(over)} unapplied`
+    : `Matched: ${s ? s.name : 'Student'} — balance updated`, over > 0 ? 'warn' : 'success');
+  APP.render();
 }
 
 function recordCashPaymentModal() {
-  const allStudents = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && s.status === 'active');
+  const allStudents = DB.query('students', s => s.schoolId === currentSchoolId() && s.status === 'active');
   modal({
     title: 'Record Cash Payment',
     body: `
       <div class="space-y-3">
-        <div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
           ${icon('check','w-4 h-4 inline')} Use the student's unique ID to ensure accurate payment matching.
         </div>
         <div>
-          <label class="input-label">Student ID</label>
+          <label class="input-label" for="cash_sid">Student ID</label>
           <div class="flex gap-2">
             <input type="text" id="cash_sid" class="input font-mono flex-1" placeholder="e.g. STU-2024-001" oninput="cashLookupStudent(this.value)" />
           </div>
           <div id="cash_student_info" class="mt-1 text-sm text-slate-600"></div>
         </div>
-        <div><label class="input-label">Amount (₦)</label><input type="number" id="cash_amount" class="input" placeholder="0.00" /></div>
-        <div><label class="input-label">Date</label><input type="date" id="cash_date" class="input" value="${today()}" /></div>
-        <div><label class="input-label">Receipt Note</label><input type="text" id="cash_note" class="input" placeholder="School fees payment — First Term" /></div>
+        <div><label class="input-label" for="cash_amount">Amount (₦)</label><input type="number" id="cash_amount" class="input" placeholder="0.00" /></div>
+        <div><label class="input-label" for="cash_date">Date</label><input type="date" id="cash_date" class="input" value="${today()}" /></div>
+        <div><label class="input-label" for="cash_note">Receipt Note</label><input type="text" id="cash_note" class="input" placeholder="School fees payment — First Term" /></div>
       </div>
     `,
     footer: `
@@ -1552,7 +1629,7 @@ function recordCashPaymentModal() {
 }
 
 function cashLookupStudent(sid) {
-  const allStudents = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const allStudents = DB.query('students', s => s.schoolId === currentSchoolId());
   const found = allStudents.find(s => (s.studentId || '').toUpperCase() === sid.toUpperCase() || s.id.slice(-6).toUpperCase() === sid.toUpperCase());
   const info = document.getElementById('cash_student_info');
   if (info) info.textContent = found ? `✓ ${found.name} — ${(DB.find('classes', found.classId) || {}).name || ''}` : sid ? '✗ No student found' : '';
@@ -1565,13 +1642,13 @@ function saveCashPayment() {
   const note = document.getElementById('cash_note').value.trim();
   if (!amount || amount <= 0) { toast('Enter a valid amount', 'danger'); return; }
   const sid = sidInput ? sidInput.value.trim() : '';
-  const allStudents = DB.query('students', s => s.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const allStudents = DB.query('students', s => s.schoolId === currentSchoolId());
   const student = allStudents.find(s => (s.studentId || '').toUpperCase() === sid.toUpperCase() || s.id.slice(-6).toUpperCase() === sid.toUpperCase());
   if (!student) { toast('Enter a valid Student ID first', 'danger'); return; }
   const inv = DB.query('invoices', i => i.studentId === student.id)[0];
   const txnId = uid('txn');
   DB.insert('transactions', {
-    id: txnId, schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    id: txnId, schoolId: currentSchoolId(),
     studentId: student.id, invoiceId: inv ? inv.id : null,
     amount, method: 'cash', status: 'successful',
     reference: `CASH-${Date.now().toString(36).toUpperCase()}`,
@@ -1587,7 +1664,7 @@ function saveCashPayment() {
 
 /* ---------- Expenses ---------- */
 function view_fin_expenses() {
-  const expenses = DB.query('expenses', e => e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const expenses = DB.query('expenses', e => e.schoolId === currentSchoolId());
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const byCategory = {};
   expenses.forEach(e => { byCategory[e.category] = (byCategory[e.category] || 0) + e.amount; });
@@ -1608,7 +1685,7 @@ function view_fin_expenses() {
 
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Date</th><th scope="col">Category</th><th scope="col">Description</th><th scope="col">Amount</th></tr></thead>
         <tbody>
           ${expenses.sort((a,b) => b.date.localeCompare(a.date)).map(e => `<tr>
             <td class="text-sm text-slate-500">${fdate(e.date, { long: true })}</td>
@@ -1627,12 +1704,12 @@ function addExpenseModal() {
     title: 'Record Expense',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Date</label><input id="ex_date" type="date" class="input" value="${today()}" /></div>
-        <div><label class="input-label">Category</label>
+        <div><label class="input-label" for="ex_date">Date</label><input id="ex_date" type="date" class="input" value="${today()}" /></div>
+        <div><label class="input-label" for="ex_cat">Category</label>
           <select id="ex_cat" class="input">${(DB.settings().expenseCategories || ['Salaries','Electricity','Diesel','Maintenance','Supplies','Internet','Transport','Security','Cleaning','Bank Charges','Other']).map(c => `<option>${c}</option>`).join('')}</select>
         </div>
-        <div><label class="input-label">Amount (NGN)</label><input id="ex_amt" type="number" class="input" /></div>
-        <div><label class="input-label">Description</label><textarea id="ex_desc" class="input" rows="2"></textarea></div>
+        <div><label class="input-label" for="ex_amt">Amount (NGN)</label><input id="ex_amt" type="number" class="input" /></div>
+        <div><label class="input-label" for="ex_desc">Description</label><textarea id="ex_desc" class="input" rows="2"></textarea></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -1644,7 +1721,7 @@ function saveExpense() {
   const amount = parseInt(document.getElementById('ex_amt').value) || 0;
   if (!amount || amount <= 0) { toast('Enter a valid amount', 'danger'); return; }
   DB.insert('expenses', {
-    id: uid('exp'), schoolId: 'sch_brightlights',
+    id: uid('exp'), schoolId: currentSchoolId(),
     date: document.getElementById('ex_date').value,
     category: document.getElementById('ex_cat').value,
     amount,
@@ -1669,13 +1746,13 @@ function view_fin_lending() {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Active Loans', value: active.length, icon: 'loan', color: 'brand' })}
       ${statCard({ label: 'Total Disbursed', value: money(totalDisbursed), icon: 'fees', color: 'gold' })}
-      ${statCard({ label: 'Repaid', value: money(totalRepaid), icon: 'check', color: 'brand' })}
+      ${statCard({ label: 'Repaid', value: money(totalRepaid), icon: 'check', color: 'blue' })}
       ${statCard({ label: 'Awaiting Decision', value: pending.length, icon: 'bell', color: 'rose' })}
     </div>
 
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Parent</th><th>Amount</th><th>Term</th><th>Credit Score</th><th>Repaid</th><th>Next Payment</th><th>Status</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Parent</th><th scope="col">Amount</th><th scope="col">Term</th><th scope="col">Credit Score</th><th scope="col">Repaid</th><th scope="col">Next Payment</th><th scope="col">Status</th></tr></thead>
         <tbody>
           ${loans.map(l => {
             const p = DB.find('parents', l.parentId);
@@ -1695,7 +1772,7 @@ function view_fin_lending() {
       </table>
     </div>
 
-    ${pending.length ? `<div class="card p-4 mt-4 bg-amber-50">
+    ${pending.length ? `<div class="card p-5 mt-4 bg-amber-50 border border-amber-200">
       <h4 class="font-semibold text-amber-900 mb-3">${pending.length} pending application${pending.length>1?'s':''} — review before deciding</h4>
       <div class="space-y-2">
         ${pending.map(l => {
@@ -1744,10 +1821,10 @@ function reviewLoanApplication(loanId) {
   if (liveScore >= 700) flags.push({ level: 'ok', text: 'Strong credit history — auto-approve recommended' });
 
   const scoreClass = liveScore >= 700
-    ? { grad: 'bg-emerald-600', label: 'Excellent', txt: 'text-emerald-100' }
+    ? { grad: 'from-emerald-500 to-emerald-700', label: 'Excellent', txt: 'text-emerald-100' }
     : liveScore >= 600
-    ? { grad: 'bg-amber-500', label: 'Good', txt: 'text-amber-100' }
-    : { grad: 'bg-rose-600', label: 'Fair', txt: 'text-rose-100' };
+    ? { grad: 'from-amber-500 to-amber-700', label: 'Good', txt: 'text-amber-100' }
+    : { grad: 'from-rose-500 to-rose-700', label: 'Fair', txt: 'text-rose-100' };
 
   modal({
     title: 'Loan Application Review',
@@ -1769,7 +1846,7 @@ function reviewLoanApplication(loanId) {
         </div>
 
         <!-- Credit score band -->
-        <div class="rounded-2xl p-4 ${scoreClass.grad} text-white">
+        <div class="rounded-2xl p-4 bg-gradient-to-br ${scoreClass.grad} text-white">
           <div class="flex items-end justify-between">
             <div>
               <div class="${scoreClass.txt} text-xs uppercase font-semibold">CASPAA Credit Score</div>
@@ -1791,12 +1868,12 @@ function reviewLoanApplication(loanId) {
 
         <!-- Requested terms -->
         <div class="grid grid-cols-2 gap-3">
-          <div class="card p-4 border border-slate-200">
+          <div class="card p-5 border border-slate-200">
             <div class="text-xs text-slate-500 uppercase font-semibold">Amount Requested</div>
             <div class="text-2xl font-extrabold text-slate-900">${money(loan.amount)}</div>
             <div class="text-xs text-slate-500 mt-1">Over ${loan.term} months @ 5% interest</div>
           </div>
-          <div class="card p-4 border border-slate-200">
+          <div class="card p-5 border border-slate-200">
             <div class="text-xs text-slate-500 uppercase font-semibold">Monthly Payment</div>
             <div class="text-2xl font-extrabold text-brand-700">${money(monthly)}</div>
             <div class="text-xs text-slate-500 mt-1">Total to repay: ${money(totalRepay)}</div>
@@ -1848,8 +1925,8 @@ function reviewLoanApplication(loanId) {
         <details class="bg-slate-50 rounded-xl">
           <summary class="cursor-pointer p-3 font-semibold text-sm">Counter-offer (adjust amount or term)</summary>
           <div class="p-3 pt-0 grid grid-cols-2 gap-2">
-            <div><label class="input-label">New Amount</label><input id="rev_amount" type="number" class="input" value="${loan.amount}" /></div>
-            <div><label class="input-label">New Term (months)</label><input id="rev_term" type="number" class="input" value="${loan.term}" /></div>
+            <div><label class="input-label" for="rev_amount">New Amount</label><input id="rev_amount" type="number" class="input" value="${loan.amount}" /></div>
+            <div><label class="input-label" for="rev_term">New Term (months)</label><input id="rev_term" type="number" class="input" value="${loan.term}" /></div>
           </div>
         </details>
       </div>
@@ -1879,7 +1956,9 @@ function approveLoan(loanId) {
   }
   DB.update('loans', loanId, { status: 'active', creditScore: score, amount, term, interestRate: 5, totalRepayment: total, monthlyPayment: monthly, repayments, approvedAt: now() });
   DB.insert('notifications', { id: uid('not'), userId: loan.parentId, title: 'Loan Approved!', body: `Your loan of ${money(amount)} has been approved and disbursed.`, type: 'success', read: false, timestamp: now() });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: loan.schoolId, actor: AUTH.current.id, action: 'approved_loan', target: `${money(amount)} for ${DB.find('parents', loan.parentId).name}`, timestamp: now() });
+  // Loan is already active with a full schedule above. An unguarded parent lookup here
+  // threw, left the UI showing 'pending', and a second Approve re-issued the schedule.
+  DB.insert('auditLog', { id: uid('aud'), schoolId: loan.schoolId, actor: AUTH.current.id, action: 'approved_loan', target: `${money(amount)} for ${(DB.find('parents', loan.parentId) || {}).name || 'parent'}`, timestamp: now() });
   const root = document.getElementById('modalBackdrop'); if (root) root.click();
   toast(`Loan of ${money(amount)} approved and disbursed`, 'success');
   APP.render();
@@ -1891,7 +1970,7 @@ function rejectLoanModal(loanId) {
     title: 'Reject Application',
     body: `
       <p class="text-sm text-slate-600 mb-3">The applicant will be told the decision. A clear reason helps them know what to do next.</p>
-      <label class="input-label">Reason for rejection</label>
+      <label class="input-label" for="rej_reason">Reason for rejection</label>
       <select id="rej_reason" class="input mb-3">
         <option value="insufficient_history">Insufficient payment history</option>
         <option value="income_mismatch">Loan amount too high for income</option>
@@ -1899,7 +1978,7 @@ function rejectLoanModal(loanId) {
         <option value="incomplete_info">Application information incomplete</option>
         <option value="other">Other</option>
       </select>
-      <label class="input-label">Note to applicant (optional)</label>
+      <label class="input-label" for="rej_note">Note to applicant (optional)</label>
       <textarea id="rej_note" rows="3" class="input" placeholder="e.g. We'd be glad to revisit after the next term's payments."></textarea>
     `,
     footer: `
@@ -1924,7 +2003,7 @@ function rejectLoan(loanId) {
   const note = noteEl ? noteEl.value.trim() : '';
   DB.update('loans', loanId, { status: 'rejected', rejectionReason: reason, rejectionNote: note, decidedAt: now() });
   DB.insert('notifications', { id: uid('not'), userId: loan.parentId, title: 'Loan Decision', body: `We weren't able to approve this loan. Reason: ${reason}${note ? ' — ' + note : ''}`, type: 'warn', read: false, timestamp: now() });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: loan.schoolId, actor: AUTH.current.id, action: 'rejected_loan', target: `${money(loan.amount)} for ${DB.find('parents', loan.parentId).name}`, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: loan.schoolId, actor: AUTH.current.id, action: 'rejected_loan', target: `${money(loan.amount)} for ${(DB.find('parents', loan.parentId) || {}).name || 'parent'}`, timestamp: now() });
   const root = document.getElementById('modalBackdrop'); if (root) root.click();
   toast('Application rejected and applicant notified', 'info');
   APP.render();
@@ -1966,7 +2045,7 @@ function view_fin_payroll() {
         <h3 class="font-bold text-slate-900">Past Runs</h3>
       </div>
       <table class="tbl">
-        <thead><tr><th>Period</th><th>Gross</th><th>PAYE</th><th>Pension</th><th>Net Paid</th><th>Staff</th><th>Tax/Pension</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Period</th><th scope="col">Gross</th><th scope="col">PAYE</th><th scope="col">Pension</th><th scope="col">Net Paid</th><th scope="col">Staff</th><th scope="col">Tax/Pension</th><th scope="col"></th></tr></thead>
         <tbody>
           ${pastRuns.map(r => `<tr>
             <td><strong>${r.period}</strong><div class="text-xs text-slate-500">Paid ${fdate(r.paidAt, { short: true })}</div></td>
@@ -1990,7 +2069,7 @@ function view_fin_payroll() {
       </div>
       <div class="overflow-x-auto">
         <table class="tbl">
-          <thead><tr><th>Staff</th><th>Type</th><th>Bank</th><th>Account</th><th class="text-right">Base Salary</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Staff</th><th scope="col">Type</th><th scope="col">Bank</th><th scope="col">Account</th><th scope="col" class="text-right">Base Salary</th></tr></thead>
           <tbody>
             ${teachers.map(t => `<tr>
               <td><div class="flex items-center gap-2">${avatar(t.name, 'sm')}<div><div class="font-medium text-sm">${t.name}</div><div class="text-xs text-slate-500">${t.role || ''}</div></div></div></td>
@@ -2055,7 +2134,7 @@ function renderPayrollStepper(run) {
 function renderPayrollStageAction(run) {
   if (run.stage === 'draft') {
     return `
-      <div class="bg-amber-50 rounded-xl p-4">
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-lg bg-amber-200 text-amber-800 flex items-center justify-center flex-shrink-0">${icon('edit','w-5 h-5')}</div>
           <div class="flex-1">
@@ -2071,22 +2150,22 @@ function renderPayrollStageAction(run) {
     `;
   }
   if (run.stage === 'pending_approval') {
-    const txns = DB.query('transactions', t => t.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && t.status === 'successful');
-    const cashOnHand = txns.reduce((s, t) => s + t.amount, 0) - (DB.query('expenses', e => e.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).reduce((s, e) => s + e.amount, 0));
+    const txns = DB.query('transactions', t => t.schoolId === currentSchoolId() && t.status === 'successful');
+    const cashOnHand = txns.reduce((s, t) => s + t.amount, 0) - (DB.query('expenses', e => e.schoolId === currentSchoolId()).reduce((s, e) => s + e.amount, 0));
     const sufficient = cashOnHand >= run.netTotal;
     return `
-      <div class="bg-brand-50 rounded-xl p-4">
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-lg bg-brand-200 text-brand-800 flex items-center justify-center flex-shrink-0">${icon('check','w-5 h-5')}</div>
+          <div class="w-10 h-10 rounded-lg bg-blue-200 text-blue-800 flex items-center justify-center flex-shrink-0">${icon('check','w-5 h-5')}</div>
           <div class="flex-1">
-            <div class="font-bold text-brand-900">Accountant — Confirm Funds &amp; Authorize Disbursement</div>
-            <p class="text-sm text-brand-800 mt-1">HR submitted this payroll on ${fdate(run.submittedAt, { long: true })}. As Accountant, your role is to confirm fund availability and authorize the payment. HR cannot disburse without your authorization.</p>
+            <div class="font-bold text-blue-900">Accountant — Confirm Funds &amp; Authorize Disbursement</div>
+            <p class="text-sm text-blue-800 mt-1">HR submitted this payroll on ${fdate(run.submittedAt, { long: true })}. As Accountant, your role is to confirm fund availability and authorize the payment. HR cannot disburse without your authorization.</p>
             <div class="bg-white rounded-lg p-3 mt-2 grid grid-cols-3 gap-3 text-sm">
               <div><div class="text-xs text-slate-500">Amount Required</div><div class="font-mono font-bold">${money(run.netTotal)}</div></div>
               <div><div class="text-xs text-slate-500">Available Balance</div><div class="font-mono font-bold ${sufficient ? 'text-emerald-700' : 'text-rose-700'}">${money(Math.max(0, cashOnHand))}</div></div>
               <div><div class="text-xs text-slate-500">Fund Status</div><div class="font-bold ${sufficient ? 'text-emerald-700' : 'text-rose-700'}">${sufficient ? icon('check','w-3 h-3 inline') + ' Sufficient' : icon('x','w-3 h-3 inline') + ' Insufficient'}</div></div>
             </div>
-            ${!sufficient ? `<div class="bg-rose-50 rounded-lg p-2 mt-2 text-xs text-rose-900">${icon('bell','w-3.5 h-3.5 inline')} Available funds may be insufficient. Review expenses and collections before authorizing.</div>` : ''}
+            ${!sufficient ? `<div class="bg-rose-50 border border-rose-200 rounded-lg p-2 mt-2 text-xs text-rose-900">${icon('bell','w-3.5 h-3.5 inline')} Available funds may be insufficient. Review expenses and collections before authorizing.</div>` : ''}
             <div class="flex gap-2 mt-3 flex-wrap">
               <button class="btn btn-secondary text-sm" onclick="sendBackPayroll('${run.id}')">${icon('arrow_left','w-3.5 h-3.5')} Return to HR</button>
               <button class="btn btn-primary ${!sufficient ? '!bg-amber-600' : ''}" onclick="approvePayrollRun('${run.id}')">${icon('check','w-4 h-4')} ${sufficient ? 'Authorize Disbursement →' : 'Authorize Anyway →'}</button>
@@ -2098,7 +2177,7 @@ function renderPayrollStageAction(run) {
   }
   if (run.stage === 'approved') {
     return `
-      <div class="bg-emerald-50 rounded-xl p-4">
+      <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-lg bg-emerald-200 text-emerald-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
           <div class="flex-1">
@@ -2152,7 +2231,7 @@ function approvePayrollRun(runId) {
 }
 
 function sendBackPayroll(runId) {
-  confirm('Send this payroll run back to HR for revisions? They will need to re-submit.', () => {
+  confirmDialog('Send this payroll run back to HR for revisions? They will need to re-submit.', () => {
     DB.update('payrollRuns', runId, { stage: 'draft', sentBackAt: now() });
     toast('Sent back to HR', 'info');
     APP.render();
@@ -2203,7 +2282,7 @@ function postPayrollModal(runId) {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
           ${run.staffCount} staff paid ${money(run.netTotal)} via NIBSS. Now handle the regulatory side.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -2279,7 +2358,7 @@ function viewPayrollRun(runId) {
             }).join('')}
           </div>
         </div>` : ''}
-        ${run.stage === 'paid' ? `<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">${icon('check','w-4 h-4 inline')} Payslips have been issued to all staff via in-app + email.</div>` : ''}
+        ${run.stage === 'paid' ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">${icon('check','w-4 h-4 inline')} Payslips have been issued to all staff via in-app + email.</div>` : ''}
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
@@ -2292,12 +2371,12 @@ function downloadPayrollSummary(runId) {
   const teachers = DB.query('teachers', t => t.schoolId === run.schoolId);
   const html = `
     <div style="max-width:800px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#00b386">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:18px">PAYROLL SUMMARY — ${run.period}</h2>
       </div>
       <table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-size:13px">
-        <thead style="background:#f3f4f6"><tr><th align="left">Staff</th><th align="left">Role</th><th align="right">Gross</th><th align="right">PAYE</th><th align="right">Pension</th><th align="right">Net</th></tr></thead>
+        <th scope="col"ead style="background:#f3f4f6"><tr><th scope="col" align="left">Staff</th><th scope="col" align="left">Role</th><th scope="col" align="right">Gross</th><th scope="col" align="right">PAYE</th><th scope="col" align="right">Pension</th><th scope="col" align="right">Net</th></tr></thead>
         <tbody>
           ${teachers.map(t => {
             const gross = t.salary || 0;
@@ -2322,7 +2401,7 @@ function manageAdjustmentsModal(runId) {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
           Add bonuses, overtime, fines or leave deductions for this run. They apply on top of base salary.
         </div>
         <div class="space-y-1.5">
@@ -2419,7 +2498,7 @@ function exportPayrollCSV() {
 
 /* ---------- Cost Center (Finance Overview) ---------- */
 function view_fin_cost_center() {
-  const schoolId = currentSchoolId ? currentSchoolId() : (AUTH.current.schoolId || 'sch_brightlights');
+  const schoolId = currentSchoolId ? currentSchoolId() : currentSchoolId();
   const invoices = DB.query('invoices', i => i.schoolId === schoolId);
   const expenses = DB.query('expenses', e => e.schoolId === schoolId);
   const teachers = DB.query('teachers', t => t.schoolId === schoolId && t.status !== 'terminated');
@@ -2446,7 +2525,7 @@ function view_fin_cost_center() {
   const byType = {};
   teachers.forEach(t => { const k = t.staffType || 'Other'; byType[k] = (byType[k]||0) + (t.salary||0); });
   const totalStaffCost = Object.values(byType).reduce((s,v) => s+v, 0);
-  const colors = ['bg-brand-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-brand-500'];
+  const colors = ['bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-purple-500'];
 
   const revenueView = APP.params.revenueView || 'termly';
 
@@ -2466,7 +2545,7 @@ function view_fin_cost_center() {
     }
     new Chart(ctx, {
       type: 'bar',
-      data: { labels, datasets: [{ label: 'Collected (₦)', data, backgroundColor: '#00b386', borderRadius: 6, maxBarThickness: 60 }] },
+      data: { labels, datasets: [{ label: 'Collected (₦)', data, backgroundColor: '#047857', borderRadius: 6, maxBarThickness: 60 }] },
       options: {
         responsive: true, maintainAspectRatio: false, animation: { duration: 0 },
         plugins: { legend: { display: false } },
@@ -2501,7 +2580,20 @@ function view_fin_cost_center() {
       ${statCard({ label: 'Revenue', value: money(collected), icon: 'trending_up', color: 'brand' })}
       ${statCard({ label: 'Total Expenses', value: money(totalExp), icon: 'trending_down', color: 'rose' })}
       ${statCard({ label: 'Net Cash', value: money(netCash), icon: 'fees', color: netCash >= 0 ? 'brand' : 'rose', trend: { direction: netCash >= 0 ? 'up' : 'down', label: netCash >= 0 ? 'Surplus' : 'Deficit' } })}
-      ${statCard({ label: 'Profit Margin', value: profitMargin + '%', icon: 'check', color: profitMargin >= targetMargin ? 'brand' : 'gold', trend: { direction: profitMargin >= targetMargin ? 'up' : 'down', label: 'Target: ' + targetMargin + '%' } })}
+      ${(() => {
+        // Icon was hardcoded 'check', so a -140% margin against a 20% target still showed
+        // a success tick. The glyph has to agree with the number, not just the colour —
+        // colour alone isn't a signal everyone can read.
+        const onTarget = profitMargin >= targetMargin;
+        const negative = profitMargin < 0;
+        return statCard({
+          label: 'Profit Margin',
+          value: profitMargin + '%',
+          icon: onTarget ? 'check' : negative ? 'trending_down' : 'bell',
+          color: onTarget ? 'brand' : negative ? 'rose' : 'gold',
+          trend: { direction: onTarget ? 'up' : 'down', label: 'Target: ' + targetMargin + '%' }
+        });
+      })()}
     </div>
 
     <div class="grid lg:grid-cols-3 gap-4 mb-5">
@@ -2544,7 +2636,7 @@ function view_fin_cost_center() {
         <h3 class="font-bold text-slate-900 mb-3">Expense Breakdown by Category</h3>
         ${!Object.keys(expByCat).length ? '<p class="text-sm text-slate-400">No expenses recorded yet.</p>' : `
           <table class="tbl">
-            <thead><tr><th>Category</th><th class="text-right">Amount</th><th class="text-right">%</th><th></th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Category</th><th scope="col" class="text-right">Amount</th><th scope="col" class="text-right">%</th><th scope="col"></th></tr></thead>
             <tbody>${expCatRows}</tbody>
             <tfoot><tr class="font-bold"><td>Total</td><td class="text-right font-mono">${money(totalExp)}</td><td></td><td></td></tr></tfoot>
           </table>
@@ -2598,10 +2690,10 @@ function view_fin_reports(embedded) {
 }
 
 function renderFinanceActivityLog() {
-  const sid = AUTH.current.schoolId || 'sch_brightlights';
+  const sid = currentSchoolId();
   const FIN_ACTIONS = ['payroll_draft_created','payroll_submitted','payroll_approved','payroll_paid','issued_refund'];
   const ACTION_META = {
-    payroll_draft_created: { label: 'Payroll started',    color: 'bg-brand-100 text-brand-700' },
+    payroll_draft_created: { label: 'Payroll started',    color: 'bg-blue-100 text-blue-700' },
     payroll_submitted:     { label: 'Payroll submitted',  color: 'bg-amber-100 text-amber-700' },
     payroll_approved:      { label: 'Payroll approved',   color: 'bg-emerald-100 text-emerald-700' },
     payroll_paid:          { label: 'Payroll disbursed',  color: 'bg-emerald-100 text-emerald-700' },
@@ -2644,9 +2736,9 @@ function renderFinanceActivityLog() {
 }
 
 function _accFigures() {
-  const invoices = DB.query('invoices', i => i.schoolId === 'sch_brightlights');
-  const txns = DB.query('transactions', t => t.schoolId === 'sch_brightlights' && t.status === 'successful');
-  const expenses = DB.query('expenses', e => e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const invoices = DB.query('invoices', i => i.schoolId === currentSchoolId());
+  const txns = DB.query('transactions', t => t.schoolId === currentSchoolId() && t.status === 'successful');
+  const expenses = DB.query('expenses', e => e.schoolId === currentSchoolId());
   const collected = txns.reduce((s, t) => s + t.amount, 0);
   const billed = invoices.reduce((s, i) => s + i.total, 0);
   const outstanding = invoices.reduce((s, i) => s + i.balance, 0);
@@ -2655,7 +2747,7 @@ function _accFigures() {
 }
 
 function renderUnitEconomics() {
-  const sid = AUTH.current.schoolId || 'sch_brightlights';
+  const sid = currentSchoolId();
   const invoices = DB.query('invoices', i => i.schoolId === sid);
   const expenses = DB.query('expenses', e => e.schoolId === sid);
   const payrollRuns = DB.query('payrollRuns', r => r.schoolId === sid && r.stage === 'paid');
@@ -2737,11 +2829,11 @@ function renderUnitEconomics() {
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm min-w-[400px]">
-          <thead><tr class="border-b text-xs text-slate-500 uppercase">
-            <th class="text-left py-2">Component</th>
-            <th class="text-right py-2">Billed</th>
-            <th class="text-right py-2">Collected</th>
-            <th class="text-right py-2">Outstanding</th>
+          <th scope="col"ead><tr class="border-b text-xs text-slate-500 uppercase">
+            <th scope="col" class="text-left py-2">Component</th>
+            <th scope="col" class="text-right py-2">Billed</th>
+            <th scope="col" class="text-right py-2">Collected</th>
+            <th scope="col" class="text-right py-2">Outstanding</th>
           </tr></thead>
           <tbody>
             ${components.map(([name, d]) => {
@@ -2769,8 +2861,8 @@ function renderUnitEconomics() {
       <h3 class="font-bold text-slate-900 mb-1">Revenue by Class</h3>
       <p class="text-sm text-slate-500 mb-4">Which classes generate the most revenue</p>
       <table class="w-full text-sm">
-        <thead><tr class="border-b text-xs text-slate-500 uppercase">
-          <th class="text-left py-2">Class</th><th class="text-right py-2">Students</th><th class="text-right py-2">Billed</th><th class="text-right py-2">Collected</th><th class="text-right py-2">Outstanding</th>
+        <th scope="col"ead><tr class="border-b text-xs text-slate-500 uppercase">
+          <th scope="col" class="text-left py-2">Class</th><th scope="col" class="text-right py-2">Students</th><th scope="col" class="text-right py-2">Billed</th><th scope="col" class="text-right py-2">Collected</th><th scope="col" class="text-right py-2">Outstanding</th>
         </tr></thead>
         <tbody>
           ${clsByRev.map(([cId, d]) => {
@@ -2827,8 +2919,8 @@ function renderUnitEconomics() {
         <h3 class="font-bold text-slate-900 mb-1">Full Expense Breakdown</h3>
         <p class="text-sm text-slate-500 mb-4">Every cost category — salaries, electricity, diesel, maintenance and more</p>
         <table class="w-full text-sm">
-          <thead><tr class="border-b text-xs text-slate-500 uppercase">
-            <th class="text-left py-2">Category</th><th class="text-right py-2">Amount</th><th class="text-right py-2">% of Costs</th>
+          <th scope="col"ead><tr class="border-b text-xs text-slate-500 uppercase">
+            <th scope="col" class="text-left py-2">Category</th><th scope="col" class="text-right py-2">Amount</th><th scope="col" class="text-right py-2">% of Costs</th>
           </tr></thead>
           <tbody>
             ${expCats.map(([cat, amt]) => {
@@ -2881,13 +2973,13 @@ function renderUnitEconomics() {
       <p class="text-sm text-slate-500 mb-4">Every student's billed amount, what's been paid, and what's still owed</p>
       <div class="overflow-x-auto">
         <table class="w-full text-sm min-w-[580px]">
-          <thead><tr class="border-b text-xs text-slate-500 uppercase">
-            <th class="text-left py-2">Student</th>
-            <th class="text-left py-2">Class</th>
-            <th class="text-right py-2">Billed</th>
-            <th class="text-right py-2">Paid</th>
-            <th class="text-right py-2">Outstanding</th>
-            <th class="text-right py-2">Status</th>
+          <th scope="col"ead><tr class="border-b text-xs text-slate-500 uppercase">
+            <th scope="col" class="text-left py-2">Student</th>
+            <th scope="col" class="text-left py-2">Class</th>
+            <th scope="col" class="text-right py-2">Billed</th>
+            <th scope="col" class="text-right py-2">Paid</th>
+            <th scope="col" class="text-right py-2">Outstanding</th>
+            <th scope="col" class="text-right py-2">Status</th>
           </tr></thead>
           <tbody>
             ${invoices.slice().sort((a, b) => b.balance - a.balance).map(inv => {
@@ -2930,7 +3022,7 @@ function renderProfitLoss() {
         <h3 class="font-bold text-slate-900 mb-2">Debtors List</h3>
         <p class="text-sm text-slate-500 mb-3">Students with outstanding balances</p>
         <table class="w-full text-sm">
-          <thead><tr class="border-b"><th class="text-left py-2">Student</th><th class="text-right">Owing</th></tr></thead>
+          <th scope="col"ead><tr class="border-b"><th scope="col" class="text-left py-2">Student</th><th scope="col" class="text-right">Owing</th></tr></thead>
           <tbody>
             ${f.invoices.filter(i => i.balance > 0).sort((a, b) => b.balance - a.balance).slice(0, 10).map(i => { const s = DB.find('students', i.studentId); return `<tr class="border-b"><td class="py-2">${s ? s.name : '—'}</td><td class="text-right font-mono text-rose-700">${money(i.balance)}</td></tr>`; }).join('')}
           </tbody>
@@ -2968,7 +3060,7 @@ function renderTrialBalance() {
     <div class="card p-5">
       <h3 class="font-bold text-slate-900 mb-1">Trial Balance · ${DB.settings().currentTerm}</h3>
       <p class="text-sm text-slate-500 mb-4">Indicative ledger balances. Debits and credits should agree.</p>
-      <table class="w-full text-sm"><thead><tr class="border-b-2 border-slate-200"><th class="text-left py-2">Account</th><th class="text-right">Debit</th><th class="text-right">Credit</th></tr></thead>
+      <table class="w-full text-sm"><th scope="col"ead><tr class="border-b-2 border-slate-200"><th scope="col" class="text-left py-2">Account</th><th scope="col" class="text-right">Debit</th><th scope="col" class="text-right">Credit</th></tr></thead>
         <tbody>
           ${debits.map(([n, a]) => `<tr class="border-b"><td class="py-2">${n}</td><td class="text-right font-mono">${money(a)}</td><td></td></tr>`).join('')}
           ${credits.map(([n, a]) => `<tr class="border-b"><td class="py-2">${n}</td><td></td><td class="text-right font-mono">${money(a)}</td></tr>`).join('')}
@@ -3027,7 +3119,7 @@ function renderBalanceSheet() {
 }
 
 function renderBudgets() {
-  const sid = 'sch_brightlights';
+  const sid = currentSchoolId();
   const budgets = DB.query('budgets', b => b.schoolId === sid);
   const expenses = DB.get('expenses');
   const actualByCat = expenses.reduce((a, e) => { a[e.category] = (a[e.category] || 0) + e.amount; return a; }, {});
@@ -3063,10 +3155,10 @@ function addBudgetModal() {
     title: 'Add Budget Line',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Category</label>
+        <div><label class="input-label" for="bud_cat">Category</label>
           <select id="bud_cat" class="input">${['Salaries','Utilities','Maintenance','Supplies','Internet','Transport','Other'].map(c => `<option value="${c}">${c}</option>`).join('')}</select>
         </div>
-        <div><label class="input-label">Planned amount (₦)</label><input id="bud_amount" type="number" class="input" placeholder="500000" /></div>
+        <div><label class="input-label" for="bud_amount">Planned amount (₦)</label><input id="bud_amount" type="number" class="input" placeholder="500000" /></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -3078,31 +3170,36 @@ function saveBudget() {
   const category = document.getElementById('bud_cat').value;
   const planned = parseInt(document.getElementById('bud_amount').value) || 0;
   if (planned <= 0) { toast('Enter a planned amount', 'danger'); return; }
-  const existing = DB.query('budgets', b => b.schoolId === 'sch_brightlights' && b.category === category && b.period === DB.settings().currentTerm)[0];
+  const existing = DB.query('budgets', b => b.schoolId === currentSchoolId() && b.category === category && b.period === DB.settings().currentTerm)[0];
   if (existing) DB.update('budgets', existing.id, { planned });
-  else DB.insert('budgets', { id: uid('bud'), schoolId: 'sch_brightlights', category, period: DB.settings().currentTerm, planned });
+  else DB.insert('budgets', { id: uid('bud'), schoolId: currentSchoolId(), category, period: DB.settings().currentTerm, planned });
   document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast('Budget saved', 'success');
 }
 
 function exportPL() {
-  const txns = DB.query('transactions', t => t.status === 'successful');
-  const expenses = DB.query('expenses', e => e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const schoolId = currentSchoolId();
+  // Revenue had NO schoolId filter while expenses did — so a tenant's P&L summed every
+  // school's income against its own costs, printing another school's revenue and a
+  // fabricated profit. Both sides must be scoped to the same school.
+  const txns = DB.query('transactions', t => t.schoolId === schoolId && t.status === 'successful');
+  const expenses = DB.query('expenses', e => e.schoolId === schoolId);
   const totalRev = txns.reduce((s, t) => s + t.amount, 0);
   const totalExp = expenses.reduce((s, e) => s + e.amount, 0);
   const profit = totalRev - totalExp;
+  const school = DB.find('schools', schoolId) || {};
   const html = `
-    <h1>Bright Lights Academy</h1>
+    <h1>${school.name || 'School'}</h1>
     <h2>Profit &amp; Loss Statement</h2>
     <p>${DB.settings().currentTerm}</p>
     <table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">
-      <tr><th align="left">REVENUE</th><th></th></tr>
+      <tr><th scope="col" align="left">REVENUE</th><th scope="col"></th></tr>
       <tr><td>Total Fees Collected</td><td align="right">${money(totalRev)}</td></tr>
-      <tr><th align="left">EXPENSES</th><th></th></tr>
+      <tr><th scope="col" align="left">EXPENSES</th><th scope="col"></th></tr>
       ${expenses.map(e => `<tr><td>${e.category} - ${e.description}</td><td align="right">${money(e.amount)}</td></tr>`).join('')}
-      <tr><th align="left">Total Expenses</th><th align="right">${money(totalExp)}</th></tr>
-      <tr style="background:${profit >= 0 ? '#d1fae5' : '#fee2e2'}"><th align="left">${profit >= 0 ? 'NET PROFIT' : 'NET LOSS'}</th><th align="right">${money(Math.abs(profit))}</th></tr>
+      <tr><th scope="col" align="left">Total Expenses</th><th scope="col" align="right">${money(totalExp)}</th></tr>
+      <tr style="background:${profit >= 0 ? '#d1fae5' : '#fee2e2'}"><th scope="col" align="left">${profit >= 0 ? 'NET PROFIT' : 'NET LOSS'}</th><th scope="col" align="right">${money(Math.abs(profit))}</th></tr>
     </table>
   `;
   printElement(html);
@@ -3146,8 +3243,8 @@ function _storeView() {
         <td class="text-right">${it.stock}</td>
         <td class="text-right font-semibold text-rose-700">${money(it.stock * it.costPrice)}</td>
         <td>
-          <button class="btn btn-ghost !p-1.5" title="Edit" onclick="editStoreItem('${it.id}')">${icon('edit','w-3.5 h-3.5')}</button>
-          <button class="btn btn-ghost !p-1.5 text-rose-600" title="Remove" onclick="removeStoreItem('${it.id}')">${icon('x','w-3.5 h-3.5')}</button>
+          <button class="btn btn-ghost !p-1.5" aria-label="Edit" title="Edit" onclick="editStoreItem('${it.id}')">${icon('edit','w-3.5 h-3.5')}</button>
+          <button class="btn btn-ghost !p-1.5 text-rose-600" aria-label="Remove" title="Remove" onclick="removeStoreItem('${it.id}')">${icon('x','w-3.5 h-3.5')}</button>
         </td>
       </tr>`;
     }).join('');
@@ -3158,16 +3255,16 @@ function _storeView() {
       ${tabBar}
       ${items.length ? `<div class="card overflow-hidden">
         <table class="w-full text-sm">
-          <thead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
-            <th class="text-left p-3 font-semibold">Item</th>
-            <th class="text-right p-3 font-semibold">Selling Price</th>
-            <th class="text-right p-3 font-semibold">Cost Price</th>
-            <th class="text-right p-3 font-semibold">Margin (₦)</th>
-            <th class="text-right p-3 font-semibold">Margin %</th>
-            <th class="text-right p-3 font-semibold">Sold</th>
-            <th class="text-right p-3 font-semibold">Stock</th>
-            <th class="text-right p-3 font-semibold">Stock Value</th>
-            <th class="p-3"></th>
+          <th scope="col"ead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
+            <th scope="col" class="text-left p-3 font-semibold">Item</th>
+            <th scope="col" class="text-right p-3 font-semibold">Selling Price</th>
+            <th scope="col" class="text-right p-3 font-semibold">Cost Price</th>
+            <th scope="col" class="text-right p-3 font-semibold">Margin (₦)</th>
+            <th scope="col" class="text-right p-3 font-semibold">Margin %</th>
+            <th scope="col" class="text-right p-3 font-semibold">Sold</th>
+            <th scope="col" class="text-right p-3 font-semibold">Stock</th>
+            <th scope="col" class="text-right p-3 font-semibold">Stock Value</th>
+            <th scope="col" class="p-3"></th>
           </tr></thead>
           <tbody class="divide-y divide-slate-100">${rows}</tbody>
         </table>
@@ -3206,10 +3303,10 @@ function _storeView() {
       ${tabBar}
       ${allPurchases.length ? `<div class="card overflow-hidden">
         <table class="w-full text-sm">
-          <thead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
-            <th class="text-left p-3">Date</th><th class="text-left p-3">Student</th><th class="text-left p-3">Item</th>
-            <th class="text-center p-3">Qty</th><th class="text-right p-3">Revenue</th><th class="text-right p-3">Cost</th>
-            <th class="text-right p-3">Profit</th><th class="text-left p-3">Status</th><th class="p-3"></th>
+          <th scope="col"ead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
+            <th scope="col" class="text-left p-3">Date</th><th scope="col" class="text-left p-3">Student</th><th scope="col" class="text-left p-3">Item</th>
+            <th scope="col" class="text-center p-3">Qty</th><th scope="col" class="text-right p-3">Revenue</th><th scope="col" class="text-right p-3">Cost</th>
+            <th scope="col" class="text-right p-3">Profit</th><th scope="col" class="text-left p-3">Status</th><th scope="col" class="p-3"></th>
           </tr></thead>
           <tbody class="divide-y divide-slate-100">${rows}</tbody>
           <tfoot class="bg-slate-50 font-bold"><tr>
@@ -3293,11 +3390,11 @@ function _storeView() {
       <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Profit by Item</div>
       <div class="card overflow-hidden mb-5">
         <table class="w-full text-sm">
-          <thead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
-            <th class="text-left p-3">Item</th><th class="text-right p-3">Units Sold</th>
-            <th class="text-right p-3">Total Cost</th><th class="text-right p-3">Margin / Unit</th>
-            <th class="text-right p-3">Margin %</th><th class="text-right p-3">Total Revenue</th>
-            <th class="text-right p-3">Total Profit</th>
+          <th scope="col"ead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
+            <th scope="col" class="text-left p-3">Item</th><th scope="col" class="text-right p-3">Units Sold</th>
+            <th scope="col" class="text-right p-3">Total Cost</th><th scope="col" class="text-right p-3">Margin / Unit</th>
+            <th scope="col" class="text-right p-3">Margin %</th><th scope="col" class="text-right p-3">Total Revenue</th>
+            <th scope="col" class="text-right p-3">Total Profit</th>
           </tr></thead>
           <tbody class="divide-y divide-slate-100">${itemRows}</tbody>
         </table>
@@ -3306,10 +3403,10 @@ function _storeView() {
       <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 mt-5">Profit by Student</div>
       <div class="card overflow-hidden">
         <table class="w-full text-sm">
-          <thead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
-            <th class="text-left p-3">Student</th><th class="text-right p-3">Items</th>
-            <th class="text-right p-3">Revenue</th><th class="text-right p-3">Cost</th>
-            <th class="text-right p-3">Profit</th><th class="text-right p-3">Margin %</th>
+          <th scope="col"ead><tr class="bg-slate-50 text-xs uppercase text-slate-500">
+            <th scope="col" class="text-left p-3">Student</th><th scope="col" class="text-right p-3">Items</th>
+            <th scope="col" class="text-right p-3">Revenue</th><th scope="col" class="text-right p-3">Cost</th>
+            <th scope="col" class="text-right p-3">Profit</th><th scope="col" class="text-right p-3">Margin %</th>
           </tr></thead>
           <tbody class="divide-y divide-slate-100">${stuRows}</tbody>
         </table>
@@ -3325,28 +3422,28 @@ function addStoreItemModal(editId) {
     title: edit ? 'Edit Item' : 'Add Item to Store',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Item Name</label>
+        <div><label class="input-label" for="si_name">Item Name</label>
           <input id="si_name" class="input" placeholder="e.g. School Uniform — Full Set" value="${edit ? edit.name : ''}"></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Category</label>
+          <div><label class="input-label" for="si_cat">Category</label>
             <select id="si_cat" class="input">
               ${['Uniform','Books','Stationery','Accessories','Other'].map(c=>`<option value="${c}" ${edit&&edit.category===c?'selected':''}>${c}</option>`).join('')}
             </select></div>
-          <div><label class="input-label">Unit</label>
+          <div><label class="input-label" for="si_unit">Unit</label>
             <input id="si_unit" class="input" placeholder="e.g. set, pair, book" value="${edit ? edit.unit||'' : ''}"></div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Selling Price <span class="text-slate-400 font-normal">(what parent pays)</span></label>
+            <label class="input-label" for="si_sell">Selling Price <span class="text-slate-400 font-normal">(what parent pays)</span></label>
             <input id="si_sell" type="number" class="input" placeholder="20000" value="${edit ? edit.sellingPrice : ''}">
           </div>
           <div>
-            <label class="input-label">Cost Price <span class="text-slate-400 font-normal">(what it costs you)</span></label>
+            <label class="input-label" for="si_cost">Cost Price <span class="text-slate-400 font-normal">(what it costs you)</span></label>
             <input id="si_cost" type="number" class="input" placeholder="15000" value="${edit ? edit.costPrice : ''}">
           </div>
         </div>
         <div id="si_marginPreview" class="bg-slate-50 rounded-xl p-3 text-sm text-slate-600 hidden"></div>
-        <div><label class="input-label">Current Stock</label>
+        <div><label class="input-label" for="si_stock">Current Stock</label>
           <input id="si_stock" type="number" class="input" placeholder="0" value="${edit ? edit.stock : '0'}"></div>
       </div>
     `,
@@ -3397,7 +3494,7 @@ function saveStoreItem(editId) {
 }
 
 function removeStoreItem(itemId) {
-  confirm('Remove this item from the store?', () => {
+  confirmDialog('Remove this item from the store?', () => {
     DB.update('schoolItems', itemId, { active: false });
     APP.render();
     toast('Item removed', 'success');
@@ -3413,27 +3510,27 @@ function recordPurchaseModal() {
     title: 'Record Student Purchase',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Student</label>
+        <div><label class="input-label" for="sp_stu">Student</label>
           <select id="sp_stu" class="input">
             <option value="">— Select student —</option>
             ${students.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}
           </select></div>
-        <div><label class="input-label">Item</label>
+        <div><label class="input-label" for="sp_item">Item</label>
           <select id="sp_item" class="input" onchange="updatePurchasePreview()">
             <option value="">— Select item —</option>
             ${items.map(it=>`<option value="${it.id}" data-sell="${it.sellingPrice}" data-cost="${it.costPrice}">${it.name} — ${money(it.sellingPrice)}</option>`).join('')}
           </select></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Quantity</label>
+          <div><label class="input-label" for="sp_qty">Quantity</label>
             <input id="sp_qty" type="number" min="1" value="1" class="input" oninput="updatePurchasePreview()"></div>
-          <div><label class="input-label">Payment Status</label>
+          <div><label class="input-label" for="sp_paid">Payment Status</label>
             <select id="sp_paid" class="input">
               <option value="paid">Paid</option>
               <option value="unpaid">Unpaid (to be collected)</option>
             </select></div>
         </div>
         <div id="sp_preview" class="bg-emerald-50 rounded-xl p-3 text-sm hidden"></div>
-        <div><label class="input-label">Notes (optional)</label>
+        <div><label class="input-label" for="sp_notes">Notes (optional)</label>
           <input id="sp_notes" class="input" placeholder="e.g. Size L, special order"></div>
       </div>
     `,
@@ -3480,7 +3577,7 @@ function confirmRecordPurchase() {
 }
 
 function removeStudentPurchase(purchaseId) {
-  confirm('Remove this purchase record?', () => {
+  confirmDialog('Remove this purchase record?', () => {
     DB.remove('studentPurchases', purchaseId);
     APP.render();
     toast('Purchase removed', 'success');

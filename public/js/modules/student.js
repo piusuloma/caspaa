@@ -33,7 +33,7 @@ function view_stu_dashboard() {
   return `
     <div class="space-y-5">
       <!-- Hero + gamification -->
-      <div class="bg-navy-800 rounded-2xl p-5 lg:p-6 text-white">
+      <div class="bg-gradient-to-br from-brand-700 to-brand-800 rounded-2xl p-5 lg:p-6 text-white">
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <p class="text-brand-200 text-sm">Welcome back,</p>
@@ -58,7 +58,7 @@ function view_stu_dashboard() {
         ${statCard({ label: 'Assignments Due', value: pendingAssignments.length, icon: 'results', color: pendingAssignments.length ? 'gold' : 'brand', trend: pendingAssignments.length ? { direction: 'down', label: 'to submit' } : { direction: 'up', label: 'all done' } })}
         ${statCard({ label: 'Upcoming CBT', value: upcomingExams.length, icon: 'classes', color: upcomingExams.length ? 'gold' : 'brand', trend: upcomingExams.length ? { direction: 'down', label: 'to take' } : { direction: 'up', label: 'none pending' } })}
         ${statCard({ label: 'My Attendance', value: attRate + '%', icon: 'attendance', color: attRate >= 85 ? 'brand' : 'rose' })}
-        ${statCard({ label: 'Academic Avg', value: reward.avg + '%', icon: 'reports', color: 'brand' })}
+        ${statCard({ label: 'Academic Avg', value: reward.avg + '%', icon: 'reports', color: 'blue' })}
       </div>
 
       <!-- Badges -->
@@ -67,7 +67,7 @@ function view_stu_dashboard() {
         <div class="flex flex-wrap gap-3">
           ${reward.badges.length === 0
             ? `<p class="text-sm text-slate-500">No badges yet — keep working hard!</p>`
-            : reward.badges.map(b => `<div class="flex items-center gap-2 bg-amber-50 rounded-xl px-3 py-2">
+            : reward.badges.map(b => `<div class="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
             <span class="text-2xl">${b.icon}</span>
             <span class="text-sm font-semibold text-amber-900">${b.label}</span>
           </div>`).join('')}
@@ -177,7 +177,7 @@ function view_stu_learning(params) {
         <div class="space-y-3">
           ${notes.map(m => {
             const viewed = DB.query('materialViews', v => v.materialId === m.id && v.studentId === s.id).length > 0;
-            return `<div class="card p-4 ${viewed ? '' : 'border-l-4 border-brand-400'}">
+            return `<div class="card p-5 ${viewed ? '' : 'border-l-4 border-brand-400'}">
               <div class="flex items-start justify-between gap-3">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1 flex-wrap">
@@ -240,12 +240,12 @@ function view_stu_learning(params) {
     ${pageHeader({ title: 'Learning Hub', subtitle: 'Interactive science and maths simulations' })}
     ${tabBar}
     <div class="flex gap-2 mb-4 flex-wrap">
-      ${subjects.map(sub => `<button onclick="APP.go('stu_learning',{tab:'sims',simFilter:'${sub}'})" class="px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors ${filter===sub?'bg-navy-800 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${sub}</button>`).join('')}
+      ${subjects.map(sub => `<button onclick="APP.go('stu_learning',{tab:'sims',simFilter:'${sub}'})" class="px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors ${filter===sub?'bg-brand-700 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${sub}</button>`).join('')}
     </div>
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      ${filtered.map(sim => `<div class="card p-4 hover:shadow-md transition-shadow">
+      ${filtered.map(sim => `<div class="card p-5 hover:shadow-md transition-shadow">
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl ${{Physics:'bg-brand-50',Chemistry:'bg-amber-50',Biology:'bg-green-50',Mathematics:'bg-brand-50'}[sim.subject]||'bg-slate-50'}">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl ${{Physics:'bg-blue-50',Chemistry:'bg-amber-50',Biology:'bg-green-50',Mathematics:'bg-purple-50'}[sim.subject]||'bg-slate-50'}">
             ${{Physics:'⚡',Chemistry:'🧪',Biology:'🌿',Mathematics:'📐'}[sim.subject]||'🔬'}
           </div>
           <div>
@@ -281,8 +281,8 @@ function stu_openNote(id) {
       </div>
       ${m.content ? `<div class="bg-slate-50 rounded-xl p-4 text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">${m.content}</div>` : ''}
       ${m.description && !m.content ? `<p class="text-sm text-slate-700">${m.description}</p>` : ''}
-      ${m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="inline-flex items-center gap-2 px-4 py-2 bg-brand-50 rounded-xl text-sm hover:bg-brand-100 font-semibold text-brand-900">
-        ${icon('download','w-4 h-4 text-brand-600')} Download Attachment — ${m.file.name} (${m.file.size})
+      ${m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-xl text-sm hover:bg-blue-100 font-semibold text-blue-900">
+        ${icon('download','w-4 h-4 text-blue-600')} Download Attachment — ${m.file.name} (${m.file.size})
       </a>` : ''}
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
@@ -368,7 +368,7 @@ function view_stu_assignments() {
             : sub ? `<span class="badge badge-info">Submitted</span>`
             : overdue ? `<span class="badge badge-danger">Overdue</span>`
             : `<span class="badge badge-warn">To do</span>`;
-          return `<div class="card p-4">
+          return `<div class="card p-5">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2 mb-1 flex-wrap">
@@ -413,9 +413,9 @@ function stu_submitAssignmentModal(assignmentId) {
           <div class="font-semibold text-sm">${a.title}</div>
           <div class="text-xs text-slate-500 mt-0.5">${subjName(a.subjectId)} · Due ${fdate(a.dueDate, { long: true })}</div>
         </div>
-        <div><label class="input-label">Your answer / notes</label><textarea id="stu_sub_text" rows="5" class="input" placeholder="Type your answer, or describe the work you are attaching…"></textarea></div>
+        <div><label class="input-label" for="stu_sub_text">Your answer / notes</label><textarea id="stu_sub_text" rows="5" class="input" placeholder="Type your answer, or describe the work you are attaching…"></textarea></div>
         <div>
-          <label class="input-label">Attach file or photo (optional)</label>
+          <label class="input-label" for="stu_sub_file">Attach file or photo (optional)</label>
           <input type="file" id="stu_sub_file" class="hidden" accept="image/*,application/pdf,.doc,.docx" onchange="stu_onSubFile(event)" />
           <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('stu_sub_file').click()">
             ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}
@@ -444,7 +444,7 @@ function stu_onSubFile(ev) {
     const isImage = file.type.startsWith('image/');
     p.innerHTML = isImage
       ? `<div class="mt-2"><img src="${e.target.result}" class="max-h-48 rounded-xl border border-slate-200 object-contain w-full" alt="Preview"><div class="text-xs text-slate-500 mt-1 text-center">${file.name} · ${_stuSubFile.size}</div></div>`
-      : `<div class="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="flex-1 truncate font-semibold text-emerald-900">${file.name}</span><span class="text-xs text-emerald-700">${_stuSubFile.size}</span></div>`;
+      : `<div class="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="flex-1 truncate font-semibold text-emerald-900">${file.name}</span><span class="text-xs text-emerald-700">${_stuSubFile.size}</span></div>`;
   };
   reader.readAsDataURL(file);
 }
@@ -458,14 +458,14 @@ function stu_resubmitModal(assignmentId) {
   modal({
     title: 'Resubmit Assignment',
     body: `
-      <div class="${isReturned && sub.resubmissionRequested ? 'bg-amber-50' : 'bg-brand-50'} rounded-xl p-3 mb-3 text-sm ${isReturned && sub.resubmissionRequested ? 'text-amber-800' : 'text-brand-800'}">
+      <div class="${isReturned && sub.resubmissionRequested ? 'bg-amber-50 border border-amber-200' : 'bg-blue-50 border border-blue-200'} rounded-xl p-3 mb-3 text-sm ${isReturned && sub.resubmissionRequested ? 'text-amber-800' : 'text-blue-800'}">
         ${icon('refresh','w-4 h-4 inline mr-1')} ${isReturned && sub.resubmissionRequested ? 'Your teacher has requested a revision. Review the feedback and re-upload your corrected work.' : 'Upload a new version of your work to send back to your teacher.'}
         ${sub && sub.feedback ? `<div class="mt-1 font-semibold">"${sub.feedback}"</div>` : ''}
       </div>
       <div class="space-y-3">
-        <div><label class="input-label">Updated answer / notes</label><textarea id="stu_resub_text" rows="4" class="input" placeholder="Explain your corrections…">${sub ? sub.text || '' : ''}</textarea></div>
+        <div><label class="input-label" for="stu_resub_text">Updated answer / notes</label><textarea id="stu_resub_text" rows="4" class="input" placeholder="Explain your corrections…">${sub ? sub.text || '' : ''}</textarea></div>
         <div>
-          <label class="input-label">Attach updated file or photo</label>
+          <label class="input-label" for="stu_resub_file">Attach updated file or photo</label>
           <input type="file" id="stu_resub_file" class="hidden" accept="image/*,application/pdf,.doc,.docx" onchange="stu_onResubFile(event)" />
           <div class="border-2 border-dashed border-amber-300 rounded-xl p-4 text-center hover:border-amber-400 cursor-pointer" onclick="document.getElementById('stu_resub_file').click()">
             ${icon('upload','w-5 h-5 mx-auto text-amber-400 mb-1')}
@@ -486,7 +486,7 @@ function stu_viewReturnedWork(assignmentId) {
   const sub = a.submissions.find(x => x.studentId === s.id);
   if (!sub) return;
   const statusLabel = sub.markStatus === 'excellent' ? '⭐ Excellent' : sub.markStatus === 'needs_revision' ? '🔄 Revision Requested' : '✓ Satisfactory';
-  const statusCls   = sub.markStatus === 'excellent' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : sub.markStatus === 'needs_revision' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-brand-50 border-brand-200 text-brand-800';
+  const statusCls   = sub.markStatus === 'excellent' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : sub.markStatus === 'needs_revision' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-blue-50 border-blue-200 text-blue-800';
   const comments = sub.marginalComments || [];
   modal({
     title: 'Returned Work — ' + a.title,
@@ -495,7 +495,7 @@ function stu_viewReturnedWork(assignmentId) {
       <div class="space-y-4">
         <!-- Grade row -->
         <div class="flex items-center gap-3">
-          <div class="text-center bg-emerald-50 rounded-2xl px-5 py-3">
+          <div class="text-center bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-3">
             <div class="text-3xl font-extrabold text-emerald-700">${sub.grade}</div>
             <div class="text-xs text-slateald-500">/100</div>
           </div>
@@ -527,7 +527,7 @@ function stu_viewReturnedWork(assignmentId) {
             <img src="${sub.file.data}" class="max-h-48 rounded-xl border border-slate-200 object-contain w-full" alt="submission" />
           </div>` : ''}
         ${sub.resubmissionRequested ? `
-          <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-800">
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
             ${icon('refresh','w-4 h-4 inline mr-1')} Your teacher is asking you to revise and resubmit this work.
           </div>` : ''}
       </div>`,
@@ -551,7 +551,7 @@ function stu_onResubFile(ev) {
     const isImage = file.type.startsWith('image/');
     p.innerHTML = isImage
       ? `<img src="${e.target.result}" class="max-h-40 rounded-xl border border-slate-200 object-contain w-full mt-1" alt="Preview">`
-      : `<div class="flex items-center gap-2 p-2 bg-amber-50 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-amber-600')}<span class="font-semibold text-amber-900">${file.name}</span><span class="text-xs text-amber-700">${_stuResubFile.size}</span></div>`;
+      : `<div class="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-sm">${icon('paperclip','w-4 h-4 text-amber-600')}<span class="font-semibold text-amber-900">${file.name}</span><span class="text-xs text-amber-700">${_stuResubFile.size}</span></div>`;
   };
   reader.readAsDataURL(file);
 }
@@ -606,7 +606,7 @@ function view_stu_cbt() {
           const sub = subs.find(x => x.examId === e.id);
           const objCount = e.questions.filter(q => q.type === 'objective').length;
           const theoryCount = e.questions.filter(q => q.type === 'theory').length;
-          return `<div class="card p-4">
+          return `<div class="card p-5">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2 mb-1 flex-wrap">
@@ -638,7 +638,7 @@ function stu_startCbt(examId) {
   const e = DB.find('cbtExams', examId);
   if (!e) return;
   _cbtState = { examId, answers: {}, secondsLeft: e.durationMins * 60, timer: null, index: 0 };
-  confirm(`You are about to start "${e.title}". You have ${e.durationMins} minutes and one attempt. The timer starts immediately. Ready?`, () => {
+  confirmDialog(`You are about to start "${e.title}". You have ${e.durationMins} minutes and one attempt. The timer starts immediately. Ready?`, () => {
     stu_renderCbt();
     _cbtState.timer = setInterval(() => {
       if (!_cbtState) return;
@@ -768,7 +768,7 @@ function stu_viewCbtResult(subId) {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-navy-800 text-white rounded-xl p-4 text-center">
+        <div class="bg-gradient-to-br from-brand-700 to-brand-800 text-white rounded-xl p-4 text-center">
           <div class="text-4xl font-extrabold">${sub.totalScore}<span class="text-xl opacity-70">/${sub.maxScore}</span></div>
           <div class="text-sm text-brand-200 mt-1">${sub.status === 'graded' ? 'Final score' : 'Objective score (theory pending review)'}</div>
         </div>
@@ -816,14 +816,14 @@ function view_stu_results() {
   return `
     ${pageHeader({ title: 'My Results', subtitle: `${(APP.params && APP.params.term) || (results.length > 0 && results[0].term) || DB.settings().currentTerm} · academic performance`, actions: results.length ? `
       <div class="flex items-center gap-2">
-        ${!reportComment ? `<span class="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">${icon('info','w-3.5 h-3.5 inline mr-1')} Awaiting teacher comment</span>` : ''}
-        <button class="btn btn-secondary ${!canDownload ? 'opacity-50 cursor-not-allowed' : ''}" ${canDownload ? `onclick="printReportCard('${s.id}')"` : 'disabled title="Your class teacher must add a comment before the report card can be downloaded"'}>${icon('download','w-4 h-4')} Report Card</button>
+        ${!reportComment ? `<span class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">${icon('info','w-3.5 h-3.5 inline mr-1')} Awaiting teacher comment</span>` : ''}
+        <button class="btn btn-secondary ${!canDownload ? 'opacity-50 cursor-not-allowed' : ''}" ${canDownload ? `onclick="printReportCard('${s.id}')"` : 'disabled aria-label="Your class teacher must add a comment before the report card can be downloaded" title="Your class teacher must add a comment before the report card can be downloaded"'}>${icon('download','w-4 h-4')} Report Card</button>
       </div>` : '' })}
 
     <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
       ${statCard({ label: 'Subjects', value: results.length, icon: 'book', color: 'brand' })}
       ${statCard({ label: 'Average', value: avg + '%', icon: 'reports', color: avg >= 60 ? 'brand' : 'rose' })}
-      ${statCard({ label: 'CBT Taken', value: cbtSubs.length, icon: 'classes', color: 'brand' })}
+      ${statCard({ label: 'CBT Taken', value: cbtSubs.length, icon: 'classes', color: 'blue' })}
     </div>
 
 
@@ -831,7 +831,7 @@ function view_stu_results() {
       <div class="px-4 py-3 border-b border-slate-100"><h3 class="font-bold text-slate-900">Subject Results</h3></div>
       ${results.length === 0 ? `<div class="p-6 text-center text-sm text-slate-500">No results published yet.</div>` : `
         <div class="overflow-x-auto"><table class="tbl">
-          <thead><tr><th>Subject</th><th class="text-center">${ca1Label}</th><th class="text-center">${ca2Label}</th><th class="text-center">${examLabel}</th><th class="text-center">Total</th><th class="text-center">Grade</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Subject</th><th scope="col" class="text-center">${ca1Label}</th><th scope="col" class="text-center">${ca2Label}</th><th scope="col" class="text-center">${examLabel}</th><th scope="col" class="text-center">Total</th><th scope="col" class="text-center">Grade</th></tr></thead>
           <tbody>
             ${results.map(r => `<tr>
               <td class="font-medium">${subjName(r.subjectId)}</td>
@@ -853,7 +853,7 @@ function view_stu_results() {
         <span>By ${reportComment.classTeacher || 'Class Teacher'}</span>
         <span>Head Teacher: ${reportComment.headTeacher || '—'}</span>
       </div>
-    </div>` : `<div class="card p-4 mb-4 bg-amber-50">
+    </div>` : `<div class="card p-5 mb-4 bg-amber-50 border border-amber-200">
       <div class="flex items-center gap-3">
         <span class="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">${icon('bell','w-5 h-5')}</span>
         <div>
@@ -866,7 +866,7 @@ function view_stu_results() {
     ${cbtSubs.length ? `<div class="card overflow-hidden">
       <div class="px-4 py-3 border-b border-slate-100"><h3 class="font-bold text-slate-900">CBT Scores</h3></div>
       <div class="overflow-x-auto"><table class="tbl">
-        <thead><tr><th>Exam</th><th>Subject</th><th class="text-center">Score</th><th class="text-center">Status</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Exam</th><th scope="col">Subject</th><th scope="col" class="text-center">Score</th><th scope="col" class="text-center">Status</th></tr></thead>
         <tbody>
           ${cbtSubs.map(sub => { const e = DB.find('cbtExams', sub.examId); return `<tr>
             <td class="font-medium">${e ? e.title : '—'}</td>
@@ -892,7 +892,7 @@ function view_stu_behaviour() {
   return `
     ${pageHeader({ title: 'My Behaviour', subtitle: 'Conduct record, commendations and rewards' })}
 
-    <div class="bg-amber-500 text-white rounded-2xl p-5 mb-4">
+    <div class="bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-2xl p-5 mb-4">
       <div class="flex items-center justify-between flex-wrap gap-4">
         <div>
           <div class="text-amber-100 text-sm">Reward Points</div>
@@ -951,12 +951,12 @@ function view_stu_timetable() {
     ${!hasAny ? emptyState({ title: 'No timetable yet', body: 'Your class timetable will appear here once published.', icon: 'calendar' }) : `
       <div class="card overflow-hidden">
         <div class="overflow-x-auto"><table class="tbl">
-          <thead><tr><th>Period</th>${days.map(d => '<th class="text-center">' + d.slice(0, 3) + '</th>').join('')}</tr></thead>
+          <th scope="col"ead><tr><th scope="col">Period</th>${days.map(d => '<th scope="col" class="text-center">' + d.slice(0, 3) + '</th>').join('')}</tr></thead>
           <tbody>
             ${periods.map(p => {
               const rows = [];
               if (p === break1After + 1) rows.push('<tr class="bg-amber-50"><td colspan="6" class="text-center text-xs text-amber-800 font-semibold py-1.5">' + break1Label + '</td></tr>');
-              else if (p === break2After + 1) rows.push('<tr class="bg-brand-50"><td colspan="6" class="text-center text-xs text-brand-800 font-semibold py-1.5">' + break2Label + '</td></tr>');
+              else if (p === break2After + 1) rows.push('<tr class="bg-sky-50"><td colspan="6" class="text-center text-xs text-sky-800 font-semibold py-1.5">' + break2Label + '</td></tr>');
               rows.push('<tr>'
                 + '<td><strong class="text-slate-900">P' + p + '</strong><br><span class="text-xs text-slate-500">' + (periodTimes[p] || '') + '</span></td>'
                 + days.map(d => {
@@ -1036,15 +1036,15 @@ function renderStudentWallet(studentId, schoolId) {
   return `
     ${pageHeader ? pageHeader({ title: 'My Wallet', subtitle: 'School fees, payments, and account balance' }) : '<h2 class="text-xl font-bold mb-4">My Wallet</h2>'}
     <div class="grid grid-cols-3 gap-3 mb-4">
-      <div class="card p-4 text-center">
+      <div class="card p-5 text-center">
         <div class="text-2xl font-extrabold text-emerald-700">${money(creditTotal)}</div>
         <div class="text-xs text-slate-500 mt-1">Total Paid</div>
       </div>
-      <div class="card p-4 text-center">
+      <div class="card p-5 text-center">
         <div class="text-2xl font-extrabold text-rose-700">${money(debitTotal)}</div>
         <div class="text-xs text-slate-500 mt-1">Total Billed</div>
       </div>
-      <div class="card p-4 text-center ${finalBalance >= 0 ? 'bg-emerald-50' : 'bg-rose-50'}">
+      <div class="card p-5 text-center ${finalBalance >= 0 ? 'bg-emerald-50' : 'bg-rose-50'}">
         <div class="text-2xl font-extrabold ${finalBalance >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${money(Math.abs(finalBalance))}</div>
         <div class="text-xs text-slate-500 mt-1">${finalBalance >= 0 ? 'Credit Balance' : 'Amount Owed'}</div>
       </div>
