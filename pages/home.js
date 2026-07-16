@@ -128,16 +128,27 @@ function TrustBar() {
 function Problem() {
   return (
     <Section>
-      <div className="max-w-3xl" data-reveal>
-        <Eyebrow>THE PROBLEM</Eyebrow>
-        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Most schools run on a patchwork of tools that don’t talk to each other.
-        </h2>
-        <p className="mt-5 text-lg text-slate-600">
-          A record system here. A separate accounting package there. Fees in a spreadsheet. Consent forms on paper.
-          Every tool holds a piece of the truth — and none of them give you the whole picture. The result? Revenue
-          leaks, reconciliation eats your week, and reports reach your desk after the moment to act has passed.
-        </p>
+      <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div data-reveal>
+          <Eyebrow>THE PROBLEM</Eyebrow>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+            Most schools run on a patchwork of tools that don’t talk to each other.
+          </h2>
+          <p className="mt-5 text-lg text-slate-600">
+            A record system here. A separate accounting package there. Fees in a spreadsheet. Consent forms on paper.
+            Every tool holds a piece of the truth — and none of them give you the whole picture. The result? Revenue
+            leaks, reconciliation eats your week, and reports reach your desk after the moment to act has passed.
+          </p>
+        </div>
+        <SlotImage
+          src="/images/problem.jpg"
+          alt="Paper forms being filled in beside a keyboard"
+          label="Problem — paperwork"
+          size="1200×800"
+          ratio="aspect-[3/2]"
+          className="shadow-lg mkt-lift"
+          data-reveal="right"
+        />
       </div>
       <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {PROBLEMS.map((p, i) => (
@@ -200,13 +211,17 @@ function PlatformMarquee() {
               <div
                 key={`${t.title}-${i}`}
                 aria-hidden={dup || undefined}
-                className="w-[280px] shrink-0 rounded-2xl bg-white p-5 ring-1 ring-slate-100 shadow-sm"
+                className="group w-[360px] shrink-0 rounded-2xl bg-white p-7 ring-1 ring-slate-200 shadow-sm transition-colors duration-300 hover:bg-navy-600"
               >
-                <div className="w-11 h-11 rounded-xl bg-brand-50 text-navy-600 grid place-items-center">
-                  <Icon name={t.icon} className="w-5 h-5" />
+                <div className="w-12 h-12 rounded-xl bg-brand-50 text-navy-600 grid place-items-center transition-colors duration-300 group-hover:bg-white/10 group-hover:text-accent-400">
+                  <Icon name={t.icon} className="w-6 h-6" />
                 </div>
-                <h3 className="mt-3 font-bold text-slate-900">{t.title}</h3>
-                <p className="mt-1.5 text-sm text-slate-600">{t.body}</p>
+                <h3 className="mt-4 text-lg font-bold text-slate-900 transition-colors duration-300 group-hover:text-white">
+                  {t.title}
+                </h3>
+                <p className="mt-2 text-sm text-slate-600 transition-colors duration-300 group-hover:text-white">
+                  {t.body}
+                </p>
               </div>
             )
           })}

@@ -332,15 +332,20 @@ span.flatpickr-weekday { color: var(--muted); }
           mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
 }
 .marquee-track {
+  /* The gap lives in a variable because the keyframe below has to subtract
+     exactly half of it. Changing the gap alone would desync the loop. */
+  --marquee-gap: 28px;
   display: flex;
   width: max-content;
-  gap: var(--s-3);
-  animation: marquee-scroll 45s linear infinite;
+  gap: var(--marquee-gap);
+  /* Duration tracks card width: wider cards over the same 45s would read as a
+     speed-up. 55s holds roughly the original pixels-per-second. */
+  animation: marquee-scroll 55s linear infinite;
 }
 .marquee:hover .marquee-track { animation-play-state: paused; }
 @keyframes marquee-scroll {
   from { transform: translateX(0); }
-  to   { transform: translateX(calc(-50% - (var(--s-3) / 2))); }
+  to   { transform: translateX(calc(-50% - (var(--marquee-gap) / 2))); }
 }
 
 /* Reduced motion: no auto-scroll. The strip becomes a normal swipeable
