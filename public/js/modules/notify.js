@@ -163,13 +163,13 @@ function notify_historyTab(campaigns) {
   return `
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead>
+        <th scope="col"ead>
           <tr>
-            <th>Date</th>
-            <th>Audience</th>
-            <th>Subject</th>
-            <th class="text-center">Recipients</th>
-            <th>Status</th>
+            <th scope="col">Date</th>
+            <th scope="col">Audience</th>
+            <th scope="col">Subject</th>
+            <th scope="col" class="text-center">Recipients</th>
+            <th scope="col">Status</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>

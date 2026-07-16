@@ -9,7 +9,6 @@
 # OS / editor
 .DS_Store
 Thumbs.db
-.vscode/
 .idea/
 
 # Next.js build output
@@ -20,8 +19,7 @@ out/
 node_modules/
 
 # Env files
-.env
-.env.local
 .env.*.local
 
 .vercel
+config.bat
