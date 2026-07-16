@@ -266,3 +266,52 @@ span.flatpickr-weekday { color: var(--muted); }
 .fade-in { animation: fadeIn 0.25s ease; }
 .slide-up { animation: slideUp 0.3s ease; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ============================================================
+   MARKETING SITE MOTION
+   Scroll-reveal + hover motion for the landing pages only. Every rule is
+   gated on html.reveal-ready, which an inline script in _document sets
+   before first paint. Without JS the class never lands, [data-reveal]
+   elements are never hidden, and the page renders exactly as it does now —
+   so a JS failure can never leave the site blank.
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  html.reveal-ready [data-reveal] {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  html.reveal-ready [data-reveal="left"]  { transform: translateX(-24px); }
+  html.reveal-ready [data-reveal="right"] { transform: translateX(24px); }
+  html.reveal-ready [data-reveal="scale"] { transform: scale(0.96); }
+
+  html.reveal-ready [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Stagger. Applied to the child so siblings cascade in sequence. */
+  html.reveal-ready [data-reveal-delay="1"] { transition-delay: 70ms; }
+  html.reveal-ready [data-reveal-delay="2"] { transition-delay: 140ms; }
+  html.reveal-ready [data-reveal-delay="3"] { transition-delay: 210ms; }
+  html.reveal-ready [data-reveal-delay="4"] { transition-delay: 280ms; }
+  html.reveal-ready [data-reveal-delay="5"] { transition-delay: 350ms; }
+  html.reveal-ready [data-reveal-delay="6"] { transition-delay: 420ms; }
+
+  /* Buttons — lift on hover, settle on press. */
+  .mkt-btn { transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                         background-color 0.18s ease, box-shadow 0.18s ease; }
+  .mkt-btn:hover  { transform: translateY(-2px); }
+  .mkt-btn:active { transform: translateY(0); transition-duration: 60ms; }
+
+  /* Images / mock panels — a slow drift up on hover. */
+  .mkt-lift { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                          box-shadow 0.4s ease; }
+  .mkt-lift:hover { transform: translateY(-6px); }
+
+  /* Cards — same idea, shorter throw. */
+  .mkt-card { transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                          box-shadow 0.25s ease, border-color 0.25s ease; }
+  .mkt-card:hover { transform: translateY(-4px); }
+}

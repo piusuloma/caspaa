@@ -23,6 +23,14 @@ export default function Document() {
           rel="stylesheet"
         />
         <link rel="stylesheet" href="/css/styles.css" />
+        {/* Arms the scroll-reveal CSS before first paint, so revealed elements
+            never flash in visible and then re-hide. If JS is off this never
+            runs, the CSS stays inert, and the page renders fully. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{document.documentElement.classList.add('reveal-ready')}catch(e){}`
+          }}
+        />
         {/* Tailwind Play CDN + Chart.js must load before app scripts */}
         <script src="https://cdn.tailwindcss.com" />
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" />

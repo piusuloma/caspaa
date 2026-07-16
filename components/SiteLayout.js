@@ -1,7 +1,40 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { NAV_LINKS, CONTACT, ROLES } from '../data/site'
+
+// Reveals [data-reveal] elements as they scroll in. One observer for the whole
+// page rather than one per element. Elements are unobserved once shown, so
+// nothing re-animates on scroll-back and the observer drains as you read.
+// Bails out to "everything visible" if IntersectionObserver is missing or the
+// visitor asked for reduced motion.
+function useScrollReveal() {
+  useEffect(() => {
+    const nodes = Array.from(document.querySelectorAll('[data-reveal]'))
+    if (!nodes.length) return
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduced || typeof IntersectionObserver === 'undefined') {
+      nodes.forEach((n) => n.classList.add('is-visible'))
+      return
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return
+          entry.target.classList.add('is-visible')
+          io.unobserve(entry.target)
+        })
+      },
+      // Start slightly before the element's top edge arrives, so the motion
+      // finishes about when it reaches comfortable reading height.
+      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' }
+    )
+    nodes.forEach((n) => io.observe(n))
+    return () => io.disconnect()
+  }, [])
+}
 
 // Official CASPAA wordmark. `light` swaps to the white cut for dark surfaces.
 export function Logo({ light = false }) {
@@ -20,7 +53,7 @@ export function PrimaryButton({ href, children, className = '' }) {
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-accent-600 hover:bg-accent-700 text-navy-600 font-bold text-sm shadow-lg shadow-accent-600/20 transition ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-accent-600 hover:bg-accent-700 text-white font-bold text-sm shadow-lg shadow-accent-600/20 hover:shadow-xl hover:shadow-accent-600/30 mkt-btn ${className}`}
     >
       {children}
     </Link>
@@ -34,7 +67,7 @@ export function GhostButton({ href, children, light = false, className = '' }) {
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border font-semibold text-sm transition ${base} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border font-semibold text-sm mkt-btn ${base} ${className}`}
     >
       {children}
     </Link>
@@ -167,6 +200,7 @@ function Footer() {
 
 export default function SiteLayout({ children, title, description }) {
   const pageTitle = title ? `${title} — CASPAA` : 'CASPAA — School Operating System'
+  useScrollReveal()
   return (
     <>
       <Head>

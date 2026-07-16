@@ -83,17 +83,17 @@ function Hero() {
       <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-accent-600/10 blur-3xl" />
       <div className="relative max-w-7xl mx-auto px-5 py-20 md:py-28 grid lg:grid-cols-2 gap-12 items-center">
         <div>
-          <Eyebrow light>{HERO.eyebrow}</Eyebrow>
-          <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.1] tracking-tight">
+          <div data-reveal><Eyebrow light>{HERO.eyebrow}</Eyebrow></div>
+          <h1 data-reveal data-reveal-delay="1" className="text-4xl md:text-5xl font-extrabold leading-[1.1] tracking-tight">
             {HERO.title}
           </h1>
-          <p className="mt-5 text-lg text-brand-100 max-w-xl">{HERO.subtitle}</p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <p data-reveal data-reveal-delay="2" className="mt-5 text-lg text-brand-100 max-w-xl">{HERO.subtitle}</p>
+          <div data-reveal data-reveal-delay="3" className="mt-8 flex flex-wrap gap-3">
             <PrimaryButton href="/contact">Book a Free Demo</PrimaryButton>
             <GhostButton href="/pricing" light>See Pricing →</GhostButton>
           </div>
-          <p className="mt-5 text-sm text-brand-200">{HERO.microtrust}</p>
-          <div className="mt-6 flex flex-wrap gap-2">
+          <p data-reveal data-reveal-delay="4" className="mt-5 text-sm text-brand-200">{HERO.microtrust}</p>
+          <div data-reveal data-reveal-delay="5" className="mt-6 flex flex-wrap gap-2">
             {HERO.chips.map((c) => (
               <span key={c.label} className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white/10 border border-white/15 rounded-full px-3 py-1.5">
                 <span>{c.icon}</span> {c.label}
@@ -101,7 +101,7 @@ function Hero() {
             ))}
           </div>
         </div>
-        <div className="lg:pl-6">
+        <div className="lg:pl-6 mkt-lift" data-reveal="right" data-reveal-delay="2">
           <DashboardMock />
         </div>
       </div>
@@ -117,8 +117,8 @@ function TrustBar() {
           TRUSTED BY FORWARD-THINKING AFRICAN SCHOOLS
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {METRICS.map((m) => (
-            <div key={m.label} className="text-center">
+          {METRICS.map((m, i) => (
+            <div key={m.label} className="text-center" data-reveal data-reveal-delay={String((i % 4) + 1)}>
               <p className="text-3xl font-extrabold text-navy-600">{m.value}</p>
               <p className="text-xs text-slate-500 mt-1">{m.label}</p>
             </div>
@@ -135,7 +135,7 @@ function TrustBar() {
 function Problem() {
   return (
     <Section>
-      <div className="max-w-3xl">
+      <div className="max-w-3xl" data-reveal>
         <Eyebrow>THE PROBLEM</Eyebrow>
         <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
           Most schools run on a patchwork of tools that don’t talk to each other.
@@ -147,15 +147,15 @@ function Problem() {
         </p>
       </div>
       <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {PROBLEMS.map((p) => (
-          <div key={p.title} className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        {PROBLEMS.map((p, i) => (
+          <div key={p.title} className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm mkt-card" data-reveal data-reveal-delay={String((i % 4) + 1)}>
             <div className="text-3xl">{p.icon}</div>
             <h3 className="mt-3 font-bold text-slate-900">{p.title}</h3>
             <p className="mt-2 text-sm text-slate-600">{p.body}</p>
           </div>
         ))}
       </div>
-      <p className="mt-10 text-xl font-bold text-navy-600">There’s a better way to run a school.</p>
+      <p className="mt-10 text-xl font-bold text-navy-600" data-reveal>There’s a better way to run a school.</p>
     </Section>
   )
 }
@@ -164,7 +164,7 @@ function Solution() {
   return (
     <Section id="features" className="bg-slate-50">
       <div className="grid lg:grid-cols-2 gap-12 items-start">
-        <div className="lg:sticky lg:top-24">
+        <div className="lg:sticky lg:top-24" data-reveal="left">
           <Eyebrow>THE SOLUTION</Eyebrow>
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
             One platform for every part of your school.
@@ -176,8 +176,8 @@ function Solution() {
           <PrimaryButton href="/solutions/proprietors" className="mt-8">Explore the platform →</PrimaryButton>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
-          {PLATFORM_TILES.map((t) => (
-            <div key={t.title} className="rounded-2xl bg-white p-5 ring-1 ring-slate-100 shadow-sm">
+          {PLATFORM_TILES.map((t, i) => (
+            <div key={t.title} className="rounded-2xl bg-white p-5 ring-1 ring-slate-100 shadow-sm mkt-card" data-reveal data-reveal-delay={String((i % 4) + 1)}>
               <div className="w-11 h-11 rounded-xl bg-brand-50 grid place-items-center text-xl">{t.icon}</div>
               <h3 className="mt-3 font-bold text-slate-900">{t.title}</h3>
               <p className="mt-1.5 text-sm text-slate-600">{t.body}</p>
@@ -194,7 +194,7 @@ function Roles() {
   const role = ROLES[active]
   return (
     <Section id="roles">
-      <div className="text-center max-w-2xl mx-auto">
+      <div className="text-center max-w-2xl mx-auto" data-reveal>
         <Eyebrow>BUILT FOR YOUR WHOLE SCHOOL</Eyebrow>
         <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
           Every role gets a purpose-built experience.
@@ -246,7 +246,7 @@ function FeatureDeepDives() {
       <div className="space-y-16">
         {FEATURE_DEEPDIVES.map((f, i) => (
           <div key={f.title} className={`grid lg:grid-cols-2 gap-10 items-center ${i % 2 ? 'lg:[&>div:first-child]:order-2' : ''}`}>
-            <div>
+            <div data-reveal={i % 2 ? "right" : "left"}>
               <Eyebrow>{f.eyebrow}</Eyebrow>
               <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">{f.title}</h3>
               <p className="mt-4 text-slate-600">{f.body}</p>
@@ -255,8 +255,8 @@ function FeatureDeepDives() {
               </div>
             </div>
             <div className="grid gap-3">
-              {f.points.map((p) => (
-                <div key={p} className="flex items-center gap-3 bg-white rounded-2xl p-5 ring-1 ring-slate-100 shadow-sm">
+              {f.points.map((p, j) => (
+                <div key={p} className="flex items-center gap-3 bg-white rounded-2xl p-5 ring-1 ring-slate-100 shadow-sm mkt-card" data-reveal={i % 2 ? "left" : "right"} data-reveal-delay={String((j % 5) + 1)}>
                   <span className="w-9 h-9 rounded-lg bg-brand-600 text-white grid place-items-center"><Check className="text-white" /></span>
                   <span className="font-semibold text-slate-800">{p}</span>
                 </div>
@@ -272,13 +272,13 @@ function FeatureDeepDives() {
 function Comparison() {
   return (
     <Section>
-      <div className="text-center max-w-2xl mx-auto">
+      <div className="text-center max-w-2xl mx-auto" data-reveal>
         <Eyebrow>WHY SCHOOLS ARE SWITCHING</Eyebrow>
         <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
           A regular SMS manages records. CASPAA runs your school.
         </h2>
       </div>
-      <div className="mt-10 max-w-4xl mx-auto overflow-hidden rounded-2xl ring-1 ring-slate-200">
+      <div className="mt-10 max-w-4xl mx-auto overflow-hidden rounded-2xl ring-1 ring-slate-200" data-reveal="scale">
         <div className="grid grid-cols-2 text-sm font-bold">
           <div className="p-4 bg-slate-100 text-slate-500">Regular School Management System</div>
           <div className="p-4 bg-navy-600 text-white">CASPAA School Operating System</div>
@@ -302,21 +302,21 @@ function Comparison() {
 function Advantages() {
   return (
     <Section className="bg-navy-600 text-white">
-      <div className="text-center max-w-2xl mx-auto">
+      <div className="text-center max-w-2xl mx-auto" data-reveal>
         <Eyebrow light>OUR UNIQUE ADVANTAGES</Eyebrow>
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
           Everything a modern school needs, in one system.
         </h2>
       </div>
       <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
-        {ADVANTAGES.map((a) => (
-          <div key={a} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+        {ADVANTAGES.map((a, i) => (
+          <div key={a} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3" data-reveal data-reveal-delay={String((i % 6) + 1)}>
             <Check className="text-accent-400" />
             <span className="text-sm text-white/90">{a}</span>
           </div>
         ))}
       </div>
-      <p className="text-center mt-10 text-xl font-bold text-accent-400">
+      <p className="text-center mt-10 text-xl font-bold text-accent-400" data-reveal>
         Smart schools run on systems. Great schools run on CASPAA.
       </p>
     </Section>
@@ -326,15 +326,15 @@ function Advantages() {
 function Outcomes() {
   return (
     <Section id="why">
-      <div className="text-center max-w-2xl mx-auto">
+      <div className="text-center max-w-2xl mx-auto" data-reveal>
         <Eyebrow>THE FUTURE OF SCHOOL OPERATIONS IS HERE</Eyebrow>
         <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
           What changes when you run on CASPAA.
         </h2>
       </div>
       <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {OUTCOMES.map((o) => (
-          <div key={o.title} className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm hover:shadow-md transition">
+        {OUTCOMES.map((o, i) => (
+          <div key={o.title} className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm hover:shadow-md mkt-card" data-reveal data-reveal-delay={String((i % 3) + 1)}>
             <div className="text-2xl">{o.icon}</div>
             <h3 className="mt-3 font-bold text-slate-900">{o.title}</h3>
             <p className="mt-2 text-sm text-slate-600">{o.body}</p>
@@ -348,15 +348,15 @@ function Outcomes() {
 function Onboarding() {
   return (
     <Section className="bg-slate-50">
-      <div className="text-center max-w-2xl mx-auto">
+      <div className="text-center max-w-2xl mx-auto" data-reveal>
         <Eyebrow>GO LIVE IN DAYS, NOT MONTHS</Eyebrow>
         <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
           From sign-up to fully running — we handle the heavy lifting.
         </h2>
       </div>
       <div className="mt-12 grid gap-6 md:grid-cols-4">
-        {STEPS.map((s) => (
-          <div key={s.n} className="relative rounded-2xl bg-white p-6 ring-1 ring-slate-100">
+        {STEPS.map((s, i) => (
+          <div key={s.n} className="relative rounded-2xl bg-white p-6 ring-1 ring-slate-100 mkt-card" data-reveal data-reveal-delay={String((i % 4) + 1)}>
             <div className="w-10 h-10 rounded-full bg-navy-600 text-white grid place-items-center font-extrabold">{s.n}</div>
             <h3 className="mt-4 font-bold text-slate-900">{s.title}</h3>
             <p className="mt-2 text-sm text-slate-600">{s.body}</p>
@@ -373,7 +373,7 @@ function Onboarding() {
 function Security() {
   return (
     <Section id="security">
-      <div className="rounded-3xl bg-navy-600 text-white p-8 md:p-12">
+      <div className="rounded-3xl bg-navy-600 text-white p-8 md:p-12" data-reveal="scale">
         <div className="max-w-2xl">
           <Eyebrow light>BUILT ON TRUST</Eyebrow>
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
@@ -401,7 +401,7 @@ function Faq() {
   return (
     <Section id="faq" className="bg-slate-50">
       <div className="max-w-3xl mx-auto">
-        <div className="text-center">
+        <div className="text-center" data-reveal>
           <Eyebrow>QUESTIONS, ANSWERED</Eyebrow>
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
             Frequently asked questions.
@@ -409,7 +409,7 @@ function Faq() {
         </div>
         <div className="mt-10 space-y-3">
           {FAQ.map((f, i) => (
-            <div key={f.q} className="rounded-xl bg-white ring-1 ring-slate-100 overflow-hidden">
+            <div key={f.q} className="rounded-xl bg-white ring-1 ring-slate-100 overflow-hidden" data-reveal data-reveal-delay={String((i % 5) + 1)}>
               <button
                 className="w-full flex items-center justify-between gap-4 text-left px-5 py-4 font-semibold text-slate-900"
                 onClick={() => setOpen(open === i ? -1 : i)}
@@ -417,7 +417,7 @@ function Faq() {
                 {f.q}
                 <span className="text-brand-600 text-xl shrink-0">{open === i ? '−' : '+'}</span>
               </button>
-              {open === i && <p className="px-5 pb-5 -mt-1 text-slate-600 text-sm">{f.a}</p>}
+              {open === i && <p className="px-5 pb-5 -mt-1 text-slate-600 text-sm slide-up">{f.a}</p>}
             </div>
           ))}
         </div>
@@ -430,18 +430,18 @@ function FinalCta() {
   return (
     <section className="bg-navy-600 text-white">
       <div className="max-w-5xl mx-auto px-5 py-20 text-center">
-        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight" data-reveal>
           Ready to run your school the modern way?
         </h2>
-        <p className="mt-4 text-lg text-brand-100 max-w-2xl mx-auto">
+        <p className="mt-4 text-lg text-brand-100 max-w-2xl mx-auto" data-reveal data-reveal-delay="1">
           Join the schools transforming how they operate, collect fees and engage parents — online and offline. See
           CASPAA on your own workflows in a free, no-obligation demo.
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <div className="mt-8 flex flex-wrap justify-center gap-3" data-reveal data-reveal-delay="2">
           <PrimaryButton href="/contact">Book Your Free Demo</PrimaryButton>
           <GhostButton href="/contact" light>Talk to Sales — 0803 201 1561</GhostButton>
         </div>
-        <p className="mt-6 text-accent-400 font-bold">Smart schools run on systems. Great schools run on CASPAA.</p>
+        <p className="mt-6 text-accent-400 font-bold" data-reveal data-reveal-delay="3">Smart schools run on systems. Great schools run on CASPAA.</p>
       </div>
     </section>
   )
