@@ -20,12 +20,6 @@ export const HERO = {
   subtitle:
     'CASPAA replaces the disconnected tools your school juggles today — admissions, fees, payments, attendance, results, communication and accounting — with a single Edu-Fintech operating system. Online or offline, you get complete visibility and control.',
   microtrust: 'No spreadsheets. No manual reconciliation. No waiting for reports.',
-  chips: [
-    { icon: 'bolt', label: 'Works fully offline' },
-    { icon: 'card', label: 'Parents pay in 30 seconds' },
-    { icon: 'sync', label: 'Real-time reconciliation' },
-    { icon: 'chart', label: 'Executive dashboards, live' },
-  ],
 }
 
 export const METRICS = [
