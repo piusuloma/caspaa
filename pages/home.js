@@ -23,53 +23,6 @@ import {
   FAQ,
 } from '../data/site'
 
-// --- An inline, on-brand dashboard mockup so the hero looks premium
-//     without depending on external image assets. ---
-function DashboardMock() {
-  const tiles = [
-    { label: 'OUTSTANDING FEES', value: '₦2,982,200', sub: '12 students owing' },
-    { label: 'PAYMENT RECEIVED', value: '₦3,613,800', sub: '7 paid in full' },
-    { label: 'FEE COLLECTION', value: '55%', sub: 'of ₦6.6m billed' },
-    { label: 'ATTENDANCE TODAY', value: '92%', sub: 'across 19 classes' },
-  ]
-  return (
-    <div className="rounded-2xl bg-white shadow-2xl shadow-black/20 ring-1 ring-black/5 overflow-hidden">
-      <div className="flex items-center gap-1.5 px-4 h-9 bg-slate-100 border-b border-slate-200">
-        <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
-        <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-        <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
-        <span className="ml-3 text-[11px] text-slate-400 font-medium">app.caspaa.org</span>
-      </div>
-      <div className="p-4 bg-slate-50">
-        <div className="rounded-xl bg-navy-600 text-white p-4 mb-3">
-          <p className="text-[11px] text-brand-100">Welcome back,</p>
-          <p className="text-lg font-bold">Akande</p>
-          <p className="text-[11px] text-brand-100">Bright Lights Academy · 1st Term 2025/26</p>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {tiles.map((t) => (
-            <div key={t.label} className="rounded-xl bg-white p-3 ring-1 ring-slate-100">
-              <p className="text-[9px] font-bold tracking-wide text-slate-400">{t.label}</p>
-              <p className="text-base font-extrabold text-slate-800 mt-1">{t.value}</p>
-              <p className="text-[10px] text-brand-600 mt-0.5">{t.sub}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 rounded-xl bg-white p-3 ring-1 ring-slate-100">
-          <p className="text-[9px] font-bold tracking-wide text-slate-400 mb-2">ENROLMENT BY GENDER</p>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full border-[6px] border-brand-500 border-r-pink-400 border-b-pink-400" />
-            <div className="flex-1 text-[11px] text-slate-500">
-              <div className="flex justify-between"><span>Boys</span><span className="font-bold text-slate-700">10</span></div>
-              <div className="flex justify-between"><span>Girls</span><span className="font-bold text-slate-700">9</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // Cycles the headline: types a phrase, holds, backspaces, moves to the next,
 // and loops back round to the first.
 //
@@ -164,8 +117,14 @@ function Hero() {
           </div>
           <p data-reveal data-reveal-delay="4" className="mt-5 text-sm text-brand-200">{HERO.microtrust}</p>
         </div>
-        <div className="lg:pl-6 mkt-lift" data-reveal="right" data-reveal-delay="2">
-          <DashboardMock />
+        <div className="lg:pl-6" data-reveal="right" data-reveal-delay="2">
+          <img
+            src="/images/hero-woman.webp"
+            alt="A school administrator holding a laptop"
+            width="1100"
+            height="1387"
+            className="w-full max-w-md lg:max-w-none mx-auto h-auto select-none pointer-events-none"
+          />
         </div>
       </div>
     </section>
