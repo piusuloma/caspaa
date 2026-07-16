@@ -231,26 +231,16 @@ function Roles() {
             Learn more →
           </GhostButton>
         </div>
-        <div>
-          <SlotImage
-            key={role.slug}
-            src={`/images/roles/${role.slug}.jpg`}
-            alt={role.name}
-            label={`Role — ${role.tab}`}
-            size="900×600 · person in context"
-            ratio="aspect-[3/2]"
-            dark
-            className="mb-4 shadow-xl"
-          />
-        <ul className="grid gap-3">
-          {role.bullets.map((b) => (
-            <li key={b} className="flex items-start gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/10">
-              <Check className="text-accent-400" />
-              <span className="text-sm text-white/90">{b}</span>
-            </li>
-          ))}
-        </ul>
-        </div>
+        <SlotImage
+          key={role.slug}
+          src={`/images/roles/${role.slug}.jpg`}
+          alt={role.name}
+          label={`Role — ${role.tab}`}
+          size="900×600 · person in context"
+          ratio="aspect-[3/2]"
+          dark
+          className="shadow-xl"
+        />
       </div>
     </Section>
   )
@@ -270,23 +260,15 @@ function FeatureDeepDives() {
                 {f.stat}
               </div>
             </div>
-            <div className="grid gap-3">
-              <SlotImage
-                src={`/images/features/feature-${i + 1}.jpg`}
-                alt={f.title}
-                label={`Feature ${i + 1} — ${f.eyebrow}`}
-                size="1000×640"
-                ratio="aspect-[25/16]"
-                className="mb-2 shadow-lg mkt-lift"
-                data-reveal={i % 2 ? "left" : "right"}
-              />
-              {f.points.map((p, j) => (
-                <div key={p} className="flex items-center gap-3 bg-white rounded-2xl p-5 ring-1 ring-slate-100 shadow-sm mkt-card" data-reveal={i % 2 ? "left" : "right"} data-reveal-delay={String((j % 5) + 1)}>
-                  <span className="w-9 h-9 rounded-lg bg-brand-600 text-white grid place-items-center"><Check className="text-white" /></span>
-                  <span className="font-semibold text-slate-800">{p}</span>
-                </div>
-              ))}
-            </div>
+            <SlotImage
+              src={`/images/features/feature-${i + 1}.jpg`}
+              alt={f.title}
+              label={`Feature ${i + 1} — ${f.eyebrow}`}
+              size="1000×640"
+              ratio="aspect-[25/16]"
+              className="shadow-lg mkt-lift"
+              data-reveal={i % 2 ? "left" : "right"}
+            />
           </div>
         ))}
       </div>
