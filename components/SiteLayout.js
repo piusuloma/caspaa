@@ -28,8 +28,9 @@ function useScrollReveal() {
         })
       },
       // Start slightly before the element's top edge arrives, so the motion
-      // finishes about when it reaches comfortable reading height.
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' }
+      // finishes about when it reaches comfortable reading height. Kept early
+      // and shallow because the reveal itself runs long (1.3s).
+      { threshold: 0.05, rootMargin: '0px 0px -4% 0px' }
     )
     nodes.forEach((n) => io.observe(n))
     return () => io.disconnect()
