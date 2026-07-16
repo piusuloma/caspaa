@@ -48,7 +48,7 @@ export default function ContactPage() {
             <div className="mt-8 space-y-4">
               {STEPS.map((s) => (
                 <div key={s.n} className="flex items-start gap-3">
-                  <span className="w-7 h-7 rounded-full bg-gold-500 text-navy-600 grid place-items-center text-sm font-extrabold shrink-0">
+                  <span className="w-7 h-7 rounded-full bg-accent-500 text-navy-600 grid place-items-center text-sm font-extrabold shrink-0">
                     {s.n}
                   </span>
                   <div>
@@ -119,7 +119,7 @@ export default function ContactPage() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-navy-600 font-bold text-sm shadow-lg transition"
+                  className="w-full py-3.5 rounded-xl bg-accent-500 hover:bg-accent-600 text-navy-600 font-bold text-sm shadow-lg transition"
                 >
                   Request my demo
                 </button>

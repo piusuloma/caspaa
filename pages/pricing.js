@@ -13,14 +13,14 @@ function PlanCard({ plan }) {
     <div
       className={`relative rounded-3xl p-7 flex flex-col ${
         highlight
-          ? 'bg-navy-600 text-white ring-2 ring-gold-500 shadow-2xl lg:-translate-y-3'
+          ? 'bg-navy-600 text-white ring-2 ring-accent-500 shadow-2xl lg:-translate-y-3'
           : gold
-          ? 'bg-gradient-to-br from-gold-400 to-gold-600 text-navy-600 shadow-xl'
+          ? 'bg-gradient-to-br from-accent-400 to-accent-600 text-navy-600 shadow-xl'
           : 'bg-white text-slate-800 ring-1 ring-slate-200 shadow-sm'
       }`}
     >
       {highlight && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gold-500 text-navy-600 text-xs font-extrabold px-3 py-1 rounded-full shadow">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent-500 text-navy-600 text-xs font-extrabold px-3 py-1 rounded-full shadow">
           MOST POPULAR
         </span>
       )}
@@ -48,14 +48,14 @@ function PlanCard({ plan }) {
       </div>
 
       {plan.inherits && (
-        <p className={`mt-6 text-sm font-bold ${highlight ? 'text-gold-300' : 'text-navy-600'}`}>
+        <p className={`mt-6 text-sm font-bold ${highlight ? 'text-accent-300' : 'text-navy-600'}`}>
           {plan.inherits}
         </p>
       )}
       <ul className="mt-4 space-y-2.5 flex-1">
         {plan.features.map((f) => (
           <li key={f} className="flex items-start gap-2.5 text-sm">
-            <Check className={gold ? 'text-navy-600' : highlight ? 'text-gold-400' : 'text-brand-600'} />
+            <Check className={gold ? 'text-navy-600' : highlight ? 'text-accent-400' : 'text-brand-600'} />
             <span className={highlight ? 'text-white/90' : gold ? 'text-navy-600' : 'text-slate-700'}>{f}</span>
           </li>
         ))}
@@ -104,7 +104,7 @@ export default function PricingPage() {
             <ul className="mt-3 space-y-2">
               {PRICING_NOTES.map((n) => (
                 <li key={n} className="flex items-start gap-2 text-sm text-slate-600">
-                  <span className="text-gold-600 mt-0.5">•</span> {n}
+                  <span className="text-accent-600 mt-0.5">•</span> {n}
                 </li>
               ))}
             </ul>

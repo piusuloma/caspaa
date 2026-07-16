@@ -32,7 +32,7 @@ export default function RolePage({ index }) {
             <Eyebrow light>FOR {role.name.toUpperCase()}</Eyebrow>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1]">{role.headline}</h1>
             <p className="mt-5 text-lg text-brand-100 max-w-xl">{role.body}</p>
-            <p className="mt-5 text-gold-300 font-semibold italic">{role.punch}</p>
+            <p className="mt-5 text-accent-300 font-semibold italic">{role.punch}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <PrimaryButton href="/contact">Book a Free Demo</PrimaryButton>
               <GhostButton href="/pricing" light>See Pricing →</GhostButton>
@@ -40,11 +40,11 @@ export default function RolePage({ index }) {
           </div>
           <div className="lg:pl-6">
             <div className="rounded-3xl bg-navy-600 p-8 ring-1 ring-white/10">
-              <p className="text-gold-400 font-bold text-sm mb-4">What {role.tab.toLowerCase()} get</p>
+              <p className="text-accent-400 font-bold text-sm mb-4">What {role.tab.toLowerCase()} get</p>
               <ul className="grid gap-3">
                 {role.bullets.map((b) => (
                   <li key={b} className="flex items-start gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/10">
-                    <Check className="text-gold-400" />
+                    <Check className="text-accent-400" />
                     <span className="text-sm text-white/90">{b}</span>
                   </li>
                 ))}

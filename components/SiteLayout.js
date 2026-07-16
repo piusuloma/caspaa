@@ -20,7 +20,7 @@ export function PrimaryButton({ href, children, className = '' }) {
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gold-500 hover:bg-gold-600 text-navy-600 font-bold text-sm shadow-lg shadow-gold-500/20 transition ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-accent-500 hover:bg-accent-600 text-navy-600 font-bold text-sm shadow-lg shadow-accent-500/20 transition ${className}`}
     >
       {children}
     </Link>
@@ -43,7 +43,7 @@ export function GhostButton({ href, children, light = false, className = '' }) {
 
 export function Eyebrow({ children, light = false }) {
   return (
-    <p className={`text-xs font-bold tracking-[0.15em] mb-3 ${light ? 'text-gold-400' : 'text-brand-600'}`}>
+    <p className={`text-xs font-bold tracking-[0.15em] mb-3 ${light ? 'text-accent-400' : 'text-brand-600'}`}>
       {children}
     </p>
   )

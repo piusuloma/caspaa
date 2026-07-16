@@ -80,7 +80,7 @@ function Hero() {
   return (
     <section className="relative overflow-hidden bg-navy-600 text-white">
       <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-navy-400/30 blur-3xl" />
-      <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-gold-500/10 blur-3xl" />
+      <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-accent-500/10 blur-3xl" />
       <div className="relative max-w-7xl mx-auto px-5 py-20 md:py-28 grid lg:grid-cols-2 gap-12 items-center">
         <div>
           <Eyebrow light>{HERO.eyebrow}</Eyebrow>
@@ -219,10 +219,10 @@ function Roles() {
       </div>
       <div className="mt-8 rounded-3xl bg-navy-600 text-white p-8 md:p-12 grid lg:grid-cols-2 gap-10 items-center">
         <div>
-          <p className="text-gold-400 font-bold text-sm">{role.name}</p>
+          <p className="text-accent-400 font-bold text-sm">{role.name}</p>
           <h3 className="mt-2 text-2xl md:text-3xl font-extrabold">{role.headline}</h3>
           <p className="mt-4 text-brand-100">{role.body}</p>
-          <p className="mt-5 text-gold-300 font-semibold italic">{role.punch}</p>
+          <p className="mt-5 text-accent-300 font-semibold italic">{role.punch}</p>
           <GhostButton href={`/solutions/${role.slug}`} light className="mt-6">
             Learn more →
           </GhostButton>
@@ -230,7 +230,7 @@ function Roles() {
         <ul className="grid gap-3">
           {role.bullets.map((b) => (
             <li key={b} className="flex items-start gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/10">
-              <Check className="text-gold-400" />
+              <Check className="text-accent-400" />
               <span className="text-sm text-white/90">{b}</span>
             </li>
           ))}
@@ -311,12 +311,12 @@ function Advantages() {
       <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
         {ADVANTAGES.map((a) => (
           <div key={a} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-            <Check className="text-gold-400" />
+            <Check className="text-accent-400" />
             <span className="text-sm text-white/90">{a}</span>
           </div>
         ))}
       </div>
-      <p className="text-center mt-10 text-xl font-bold text-gold-400">
+      <p className="text-center mt-10 text-xl font-bold text-accent-400">
         Smart schools run on systems. Great schools run on CASPAA.
       </p>
     </Section>
@@ -441,7 +441,7 @@ function FinalCta() {
           <PrimaryButton href="/contact">Book Your Free Demo</PrimaryButton>
           <GhostButton href="/contact" light>Talk to Sales — 0803 201 1561</GhostButton>
         </div>
-        <p className="mt-6 text-gold-400 font-bold">Smart schools run on systems. Great schools run on CASPAA.</p>
+        <p className="mt-6 text-accent-400 font-bold">Smart schools run on systems. Great schools run on CASPAA.</p>
       </div>
     </section>
   )
