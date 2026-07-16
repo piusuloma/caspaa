@@ -16,7 +16,7 @@ function view_tch_diary(params) {
 
   const activeClassId = (params && params.classId) || classes[0].id;
   const students = COMPUTE.studentsByClass(activeClassId);
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
 
   return `
     ${pageHeader({ title: 'Communication Diary', subtitle: 'Write structured notes to parents — per student, per day' })}
@@ -28,12 +28,12 @@ function view_tch_diary(params) {
     ${students.length === 0 ? emptyState({ title: 'No students in this class', body: 'Enrol students to start writing diary entries.', icon: 'students' }) : `
       <div class="space-y-2">
         ${students.map(s => {
-          const entries = DB.query('diaryEntries', e => e.studentId === s.id && e.teacherId === teacherId && e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
+          const entries = DB.query('diaryEntries', e => e.studentId === s.id && e.teacherId === teacherId && e.schoolId === currentSchoolId())
                            .sort((a,b) => b.date.localeCompare(a.date));
           const unreadReplies = entries.filter(e => e.parentReply && !e.teacherReadReply).length;
           const lastEntry = entries[0];
           const parent = s.parentId ? DB.find('parents', s.parentId) : null;
-          return `<div class="card p-4">
+          return `<div class="card p-5">
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
                 ${avatar(s, 'sm')}
@@ -61,7 +61,7 @@ function diary_viewStudent(studentId, classId) {
   const s = DB.find('students', studentId);
   const parent = s && s.parentId ? DB.find('parents', s.parentId) : null;
   const teacherId = AUTH.current.id;
-  const entries = DB.query('diaryEntries', e => e.studentId === studentId && e.teacherId === teacherId && e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
+  const entries = DB.query('diaryEntries', e => e.studentId === studentId && e.teacherId === teacherId && e.schoolId === currentSchoolId())
                     .sort((a,b) => b.date.localeCompare(a.date));
 
   // Mark all unread replies as read
@@ -124,7 +124,7 @@ function diary_saveEntry(studentId, classId) {
   if (!note) { toast('Note cannot be empty', 'danger'); return; }
 
   const entry = {
-    id: uid('de'), schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    id: uid('de'), schoolId: currentSchoolId(),
     studentId, teacherId: AUTH.current.id, category: cat,
     note, date, parentRead: false, parentReadAt: null,
     parentReply: null, parentRepliedAt: null, teacherReadReply: false,
@@ -159,7 +159,7 @@ function view_par_diary(params) {
 
   const activeId = (params && params.studentId) || children[0].id;
   const student  = DB.find('students', activeId);
-  const entries  = DB.query('diaryEntries', e => e.studentId === activeId && e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
+  const entries  = DB.query('diaryEntries', e => e.studentId === activeId && e.schoolId === currentSchoolId())
                      .sort((a,b) => b.date.localeCompare(a.date));
   const unread   = entries.filter(e => !e.parentRead).length;
 
@@ -189,7 +189,7 @@ function view_par_diary(params) {
             const teacher = DB.find('teachers', e.teacherId);
             const cc = catColors[e.category] || catColors.General;
             const cb = catBadge[e.category] || catBadge.General;
-            return `<div class="card p-4 border-l-4 ${cc}">
+            return `<div class="card p-5 border-l-4 ${cc}">
               <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
                 <div class="flex items-center gap-2">
                   <span class="text-xs font-bold px-2 py-0.5 rounded-full border ${cb}">${e.category}</span>
