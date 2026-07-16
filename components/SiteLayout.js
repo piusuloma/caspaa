@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { NAV_LINKS, CONTACT, ROLES } from '../data/site'
 import Icon from './Icons'
 
@@ -103,6 +104,12 @@ export function Check({ className = 'text-brand-600' }) {
 function Nav() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const { pathname } = useRouter()
+
+  // "Solutions" points at /solutions/proprietors but must stay lit on every
+  // role page, so match the section rather than the exact href.
+  const isActive = (href) =>
+    href.startsWith('/solutions') ? pathname.startsWith('/solutions') : pathname === href
 
   useEffect(() => {
     // Past ~24px the hero has moved under the bar, so the white plate comes in.
@@ -125,15 +132,29 @@ function Nav() {
       <div className="max-w-7xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
         <Logo light={!solid} />
         <nav className={`hidden md:flex items-center gap-8 text-sm font-semibold ${solid ? 'text-slate-600' : 'text-white/80'}`}>
-          {NAV_LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={`transition-colors ${solid ? 'hover:text-navy-600' : 'hover:text-white'}`}
-            >
-              {l.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((l) => {
+            const active = isActive(l.href)
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                aria-current={active ? 'page' : undefined}
+                className={`relative py-1 transition-colors ${
+                  active
+                    ? solid ? 'text-navy-600' : 'text-white'
+                    : solid ? 'hover:text-navy-600' : 'hover:text-white'
+                }`}
+              >
+                {l.label}
+                {active && (
+                  <span
+                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-accent-600"
+                    aria-hidden="true"
+                  />
+                )}
+              </Link>
+            )
+          })}
         </nav>
         <div className="hidden md:flex items-center gap-3">
           <a
@@ -159,11 +180,24 @@ function Nav() {
       </div>
       {open && (
         <div className="md:hidden border-t border-slate-100 bg-white px-5 py-4 flex flex-col gap-3">
-          {NAV_LINKS.map((l) => (
-            <Link key={l.href} href={l.href} className="py-1.5 font-semibold text-slate-700" onClick={() => setOpen(false)}>
-              {l.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((l) => {
+            const active = isActive(l.href)
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                aria-current={active ? 'page' : undefined}
+                className={`py-1.5 font-semibold flex items-center gap-2 ${active ? 'text-navy-600' : 'text-slate-700'}`}
+                onClick={() => setOpen(false)}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${active ? 'bg-accent-600' : 'bg-transparent'}`}
+                  aria-hidden="true"
+                />
+                {l.label}
+              </Link>
+            )
+          })}
           <a href="/signin" className="py-1.5 font-semibold text-slate-700" onClick={() => setOpen(false)}>
             Sign in
           </a>
