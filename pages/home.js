@@ -7,6 +7,7 @@ import SiteLayout, {
   GhostButton,
 } from '../components/SiteLayout'
 import SlotImage, { SlotBackdrop } from '../components/SlotImage'
+import Icon from '../components/Icons'
 import {
   HERO,
   METRICS,
@@ -95,11 +96,17 @@ function Hero() {
             <GhostButton href="/pricing" light>See Pricing →</GhostButton>
           </div>
           <p data-reveal data-reveal-delay="4" className="mt-5 text-sm text-brand-200">{HERO.microtrust}</p>
-          <div data-reveal data-reveal-delay="5" className="mt-6 flex flex-wrap gap-2">
+          <div data-reveal data-reveal-delay="5" className="mt-6 grid grid-cols-2 gap-2 max-w-md">
             {HERO.chips.map((c) => (
-              <span key={c.label} className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white/10 border border-white/15 rounded-full px-3 py-1.5">
-                <span>{c.icon}</span> {c.label}
-              </span>
+              <div
+                key={c.label}
+                className="flex items-center gap-2 rounded-lg bg-white/5 border border-white/10 px-2.5 py-2"
+              >
+                <span className="w-6 h-6 rounded-md bg-accent-600/20 text-accent-400 grid place-items-center shrink-0">
+                  <Icon name={c.icon} className="w-3.5 h-3.5" />
+                </span>
+                <span className="text-[11px] font-semibold text-white/85 leading-tight">{c.label}</span>
+              </div>
             ))}
           </div>
         </div>

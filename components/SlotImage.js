@@ -1,8 +1,23 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+
+/* Was the image already known-broken before React attached its handlers?
+   The markup is server-rendered, so a missing file errors during hydration —
+   before onError is live — and the component would sit there showing the
+   browser's broken-image glyph forever. A complete image with zero natural
+   width is a load that already failed, so re-check once on mount. */
+function useBrokenImage() {
+  const ref = useRef(null)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (el && el.complete && el.naturalWidth === 0) setFailed(true)
+  }, [])
+  return [ref, failed, () => setFailed(true)]
+}
 
 /* An image slot that degrades to a labelled placeholder.
    While /public/images/<src> is missing, the box shows the filename and the
-   size to supply, so every slot is visible on the page and self-documenting.
+   size to supply, so every slot is visible and self-documenting on the page.
    Drop the file in at that path and it goes live with no code change. */
 export default function SlotImage({
   src,
@@ -16,7 +31,7 @@ export default function SlotImage({
   imgClassName = '',
   ...rest
 }) {
-  const [failed, setFailed] = useState(false)
+  const [ref, failed, fail] = useBrokenImage()
 
   if (failed) {
     return (
@@ -52,10 +67,11 @@ export default function SlotImage({
   return (
     <div className={`relative ${ratio} ${rounded} overflow-hidden ${className}`} {...rest}>
       <img
+        ref={ref}
         src={src}
         alt={alt}
         loading="lazy"
-        onError={() => setFailed(true)}
+        onError={fail}
         className={`w-full h-full object-cover ${imgClassName}`}
       />
     </div>
@@ -63,17 +79,18 @@ export default function SlotImage({
 }
 
 /* Full-bleed background image for dark bands. A missing file simply leaves the
-   flat navy behind it, so there is nothing to place-hold -- the section is
+   flat navy behind it, so there is nothing to place-hold — the section is
    already complete without it. */
 export function SlotBackdrop({ src, opacity = 'opacity-20' }) {
-  const [failed, setFailed] = useState(false)
+  const [ref, failed, fail] = useBrokenImage()
   if (failed) return null
   return (
     <img
+      ref={ref}
       src={src}
       alt=""
       aria-hidden="true"
-      onError={() => setFailed(true)}
+      onError={fail}
       className={`absolute inset-0 w-full h-full object-cover pointer-events-none ${opacity}`}
     />
   )
