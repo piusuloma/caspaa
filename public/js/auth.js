@@ -71,10 +71,10 @@ const LOGIN_ROLES = {
     hint: 'Use the email or phone number your school has on record.'
   },
   educator: {
-    key: 'educator', label: 'Educator', icon: 'teacher',
-    heading: 'Educator Login', subtitle: 'Access your teaching dashboard',
-    fieldLabel: 'Staff Email or ID', placeholder: 'you@school.ng',
-    hint: 'Staff & school administrators sign in here.'
+    key: 'educator', label: 'School / Staff', icon: 'teacher',
+    heading: 'School & Staff Login', subtitle: 'Owners, admins & teachers',
+    fieldLabel: 'Work email', placeholder: 'you@yourschool.ng',
+    hint: 'School owners, admins and staff sign in with their work email.'
   }
 };
 
@@ -500,28 +500,22 @@ function renderLogin() {
               <p class="text-xs text-slate-400 text-center" id="loginFieldHint">Staff &amp; parents use email · students use their admission number</p>
             </div>
 
-            <!-- Quick access — role picker (each swaps the hero image) -->
+            <!-- Sign in as — the three member roles of an onboarded school.
+                 Each also swaps the hero background image (via selectLoginRole). -->
             <div class="mt-5 pt-5 border-t border-slate-100">
-              <div class="text-xs font-semibold uppercase text-slate-400 text-center mb-2.5">Quick Access</div>
+              <div class="text-xs font-semibold uppercase text-slate-400 text-center mb-2.5">Sign in as</div>
               <div class="grid grid-cols-3 gap-2">
-                ${quickAccessBtn('Students', 'students', "selectLoginRole('student')")}
+                ${quickAccessBtn('School / Staff', 'teacher', "selectLoginRole('educator')")}
                 ${quickAccessBtn('Parents', 'user', "selectLoginRole('parent')")}
-                ${quickAccessBtn('Educator', 'teacher', "selectLoginRole('educator')")}
+                ${quickAccessBtn('Students', 'students', "selectLoginRole('student')")}
               </div>
-              <div class="mt-2">
-                ${quickAccessBtn('Book a Tour', 'calendar', 'openTourPage()')}
-              </div>
-            </div>
-
-            <!-- Portal actions — moved here from the hero (logo-only) panel -->
-            <div class="mt-4 grid grid-cols-2 gap-2">
-              ${quickAccessBtn('Admissions', 'students', 'admissionsModal()')}
-              ${quickAccessBtn('Careers', 'teacher', 'careersModal()')}
             </div>
 
             <div class="mt-4 pt-4 border-t border-slate-100 text-center">
-              <p class="text-sm text-slate-500">New to CASPAA?
-                <button type="button" class="text-brand-700 font-semibold hover:text-brand-800" onclick="signupSchoolModal()">Sign up your school &rarr;</button>
+              <p class="text-xs text-slate-400">Prospective parent?
+                <button type="button" class="text-slate-500 font-medium hover:text-slate-700 underline" onclick="openTourPage()">Book a tour</button>
+                or
+                <button type="button" class="text-slate-500 font-medium hover:text-slate-700 underline" onclick="admissionsModal()">apply for admission</button>
               </p>
             </div>
           </div>
