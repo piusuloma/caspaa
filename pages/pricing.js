@@ -13,14 +13,14 @@ function PlanCard({ plan }) {
     <div
       className={`relative rounded-3xl p-7 flex flex-col ${
         highlight
-          ? 'bg-navy-600 text-white ring-2 ring-accent-500 shadow-2xl lg:-translate-y-3'
+          ? 'bg-navy-600 text-white ring-2 ring-accent-600 shadow-2xl lg:-translate-y-3'
           : gold
-          ? 'bg-gradient-to-br from-accent-400 to-accent-600 text-navy-600 shadow-xl'
+          ? 'bg-gradient-to-br from-accent-500 to-accent-700 text-navy-600 shadow-xl'
           : 'bg-white text-slate-800 ring-1 ring-slate-200 shadow-sm'
       }`}
     >
       {highlight && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent-500 text-navy-600 text-xs font-extrabold px-3 py-1 rounded-full shadow">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent-600 text-navy-600 text-xs font-extrabold px-3 py-1 rounded-full shadow">
           MOST POPULAR
         </span>
       )}

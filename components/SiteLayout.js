@@ -20,7 +20,7 @@ export function PrimaryButton({ href, children, className = '' }) {
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-accent-500 hover:bg-accent-600 text-navy-600 font-bold text-sm shadow-lg shadow-accent-500/20 transition ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-accent-600 hover:bg-accent-700 text-navy-600 font-bold text-sm shadow-lg shadow-accent-600/20 transition ${className}`}
     >
       {children}
     </Link>

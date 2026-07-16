@@ -80,7 +80,7 @@ function Hero() {
   return (
     <section className="relative overflow-hidden bg-navy-600 text-white">
       <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-navy-400/30 blur-3xl" />
-      <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-accent-500/10 blur-3xl" />
+      <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-accent-600/10 blur-3xl" />
       <div className="relative max-w-7xl mx-auto px-5 py-20 md:py-28 grid lg:grid-cols-2 gap-12 items-center">
         <div>
           <Eyebrow light>{HERO.eyebrow}</Eyebrow>

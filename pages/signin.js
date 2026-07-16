@@ -46,7 +46,7 @@ export default function SignInFinder() {
 
       <div className="min-h-screen relative overflow-hidden bg-navy-600 text-white flex flex-col">
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-navy-400/30 blur-3xl" />
-        <div className="absolute bottom-0 -left-20 w-72 h-72 rounded-full bg-accent-500/10 blur-3xl" />
+        <div className="absolute bottom-0 -left-20 w-72 h-72 rounded-full bg-accent-600/10 blur-3xl" />
 
         <header className="relative z-10 max-w-6xl w-full mx-auto px-5 h-16 flex items-center justify-between">
           <Logo light />
@@ -84,7 +84,7 @@ export default function SignInFinder() {
                 {err && <div className="mt-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-sm px-3 py-2">{err}</div>}
                 <button
                   type="submit"
-                  className="mt-4 w-full py-3.5 rounded-xl bg-accent-500 hover:bg-accent-600 text-navy-600 font-bold text-sm shadow-lg transition"
+                  className="mt-4 w-full py-3.5 rounded-xl bg-accent-600 hover:bg-accent-700 text-navy-600 font-bold text-sm shadow-lg transition"
                 >
                   Continue
                 </button>
