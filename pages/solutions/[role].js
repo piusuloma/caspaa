@@ -5,6 +5,7 @@ import SiteLayout, {
   PrimaryButton,
   GhostButton,
 } from '../../components/SiteLayout'
+import { SlotBackdrop } from '../../components/SlotImage'
 import { ROLES } from '../../data/site'
 
 export async function getStaticPaths() {
@@ -26,8 +27,9 @@ export default function RolePage({ index }) {
   return (
     <SiteLayout title={`For ${role.tab}`} description={`${role.headline} — ${role.body}`}>
       {/* Hero */}
-      <section className="bg-navy-600 text-white">
-        <div className="max-w-7xl mx-auto px-5 pt-32 pb-16 md:pt-40 md:pb-24 grid lg:grid-cols-2 gap-12 items-center">
+      <section className="relative overflow-hidden bg-navy-600 text-white">
+        <SlotBackdrop src={`/images/roles/${role.slug}.jpg`} opacity="opacity-15" />
+        <div className="relative max-w-7xl mx-auto px-5 pt-32 pb-16 md:pt-40 md:pb-24 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <Eyebrow light>FOR {role.name.toUpperCase()}</Eyebrow>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1]">{role.headline}</h1>
