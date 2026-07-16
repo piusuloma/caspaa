@@ -131,23 +131,23 @@ function bookTourModal() {
           Pick a day and time to visit. The school will confirm your slot and share directions.
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Parent / Guardian Name *</label><input id="tr_name" class="input" placeholder="e.g. Mrs. Grace Bello" /></div>
-          <div><label class="input-label">Phone *</label><input id="tr_phone" class="input" placeholder="+234…" /></div>
+          <div><label class="input-label" for="tr_name">Parent / Guardian Name *</label><input id="tr_name" class="input" placeholder="e.g. Mrs. Grace Bello" /></div>
+          <div><label class="input-label" for="tr_phone">Phone *</label><input id="tr_phone" class="input" placeholder="+234…" /></div>
         </div>
-        <div><label class="input-label">Email *</label><input id="tr_email" type="email" class="input" placeholder="you@email.com" /></div>
+        <div><label class="input-label" for="tr_email">Email *</label><input id="tr_email" type="email" class="input" placeholder="you@email.com" /></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Child's Name</label><input id="tr_child" class="input" placeholder="Optional" /></div>
-          <div><label class="input-label">Class of Interest</label>
+          <div><label class="input-label" for="tr_child">Child's Name</label><input id="tr_child" class="input" placeholder="Optional" /></div>
+          <div><label class="input-label" for="tr_class">Class of Interest</label>
             <select id="tr_class" class="input">${CLASS_LEVELS.map(c => `<option>${c}</option>`).join('')}</select>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Preferred Date *</label><input id="tr_date" type="date" class="input" min="${today()}" /></div>
-          <div><label class="input-label">Preferred Time *</label>
+          <div><label class="input-label" for="tr_date">Preferred Date *</label><input id="tr_date" type="date" class="input" min="${today()}" /></div>
+          <div><label class="input-label" for="tr_time">Preferred Time *</label>
             <select id="tr_time" class="input">${TOUR_SLOTS.map(s => `<option>${s}</option>`).join('')}</select>
           </div>
         </div>
-        <div><label class="input-label">Anything we should know?</label><textarea id="tr_note" class="input" rows="2" placeholder="Optional"></textarea></div>
+        <div><label class="input-label" for="tr_note">Anything we should know?</label><textarea id="tr_note" class="input" rows="2" placeholder="Optional"></textarea></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -190,25 +190,25 @@ function admissionsModal() {
         </div>
         <div class="text-xs font-semibold uppercase text-slate-400 pt-1">Child's details</div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Child's Full Name *</label><input id="ad_child" class="input" placeholder="e.g. Tobi Okafor" /></div>
-          <div><label class="input-label">Date of Birth *</label><input id="ad_dob" type="date" class="input" max="${today()}" /></div>
+          <div><label class="input-label" for="ad_child">Child's Full Name *</label><input id="ad_child" class="input" placeholder="e.g. Tobi Okafor" /></div>
+          <div><label class="input-label" for="ad_dob">Date of Birth *</label><input id="ad_dob" type="date" class="input" max="${today()}" /></div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Gender</label>
+          <div><label class="input-label" for="ad_gender">Gender</label>
             <select id="ad_gender" class="input"><option>Male</option><option>Female</option></select>
           </div>
-          <div><label class="input-label">Class Applying For *</label>
+          <div><label class="input-label" for="ad_class">Class Applying For *</label>
             <select id="ad_class" class="input">${CLASS_LEVELS.map(c => `<option>${c}</option>`).join('')}</select>
           </div>
         </div>
-        <div><label class="input-label">Previous School</label><input id="ad_prev" class="input" placeholder="Optional" /></div>
+        <div><label class="input-label" for="ad_prev">Previous School</label><input id="ad_prev" class="input" placeholder="Optional" /></div>
         <div class="text-xs font-semibold uppercase text-slate-400 pt-1">Parent / Guardian</div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Full Name *</label><input id="ad_parent" class="input" placeholder="e.g. Mr. Tunde Okafor" /></div>
-          <div><label class="input-label">Phone *</label><input id="ad_phone" class="input" placeholder="+234…" /></div>
+          <div><label class="input-label" for="ad_parent">Full Name *</label><input id="ad_parent" class="input" placeholder="e.g. Mr. Tunde Okafor" /></div>
+          <div><label class="input-label" for="ad_phone">Phone *</label><input id="ad_phone" class="input" placeholder="+234…" /></div>
         </div>
-        <div><label class="input-label">Email *</label><input id="ad_email" type="email" class="input" placeholder="you@email.com" /></div>
-        <div><label class="input-label">Notes</label><textarea id="ad_note" class="input" rows="2" placeholder="Anything else you'd like the school to know (optional)"></textarea></div>
+        <div><label class="input-label" for="ad_email">Email *</label><input id="ad_email" type="email" class="input" placeholder="you@email.com" /></div>
+        <div><label class="input-label" for="ad_note">Notes</label><textarea id="ad_note" class="input" rows="2" placeholder="Anything else you'd like the school to know (optional)"></textarea></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -260,18 +260,18 @@ function careersModal() {
           Interested in joining the team? Tell us about yourself and we'll be in touch when a matching role opens.
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Full Name *</label><input id="cr_name" class="input" placeholder="Your name" /></div>
-          <div><label class="input-label">Phone *</label><input id="cr_phone" class="input" placeholder="+234…" /></div>
+          <div><label class="input-label" for="cr_name">Full Name *</label><input id="cr_name" class="input" placeholder="Your name" /></div>
+          <div><label class="input-label" for="cr_phone">Phone *</label><input id="cr_phone" class="input" placeholder="+234…" /></div>
         </div>
-        <div><label class="input-label">Email *</label><input id="cr_email" type="email" class="input" placeholder="you@email.com" /></div>
+        <div><label class="input-label" for="cr_email">Email *</label><input id="cr_email" type="email" class="input" placeholder="you@email.com" /></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Role of Interest *</label>
+          <div><label class="input-label" for="cr_role">Role of Interest *</label>
             <select id="cr_role" class="input"><option>Teacher</option><option>Administrative</option><option>Finance / Bursary</option><option>ICT</option><option>Operations</option><option>Other</option></select>
           </div>
-          <div><label class="input-label">Years of Experience</label><input id="cr_exp" class="input" placeholder="e.g. 5" /></div>
+          <div><label class="input-label" for="cr_exp">Years of Experience</label><input id="cr_exp" class="input" placeholder="e.g. 5" /></div>
         </div>
-        <div><label class="input-label">LinkedIn / Portfolio / CV link</label><input id="cr_link" class="input" placeholder="Optional" /></div>
-        <div><label class="input-label">Cover note</label><textarea id="cr_note" class="input" rows="2" placeholder="Optional"></textarea></div>
+        <div><label class="input-label" for="cr_link">LinkedIn / Portfolio / CV link</label><input id="cr_link" class="input" placeholder="Optional" /></div>
+        <div><label class="input-label" for="cr_note">Cover note</label><textarea id="cr_note" class="input" rows="2" placeholder="Optional"></textarea></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -380,7 +380,7 @@ function renderLogin() {
             </div>
             <div class="space-y-3 mt-5">
               <div>
-                <label class="input-label" id="loginFieldLabel">Email or Admission Number</label>
+                <label class="input-label" for="loginIdentifier" id="loginFieldLabel">Email or Admission Number</label>
                 <input type="text" class="input" id="loginIdentifier" placeholder="you@school.ng  ·  BL/2025/001" autocomplete="username" />
               </div>
               <button class="btn btn-primary w-full" id="loginContinueBtn">Continue</button>
@@ -565,17 +565,17 @@ function bindLoginHandlers() {
       body.innerHTML = `
         <p class="text-sm text-slate-500">Enter your date of birth to confirm it's you.</p>
         <div>
-          <label class="input-label">Date of Birth</label>
+          <label class="input-label" for="loginDob">Date of Birth</label>
           <input type="date" class="input" id="loginDob" />
         </div>
         <button class="btn btn-primary w-full" id="loginSubmitBtn">Sign in as Student</button>`;
     } else {
       body.innerHTML = `
         <div>
-          <label class="input-label">Password</label>
+          <label class="input-label" for="loginPassword">Password</label>
           <div class="relative">
             <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" autocomplete="current-password" />
-            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" tabindex="-1">
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" aria-label="Show or hide password">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
           </div>
@@ -673,31 +673,31 @@ function signupSchoolModal() {
         <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
           Register your school with your <strong>official school email</strong> and upload a verification document. To keep the platform secure, our team reviews every school before the dashboard is unlocked — usually within 1 business day.
         </div>
-        <div><label class="input-label">School Name *</label><input id="su_name" class="input" placeholder="e.g. Sunrise Academy" /></div>
+        <div><label class="input-label" for="su_name">School Name *</label><input id="su_name" class="input" placeholder="e.g. Sunrise Academy" /></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Your Name (Proprietor) *</label><input id="su_prop" class="input" placeholder="e.g. Mrs. Grace Bello" /></div>
-          <div><label class="input-label">Phone *</label><input id="su_phone" class="input" placeholder="+234…" /></div>
+          <div><label class="input-label" for="su_prop">Your Name (Proprietor) *</label><input id="su_prop" class="input" placeholder="e.g. Mrs. Grace Bello" /></div>
+          <div><label class="input-label" for="su_phone">Phone *</label><input id="su_phone" class="input" placeholder="+234…" /></div>
         </div>
-        <div><label class="input-label">Work Email *</label><input id="su_email" type="email" class="input" placeholder="you@yourschool.ng" /></div>
-        <div><label class="input-label">Subscription Plan</label>
+        <div><label class="input-label" for="su_email">Work Email *</label><input id="su_email" type="email" class="input" placeholder="you@yourschool.ng" /></div>
+        <div><label class="input-label" for="su_plan">Subscription Plan</label>
           <select id="su_plan" class="input">
             <option value="Essential">Essential — ₦45,000/mo (up to 100 students)</option>
             <option value="Professional" selected>Professional — ₦95,000/mo (up to 300 students)</option>
             <option value="Enterprise">Enterprise — from ₦250,000/mo (unlimited)</option>
           </select>
         </div>
-        <div><label class="input-label">School Verification Document *</label>
+        <div><label class="input-label" for="su_doc">School Verification Document *</label>
           <input id="su_doc" type="file" class="input" accept=".pdf,.jpg,.jpeg,.png" />
           <p class="text-xs text-slate-400 mt-1">CAC certificate, Ministry of Education approval, or similar proof. Required to verify your school.</p>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Password *</label>
+          <div><label class="input-label" for="su_pw">Password *</label>
             <div class="relative">
               <input id="su_pw" type="password" class="input pr-10" placeholder="Min 8 characters" />
-              <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('su_pw', this)" tabindex="-1">${eye}</button>
+              <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('su_pw', this)" aria-label="Show or hide password">${eye}</button>
             </div>
           </div>
-          <div><label class="input-label">Confirm Password *</label><input id="su_pw2" type="password" class="input" placeholder="Repeat password" /></div>
+          <div><label class="input-label" for="su_pw2">Confirm Password *</label><input id="su_pw2" type="password" class="input" placeholder="Repeat password" /></div>
         </div>
         <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" id="su_terms" class="w-4 h-4 accent-brand-600" /> I agree to CASPAA's Terms and Privacy Policy</label>
       </div>
@@ -853,19 +853,19 @@ function promptFirstLoginPasswordChange(account) {
           <strong>Action required:</strong> For your security, please set a personal password before continuing. You will not be able to proceed until this is done.
         </div>
         <div>
-          <label class="input-label">New Password</label>
+          <label class="input-label" for="fl_pw_new">New Password</label>
           <div class="relative">
             <input type="password" id="fl_pw_new" class="input pr-10" placeholder="Minimum 8 characters" />
-            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_new',this)" tabindex="-1">
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_new',this)" aria-label="Show or hide password">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
           </div>
         </div>
         <div>
-          <label class="input-label">Confirm Password</label>
+          <label class="input-label" for="fl_pw_confirm">Confirm Password</label>
           <div class="relative">
             <input type="password" id="fl_pw_confirm" class="input pr-10" placeholder="Repeat new password" />
-            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_confirm',this)" tabindex="-1">
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_confirm',this)" aria-label="Show or hide password">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
           </div>
