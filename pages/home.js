@@ -270,6 +270,12 @@ function PlatformMarquee() {
   const run = [...PLATFORM_TILES, ...PLATFORM_TILES]
   return (
     <section className="py-16 md:py-20 bg-white overflow-hidden">
+      <div className="max-w-7xl mx-auto px-5 text-center mb-10" data-reveal>
+        <Eyebrow>INSIDE THE PLATFORM</Eyebrow>
+        <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+          The tools your school runs on.
+        </h2>
+      </div>
       <div className="marquee">
         <div className="marquee-track">
           {run.map((t, i) => {
