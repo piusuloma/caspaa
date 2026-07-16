@@ -354,3 +354,15 @@ span.flatpickr-weekday { color: var(--muted); }
   .marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
   .marquee-track { animation: none; }
 }
+
+/* Typewriter caret — sized in em so it tracks the headline's font size. */
+.tw-caret {
+  display: inline-block;
+  width: 0.055em;
+  height: 0.82em;
+  margin-left: 0.06em;
+  vertical-align: -0.06em;
+  background: currentColor;
+  animation: tw-blink 1s step-end infinite;
+}
+@keyframes tw-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }

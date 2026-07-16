@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import SiteLayout, {
   Eyebrow,
   Check,
@@ -7,6 +8,32 @@ import SiteLayout, {
 import Icon from '../components/Icons'
 import { SlotBackdrop } from '../components/SlotImage'
 import { PRICING, PRICING_NOTES, COMPARISON, FAQ, CONTACT } from '../data/site'
+
+function PricingFaq() {
+  const [open, setOpen] = useState(0)
+  return (
+    <div className="space-y-3">
+      {FAQ.slice(0, 4).map((f, i) => (
+        <div
+          key={f.q}
+          className="rounded-xl bg-white ring-1 ring-slate-200 overflow-hidden"
+          data-reveal
+          data-reveal-delay={String((i % 4) + 1)}
+        >
+          <button
+            className="w-full flex items-center justify-between gap-4 text-left px-5 py-4 font-semibold text-slate-900"
+            onClick={() => setOpen(open === i ? -1 : i)}
+            aria-expanded={open === i}
+          >
+            {f.q}
+            <span className="text-brand-600 text-xl shrink-0 leading-none">{open === i ? '−' : '+'}</span>
+          </button>
+          {open === i && <p className="px-5 pb-5 -mt-1 text-slate-600 text-sm slide-up">{f.a}</p>}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 function PlanCard({ plan }) {
   const highlight = plan.popular
@@ -183,14 +210,7 @@ export default function PricingPage() {
           <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight text-center mb-8">
             Pricing questions
           </h2>
-          <div className="space-y-4">
-            {FAQ.slice(0, 4).map((f) => (
-              <div key={f.q} className="rounded-xl bg-white ring-1 ring-slate-100 p-5">
-                <p className="font-semibold text-slate-900">{f.q}</p>
-                <p className="mt-2 text-sm text-slate-600">{f.a}</p>
-              </div>
-            ))}
-          </div>
+          <PricingFaq />
           <div className="text-center mt-10">
             <PrimaryButton href="/contact">Book a Free Demo</PrimaryButton>
           </div>

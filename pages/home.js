@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import SiteLayout, {
   Eyebrow,
@@ -70,6 +70,47 @@ function DashboardMock() {
   )
 }
 
+// Types the headline out character by character.
+//
+// Server-render and no-JS and reduced-motion all fall through to a plain <h1>
+// with the full text, so the headline is never missing from the markup.
+//
+// While typing, an invisible copy of the full string holds the block's final
+// size and the typed prefix is overlaid on top. Without that, the h1 would
+// grow from zero to two lines and shove the paragraph and buttons down the
+// page as it typed.
+function TypewriterTitle({ text, className }) {
+  const [typed, setTyped] = useState(null)
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let i = 0
+    let timer
+    setTyped('')
+    // Let the hero settle before the first keystroke.
+    const start = setTimeout(() => {
+      timer = setInterval(() => {
+        i += 1
+        setTyped(text.slice(0, i))
+        if (i >= text.length) clearInterval(timer)
+      }, 45)
+    }, 350)
+    return () => { clearTimeout(start); clearInterval(timer) }
+  }, [text])
+
+  if (typed === null) return <h1 className={className}>{text}</h1>
+
+  return (
+    <h1 className={`${className} relative`}>
+      <span className="invisible" aria-hidden="true">{text}</span>
+      <span className="absolute inset-0">
+        {typed}
+        <span className="tw-caret" aria-hidden="true" />
+      </span>
+    </h1>
+  )
+}
+
 function Section({ id, className = '', children }) {
   return (
     <section id={id} className={`py-24 md:py-32 scroll-mt-16 ${className}`}>
@@ -87,9 +128,10 @@ function Hero() {
       <div className="relative max-w-7xl mx-auto px-5 pt-36 pb-20 md:pt-44 md:pb-28 grid lg:grid-cols-2 gap-12 items-center">
         <div>
           <div data-reveal><Eyebrow light>{HERO.eyebrow}</Eyebrow></div>
-          <h1 data-reveal data-reveal-delay="1" className="text-4xl md:text-5xl font-extrabold leading-[1.1] tracking-tight">
-            {HERO.title}
-          </h1>
+          <TypewriterTitle
+            text={HERO.title}
+            className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight"
+          />
           <p data-reveal data-reveal-delay="2" className="mt-5 text-lg text-brand-100 max-w-xl">{HERO.subtitle}</p>
           <div data-reveal data-reveal-delay="3" className="mt-8 flex flex-wrap gap-3">
             <PrimaryButton href="/contact">Book a Free Demo</PrimaryButton>
