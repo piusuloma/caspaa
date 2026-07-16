@@ -123,7 +123,7 @@ function Hero() {
             alt="A school administrator holding a laptop"
             width="1100"
             height="1387"
-            className="w-full max-w-md lg:max-w-none mx-auto h-auto select-none pointer-events-none"
+            className="w-full max-w-xs sm:max-w-sm lg:max-w-md xl:max-w-lg mx-auto h-auto select-none pointer-events-none"
           />
         </div>
       </div>
