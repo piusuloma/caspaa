@@ -177,6 +177,16 @@ const APP = {
     const user = AUTH.current;
     const nav = this.navFor(user.role);
 
+    // render() replaces the whole shell via innerHTML, which destroys the element the user
+    // is typing into — every search box lost focus after ONE character, and callers worked
+    // around it locally (badly, forcing the caret to the end). Remember what was focused
+    // and where the caret was, then put it back after the rebuild. Fixes all of them at
+    // once and keeps mid-string editing intact.
+    const active = document.activeElement;
+    const restore = active && active.id && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)
+      ? { id: active.id, start: active.selectionStart, end: active.selectionEnd, scroll: active.scrollLeft }
+      : null;
+
     document.getElementById('app').innerHTML = `
       <div class="min-h-screen flex bg-slate-50">
 
@@ -233,7 +243,11 @@ const APP = {
         ` : ''}
 
         <!-- Main panel -->
-        <div class="flex-1 lg:ml-64 flex flex-col min-h-screen">
+        <!-- min-w-0: a flex item defaults to min-width:auto, so it refuses to shrink below
+             its content's min-content width and pushes the whole page into horizontal
+             scroll (sidebar and header drift with it). This lets wide content scroll
+             inside its own container instead of dragging the layout. -->
+        <div class="flex-1 min-w-0 lg:ml-64 flex flex-col min-h-screen">
 
           ${isImpersonating() ? `
             <div class="bg-amber-100 border-b border-amber-300 px-4 py-2 flex items-center justify-between gap-3 text-sm">
@@ -249,7 +263,7 @@ const APP = {
           <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
             <div class="flex items-center justify-between px-4 lg:px-6 h-14 gap-3">
               <div class="flex items-center gap-3 min-w-0">
-                <button class="lg:hidden btn btn-ghost !p-1.5" onclick="APP.sidebarOpen=true; APP.render()">${icon('menu')}</button>
+                <button class="lg:hidden btn btn-ghost !p-1.5" aria-label="Open navigation menu" onclick="APP.sidebarOpen=true; APP.render()">${icon('menu')}</button>
                 <h2 class="font-bold text-slate-900 text-base lg:text-lg truncate">${this.viewTitle()}</h2>
               </div>
               <button class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm text-slate-500 min-w-[160px] lg:min-w-[260px]" onclick="openGlobalSearch()">
@@ -258,12 +272,18 @@ const APP = {
                 <kbd class="hidden lg:inline text-xs bg-white border border-slate-300 rounded px-1.5 py-0.5 font-mono">/</kbd>
               </button>
               <div class="flex items-center gap-2">
-                <button class="sm:hidden btn btn-ghost !p-2" onclick="openGlobalSearch()" title="Search">${icon('search', 'w-5 h-5')}</button>
-                <button class="btn btn-ghost !p-2 relative" onclick="showNotifications()">
+                <button class="sm:hidden btn btn-ghost !p-2" onclick="openGlobalSearch()" aria-label="Search" title="Search">${icon('search', 'w-5 h-5')}</button>
+                ${(() => {
+                  // The unread count is signalled only by a red dot; put it in the
+                  // accessible name too so it isn't colour-only information.
+                  const unread = COMPUTE.unreadCount(user.id);
+                  return `<button class="btn btn-ghost !p-2 relative" onclick="showNotifications()"
+                    aria-label="Notifications${unread > 0 ? ` — ${unread} unread` : ''}" title="Notifications">
                   ${icon('bell', 'w-5 h-5')}
-                  ${COMPUTE.unreadCount(user.id) > 0 ? `<span class="absolute top-0.5 right-0.5 w-2 h-2 bg-rose-500 rounded-full"></span>` : ''}
-                </button>
-                <button class="btn btn-ghost !p-2" onclick="toggleOffline()" title="Toggle offline mode">
+                  ${unread > 0 ? `<span class="absolute top-0.5 right-0.5 w-2 h-2 bg-rose-500 rounded-full"></span>` : ''}
+                </button>`;
+                })()}
+                <button class="btn btn-ghost !p-2" onclick="toggleOffline()" aria-label="Toggle offline mode" title="Toggle offline mode">
                   ${icon(isOffline() ? 'wifi_off' : 'check', 'w-5 h-5')}
                 </button>
                 <button onclick="showProfile()" class="flex items-center gap-2 hover:bg-slate-100 rounded-xl pl-1 pr-2 py-1 transition">
@@ -298,6 +318,19 @@ const APP = {
         </div>
       </div>
     `;
+
+    // Put the caret back where the user left it (see `restore` above).
+    if (restore) {
+      const el = document.getElementById(restore.id);
+      if (el && typeof el.focus === 'function') {
+        el.focus({ preventScroll: true });
+        // Only text-ish inputs expose selection; number/date/select throw on setSelectionRange.
+        if (restore.start != null && typeof el.setSelectionRange === 'function') {
+          try { el.setSelectionRange(restore.start, restore.end); } catch (e) { /* unsupported type */ }
+        }
+        if (restore.scroll) el.scrollLeft = restore.scroll;
+      }
+    }
 
     // Bind any post-render handlers from view code
     if (typeof window.afterRender === 'function') {
@@ -444,7 +477,7 @@ function showLoginSessions() {
         <div class="text-xs text-slate-500 mt-0.5">${s.location} · IP ${s.ip}</div>
         <div class="text-xs text-slate-400 mt-1">Signed in ${fdate(s.loggedInAt, { relative: true })} ${s.twoFA ? '· <span class="text-emerald-700">2FA verified</span>' : '· <span class="text-amber-700">No 2FA</span>'}</div>
       </div>
-      ${!isCurrent ? `<button class="btn btn-ghost !p-1.5 text-rose-600" title="Revoke this session" onclick="revokeSession('${s.id}')">${icon('x','w-4 h-4')}</button>` : ''}
+      ${!isCurrent ? `<button class="btn btn-ghost !p-1.5 text-rose-600" aria-label="Revoke this session" title="Revoke this session" onclick="revokeSession('${s.id}')">${icon('x','w-4 h-4')}</button>` : ''}
     </div>
   `;
 
@@ -518,7 +551,7 @@ function quickSwitchRole(accountId) {
 }
 
 function resetDemo() {
-  confirm('This will erase all changes you made and restore the demo to its original seeded state. Continue?', () => {
+  confirmDialog('This will erase all changes you made and restore the demo to its original seeded state. Continue?', () => {
     DB.reset();
     AUTH.logout();
     toast('Demo data has been reset', 'success');

@@ -25,10 +25,10 @@ function view_par_dashboard() {
   }, 0);
   const totalBilled = totalPaid + totalOutstanding;
   const paidPct = totalBilled ? Math.round((totalPaid / totalBilled) * 100) : 0;
-  const announcements = DB.query('announcements', a => a.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && (a.audience === 'all' || a.audience === 'parents')).slice(0, 3);
+  const announcements = DB.query('announcements', a => a.schoolId === currentSchoolId() && (a.audience === 'all' || a.audience === 'parents')).slice(0, 3);
   // Pending digital-consent requests across this parent's children
   const childClassIds = children.map(c => c.classId);
-  const consentForms = DB.query('consentForms', f => f.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && (f.classId === 'all' || childClassIds.includes(f.classId)));
+  const consentForms = DB.query('consentForms', f => f.schoolId === currentSchoolId() && (f.classId === 'all' || childClassIds.includes(f.classId)));
   let pendingConsent = 0;
   consentForms.forEach(f => {
     const kids = f.classId === 'all' ? children : children.filter(c => c.classId === f.classId);
@@ -41,7 +41,7 @@ function view_par_dashboard() {
       <div class="bg-gradient-to-br from-brand-700 to-brand-800 rounded-2xl p-5 lg:p-6 text-white">
         <p class="text-brand-200 text-sm">Hello,</p>
         <h1 class="text-2xl lg:text-3xl font-extrabold">${parent.name.split(' ').slice(-1)}</h1>
-        <p class="text-brand-100 text-sm mt-1">${children.length} ${children.length === 1 ? 'child' : 'children'} at ${(DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School'}</p>
+        <p class="text-brand-100 text-sm mt-1">${children.length} ${children.length === 1 ? 'child' : 'children'} at ${(DB.find('schools', currentSchoolId()) || {}).name || 'School'}</p>
 
         ${totalBilled > 0 ? `<div class="mt-4 bg-white/15 backdrop-blur rounded-xl p-4">
           <div class="flex items-center justify-between mb-2">
@@ -96,7 +96,7 @@ function view_par_dashboard() {
           // Prospective parent — look for their active application
           const me = DB.find('parents', AUTH.current.id);
           const myApp = me ? DB.query('admissionApplications', a =>
-            a.schoolId === (me.schoolId || AUTH.current.schoolId || 'sch_brightlights') &&
+            a.schoolId === (me.schoolId || currentSchoolId()) &&
             a.parentPhone === me.phone && a.status !== 'rejected'
           )[0] : null;
           if (!myApp) {
@@ -167,7 +167,7 @@ function view_par_dashboard() {
 
       <!-- Parent assistance banner -->
       ${(() => {
-        const school = DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {};
+        const school = DB.find('schools', currentSchoolId()) || {};
         return `<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
           <span class="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">${icon('chat','w-5 h-5')}</span>
           <div class="flex-1 min-w-0">
@@ -183,24 +183,24 @@ function view_par_dashboard() {
 
       <!-- Quick actions -->
       <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <button class="card card-hover p-4 text-center" onclick="APP.go('par_fees')">
+        <button class="card card-hover p-5 text-center" onclick="APP.go('par_fees')">
           <div class="w-12 h-12 mx-auto rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center mb-2">${icon('fees','w-6 h-6')}</div>
           <div class="font-semibold text-sm text-slate-900">Pay Fees</div>
         </button>
-        <button class="card card-hover p-4 text-center" onclick="APP.go('par_loans')">
+        <button class="card card-hover p-5 text-center" onclick="APP.go('par_loans')">
           <div class="w-12 h-12 mx-auto rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-2">${icon('loan','w-6 h-6')}</div>
           <div class="font-semibold text-sm text-slate-900">Apply for Loan</div>
         </button>
-        <button class="card card-hover p-4 text-center relative" onclick="APP.go('par_consent')">
+        <button class="card card-hover p-5 text-center relative" onclick="APP.go('par_consent')">
           ${pendingConsent ? `<span class="absolute top-2 right-2 badge badge-warn">${pendingConsent}</span>` : ''}
           <div class="w-12 h-12 mx-auto rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2">${icon('check','w-6 h-6')}</div>
           <div class="font-semibold text-sm text-slate-900">Consent</div>
         </button>
-        <button class="card card-hover p-4 text-center" onclick="APP.go('par_messages')">
+        <button class="card card-hover p-5 text-center" onclick="APP.go('par_messages')">
           <div class="w-12 h-12 mx-auto rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-2">${icon('chat','w-6 h-6')}</div>
           <div class="font-semibold text-sm text-slate-900">Message Teacher</div>
         </button>
-        <button class="card card-hover p-4 text-center" onclick="APP.go('par_announce')">
+        <button class="card card-hover p-5 text-center" onclick="APP.go('par_announce')">
           <div class="w-12 h-12 mx-auto rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-2">${icon('bell','w-6 h-6')}</div>
           <div class="font-semibold text-sm text-slate-900">Announcements</div>
         </button>
@@ -255,12 +255,12 @@ function parentWelcomeWizard() {
         <p class="text-sm text-slate-500 mt-1">First, let's change your temporary password to something secure.</p>
       </div>
       <div class="space-y-3">
-        <div><label class="input-label">Temporary password (we sent this)</label>
+        <div><label class="input-label" for="pw_old">Temporary password (we sent this)</label>
           <input id="pw_old" type="password" class="input" placeholder="${parent.credentials ? parent.credentials.tempPassword : ''}" />
           <p class="text-xs text-slate-400 mt-1">${parent.credentials ? 'Pre-fill hint: ' + parent.credentials.tempPassword : ''}</p>
         </div>
-        <div><label class="input-label">New password</label><input id="pw_new" type="password" class="input" placeholder="At least 8 characters" /></div>
-        <div><label class="input-label">Confirm new password</label><input id="pw_new2" type="password" class="input" placeholder="Re-enter new password" /></div>
+        <div><label class="input-label" for="pw_new">New password</label><input id="pw_new" type="password" class="input" placeholder="At least 8 characters" /></div>
+        <div><label class="input-label" for="pw_new2">Confirm new password</label><input id="pw_new2" type="password" class="input" placeholder="Re-enter new password" /></div>
       </div>
     `;
     footerContent = `<button class="btn btn-primary w-full" onclick="parentWelcomeStep1Next()">Set password →</button>`;
@@ -272,8 +272,8 @@ function parentWelcomeWizard() {
         <p class="text-sm text-slate-500 mt-1">We'll send WhatsApp and email updates here. You can change later in your profile.</p>
       </div>
       <div class="space-y-3">
-        <div><label class="input-label">Phone (WhatsApp)</label><input id="cnt_phone" class="input" value="${parent.phone || ''}" /></div>
-        <div><label class="input-label">Email</label><input id="cnt_email" type="email" class="input" value="${parent.email || ''}" /></div>
+        <div><label class="input-label" for="cnt_phone">Phone (WhatsApp)</label><input id="cnt_phone" class="input" value="${parent.phone || ''}" /></div>
+        <div><label class="input-label" for="cnt_email">Email</label><input id="cnt_email" type="email" class="input" value="${parent.email || ''}" /></div>
         <label class="flex items-center gap-2 text-sm p-3 bg-slate-50 rounded-xl"><input type="checkbox" checked /> <span>Send me WhatsApp alerts for absences, fee reminders, and announcements</span></label>
         <label class="flex items-center gap-2 text-sm p-3 bg-slate-50 rounded-xl"><input type="checkbox" checked /> <span>Email me termly report cards</span></label>
       </div>
@@ -360,7 +360,7 @@ function renderChildCard(child) {
   const results = COMPUTE.studentResults(child.id).filter(r => r.approved);
   const avg = results.length ? Math.round(results.reduce((sum, r) => sum + r.total, 0) / results.length) : 0;
   return `
-    <div class="card card-hover p-4 cursor-pointer" onclick="viewChildDetail('${child.id}')">
+    <div class="card card-hover p-5 cursor-pointer" onclick="viewChildDetail('${child.id}')">
       <div class="flex items-center gap-3 mb-3">
         ${avatar(child, 'lg')}
         <div class="flex-1 min-w-0">
@@ -550,7 +550,7 @@ function _childTab(studentId, tab) {
         </div>`;
     } catch (err) {
       console.error('_childTab render error', err);
-      return `<div class="card p-4 text-red-700 text-sm"><strong>Could not load this tab.</strong><br>${err.message}</div>`;
+      return `<div class="card p-5 text-red-700 text-sm"><strong>Could not load this tab.</strong><br>${err.message}</div>`;
     }
   };
 
@@ -614,7 +614,7 @@ function printTranscript(studentId) {
   const html = `
     <div style="max-width:820px;margin:0 auto;font-family:system-ui">
       <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:24px">
-        <h1 style="margin:0;color:#047857">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h1>
+        <h1 style="margin:0;color:#047857">${((DB.find('schools', currentSchoolId()) || {}).name || 'School').toUpperCase()}</h1>
         <p style="margin:4px 0;color:#666">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:12px 0 0;font-size:22px">OFFICIAL ACADEMIC TRANSCRIPT</h2>
       </div>
@@ -629,8 +629,8 @@ function printTranscript(studentId) {
             const termAvg = Math.round(rows.reduce((s, r) => s + r.total, 0) / rows.length);
             return `<h3 style="margin:24px 0 8px;color:#047857;border-bottom:1px solid #ddd;padding-bottom:4px">${term}</h3>
         <table border="1" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:13px">
-          <thead style="background:#f3f4f6">
-            <tr><th align="left">Subject</th><th>CA1</th><th>CA2</th><th>Exam</th><th>Total</th><th>Grade</th></tr>
+          <th scope="col"ead style="background:#f3f4f6">
+            <tr><th scope="col" align="left">Subject</th><th scope="col">CA1</th><th scope="col">CA2</th><th scope="col">Exam</th><th scope="col">Total</th><th scope="col">Grade</th></tr>
           </thead>
           <tbody>
             ${rows.map(r => {
@@ -668,7 +668,7 @@ function printReportCard(studentId) {
   const html = `
     <div style="max-width:780px;margin:0 auto;font-family:system-ui">
       <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:24px">
-        <h1 style="margin:0;color:#047857">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h1>
+        <h1 style="margin:0;color:#047857">${((DB.find('schools', currentSchoolId()) || {}).name || 'School').toUpperCase()}</h1>
         <p style="margin:4px 0;color:#666">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:12px 0 0;font-size:20px">STUDENT REPORT CARD</h2>
         <p style="margin:4px 0">${DB.settings().currentTerm}</p>
@@ -678,8 +678,8 @@ function printReportCard(studentId) {
         <td style="text-align:right"><strong>DOB:</strong> ${fdate(s.dob, { long: true })}<br/><strong>Gender:</strong> ${s.gender==='M'?'Male':'Female'}<br/><strong>Attendance:</strong> ${attRate}%</td>
       </tr></table>
       <table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-size:13px">
-        <thead style="background:#f3f4f6">
-          <tr><th align="left">Subject</th><th>CA1/20</th><th>CA2/20</th><th>Exam/60</th><th>Total</th><th>Grade</th><th>Remark</th></tr>
+        <th scope="col"ead style="background:#f3f4f6">
+          <tr><th scope="col" align="left">Subject</th><th scope="col">CA1/20</th><th scope="col">CA2/20</th><th scope="col">Exam/60</th><th scope="col">Total</th><th scope="col">Grade</th><th scope="col">Remark</th></tr>
         </thead>
         <tbody>
           ${results.map(r => {
@@ -715,7 +715,7 @@ function printReportCard(studentId) {
 function view_par_children() {
   const children = parentChildren();
   return `
-    ${pageHeader({ title: 'My Children', subtitle: `${children.length} ${children.length===1?'child':'children'} at ${(DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School'}` })}
+    ${pageHeader({ title: 'My Children', subtitle: `${children.length} ${children.length===1?'child':'children'} at ${(DB.find('schools', currentSchoolId()) || {}).name || 'School'}` })}
     <div class="grid sm:grid-cols-2 gap-4">
       ${children.map(c => renderChildCard(c)).join('')}
     </div>
@@ -730,7 +730,7 @@ function view_par_fees() {
   if (children.length === 0) {
     const me = DB.find('parents', AUTH.current.id);
     const myApp = me ? DB.query('admissionApplications', a =>
-      a.schoolId === (me.schoolId || AUTH.current.schoolId || 'sch_brightlights') &&
+      a.schoolId === (me.schoolId || currentSchoolId()) &&
       a.parentPhone === me.phone &&
       a.status !== 'rejected' && a.status !== 'accepted'
     )[0] : null;
@@ -763,7 +763,7 @@ function view_par_fees() {
         const s = DB.find('students', inv.studentId);
         const cls = DB.find('classes', s.classId);
         const pct = inv.total ? Math.round((inv.paid / inv.total) * 100) : 0;
-        return `<div class="card p-4">
+        return `<div class="card p-5">
           <div class="flex items-center gap-3 mb-3">
             ${avatar(s.name, 'md')}
             <div class="flex-1">
@@ -818,7 +818,7 @@ function view_par_fees() {
 function renderProspectFeeGate(app) {
   const cls = DB.find('classes', app.requestedClass);
   const fs = cls ? DB.query('feeStructures', f => f.classId === cls.id)[0] : null;
-  const school = DB.find('schools', AUTH.current.schoolId || 'sch_brightlights');
+  const school = DB.find('schools', currentSchoolId());
 
   const statusOrder = ['pending', 'reviewing', 'visit_scheduled', 'visit_confirmed', 'accepted'];
   const currentIdx = statusOrder.indexOf(app.status);
@@ -831,7 +831,7 @@ function renderProspectFeeGate(app) {
   ];
 
   return `
-    ${pageHeader({ title: 'Fees & Enrolment', subtitle: 'Track your application progress' })}
+    ${pageHeader({ title: 'Fees & Enrollment', subtitle: 'Track your application progress' })}
 
     <div class="card p-5 mb-4">
       <div class="text-sm font-semibold text-slate-700 mb-4">Application Progress — <span class="text-brand-700">${app.applicantName}</span></div>
@@ -851,7 +851,7 @@ function renderProspectFeeGate(app) {
     </div>
 
     ${app.status === 'visit_scheduled' ? `
-    <div class="card p-4 mb-4 border border-brand-200 bg-brand-50">
+    <div class="card p-5 mb-4 border border-brand-200 bg-brand-50">
       <div class="flex items-start gap-3">
         <div class="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center text-brand-700 flex-shrink-0">${icon('calendar','w-5 h-5')}</div>
         <div class="flex-1">
@@ -867,7 +867,7 @@ function renderProspectFeeGate(app) {
     </div>` : ''}
 
     ${app.status === 'visit_confirmed' ? `
-    <div class="card p-4 mb-4 border border-emerald-200 bg-emerald-50">
+    <div class="card p-5 mb-4 border border-emerald-200 bg-emerald-50">
       <div class="flex items-center gap-2">
         <span class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">${icon('check','w-5 h-5')}</span>
         <div>
@@ -878,7 +878,7 @@ function renderProspectFeeGate(app) {
     </div>
 
     ${fs ? `
-    <div class="card p-4 mb-4">
+    <div class="card p-5 mb-4">
       <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
         ${avatar(app.applicantName, 'md')}
         <div>
@@ -901,13 +901,13 @@ function renderProspectFeeGate(app) {
         <span>These fees will be invoiced once your child is formally enrolled. Contact the admissions office to confirm your place.</span>
       </div>
     </div>` : `
-    <div class="card p-4 text-center text-slate-500 text-sm">
+    <div class="card p-5 text-center text-slate-500 text-sm">
       <div class="mb-1 font-semibold">Fee structure not yet published for ${cls ? cls.name : 'this class'}</div>
       <div class="text-xs">The school will update fees shortly. Check back soon or contact the admissions office.</div>
     </div>`}` : ''}
 
     ${app.status === 'pending' ? `
-    <div class="card p-4 mb-4 border border-amber-200 bg-amber-50">
+    <div class="card p-5 mb-4 border border-amber-200 bg-amber-50">
       <div class="flex items-start gap-3">
         <div class="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 flex-shrink-0">${icon('bell','w-5 h-5')}</div>
         <div>
@@ -918,7 +918,7 @@ function renderProspectFeeGate(app) {
     </div>` : ''}
 
     ${app.status === 'reviewing' ? `
-    <div class="card p-4 mb-4 border border-blue-200 bg-blue-50">
+    <div class="card p-5 mb-4 border border-blue-200 bg-blue-50">
       <div class="flex items-start gap-3">
         <div class="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 flex-shrink-0">${icon('search','w-5 h-5')}</div>
         <div>
@@ -950,7 +950,7 @@ function viewInvoice(invoiceId) {
     body: `
       <div class="print-area">
         <div class="text-center mb-4 pb-3 border-b">
-          <h2 class="text-xl font-bold text-brand-700">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h2>
+          <h2 class="text-xl font-bold text-brand-700">${((DB.find('schools', currentSchoolId()) || {}).name || 'School').toUpperCase()}</h2>
           <p class="text-xs text-slate-500">15 Liberty Estate, Lekki, Lagos</p>
         </div>
         <div class="grid grid-cols-2 text-sm mb-4">
@@ -969,7 +969,7 @@ function viewInvoice(invoiceId) {
           </div>
         </div>
         <table class="w-full text-sm border-t">
-          <thead><tr class="border-b"><th class="text-left py-2">Description</th><th class="text-right py-2">Amount</th></tr></thead>
+          <th scope="col"ead><tr class="border-b"><th scope="col" class="text-left py-2">Description</th><th scope="col" class="text-right py-2">Amount</th></tr></thead>
           <tbody>
             ${(() => {
               // Detect activity items by emoji prefix — activities catalog uses emoji icons
@@ -1019,7 +1019,7 @@ function installmentPlanModal(invoiceId) {
           Split the outstanding balance of <strong>${money(inv.balance)}</strong> across several scheduled payments. The school keeps track of due dates and sends reminders automatically.
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Number of installments</label>
+          <div><label class="input-label" for="ip_count">Number of installments</label>
             <select id="ip_count" class="input" onchange="renderInstallmentPreview('${invoiceId}')">
               <option value="2">2 payments</option>
               <option value="3" selected>3 payments</option>
@@ -1027,11 +1027,11 @@ function installmentPlanModal(invoiceId) {
               <option value="6">6 payments</option>
             </select>
           </div>
-          <div><label class="input-label">First payment due</label>
+          <div><label class="input-label" for="ip_start">First payment due</label>
             <input id="ip_start" type="date" class="input" value="${daysAhead(7)}" onchange="renderInstallmentPreview('${invoiceId}')" />
           </div>
         </div>
-        <div><label class="input-label">Interval</label>
+        <div><label class="input-label" for="ip_interval">Interval</label>
           <select id="ip_interval" class="input" onchange="renderInstallmentPreview('${invoiceId}')">
             <option value="30" selected>Monthly (every 30 days)</option>
             <option value="14">Bi-weekly (every 14 days)</option>
@@ -1110,7 +1110,7 @@ function applyDiscountModal(invoiceId) {
           ${icon('check','w-4 h-4 inline')} Prompt Payment Discount available until <strong>${fdate(dcDeadline, { long: true })}</strong>.
         </div>` : ''}
         <div>
-          <label class="input-label">Type</label>
+          <label class="input-label" for="dc_type">Type</label>
           <select id="dc_type" class="input" onchange="onDiscountTypeChange()">
             <option value="sibling">Sibling Discount (10% of tuition)</option>
             <option value="scholarship">Scholarship — Full Tuition Waiver</option>
@@ -1120,15 +1120,15 @@ function applyDiscountModal(invoiceId) {
           </select>
         </div>
         <div id="dc_pctRow" class="hidden">
-          <label class="input-label">% off tuition</label>
+          <label class="input-label" for="dc_pct">% off tuition</label>
           <input id="dc_pct" type="number" class="input" value="25" min="1" max="100" />
         </div>
         <div id="dc_customRow" class="hidden">
-          <label class="input-label">Discount Amount (NGN)</label>
+          <label class="input-label" for="dc_custom">Discount Amount (NGN)</label>
           <input id="dc_custom" type="number" class="input" placeholder="e.g. 25000" />
         </div>
         <div>
-          <label class="input-label">Label on invoice</label>
+          <label class="input-label" for="dc_label">Label on invoice</label>
           <input id="dc_label" class="input" value="Sibling Discount" />
         </div>
       </div>
@@ -1180,9 +1180,13 @@ function saveDiscount(invoiceId) {
   const balance = Math.max(0, total - inv.paid);
   const status = balance === 0 ? 'paid' : (inv.paid > 0 ? 'partial' : 'outstanding');
   DB.update('invoices', invoiceId, { lineItems, total, balance, status });
+  // The discount is committed above. Everything below is notification/audit, and a
+  // missing student used to throw here — leaving the modal open with no feedback, so
+  // a second click applied the discount twice (₦180k -> ₦144k -> ₦108k).
   const s = DB.find('students', inv.studentId);
-  DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Discount Applied', body: `${label} of ${money(amount)} applied to ${s.name}'s fees.`, type: 'success', read: false, timestamp: now() });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'applied_discount', target: `${money(amount)} (${label}) for ${s.name}`, timestamp: now() });
+  const who = s ? s.name : 'Student';
+  if (s && s.parentId) DB.insert('notifications', { id: uid('not'), userId: s.parentId, title: 'Discount Applied', body: `${label} of ${money(amount)} applied to ${who}'s fees.`, type: 'success', read: false, timestamp: now() });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'applied_discount', target: `${money(amount)} (${label}) for ${who}`, timestamp: now() });
   document.getElementById('modalBackdrop')?.click();
   APP.render();
   toast(`${label} of ${money(amount)} applied`, 'success');
@@ -1237,7 +1241,7 @@ function payInvoiceModal(invoiceId) {
       </div>
 
       <div class="bg-slate-50 rounded-xl p-3 mb-2">
-        <label class="input-label">Pay Amount (₦)</label>
+        <label class="input-label" for="pay_amount">Pay Amount (₦)</label>
         <input id="pay_amount" type="number" class="input text-xl font-bold" value="${inv.balance}" min="1" />
         <div class="text-xs text-slate-500 mt-1.5">${icon('info','w-3.5 h-3.5 inline')} Paying more than your balance is recorded as an advance payment and auto-applied to your next term's invoice.</div>
       </div>
@@ -1325,7 +1329,7 @@ function failPayment(invoiceId, amount, method) {
   const r = reasons[Math.floor(Math.random() * reasons.length)];
   DB.insert('transactions', {
     id: uid('txn'),
-    schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    schoolId: currentSchoolId(),
     invoiceId, studentId: DB.find('invoices', invoiceId).studentId,
     amount, method,
     reference: 'CSP-' + Math.random().toString(36).slice(2, 10).toUpperCase(),
@@ -1388,8 +1392,11 @@ function completePayment(invoiceId, amount, method) {
   DB.insert('auditLog', { id: uid('aud'), schoolId: inv.schoolId, actor: AUTH.current.id, action: 'payment', target: `${money(amount)} for ${student ? student.name : inv.studentId}${creditToAdd > 0 ? ` · ${money(creditToAdd)} advance` : ''}`, timestamp: now() });
 
   document.getElementById('modalBackdrop')?.click();
+  // Money is already taken above — a missing invoice/student here used to throw and
+  // the parent got no receipt and no confirmation for a payment that went through.
   const hasMore = _payQueue.length > 0;
-  const nextChild = hasMore ? DB.find('students', DB.find('invoices', _payQueue[0]).studentId) : null;
+  const nextInv = hasMore ? DB.find('invoices', _payQueue[0]) : null;
+  const nextChild = nextInv ? DB.find('students', nextInv.studentId) : null;
   modal({
     title: 'Payment Successful!',
     body: `
@@ -1432,7 +1439,7 @@ function downloadReceipt(invoiceId) {
   const html = `
     <div style="max-width:600px;margin:0 auto;font-family:system-ui">
       <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#047857">${((DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School').toUpperCase()}</h1>
+        <h1 style="margin:0;color:#047857">${((DB.find('schools', currentSchoolId()) || {}).name || 'School').toUpperCase()}</h1>
         <p style="margin:4px 0;color:#666;font-size:13px">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:14px 0 4px;font-size:18px">OFFICIAL PAYMENT RECEIPT</h2>
       </div>
@@ -1446,7 +1453,7 @@ function downloadReceipt(invoiceId) {
       <hr style="margin:20px 0;border:none;border-top:1px solid #ddd"/>
       <h3 style="margin-bottom:8px">Payment History</h3>
       <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead style="background:#f3f4f6"><tr><th align="left" style="padding:8px">Date</th><th align="left">Method</th><th align="left">Reference</th><th align="right" style="padding:8px">Amount</th></tr></thead>
+        <th scope="col"ead style="background:#f3f4f6"><tr><th scope="col" align="left" style="padding:8px">Date</th><th scope="col" align="left">Method</th><th scope="col" align="left">Reference</th><th scope="col" align="right" style="padding:8px">Amount</th></tr></thead>
         <tbody>
           ${txns.map(t => `<tr style="border-bottom:1px solid #eee"><td style="padding:8px">${fdate(t.timestamp, { short: true })}</td><td>${t.method.toUpperCase()}</td><td><code style="font-size:11px">${t.reference}</code></td><td align="right" style="padding:8px"><strong>${money(t.amount)}</strong></td></tr>`).join('')}
         </tbody>
@@ -1567,7 +1574,7 @@ function view_par_loans() {
 
 function renderLoanCard(loan) {
   if (loan.status === 'pending') {
-    return `<div class="card p-4 border-l-4 border-amber-500">
+    return `<div class="card p-5 border-l-4 border-amber-500">
       <div class="flex items-center justify-between mb-2">
         <div>
           <span class="badge badge-warn">Under Review</span>
@@ -1581,7 +1588,7 @@ function renderLoanCard(loan) {
     </div>`;
   }
   if (loan.status === 'rejected') {
-    return `<div class="card p-4 border-l-4 border-rose-500">
+    return `<div class="card p-5 border-l-4 border-rose-500">
       <div class="flex items-center justify-between mb-2">
         <div>
           <span class="badge badge-danger">Declined</span>
@@ -1597,7 +1604,7 @@ function renderLoanCard(loan) {
   const paidCount = loan.repayments.filter(r => r.paid).length;
   const totalCount = loan.repayments.length;
   const nextPayment = loan.repayments.find(r => !r.paid);
-  return `<div class="card p-4">
+  return `<div class="card p-5">
     <div class="flex items-center justify-between mb-3">
       <div>
         ${statusBadge(loan.status)}
@@ -1666,7 +1673,7 @@ function applyLoanModal() {
         </div>
 
         <div>
-          <label class="input-label">Loan Amount Needed</label>
+          <label class="input-label" for="ln_amount">Loan Amount Needed</label>
           <input id="ln_amount" type="number" class="input text-xl font-bold" placeholder="250000" />
           <input id="ln_slider" type="range" min="50000" max="1000000" step="10000" value="250000" class="w-full mt-2" oninput="document.getElementById('ln_amount').value = this.value; updateLoanCalc()" />
           <div class="flex justify-between text-xs text-slate-400 mt-1">
@@ -1803,7 +1810,7 @@ function finalizeLoanDecision(amount, term, childrenSel) {
     repayments.push({ dueDate: daysAhead(30 * m), amount: monthly, paid: false });
   }
   const loan = {
-    id: uid('loan'), schoolId: AUTH.current.schoolId || 'sch_brightlights', parentId: AUTH.current.id,
+    id: uid('loan'), schoolId: currentSchoolId(), parentId: AUTH.current.id,
     studentIds: childrenSel, amount, term, interestRate: 5,
     totalRepayment: total, monthlyPayment: monthly,
     status: 'active', creditScore: score,
@@ -1835,9 +1842,14 @@ function finalizeLoanDecision(amount, term, childrenSel) {
 
 function payLoanInstallment(loanId) {
   const loan = DB.find('loans', loanId);
-  const next = loan.repayments.find(r => !r.paid);
-  if (!next) return;
-  const updatedRepayments = loan.repayments.map(r => r.id === next.id ? Object.assign({}, r, { paid: true, paidAt: new Date().toISOString() }) : r);
+  if (!loan || !Array.isArray(loan.repayments)) return;
+  // Match on index, not id — repayment rows carry no id, so `r.id === next.id`
+  // was `undefined === undefined` for every row and settled the whole schedule.
+  const nextIdx = loan.repayments.findIndex(r => !r.paid);
+  if (nextIdx === -1) return;
+  const next = loan.repayments[nextIdx];
+  const updatedRepayments = loan.repayments.map((r, i) =>
+    i === nextIdx ? Object.assign({}, r, { paid: true, paidAt: new Date().toISOString() }) : r);
   DB.update('loans', loanId, { repayments: updatedRepayments });
   toast(`Installment of ${money(next.amount)} paid`);
   APP.render();
@@ -2024,7 +2036,7 @@ function view_par_timetable() {
         ${children.map(c => `<button class="chip ${c.id===childId?'active':''}" onclick="APP.params.parTtChild='${c.id}'; APP.render()">${c.name.split(' ')[0]}</button>`).join('')}
       </div>
     ` : ''}
-    <div class="card p-4 mb-4 flex items-center gap-3">
+    <div class="card p-5 mb-4 flex items-center gap-3">
       ${avatar(child ? child.name : '?', 'md')}
       <div>
         <div class="font-bold text-slate-900">${child ? child.name : '—'}</div>
@@ -2035,7 +2047,7 @@ function view_par_timetable() {
       <div class="card overflow-hidden">
         <div class="overflow-x-auto">
           <table class="tbl">
-            <thead><tr><th>Period</th>${days.map(d => `<th>${d}</th>`).join('')}</tr></thead>
+            <th scope="col"ead><tr><th scope="col">Period</th>${days.map(d => `<th scope="col">${d}</th>`).join('')}</tr></thead>
             <tbody>
               ${periods.map(p => {
                 const entries = days.map(d => tt.find(x => x.day === d && x.period === p));
@@ -2065,7 +2077,7 @@ function view_par_timetable() {
 function view_par_consent() {
   const children = COMPUTE.parentChildren(AUTH.current.id).filter(c => c.status === 'active');
   const childClassIds = children.map(c => c.classId);
-  const allForms = DB.query('consentForms', f => f.schoolId === (AUTH.current.schoolId || 'sch_brightlights') && (f.classId === 'all' || childClassIds.includes(f.classId)))
+  const allForms = DB.query('consentForms', f => f.schoolId === currentSchoolId() && (f.classId === 'all' || childClassIds.includes(f.classId)))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const consentF = APP.params.consentFilter || 'all';
 
@@ -2103,14 +2115,14 @@ function view_par_consent() {
           const typeBadge = { excursion: 'badge-info', media: 'badge-warn', pta: 'badge-neutral', policy: 'badge-success' }[f.type] || 'badge-neutral';
           const overdue = new Date(f.dueDate) < new Date();
           const stateColors = { pending: 'badge-warn', approved: 'badge-success', rejected: 'badge-danger' };
-          return `<div class="card p-4">
+          return `<div class="card p-5">
             <div class="flex items-start gap-2 mb-2">
               <div class="flex-1 flex items-center gap-2 flex-wrap">
                 <span class="badge ${typeBadge}">${f.type}</span>
                 <span class="badge ${stateColors[f.state] || 'badge-neutral'}">${f.state}</span>
                 <span class="badge ${overdue ? 'badge-danger' : 'badge-neutral'}">Due ${fdate(f.dueDate, { short: true })}</span>
               </div>
-              <button class="btn btn-ghost !p-1.5 text-slate-500 hover:text-brand-700 flex-shrink-0" title="Share this consent form" onclick="shareConsentRecord('${f.id}')">${icon('paperclip','w-4 h-4')}</button>
+              <button class="btn btn-ghost !p-1.5 text-slate-500 hover:text-brand-700 flex-shrink-0" aria-label="Share this consent form" title="Share this consent form" onclick="shareConsentRecord('${f.id}')">${icon('paperclip','w-4 h-4')}</button>
             </div>
             <h3 class="font-bold text-slate-900">${f.title}</h3>
             <p class="text-sm text-slate-600 mt-1">${f.description}</p>
@@ -2165,7 +2177,7 @@ function consentSignModal(formId, studentId) {
           <div class="text-xs text-slate-500 mt-0.5">For ${kid.name}</div>
         </div>
         <p class="text-sm text-slate-600">By signing below you confirm you have read the details and give your consent on behalf of your child.</p>
-        <div><label class="input-label">Type your full name (e-signature)</label><input id="consent_sig" class="input" value="${AUTH.current.name}" /></div>
+        <div><label class="input-label" for="consent_sig">Type your full name (e-signature)</label><input id="consent_sig" class="input" value="${AUTH.current.name}" /></div>
         <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="consent_agree" checked /> I agree and authorise this activity</label>
       </div>
     `,
