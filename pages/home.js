@@ -112,7 +112,7 @@ function TrustBar() {
         <p className="text-center text-xs font-bold tracking-[0.15em] text-brand-600 mb-6">
           TRUSTED BY FORWARD-THINKING AFRICAN SCHOOLS
         </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 max-w-3xl mx-auto">
           {METRICS.map((m, i) => (
             <div key={m.label} className="text-center" data-reveal data-reveal-delay={String((i % 4) + 1)}>
               <p className="text-3xl font-extrabold text-navy-600">{m.value}</p>
@@ -120,9 +120,6 @@ function TrustBar() {
             </div>
           ))}
         </div>
-        <p className="text-center text-sm text-slate-500 mt-8 max-w-2xl mx-auto">
-          Built by industry leaders in Education, Fintech, Information Technology, Risk Management and Business Operations.
-        </p>
       </div>
     </section>
   )
