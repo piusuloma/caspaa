@@ -86,10 +86,10 @@ function TypewriterTitle({ titles, fallback, className }) {
   const [i, setI] = useState(0)
   const [deleting, setDeleting] = useState(false)
 
-  const TYPE_MS = 45
-  const DELETE_MS = 22
-  const HOLD_MS = 2000
-  const GAP_MS = 350
+  const TYPE_MS = 75
+  const DELETE_MS = 35
+  const HOLD_MS = 2800
+  const GAP_MS = 500
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return

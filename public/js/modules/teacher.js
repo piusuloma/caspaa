@@ -417,7 +417,7 @@ function view_tch_classes() {
           </div>
           <div class="space-y-1">
             ${students.slice(0,3).map(s => `<div class="flex items-center gap-2 text-sm"><span class="avatar sm">${initials(s.name)}</span><span>${s.name}</span></div>`).join('')}
-            ${students.length > 3 ? `<p class="text-xs text-slate-400">+ ${students.length - 3} more</p>` : ''}
+            ${students.length > 3 ? `<p class="text-xs text-slate-500">+ ${students.length - 3} more</p>` : ''}
           </div>
           <div class="grid grid-cols-2 gap-1.5 mt-3">
             <button class="btn btn-secondary !py-1.5 text-xs" onclick="APP.go('tch_attendance', { classId: '${c.id}' })">${icon('attendance','w-3 h-3')} Attendance</button>
@@ -619,7 +619,7 @@ function view_tch_results() {
       <table class="tbl">
         <th scope="col"ead><tr>
           <th scope="col">Student</th>
-          ${types.map(t => `<th scope="col" class="text-center">${t.label} <span class="text-slate-400 font-normal">/${t.weight}</span></th>`).join('')}
+          ${types.map(t => `<th scope="col" class="text-center">${t.label} <span class="text-slate-500 font-normal">/${t.weight}</span></th>`).join('')}
           <th scope="col" class="text-center">Total</th><th scope="col" class="text-center">Grade</th><th scope="col">Comment</th>
         </tr></thead>
         <tbody>
@@ -842,7 +842,7 @@ function tch_renderMaterials() {
             </div>
             <h3 class="font-bold text-slate-900 text-sm mb-1">${m.title}</h3>
             <p class="text-xs text-slate-500 line-clamp-2 mb-2">${m.description || ''}</p>
-            <div class="text-xs text-slate-400">${DB.find('subjects', m.subjectId) ? DB.find('subjects', m.subjectId).name : ''} · ${fdate(m.createdAt, { short: true })}</div>
+            <div class="text-xs text-slate-500">${DB.find('subjects', m.subjectId) ? DB.find('subjects', m.subjectId).name : ''} · ${fdate(m.createdAt, { short: true })}</div>
           </div>`;
         }).join('')}
       </div>
@@ -890,7 +890,7 @@ function createMaterialModal() {
           <label class="input-label" for="mat_file">Attach file (optional — PDF / Word / image, max 3MB)</label>
           <input type="file" id="mat_file" class="hidden" accept="application/pdf,.doc,.docx,image/*" onchange="onMaterialFile(event)" />
           <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('mat_file').click()">
-            ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}<div class="text-xs text-slate-500">Click to attach a file</div>
+            ${icon('upload','w-5 h-5 mx-auto text-slate-500 mb-1')}<div class="text-xs text-slate-500">Click to attach a file</div>
           </div>
           <div id="mat_preview" class="mt-2"></div>
         </div>
@@ -1086,7 +1086,7 @@ function tch_openMarkingView(assignmentId, studentId) {
       <button id="mkv_eraser" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('eraser')">⬜ Eraser</button>
       <button id="mkv_pin" class="btn btn-secondary !py-1 !px-3 text-xs" onclick="mkvSetTool('pin')" aria-label="Click on image to place a comment pin" title="Click on image to place a comment pin">📍 Comment</button>
       <span class="text-xs text-slate-500 font-semibold ml-2">Colour:</span>
-      ${['#ef4444','#fd7d71','#10b981','#f59e0b','#fd7d71','#000000'].map(c =>
+      ${['#ef4444','#fd7d71','#00c08f','#f59e0b','#fd7d71','#000000'].map(c =>
         `<button class="w-6 h-6 rounded-full border-2 ${c === '#ef4444' ? 'border-slate-700 scale-110' : 'border-transparent'} transition-all" style="background:${c}" onclick="mkvSetColor('${c}',this)"></button>`
       ).join('')}
       <span class="text-xs text-slate-500 font-semibold ml-2">Size:</span>
@@ -1096,14 +1096,14 @@ function tch_openMarkingView(assignmentId, studentId) {
     <div class="rounded-xl overflow-hidden border border-slate-200 bg-slate-50" style="height:420px">
       <embed src="${sub.file.data}" type="application/pdf" class="w-full h-full" />
     </div>
-    <div class="text-xs text-slate-400 mt-1.5 text-center">PDF viewer — use the 📍 Add Comment button on the right to leave notes</div>` : sub.text ? `
+    <div class="text-xs text-slate-500 mt-1.5 text-center">PDF viewer — use the 📍 Add Comment button on the right to leave notes</div>` : sub.text ? `
     <div class="bg-slate-50 rounded-xl p-4 text-sm text-slate-800 leading-relaxed min-h-48 whitespace-pre-wrap border border-slate-200">${sub.text}</div>` : sub.file ? `
     <div class="flex flex-col items-center justify-center bg-slate-50 rounded-xl p-8 min-h-48 border border-slate-200">
       ${icon('paperclip','w-10 h-10 text-brand-400 mb-3')}
       <div class="font-semibold text-slate-700 mb-1">${sub.file.name}</div>
       <div class="text-xs text-slate-500 mb-3">${sub.file.size || ''}</div>
       <a href="${sub.file.data}" download="${sub.file.name}" class="btn btn-primary text-sm">${icon('download','w-4 h-4')} Download to View</a>
-    </div>` : `<div class="text-slate-400 text-center py-12">No submission content</div>`;
+    </div>` : `<div class="text-slate-500 text-center py-12">No submission content</div>`;
 
   modal({
     title: '',
@@ -1144,14 +1144,14 @@ function tch_openMarkingView(assignmentId, studentId) {
                 return `<div class="flex items-center gap-2 text-sm">
                   <span class="flex-1 text-slate-600">${c.criterion}</span>
                   <input type="number" id="mkv_rub_${c.id}" min="0" max="${c.maxPoints||10}" class="input w-16 !py-1 text-center text-sm" value="${earned}" placeholder="0" oninput="mkvUpdateRubricTotal()" />
-                  <span class="text-xs text-slate-400 whitespace-nowrap">/ ${c.maxPoints||10}</span>
+                  <span class="text-xs text-slate-500 whitespace-nowrap">/ ${c.maxPoints||10}</span>
                 </div>`;
               }).join('')}
               <div class="border-t border-slate-100 pt-1.5 flex items-center justify-between">
                 <span class="text-xs font-semibold text-slate-600">Total Score</span>
                 <div class="flex items-baseline gap-1">
                   <span id="mkv_rubric_total" class="text-2xl font-extrabold text-brand-700">${graded ? sub.grade : '—'}</span>
-                  <span class="text-xs text-slate-400">/ 100</span>
+                  <span class="text-xs text-slate-500">/ 100</span>
                 </div>
               </div>
             </div>
@@ -1178,7 +1178,7 @@ function tch_openMarkingView(assignmentId, studentId) {
             <div class="flex items-center justify-between mb-1.5">
               <label class="input-label !mb-0">Inline Comments</label>
               ${hasImage
-                ? `<span class="text-xs text-slate-400">Click image to pin</span>`
+                ? `<span class="text-xs text-slate-500">Click image to pin</span>`
                 : `<button class="btn btn-secondary !py-0.5 !px-2 text-xs" onclick="mkvAddDocComment()">${icon('plus','w-3 h-3')} Add</button>`}
             </div>
             <div id="mkv_comments_list" class="space-y-2 max-h-44 overflow-y-auto scroll-area"></div>
@@ -1567,7 +1567,7 @@ function rubricRenderCriteria() {
     <div class="flex items-center gap-2">
       <input class="input flex-1 !py-1.5 text-sm" placeholder="Criterion (e.g. Accuracy, Presentation)" value="${c.criterion.replace(/"/g,'&quot;')}" oninput="_asnRubric.find(r=>r.id==='${c.id}').criterion=this.value" />
       <input type="number" class="input w-20 !py-1.5 text-sm text-center" min="1" max="100" value="${c.maxPoints}" oninput="_asnRubric.find(r=>r.id==='${c.id}').maxPoints=+this.value||10" />
-      <span class="text-xs text-slate-400 whitespace-nowrap">pts</span>
+      <span class="text-xs text-slate-500 whitespace-nowrap">pts</span>
       <button onclick="rubricRemoveCriterion('${c.id}')" class="text-rose-400 hover:text-rose-600 p-1 flex-shrink-0">✕</button>
     </div>
   `).join('');
@@ -1603,11 +1603,11 @@ function createAssignmentModal(editingId) {
         <div><label class="input-label" for="as_due">Due Date</label><input id="as_due" type="date" class="input" value="${existing ? existing.dueDate : daysAhead(7)}" /></div>
         <div>
           <div class="flex items-center justify-between mb-2">
-            <label class="input-label !mb-0">Rubric Criteria <span class="text-slate-400 font-normal text-xs">(optional)</span></label>
+            <label class="input-label !mb-0">Rubric Criteria <span class="text-slate-500 font-normal text-xs">(optional)</span></label>
             <button type="button" class="btn btn-secondary !py-1 !px-2.5 text-xs" onclick="rubricAddCriterion()">${icon('plus','w-3 h-3')} Add Criterion</button>
           </div>
           <div id="rubric_criteria" class="space-y-2 mb-2"></div>
-          <div id="rubric_empty" class="text-xs text-slate-400 text-center py-2.5 border border-dashed border-slate-200 rounded-xl">Leave empty to grade on a 0–100 score</div>
+          <div id="rubric_empty" class="text-xs text-slate-500 text-center py-2.5 border border-dashed border-slate-200 rounded-xl">Leave empty to grade on a 0–100 score</div>
         </div>
         <div class="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center text-sm text-slate-500">
           ${icon('paperclip','w-4 h-4 inline mr-1')} Attach files (simulated)
@@ -1694,7 +1694,7 @@ function view_tch_lessons(params) {
                   ${schemeBadge}
                 </div>
                 <div class="flex items-center gap-1">
-                  <span class="text-xs text-slate-400">${fdate(l.createdAt, { short: true })}</span>
+                  <span class="text-xs text-slate-500">${fdate(l.createdAt, { short: true })}</span>
                   <button class="btn btn-ghost !p-1.5" onclick="editLessonModal('${l.id}')" aria-label="Edit lesson plan" title="Edit lesson plan">${icon('edit','w-3.5 h-3.5')}</button>
                 </div>
               </div>`;
@@ -1760,7 +1760,7 @@ function view_tch_lessons(params) {
                   </a>` : ''}
                 </div>
                 <div class="text-right flex-shrink-0">
-                  <div class="text-xs text-slate-400">${fdate(m.createdAt, { short: true })}${m.updatedAt ? ' · edited' : ''}</div>
+                  <div class="text-xs text-slate-500">${fdate(m.createdAt, { short: true })}${m.updatedAt ? ' · edited' : ''}</div>
                   ${classStudents.length ? `<div class="mt-1 text-xs font-semibold ${readViews.length >= classStudents.length ? 'text-emerald-600' : 'text-amber-600'}">${readViews.length}/${classStudents.length} read</div>` : ''}
                   <div class="flex gap-1 justify-end mt-2">
                     <button class="btn btn-ghost !p-1.5" onclick="tch_editNoteModal('${m.id}')" aria-label="Edit note" title="Edit note">${icon('edit','w-3.5 h-3.5')}</button>
@@ -1801,7 +1801,7 @@ function view_tch_lessons(params) {
                 <span class="badge badge-neutral text-xs">${sub ? sub.name : '—'}</span>
               </div>
               <h4 class="font-bold text-slate-900 text-sm leading-tight">${m.title}</h4>
-              <div class="text-xs text-slate-400 mt-1">${fdate(m.createdAt, { short: true })}</div>
+              <div class="text-xs text-slate-500 mt-1">${fdate(m.createdAt, { short: true })}</div>
               <div class="flex gap-2 mt-3">
                 <button class="btn btn-secondary flex-1 text-xs py-1.5" onclick="tch_playVideo('${m.id}')">${icon('classes','w-3.5 h-3.5')} Preview</button>
                 <button class="btn btn-secondary text-xs py-1.5 px-2 text-red-600" onclick="tch_deleteVideo('${m.id}')">${icon('trash','w-3.5 h-3.5')}</button>
@@ -1847,7 +1847,7 @@ function tch_postNoteModal() {
         <label class="input-label" for="cn_fileInput">Attach File (PDF / Image — optional, max 5MB)</label>
         <input type="file" id="cn_fileInput" accept="application/pdf,image/*" class="hidden" onchange="onNoteFilePick(event)">
         <div class="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('cn_fileInput').click()">
-          ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}<div class="text-xs text-slate-500">Click to attach a PDF or image</div>
+          ${icon('upload','w-5 h-5 mx-auto text-slate-500 mb-1')}<div class="text-xs text-slate-500">Click to attach a PDF or image</div>
         </div>
         <div id="cn_filePreview" class="mt-2"></div>
       </div>
@@ -1919,7 +1919,7 @@ function tch_editNoteModal(noteId) {
         </div>
         <div><label class="input-label" for="en_content">Note Content</label>
           <textarea id="en_content" rows="8" class="input">${m.content || ''}</textarea>
-          <p class="text-xs text-slate-400 mt-1">You can paste content copied from Word — text structure is preserved.</p>
+          <p class="text-xs text-slate-500 mt-1">You can paste content copied from Word — text structure is preserved.</p>
         </div>
         <div><label class="input-label" for="en_desc">Description / Summary</label>
           <input id="en_desc" class="input" value="${m.description || ''}"></div>
@@ -2202,7 +2202,7 @@ function tch_renderSchemeTab(tabBar) {
         <td class="px-3 py-2 text-xs font-bold text-slate-500 w-14">Wk ${w.week}</td>
         <td class="px-3 py-2">
           <div class="text-sm font-semibold text-slate-900">${w.topic}</div>
-          ${w.subtopics && w.subtopics.length ? `<div class="text-xs text-slate-400 mt-0.5">${w.subtopics.slice(0,2).join(' · ')}${w.subtopics.length > 2 ? ' …' : ''}</div>` : ''}
+          ${w.subtopics && w.subtopics.length ? `<div class="text-xs text-slate-500 mt-0.5">${w.subtopics.slice(0,2).join(' · ')}${w.subtopics.length > 2 ? ' …' : ''}</div>` : ''}
         </td>
         <td class="px-3 py-2 text-xs text-slate-500 hidden sm:table-cell">${w.duration || '—'}</td>
         <td class="px-3 py-2 text-center">
@@ -2221,7 +2221,7 @@ function tch_renderSchemeTab(tabBar) {
     return `<div class="card overflow-hidden mb-5">
       <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
         <div>
-          <div class="font-bold text-slate-900">${sub ? sub.name : '—'} <span class="text-slate-400 font-normal">·</span> ${cls ? cls.name : '—'}</div>
+          <div class="font-bold text-slate-900">${sub ? sub.name : '—'} <span class="text-slate-500 font-normal">·</span> ${cls ? cls.name : '—'}</div>
           <div class="text-xs text-slate-500">${sc.term} · ${total} weeks · ${covered} covered</div>
         </div>
         <div class="flex items-center gap-3">
@@ -2233,7 +2233,7 @@ function tch_renderSchemeTab(tabBar) {
         </div>
       </div>
       <table class="w-full text-sm">
-        <th scope="col"ead><tr class="bg-slate-50 text-xs uppercase text-slate-400 border-b border-slate-100">
+        <th scope="col"ead><tr class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-100">
           <th scope="col" class="px-3 py-2 text-left w-14">Week</th>
           <th scope="col" class="px-3 py-2 text-left">Topic</th>
           <th scope="col" class="px-3 py-2 text-left hidden sm:table-cell">Duration</th>
@@ -2343,7 +2343,7 @@ function createLessonModal() {
           <label class="input-label" for="lp_fileInput">Attach Lesson Plan File (PDF / Word / Image — optional)</label>
           <input type="file" id="lp_fileInput" accept="application/pdf,.doc,.docx,image/*" class="hidden" onchange="onLessonFilePick(event)" />
           <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('lp_fileInput').click()">
-            ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}
+            ${icon('upload','w-5 h-5 mx-auto text-slate-500 mb-1')}
             <div class="text-xs text-slate-500">Click to upload — your prepared lesson plan</div>
           </div>
           <div id="lp_filePreview" class="mt-2"></div>
@@ -2449,10 +2449,10 @@ function editLessonModal(planId) {
           <label class="input-label" for="lp_fileInput">Attach Lesson Plan File (PDF / Word / Image — optional)</label>
           <input type="file" id="lp_fileInput" accept="application/pdf,.doc,.docx,image/*" class="hidden" onchange="onLessonFilePick(event)" />
           <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 text-center hover:border-brand-400 cursor-pointer" onclick="document.getElementById('lp_fileInput').click()">
-            ${icon('upload','w-5 h-5 mx-auto text-slate-400 mb-1')}
+            ${icon('upload','w-5 h-5 mx-auto text-slate-500 mb-1')}
             <div class="text-xs text-slate-500">${plan.file ? `Current: ${plan.file.name} — click to replace` : 'Click to upload — your prepared lesson plan'}</div>
           </div>
-          <div id="lp_filePreview" class="mt-2">${plan.file ? `<div class="inline-flex items-center gap-2 text-xs text-slate-600 bg-slate-100 rounded-lg px-3 py-1.5">${icon('paperclip','w-3.5 h-3.5')} ${plan.file.name} <span class="text-slate-400">${plan.file.size}</span></div>` : ''}</div>
+          <div id="lp_filePreview" class="mt-2">${plan.file ? `<div class="inline-flex items-center gap-2 text-xs text-slate-600 bg-slate-100 rounded-lg px-3 py-1.5">${icon('paperclip','w-3.5 h-3.5')} ${plan.file.name} <span class="text-slate-500">${plan.file.size}</span></div>` : ''}</div>
         </div>
       </div>
     `,
@@ -2712,12 +2712,12 @@ function renderCbtBuilder() {
             <h4 class="font-bold text-slate-900">Questions (${d.questions.length})</h4>
             <div class="text-xs text-slate-500">Total marks: ${d.questions.reduce((s, q) => s + q.marks, 0)}</div>
           </div>
-          ${d.questions.length === 0 ? `<p class="text-sm text-slate-400 mb-3">No questions yet. Add objective or theory questions below.</p>` : `
+          ${d.questions.length === 0 ? `<p class="text-sm text-slate-500 mb-3">No questions yet. Add objective or theory questions below.</p>` : `
             <div class="space-y-2 mb-3">
               ${d.questions.map((q, i) => `<div class="bg-slate-50 rounded-xl p-3">
                 <div class="flex items-start justify-between gap-2">
                   <div class="flex-1 min-w-0">
-                    <div class="text-xs text-slate-400 mb-0.5">${i + 1}. ${q.type === 'objective' ? 'Objective' : 'Theory'} · ${q.marks} mark(s)</div>
+                    <div class="text-xs text-slate-500 mb-0.5">${i + 1}. ${q.type === 'objective' ? 'Objective' : 'Theory'} · ${q.marks} mark(s)</div>
                     <div class="font-semibold text-sm">${q.text}</div>
                     ${q.type === 'objective' ? `<div class="text-xs text-slate-500 mt-1">${q.options.map((o, oi) => `${oi === q.answer ? '✓ ' : ''}${o}`).join(' · ')}</div>` : ''}
                   </div>
@@ -2741,7 +2741,7 @@ function renderCbtBuilder() {
                 <input type="radio" name="nq_correct" value="${oi}" ${oi === 0 ? 'checked' : ''} />
                 <input id="nq_opt${oi}" class="input text-sm" placeholder="Option ${oi + 1}" />
               </div>`).join('')}
-              <div class="text-xs text-slate-400">Select the radio next to the correct option.</div>
+              <div class="text-xs text-slate-500">Select the radio next to the correct option.</div>
             </div>
             <button class="btn btn-secondary w-full text-sm" onclick="addCbtQuestion()">${icon('plus','w-4 h-4')} Add Question</button>
           </div>
@@ -2933,8 +2933,8 @@ function view_tch_appraisal() {
                 { label: 'Acknowledged', done: !!apr.ackedAt, active: apr.status === 'ack_pending' }
               ].map((step, i, arr) => `<div class="flex items-center flex-shrink-0">
                 <div class="flex flex-col items-center">
-                  <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold ${step.done ? 'bg-brand-600 text-white' : step.active ? 'bg-amber-400 text-white animate-pulse' : 'bg-slate-100 text-slate-400'}">${step.done ? '✓' : i+1}</div>
-                  <div class="text-[10px] mt-0.5 w-16 text-center ${step.active ? 'text-amber-700 font-semibold' : step.done ? 'text-brand-600' : 'text-slate-400'}">${step.label}</div>
+                  <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold ${step.done ? 'bg-brand-600 text-white' : step.active ? 'bg-amber-400 text-white animate-pulse' : 'bg-slate-100 text-slate-500'}">${step.done ? '✓' : i+1}</div>
+                  <div class="text-[10px] mt-0.5 w-16 text-center ${step.active ? 'text-amber-700 font-semibold' : step.done ? 'text-brand-600' : 'text-slate-500'}">${step.label}</div>
                 </div>
                 ${i < arr.length - 1 ? `<div class="w-6 h-0.5 ${step.done ? 'bg-brand-400' : 'bg-slate-200'} mb-4 flex-shrink-0"></div>` : ''}
               </div>`).join('')}
@@ -3005,7 +3005,7 @@ function tch_selfAssessmentModal(aprId) {
         ${APR_METRICS.map(m => `<div>
           <div class="flex items-center justify-between mb-1">
             <label class="input-label !mb-0 font-semibold">${m.label}</label>
-            <span class="text-xs text-slate-400">${m.desc}</span>
+            <span class="text-xs text-slate-500">${m.desc}</span>
           </div>
           <div class="flex items-center gap-3">
             <input id="self_${m.key}" type="range" min="0" max="100" value="75" class="flex-1 accent-brand-600" oninput="tch_updateSelfTotal()" />
@@ -3016,7 +3016,7 @@ function tch_selfAssessmentModal(aprId) {
           <span class="font-semibold text-brand-800">Your Overall Score</span>
           <span class="text-xl font-extrabold text-brand-700" id="self_overall">75%</span>
         </div>
-        <div><label class="input-label" for="self_comment">Your Comment <span class="text-slate-400 font-normal">(achievements, challenges, goals)</span></label>
+        <div><label class="input-label" for="self_comment">Your Comment <span class="text-slate-500 font-normal">(achievements, challenges, goals)</span></label>
           <textarea id="self_comment" rows="4" class="input" placeholder="What went well this term? What are your development goals?"></textarea>
         </div>
       </div>
@@ -3072,7 +3072,7 @@ function tch_viewSelfAssessment(aprId) {
           <span class="text-xl font-extrabold text-brand-700">${overall}%</span>
         </div>
         <div class="bg-slate-50 rounded-xl p-3"><div class="text-xs font-semibold text-slate-500 mb-1">Your Comment</div><div class="text-sm text-slate-700">${apr.selfComment}</div></div>
-        <div class="text-xs text-slate-400 text-center">Submitted ${fdate(apr.selfSubmittedAt, { time: true })}</div>
+        <div class="text-xs text-slate-500 text-center">Submitted ${fdate(apr.selfSubmittedAt, { time: true })}</div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
@@ -3103,7 +3103,7 @@ function tch_acknowledgeModal(aprId) {
           <div class="text-xs mt-1">${apr.outcome.note}</div>
         </div>` : ''}
         ${apr.principalComment ? `<div class="border-l-4 border-brand-400 pl-3 py-1"><div class="text-xs font-semibold text-slate-500 mb-0.5">Principal's Comment</div><div class="text-sm text-slate-700">${apr.principalComment}</div></div>` : ''}
-        <div><label class="input-label" for="ack_response">Your Response <span class="text-slate-400 font-normal">(optional)</span></label>
+        <div><label class="input-label" for="ack_response">Your Response <span class="text-slate-500 font-normal">(optional)</span></label>
           <textarea id="ack_response" rows="3" class="input" placeholder="Any comments, queries or concerns about this appraisal…"></textarea>
         </div>
         <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
@@ -3181,13 +3181,13 @@ function view_tch_profile() {
           <div class="font-bold text-slate-900 text-xl mt-3">${t.name}</div>
           <div class="text-sm text-slate-500 mt-0.5">${t.role || 'Teacher'}</div>
           ${t.department ? `<span class="badge badge-info mt-2">${t.department}</span>` : ''}
-          ${t.staffId ? `<div class="text-xs text-slate-400 mt-2">Staff ID: <strong>${t.staffId}</strong></div>` : ''}
+          ${t.staffId ? `<div class="text-xs text-slate-500 mt-2">Staff ID: <strong>${t.staffId}</strong></div>` : ''}
         </div>
         <div class="card p-5 space-y-2 text-sm">
           <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wide mb-3">Contact</h4>
-          <div class="flex items-center gap-2 text-slate-700">${icon('phone','w-4 h-4 text-slate-400')} ${t.phone || '—'}</div>
-          <div class="flex items-center gap-2 text-slate-700">${icon('edit','w-4 h-4 text-slate-400')} ${t.email || '—'}</div>
-          ${t.address ? `<div class="flex items-start gap-2 text-slate-700">${icon('package','w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0')} <span>${t.address}</span></div>` : ''}
+          <div class="flex items-center gap-2 text-slate-700">${icon('phone','w-4 h-4 text-slate-500')} ${t.phone || '—'}</div>
+          <div class="flex items-center gap-2 text-slate-700">${icon('edit','w-4 h-4 text-slate-500')} ${t.email || '—'}</div>
+          ${t.address ? `<div class="flex items-start gap-2 text-slate-700">${icon('package','w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0')} <span>${t.address}</span></div>` : ''}
         </div>
       </div>
 
@@ -3201,7 +3201,7 @@ function view_tch_profile() {
 
         <div class="card p-5">
           <h4 class="font-bold text-slate-900 mb-3">Teaching Assignments</h4>
-          ${classes.length === 0 ? `<p class="text-sm text-slate-400">No classes assigned.</p>` : `
+          ${classes.length === 0 ? `<p class="text-sm text-slate-500">No classes assigned.</p>` : `
             <div class="space-y-2">
               ${classes.map(c => {
                 const students = COMPUTE.studentsByClass(c.id);
@@ -3231,7 +3231,7 @@ function view_tch_profile() {
         <div class="card overflow-hidden">
           <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
             <h4 class="font-bold text-slate-900">Recent Attendance</h4>
-            <span class="text-xs text-slate-400">Last ${Math.min(attRecs.length, 10)} records</span>
+            <span class="text-xs text-slate-500">Last ${Math.min(attRecs.length, 10)} records</span>
           </div>
           <table class="tbl">
             <th scope="col"ead><tr><th scope="col">Date</th><th scope="col" class="text-center">Status</th><th scope="col">Note</th></tr></thead>

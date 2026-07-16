@@ -287,8 +287,8 @@ const APP = {
                   ${unread > 0 ? `<span class="absolute top-0.5 right-0.5 w-2 h-2 bg-rose-500 rounded-full"></span>` : ''}
                 </button>`;
                 })()}
-                <button class="btn btn-ghost !p-2" onclick="toggleOffline()" aria-label="Toggle offline mode" title="Toggle offline mode">
-                  ${icon(isOffline() ? 'wifi_off' : 'check', 'w-5 h-5')}
+                <button class="btn btn-ghost !p-2 ${isOffline() ? 'text-rose-600' : 'text-emerald-600'}" onclick="toggleOffline()" aria-label="${isOffline() ? 'Offline mode — tap to go online' : 'Online — tap to go offline'}" title="${isOffline() ? 'Offline mode — tap to go online' : 'Online — tap to go offline'}">
+                  ${icon(isOffline() ? 'wifi_off' : 'wifi', 'w-5 h-5')}
                 </button>
                 <button onclick="showProfile()" class="flex items-center gap-2 hover:bg-slate-100 rounded-xl pl-1 pr-2 py-1 transition">
                   ${avatar(user.name, 'sm')}
@@ -342,6 +342,7 @@ const APP = {
       window.afterRender = null;
     }
     initDatePickers();
+    animateViewIn();
   },
 
   /* ---------- View dispatcher ---------- */
@@ -396,7 +397,7 @@ function showNotifications() {
               <div class="flex-1 min-w-0">
                 <div class="font-semibold text-sm text-slate-900">${n.title}</div>
                 <div class="text-sm text-slate-600">${n.body}</div>
-                <div class="text-xs text-slate-400 mt-1 flex items-center gap-2">
+                <div class="text-xs text-slate-500 mt-1 flex items-center gap-2">
                   <span>${fdate(n.timestamp, { relative: true })}</span>
                   ${n.link && n.link.view ? `<span class="text-brand-700 font-semibold">→ Open</span>` : ''}
                 </div>
@@ -466,7 +467,7 @@ function showLoginSessions() {
       <div class="flex-1 min-w-0">
         <div class="font-semibold text-sm">${s.device}${isCurrent ? ' <span class="badge badge-success ml-1">This device</span>' : ''}</div>
         <div class="text-xs text-slate-500 mt-0.5">${s.location} · IP ${s.ip}</div>
-        <div class="text-xs text-slate-400 mt-1">Signed in ${fdate(s.loggedInAt, { relative: true })} ${s.twoFA ? '· <span class="text-emerald-700">2FA verified</span>' : '· <span class="text-amber-700">No 2FA</span>'}</div>
+        <div class="text-xs text-slate-500 mt-1">Signed in ${fdate(s.loggedInAt, { relative: true })} ${s.twoFA ? '· <span class="text-emerald-700">2FA verified</span>' : '· <span class="text-amber-700">No 2FA</span>'}</div>
       </div>
       ${!isCurrent ? `<button class="btn btn-ghost !p-1.5 text-rose-600" aria-label="Revoke this session" title="Revoke this session" onclick="revokeSession('${s.id}')">${icon('x','w-4 h-4')}</button>` : ''}
     </div>
@@ -589,7 +590,7 @@ function openGlobalSearch() {
     size: 'lg',
     body: `
       <div class="relative">
-        <span class="absolute left-3 top-3 text-slate-400">${icon('search','w-5 h-5')}</span>
+        <span class="absolute left-3 top-3 text-slate-500">${icon('search','w-5 h-5')}</span>
         <input id="globalSearchInput" class="input pl-11 text-base" placeholder="Search students, staff, classes, invoices, loans…" autocomplete="off" />
       </div>
       <div id="globalSearchResults" class="mt-3 max-h-96 overflow-y-auto"></div>
@@ -610,7 +611,7 @@ function runGlobalSearch() {
   const q = (document.getElementById('globalSearchInput').value || '').trim().toLowerCase();
   const out = document.getElementById('globalSearchResults');
   if (!out) return;
-  if (q.length < 1) { out.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Start typing to search across the platform.</p>'; return; }
+  if (q.length < 1) { out.innerHTML = '<p class="text-sm text-slate-500 text-center py-8">Start typing to search across the platform.</p>'; return; }
 
   const matches = (text) => (text || '').toLowerCase().includes(q);
   const sections = [];
@@ -730,6 +731,35 @@ function caspaaInstallApp() {
     if (choice && choice.outcome === 'accepted') toast('Installing CASPAA…', 'success');
     window.__caspaaInstallPrompt = null;
   });
+}
+
+// Staggers the cards of a newly-opened view in.
+//
+// Keyed on the view, NOT on every render: APP.render() also runs on each
+// keystroke in a search box, and replaying the animation under the cursor
+// while someone types would be actively hostile. Same view -> no replay.
+//
+// Only the first rows are staggered; anything below the fold has finished
+// animating long before it is scrolled to, so the delay buys nothing and just
+// risks a visible pop.
+let _animatedView = null;
+function animateViewIn() {
+  try {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (APP.view === _animatedView) return;
+    _animatedView = APP.view;
+    const root = document.getElementById('mainArea');
+    if (!root) return;
+    const items = root.querySelectorAll(':scope > .rise-scope, .stat, .card');
+    let i = 0;
+    items.forEach((el) => {
+      if (i > 9) return;
+      if (el.closest('.modal-panel')) return;
+      el.classList.add('rise-in');
+      el.style.animationDelay = (i * 45) + 'ms';
+      i += 1;
+    });
+  } catch (e) { /* motion is decorative — never let it break a render */ }
 }
 
 function toggleOffline() {

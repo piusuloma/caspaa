@@ -388,3 +388,22 @@ span.flatpickr-weekday { color: var(--muted); }
   animation: tw-blink 1s step-end infinite;
 }
 @keyframes tw-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* ============================================================
+   DASHBOARD ENTRANCE
+   Cards and stat tiles rise in when a view opens. Gated on
+   prefers-reduced-motion, and applied only on a VIEW CHANGE — APP.render()
+   also fires on every keystroke in a search box, and re-animating the results
+   under someone's cursor as they type would be worse than no motion at all.
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  .rise-in {
+    /* `both` holds opacity:0 through the stagger delay, then the animation
+       itself lands on opacity:1 — so a card can never be left invisible. */
+    animation: rise-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+}

@@ -714,8 +714,8 @@ function seedDatabase() {
     { id: 'role_principal',  schoolId, name: 'Principal',      description: 'Academic + administrative oversight, no finance.', system: true,  permissions: ['students','staff','academic','attendance','results','discipline','admissions','alumni','sickbay','communications'], color: '#00b386' },
     { id: 'role_vp',         schoolId, name: 'Vice Principal', description: 'Same as Principal, secondary signatory.',          system: false, permissions: ['students','staff','academic','attendance','results','discipline','admissions','sickbay','communications'], color: '#00b386' },
     { id: 'role_bursar',     schoolId, name: 'Bursar',         description: 'Fees, invoices, financial reports.',                system: true,  permissions: ['fees','invoices','payments','reports','reconciliation'], color: '#f59e0b' },
-    { id: 'role_hod',        schoolId, name: 'Head of Dept.',  description: 'Manage subject curriculum + teachers within a department.', system: false, permissions: ['curriculum','results','attendance','communications'], color: '#10b981' },
-    { id: 'role_teacher',    schoolId, name: 'Teacher',        description: 'Mark attendance, enter results, post assignments.', system: true,  permissions: ['attendance','results','assignments','lesson_plans','messaging'],     color: '#059669' },
+    { id: 'role_hod',        schoolId, name: 'Head of Dept.',  description: 'Manage subject curriculum + teachers within a department.', system: false, permissions: ['curriculum','results','attendance','communications'], color: '#00c08f' },
+    { id: 'role_teacher',    schoolId, name: 'Teacher',        description: 'Mark attendance, enter results, post assignments.', system: true,  permissions: ['attendance','results','assignments','lesson_plans','messaging'],     color: '#00b386' },
     { id: 'role_form_t',     schoolId, name: 'Form Teacher',   description: 'Teacher + own-class daily attendance + discipline.', system: false, permissions: ['attendance','results','assignments','lesson_plans','messaging','discipline'], color: '#22c55e' },
     { id: 'role_librarian',  schoolId, name: 'Librarian',      description: 'Manage library catalog and loans.',                 system: false, permissions: ['library'],                                                color: '#a855f7' },
     { id: 'role_nurse',      schoolId, name: 'School Nurse',   description: 'Sick bay records and parent health notifications.', system: false, permissions: ['sickbay','communications'],                                color: '#ef4444' },
@@ -1364,7 +1364,28 @@ const DB = {
     this.save();
     return this._data;
   },
-  save() { localStorage.setItem(DB_KEY, JSON.stringify(this._data)); },
+  // Writes mutate the in-memory cache first, so a failed persist leaves the UI
+  // showing data that is already gone on reload. Never fail silently here.
+  save() {
+    try {
+      localStorage.setItem(DB_KEY, JSON.stringify(this._data));
+      this._saveFailed = false;
+      return true;
+    } catch (e) {
+      const quota = e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22);
+      console.error('DB.save failed', e);
+      // Only shout once per failure streak — a bulk import would otherwise spam.
+      if (!this._saveFailed) {
+        this._saveFailed = true;
+        const msg = quota
+          ? 'Storage is full — your last change was NOT saved. Export a backup and clear old data before continuing.'
+          : 'Your last change could not be saved to this device.';
+        if (typeof toast === 'function') toast(msg, 'danger');
+        else if (typeof alert === 'function') alert(msg);
+      }
+      return false;
+    }
+  },
   reset() { localStorage.removeItem(DB_KEY); this._data = null; this.load(); },
   get(table) { return (this.load()[table] || []).slice(); },
   set(table, rows) { this.load()[table] = rows; this.save(); },
@@ -1411,7 +1432,24 @@ const DB = {
 const COMPUTE = {
   studentsByClass(classId) { return DB.query('students', s => s.classId === classId && s.status === 'active'); },
   parentChildren(parentId) { return DB.query('students', s => s.parentId === parentId); },
-  studentInvoice(studentId) { return DB.query('invoices', i => i.studentId === studentId)[0]; },
+  studentInvoices(studentId) { return DB.query('invoices', i => i.studentId === studentId); },
+  // Was `...[0]` — the first invoice ever created for the student, in insertion order.
+  // A returning student whose Term 1 was settled read as "owing ₦0" while Term 2 went
+  // uncollected, and finance could not accept a payment against it at all.
+  // Prefer the current term; otherwise fall back to whatever they still owe.
+  studentInvoice(studentId, term) {
+    const all = this.studentInvoices(studentId);
+    if (!all.length) return undefined;
+    const wanted = term || DB.settings().currentTerm;
+    return all.find(i => i.term === wanted)
+        || all.filter(i => i.balance > 0).pop()
+        || all[all.length - 1];
+  },
+  // The invoice a payment should land on: oldest unsettled first, so money clears
+  // the longest-standing debt rather than whichever row happened to be created first.
+  studentOwingInvoice(studentId) {
+    return this.studentInvoices(studentId).filter(i => i.balance > 0)[0];
+  },
   studentResults(studentId) { return DB.query('results', r => r.studentId === studentId); },
   studentAttendance(studentId) { return DB.query('attendance', a => a.studentId === studentId); },
   attendanceRate(studentId) {
@@ -1440,6 +1478,24 @@ const COMPUTE = {
   },
   outstandingFees(schoolId) {
     return DB.query('invoices', i => i.schoolId === schoolId).reduce((s, i) => s + i.balance, 0);
+  },
+  // The one definition of fee collection. Previously computed four different ways:
+  // two denominators (Σtotal vs Σpaid+Σbalance), two opposite empty-school fallbacks
+  // (0% and 100%), and one unbounded — which printed "192%" on Unit Economics while
+  // the dashboard printed 100% from the same data.
+  // Standard AR: collected ÷ billed, clamped, and 0 for a school that has billed nothing.
+  feeTotals(schoolId) {
+    const invoices = DB.query('invoices', i => i.schoolId === schoolId);
+    const billed = invoices.reduce((s, i) => s + (i.total || 0), 0);
+    const collected = invoices.reduce((s, i) => s + (i.paid || 0), 0);
+    const outstanding = invoices.reduce((s, i) => s + (i.balance || 0), 0);
+    return { invoices, billed, collected, outstanding, rate: this.collectionRate(billed, collected) };
+  },
+  collectionRate(billed, collected) {
+    if (!billed || billed <= 0) return 0;              // no bills => nothing to collect, not 100%
+    const pct = Math.round((collected / billed) * 100);
+    if (!Number.isFinite(pct)) return 0;               // guards 0/0 -> NaN reaching the gauge
+    return Math.max(0, Math.min(100, pct));            // an overpayment must not read as 192%
   },
   // Credit scoring
   computeCreditScore(parentId) {

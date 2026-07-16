@@ -128,7 +128,7 @@ export default function ContactPage() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl bg-accent-600 hover:bg-accent-700 text-white font-bold text-sm shadow-lg mkt-btn"
+                  className="w-full py-3.5 rounded-xl bg-accent-800 hover:bg-accent-900 text-white font-bold text-sm shadow-lg mkt-btn"
                 >
                   Request my demo
                 </button>

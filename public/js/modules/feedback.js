@@ -18,7 +18,7 @@ function fb_questionInput(q, idx) {
           >☆</button>
         `).join('')}
         <input type="hidden" id="ans_${q.id}" value="" />
-        <span id="star_label_${q.id}" class="ml-2 text-sm text-slate-400"></span>
+        <span id="star_label_${q.id}" class="ml-2 text-sm text-slate-500"></span>
       </div>
     `;
   }
@@ -112,7 +112,7 @@ function view_par_feedback(params) {
                     <div class="flex-shrink-0 flex items-center gap-2">
                       ${myResponse
                         ? `<span class="badge badge-success">${icon('check', 'w-3 h-3')} Submitted</span>
-                           <span class="text-xs text-slate-400">${fdate(myResponse.submittedAt, { short: true })}</span>`
+                           <span class="text-xs text-slate-500">${fdate(myResponse.submittedAt, { short: true })}</span>`
                         : `<button class="btn btn-primary" onclick="par_openFeedbackForm('${form.id}')">
                              ${icon('chat', 'w-4 h-4')} Fill Out
                            </button>`
@@ -505,7 +505,7 @@ function adm_viewFeedbackResults(formId) {
               <div class="h-full bg-rose-400 transition-all" style="width:${noPct}%"></div>
             </div>
           ` : ''}
-          <p class="text-xs text-slate-400 mt-1.5 text-right">${answered} answered</p>
+          <p class="text-xs text-slate-500 mt-1.5 text-right">${answered} answered</p>
         </div>
       `;
     }
@@ -515,16 +515,16 @@ function adm_viewFeedbackResults(formId) {
       <div class="p-4 bg-slate-50 rounded-xl">
         <div class="font-semibold text-sm text-slate-800 mb-3">${q.text}</div>
         ${vals.length === 0
-          ? `<p class="text-sm text-slate-400 italic">No responses yet.</p>`
+          ? `<p class="text-sm text-slate-500 italic">No responses yet.</p>`
           : `<div class="space-y-2 max-h-56 overflow-y-auto scroll-area">
               ${vals.map((v, i) => `
                 <div class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
-                  ${icon('chat', 'w-3.5 h-3.5 inline mr-1 text-slate-400')} ${v}
+                  ${icon('chat', 'w-3.5 h-3.5 inline mr-1 text-slate-500')} ${v}
                 </div>
               `).join('')}
             </div>`
         }
-        <p class="text-xs text-slate-400 mt-1.5 text-right">${vals.length} response${vals.length !== 1 ? 's' : ''}</p>
+        <p class="text-xs text-slate-500 mt-1.5 text-right">${vals.length} response${vals.length !== 1 ? 's' : ''}</p>
       </div>
     `;
   }).join('');

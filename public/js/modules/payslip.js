@@ -161,7 +161,7 @@ function pay_viewSlip(id) {
         </div>
 
         ${p.paidAt ? `
-          <p class="text-xs text-slate-400 text-right">Payment date: ${fdate(p.paidAt, { long: true })}</p>
+          <p class="text-xs text-slate-500 text-right">Payment date: ${fdate(p.paidAt, { long: true })}</p>
         ` : ''}
       </div>
     `,

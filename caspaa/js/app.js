@@ -187,6 +187,16 @@ const APP = {
     const user = AUTH.current;
     const nav = this.navFor(user.role);
 
+    // render() replaces the whole shell via innerHTML, which destroys the element the user
+    // is typing into — every search box lost focus after ONE character, and callers worked
+    // around it locally (badly, forcing the caret to the end). Remember what was focused
+    // and where the caret was, then put it back after the rebuild. Fixes all of them at
+    // once and keeps mid-string editing intact.
+    const active = document.activeElement;
+    const restore = active && active.id && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)
+      ? { id: active.id, start: active.selectionStart, end: active.selectionEnd, scroll: active.scrollLeft }
+      : null;
+
     document.getElementById('app').innerHTML = `
       <div class="min-h-screen flex bg-slate-50">
 
@@ -237,7 +247,11 @@ const APP = {
         ` : ''}
 
         <!-- Main panel -->
-        <div class="flex-1 lg:ml-64 flex flex-col min-h-screen">
+        <!-- min-w-0: a flex item defaults to min-width:auto, so it refuses to shrink below
+             its content's min-content width and pushes the whole page into horizontal
+             scroll (sidebar and header drift with it). This lets wide content scroll
+             inside its own container instead of dragging the layout. -->
+        <div class="flex-1 min-w-0 lg:ml-64 flex flex-col min-h-screen">
 
           ${isImpersonating() ? `
             <div class="bg-amber-100 px-4 py-2 flex items-center justify-between gap-3 text-sm">
@@ -253,7 +267,7 @@ const APP = {
           <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
             <div class="flex items-center justify-between px-4 lg:px-6 h-14 gap-3">
               <div class="flex items-center gap-3 min-w-0">
-                <button class="lg:hidden btn btn-ghost !p-1.5" onclick="APP.sidebarOpen=true; APP.render()">${icon('menu')}</button>
+                <button class="lg:hidden btn btn-ghost !p-1.5" aria-label="Open navigation menu" onclick="APP.sidebarOpen=true; APP.render()">${icon('menu')}</button>
                 <h2 class="font-bold text-slate-900 text-base lg:text-lg truncate">${this.viewTitle()}</h2>
               </div>
               <button class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm text-slate-500 min-w-[160px] lg:min-w-[260px]" onclick="openGlobalSearch()">
@@ -262,13 +276,19 @@ const APP = {
                 <kbd class="hidden lg:inline text-xs bg-white border border-slate-300 rounded px-1.5 py-0.5 font-mono">/</kbd>
               </button>
               <div class="flex items-center gap-2">
-                <button class="sm:hidden btn btn-ghost !p-2" onclick="openGlobalSearch()" title="Search">${icon('search', 'w-5 h-5')}</button>
-                <button class="btn btn-ghost !p-2 relative" onclick="showNotifications()">
+                <button class="sm:hidden btn btn-ghost !p-2" onclick="openGlobalSearch()" aria-label="Search" title="Search">${icon('search', 'w-5 h-5')}</button>
+                ${(() => {
+                  // The unread count is signalled only by a red dot; put it in the
+                  // accessible name too so it isn't colour-only information.
+                  const unread = COMPUTE.unreadCount(user.id);
+                  return `<button class="btn btn-ghost !p-2 relative" onclick="showNotifications()"
+                    aria-label="Notifications${unread > 0 ? ` — ${unread} unread` : ''}" title="Notifications">
                   ${icon('bell', 'w-5 h-5')}
-                  ${COMPUTE.unreadCount(user.id) > 0 ? `<span class="absolute top-0.5 right-0.5 w-2 h-2 bg-rose-500 rounded-full"></span>` : ''}
-                </button>
-                <button class="btn btn-ghost !p-2" onclick="toggleOffline()" title="Toggle offline mode">
-                  ${icon(isOffline() ? 'wifi_off' : 'check', 'w-5 h-5')}
+                  ${unread > 0 ? `<span class="absolute top-0.5 right-0.5 w-2 h-2 bg-rose-500 rounded-full"></span>` : ''}
+                </button>`;
+                })()}
+                <button class="btn btn-ghost !p-2 ${isOffline() ? 'text-rose-600' : 'text-emerald-600'}" onclick="toggleOffline()" aria-label="${isOffline() ? 'Offline mode — tap to go online' : 'Online — tap to go offline'}" title="${isOffline() ? 'Offline mode — tap to go online' : 'Online — tap to go offline'}">
+                  ${icon(isOffline() ? 'wifi_off' : 'wifi', 'w-5 h-5')}
                 </button>
                 <button onclick="showProfile()" class="flex items-center gap-2 hover:bg-slate-100 rounded-xl pl-1 pr-2 py-1 transition">
                   ${avatar(user.name, 'sm')}
@@ -303,12 +323,26 @@ const APP = {
       </div>
     `;
 
+    // Put the caret back where the user left it (see `restore` above).
+    if (restore) {
+      const el = document.getElementById(restore.id);
+      if (el && typeof el.focus === 'function') {
+        el.focus({ preventScroll: true });
+        // Only text-ish inputs expose selection; number/date/select throw on setSelectionRange.
+        if (restore.start != null && typeof el.setSelectionRange === 'function') {
+          try { el.setSelectionRange(restore.start, restore.end); } catch (e) { /* unsupported type */ }
+        }
+        if (restore.scroll) el.scrollLeft = restore.scroll;
+      }
+    }
+
     // Bind any post-render handlers from view code
     if (typeof window.afterRender === 'function') {
       try { window.afterRender(); } catch(e){ console.error(e); }
       window.afterRender = null;
     }
     initDatePickers();
+    animateViewIn();
   },
 
   /* ---------- View dispatcher ---------- */
@@ -363,7 +397,7 @@ function showNotifications() {
               <div class="flex-1 min-w-0">
                 <div class="font-semibold text-sm text-slate-900">${n.title}</div>
                 <div class="text-sm text-slate-600">${n.body}</div>
-                <div class="text-xs text-slate-400 mt-1 flex items-center gap-2">
+                <div class="text-xs text-slate-500 mt-1 flex items-center gap-2">
                   <span>${fdate(n.timestamp, { relative: true })}</span>
                   ${n.link && n.link.view ? `<span class="text-brand-700 font-semibold">→ Open</span>` : ''}
                 </div>
@@ -433,9 +467,9 @@ function showLoginSessions() {
       <div class="flex-1 min-w-0">
         <div class="font-semibold text-sm">${s.device}${isCurrent ? ' <span class="badge badge-success ml-1">This device</span>' : ''}</div>
         <div class="text-xs text-slate-500 mt-0.5">${s.location} · IP ${s.ip}</div>
-        <div class="text-xs text-slate-400 mt-1">Signed in ${fdate(s.loggedInAt, { relative: true })} ${s.twoFA ? '· <span class="text-emerald-700">2FA verified</span>' : '· <span class="text-amber-700">No 2FA</span>'}</div>
+        <div class="text-xs text-slate-500 mt-1">Signed in ${fdate(s.loggedInAt, { relative: true })} ${s.twoFA ? '· <span class="text-emerald-700">2FA verified</span>' : '· <span class="text-amber-700">No 2FA</span>'}</div>
       </div>
-      ${!isCurrent ? `<button class="btn btn-ghost !p-1.5 text-rose-600" title="Revoke this session" onclick="revokeSession('${s.id}')">${icon('x','w-4 h-4')}</button>` : ''}
+      ${!isCurrent ? `<button class="btn btn-ghost !p-1.5 text-rose-600" aria-label="Revoke this session" title="Revoke this session" onclick="revokeSession('${s.id}')">${icon('x','w-4 h-4')}</button>` : ''}
     </div>
   `;
 
@@ -509,7 +543,7 @@ function quickSwitchRole(accountId) {
 }
 
 function resetDemo() {
-  confirm('This will erase all changes you made and restore the demo to its original seeded state. Continue?', () => {
+  confirmDialog('This will erase all changes you made and restore the demo to its original seeded state. Continue?', () => {
     DB.reset();
     AUTH.logout();
     toast('Demo data has been reset', 'success');
@@ -556,7 +590,7 @@ function openGlobalSearch() {
     size: 'lg',
     body: `
       <div class="relative">
-        <span class="absolute left-3 top-3 text-slate-400">${icon('search','w-5 h-5')}</span>
+        <span class="absolute left-3 top-3 text-slate-500">${icon('search','w-5 h-5')}</span>
         <input id="globalSearchInput" class="input pl-11 text-base" placeholder="Search students, staff, classes, invoices, loans…" autocomplete="off" />
       </div>
       <div id="globalSearchResults" class="mt-3 max-h-96 overflow-y-auto"></div>
@@ -577,7 +611,7 @@ function runGlobalSearch() {
   const q = (document.getElementById('globalSearchInput').value || '').trim().toLowerCase();
   const out = document.getElementById('globalSearchResults');
   if (!out) return;
-  if (q.length < 1) { out.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Start typing to search across the platform.</p>'; return; }
+  if (q.length < 1) { out.innerHTML = '<p class="text-sm text-slate-500 text-center py-8">Start typing to search across the platform.</p>'; return; }
 
   const matches = (text) => (text || '').toLowerCase().includes(q);
   const sections = [];
@@ -697,6 +731,35 @@ function caspaaInstallApp() {
     if (choice && choice.outcome === 'accepted') toast('Installing CASPAA…', 'success');
     window.__caspaaInstallPrompt = null;
   });
+}
+
+// Staggers the cards of a newly-opened view in.
+//
+// Keyed on the view, NOT on every render: APP.render() also runs on each
+// keystroke in a search box, and replaying the animation under the cursor
+// while someone types would be actively hostile. Same view -> no replay.
+//
+// Only the first rows are staggered; anything below the fold has finished
+// animating long before it is scrolled to, so the delay buys nothing and just
+// risks a visible pop.
+let _animatedView = null;
+function animateViewIn() {
+  try {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (APP.view === _animatedView) return;
+    _animatedView = APP.view;
+    const root = document.getElementById('mainArea');
+    if (!root) return;
+    const items = root.querySelectorAll(':scope > .rise-scope, .stat, .card');
+    let i = 0;
+    items.forEach((el) => {
+      if (i > 9) return;
+      if (el.closest('.modal-panel')) return;
+      el.classList.add('rise-in');
+      el.style.animationDelay = (i * 45) + 'ms';
+      i += 1;
+    });
+  } catch (e) { /* motion is decorative — never let it break a render */ }
 }
 
 function toggleOffline() {

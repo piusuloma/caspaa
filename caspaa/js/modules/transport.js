@@ -9,7 +9,7 @@
 ────────────────────────────────────────────────────────────── */
 
 function view_adm_transport(params) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const tab = (params && params.tab) || APP.params.tab || 'routes';
 
   const routes      = DB.query('busRoutes',       r => r.schoolId === schoolId);
@@ -75,7 +75,7 @@ function adm_renderRoutesTab(routes, schoolId) {
 
   const chartRows = routes.map((r, i) => {
     const count = DB.query('busAssignments', a => a.routeId === r.id && a.schoolId === schoolId).length;
-    return { name: r.name, count, color: ['#fd7d71','#10b981','#f59e0b','#ef4444','#fd7d71','#ec4899','#00b386','#f97316'][i % 8] };
+    return { name: r.name, count, color: ['#0a2540','#00c08f','#f59e0b','#ef4444','#143a5c','#ec4899','#06b6d4','#f97316'][i % 8] };
   }).filter(d => d.count > 0);
 
   const totalAssigned = chartRows.reduce((s, d) => s + d.count, 0);
@@ -91,7 +91,7 @@ function adm_renderRoutesTab(routes, schoolId) {
               <div class="w-3 h-3 rounded-full flex-shrink-0" style="background:${d.color}"></div>
               <span class="text-sm flex-1">${d.name}</span>
               <span class="text-sm font-bold">${d.count}</span>
-              <span class="text-xs text-slate-400">${Math.round(d.count/totalAssigned*100)}%</span>
+              <span class="text-xs text-slate-500">${Math.round(d.count/totalAssigned*100)}%</span>
             </div>`).join('')}
         </div>
       </div>
@@ -121,36 +121,36 @@ function adm_renderRoutesTab(routes, schoolId) {
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       ${routes.map(route => {
         const driver = allStaff.find(s => s.id === route.driverStaffId);
-        const assignedCount = DB.query('busAssignments', a => a.routeId === route.id && a.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).length;
+        const assignedCount = DB.query('busAssignments', a => a.routeId === route.id && a.schoolId === currentSchoolId()).length;
         return `
           <div class="card p-5 flex flex-col gap-3">
             <div class="flex items-start justify-between gap-2">
               <div>
                 <h3 class="font-bold text-slate-900 text-base leading-tight">${route.name}</h3>
-                <div class="text-xs text-slate-400 mt-0.5">${route.vehiclePlate || 'No plate'} · ${route.area || 'House-to-house'}</div>
+                <div class="text-xs text-slate-500 mt-0.5">${route.vehiclePlate || 'No plate'} · ${route.area || 'House-to-house'}</div>
               </div>
               <div class="flex gap-1 flex-shrink-0">
-                <button class="btn btn-ghost !p-1.5" title="Edit route" onclick="adm_editRouteModal('${route.id}')">${icon('edit','w-4 h-4')}</button>
-                <button class="btn btn-ghost !p-1.5 text-rose-500 hover:bg-rose-50" title="Delete route" onclick="adm_deleteRoute('${route.id}')">${icon('trash','w-4 h-4')}</button>
+                <button class="btn btn-ghost !p-1.5" aria-label="Edit route" title="Edit route" onclick="adm_editRouteModal('${route.id}')">${icon('edit','w-4 h-4')}</button>
+                <button class="btn btn-ghost !p-1.5 text-rose-500 hover:bg-rose-50" aria-label="Delete route" title="Delete route" onclick="adm_deleteRoute('${route.id}')">${icon('trash','w-4 h-4')}</button>
               </div>
             </div>
             <div class="grid grid-cols-2 gap-2 text-xs">
               <div class="bg-slate-50 rounded-xl p-2.5">
-                <div class="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Driver</div>
-                <div class="font-semibold text-slate-800">${driver ? driver.name : '<span class="text-slate-400">Unassigned</span>'}</div>
+                <div class="text-slate-500 font-semibold uppercase tracking-wide mb-0.5">Driver</div>
+                <div class="font-semibold text-slate-800">${driver ? driver.name : '<span class="text-slate-500">Unassigned</span>'}</div>
               </div>
               <div class="bg-slate-50 rounded-xl p-2.5">
-                <div class="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Students</div>
+                <div class="text-slate-500 font-semibold uppercase tracking-wide mb-0.5">Students</div>
                 <div class="font-semibold ${route.capacity && assignedCount >= route.capacity ? 'text-rose-600' : 'text-slate-800'}">
                   ${assignedCount} / ${route.capacity || '?'}${route.capacity && assignedCount >= route.capacity ? ' <span class="text-xs font-bold text-rose-600 ml-1">FULL</span>' : ''}
                 </div>
               </div>
               <div class="bg-slate-50 rounded-xl p-2.5">
-                <div class="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Departure</div>
+                <div class="text-slate-500 font-semibold uppercase tracking-wide mb-0.5">Departure</div>
                 <div class="font-semibold text-slate-800">${route.departureTime || '—'}</div>
               </div>
               <div class="bg-slate-50 rounded-xl p-2.5">
-                <div class="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Return</div>
+                <div class="text-slate-500 font-semibold uppercase tracking-wide mb-0.5">Return</div>
                 <div class="font-semibold text-slate-800">${route.returnTime || '—'}</div>
               </div>
             </div>
@@ -182,7 +182,7 @@ function adm_renderAssignmentsTab(assignments, schoolId) {
           <h3 class="font-semibold text-slate-800">Assigned Students (${assignments.length})</h3>
         </div>
         <table class="tbl">
-          <thead><tr><th class="text-center">#</th><th>Student</th><th>Class</th><th>Route</th><th>Direction</th><th>Pickup Address</th><th class="text-right">Actions</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col" class="text-center">#</th><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Route</th><th scope="col">Direction</th><th scope="col">Pickup Address</th><th scope="col" class="text-right">Actions</th></tr></thead>
           <tbody>
             ${assignments.slice().sort((a,b) => (a.pickupOrder||999) - (b.pickupOrder||999)).map(a => {
               const student = DB.find('students', a.studentId);
@@ -199,8 +199,8 @@ function adm_renderAssignmentsTab(assignments, schoolId) {
                 <td><span class="text-sm text-slate-600">${dirLabel}</span></td>
                 <td class="text-sm text-slate-600 max-w-xs truncate">${addr}</td>
                 <td class="text-right whitespace-nowrap">
-                  <button class="btn btn-ghost !p-1.5 text-brand-600 hover:bg-brand-50" title="Edit pickup order/address" onclick="adm_editAssignmentModal('${a.id}')">${icon('edit','w-4 h-4')}</button>
-                  <button class="btn btn-ghost !p-1.5 text-rose-500 hover:bg-rose-50" title="Remove assignment" onclick="adm_removeAssignment('${a.id}')">${icon('trash','w-4 h-4')}</button>
+                  <button class="btn btn-ghost !p-1.5 text-brand-600 hover:bg-brand-50" aria-label="Edit pickup order/address" title="Edit pickup order/address" onclick="adm_editAssignmentModal('${a.id}')">${icon('edit','w-4 h-4')}</button>
+                  <button class="btn btn-ghost !p-1.5 text-rose-500 hover:bg-rose-50" aria-label="Remove assignment" title="Remove assignment" onclick="adm_removeAssignment('${a.id}')">${icon('trash','w-4 h-4')}</button>
                 </td>
               </tr>`;
             }).join('')}
@@ -210,7 +210,7 @@ function adm_renderAssignmentsTab(assignments, schoolId) {
     ` : ''}
 
     ${unassigned.length > 0 ? `
-      <div class="card p-4 bg-amber-50">
+      <div class="card p-5 bg-amber-50">
         <div class="flex items-center gap-2 mb-2">
           <div class="text-amber-700">${icon('bell','w-4 h-4')}</div>
           <h4 class="font-semibold text-amber-900">${unassigned.length} student${unassigned.length !== 1 ? 's' : ''} not registered for school bus</h4>
@@ -242,11 +242,11 @@ function adm_renderPickupsTab(pickups, schoolId) {
             ${pending.map(p => {
               const student = DB.find('students', p.studentId);
               return `
-                <div class="card p-4 border-l-4 border-amber-400 flex items-start justify-between gap-3 flex-wrap">
+                <div class="card p-5 border-l-4 border-amber-400 flex items-start justify-between gap-3 flex-wrap">
                   <div class="flex-1 min-w-0">
                     <div class="font-semibold text-slate-900">${p.name}</div>
                     <div class="text-sm text-slate-500">${p.relationship} · ${p.phone}</div>
-                    <div class="text-xs text-slate-400 mt-1">
+                    <div class="text-xs text-slate-500 mt-1">
                       For: <strong>${student ? student.name : '—'}</strong> · Submitted ${fdate(p.createdAt, { relative: true })}
                     </div>
                   </div>
@@ -260,7 +260,7 @@ function adm_renderPickupsTab(pickups, schoolId) {
           </div>
         </div>
       ` : `
-        <div class="card p-4 bg-emerald-50 flex items-center gap-3">
+        <div class="card p-5 bg-emerald-50 flex items-center gap-3">
           <div class="text-emerald-600">${icon('check','w-5 h-5')}</div>
           <p class="text-sm text-emerald-800 font-medium">No pending pickup authorisation requests.</p>
         </div>
@@ -271,7 +271,7 @@ function adm_renderPickupsTab(pickups, schoolId) {
           <h3 class="font-bold text-slate-700 mb-3">Approved Pickup Persons (${approved.length})</h3>
           <div class="card overflow-hidden">
             <table class="tbl">
-              <thead><tr><th>Name</th><th>Relationship</th><th>Phone</th><th>Student</th><th>Approved</th><th class="text-right">Actions</th></tr></thead>
+              <th scope="col"ead><tr><th scope="col">Name</th><th scope="col">Relationship</th><th scope="col">Phone</th><th scope="col">Student</th><th scope="col">Approved</th><th scope="col" class="text-right">Actions</th></tr></thead>
               <tbody>
                 ${approved.map(p => {
                   const student = DB.find('students', p.studentId);
@@ -280,9 +280,9 @@ function adm_renderPickupsTab(pickups, schoolId) {
                     <td class="text-sm text-slate-500">${p.relationship}</td>
                     <td class="text-sm font-mono">${p.phone}</td>
                     <td>${student ? student.name : '—'}</td>
-                    <td class="text-xs text-slate-400">${fdate(p.approvedAt, { short: true })}</td>
+                    <td class="text-xs text-slate-500">${fdate(p.approvedAt, { short: true })}</td>
                     <td class="text-right">
-                      <button class="btn btn-ghost !p-1.5 text-rose-500 hover:bg-rose-50" title="Revoke authorization" onclick="adm_revokePickup('${p.id}')">${icon('trash','w-4 h-4')}</button>
+                      <button class="btn btn-ghost !p-1.5 text-rose-500 hover:bg-rose-50" aria-label="Revoke authorization" title="Revoke authorization" onclick="adm_revokePickup('${p.id}')">${icon('trash','w-4 h-4')}</button>
                     </td>
                   </tr>`;
                 }).join('')}
@@ -302,7 +302,7 @@ function adm_renderPickupsTab(pickups, schoolId) {
                 <div class="flex-1 min-w-0">
                   <span class="font-semibold text-slate-700">${p.name}</span>
                   <span class="text-sm text-slate-500 ml-2">· ${p.relationship}</span>
-                  <div class="text-xs text-slate-400">For: ${student ? student.name : '—'}</div>
+                  <div class="text-xs text-slate-500">For: ${student ? student.name : '—'}</div>
                 </div>
                 <span class="badge badge-danger">Denied</span>
               </div>`;
@@ -323,7 +323,7 @@ function adm_addRouteModal() {
 }
 
 function adm_editRouteModal(routeId) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const existing = routeId ? DB.find('busRoutes', routeId) : null;
 
   const allStaff = [
@@ -339,40 +339,40 @@ function adm_editRouteModal(routeId) {
           This system uses <strong>house-to-house pickup</strong>. After creating a route, assign students to it and set each student's pickup order (1st house, 2nd house, etc.).
         </div>
         <div>
-          <label class="input-label">Route Name *</label>
+          <label class="input-label" for="rt_name">Route Name *</label>
           <input id="rt_name" class="input" placeholder="e.g. Lekki Morning Route" value="${existing ? existing.name.replace(/"/g, '&quot;') : ''}" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Driver *</label>
+            <label class="input-label" for="rt_driver">Driver *</label>
             <select id="rt_driver" class="input">
               <option value="">— Select driver —</option>
               ${allStaff.map(s => `<option value="${s.id}" ${existing && existing.driverStaffId === s.id ? 'selected' : ''}>${s.name}${s.role ? ' · ' + s.role : ''}</option>`).join('')}
             </select>
           </div>
           <div>
-            <label class="input-label">Vehicle Plate</label>
+            <label class="input-label" for="rt_plate">Vehicle Plate</label>
             <input id="rt_plate" class="input" placeholder="e.g. LND 234 HJ" value="${existing ? (existing.vehiclePlate || '') : ''}" />
           </div>
         </div>
         <div class="grid grid-cols-3 gap-3">
           <div>
-            <label class="input-label">Capacity (seats)</label>
+            <label class="input-label" for="rt_capacity">Capacity (seats)</label>
             <input id="rt_capacity" type="number" class="input" placeholder="e.g. 25" value="${existing ? (existing.capacity || '') : ''}" />
           </div>
           <div>
-            <label class="input-label">Departure Time</label>
+            <label class="input-label" for="rt_departure">Departure Time</label>
             <input id="rt_departure" type="time" class="input" value="${existing ? (existing.departureTime || '') : '06:30'}" />
           </div>
           <div>
-            <label class="input-label">Return Time</label>
+            <label class="input-label" for="rt_return">Return Time</label>
             <input id="rt_return" type="time" class="input" value="${existing ? (existing.returnTime || '') : '15:00'}" />
           </div>
         </div>
         <div>
-          <label class="input-label">Area / Corridor (optional)</label>
+          <label class="input-label" for="rt_area">Area / Corridor (optional)</label>
           <input id="rt_area" class="input" placeholder="e.g. Lekki / Ajah corridor" value="${existing ? (existing.area || '') : ''}" />
-          <p class="text-xs text-slate-400 mt-1">General area this route covers — for reference only.</p>
+          <p class="text-xs text-slate-500 mt-1">General area this route covers — for reference only.</p>
         </div>
       </div>
     `,
@@ -395,7 +395,7 @@ function adm_saveRoute(routeId) {
   if (!name) { toast('Route name is required', 'danger'); return; }
   if (!driverStaffId) { toast('Please select a driver', 'danger'); return; }
 
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const data = { schoolId, name, area, driverStaffId, vehiclePlate, capacity, departureTime, returnTime };
 
   if (routeId) {
@@ -413,7 +413,7 @@ function adm_deleteRoute(routeId) {
   const route = DB.find('busRoutes', routeId);
   if (!route) return;
   const assignedCount = DB.query('busAssignments', a => a.routeId === routeId).length;
-  confirm(
+  confirmDialog(
     `Delete route "${route.name}"?${assignedCount ? ` This will also remove ${assignedCount} student assignment${assignedCount !== 1 ? 's' : ''}.` : ''}`,
     () => {
       DB.query('busAssignments', a => a.routeId === routeId).forEach(a => DB.remove('busAssignments', a.id));
@@ -426,7 +426,7 @@ function adm_deleteRoute(routeId) {
 }
 
 function adm_assignStudentModal() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const students = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
   const routes   = DB.query('busRoutes', r => r.schoolId === schoolId);
 
@@ -440,7 +440,7 @@ function adm_assignStudentModal() {
     body: `
       <div class="space-y-4">
         <div>
-          <label class="input-label">Student *</label>
+          <label class="input-label" for="as_student">Student *</label>
           <select id="as_student" class="input" onchange="adm_previewStudentAddress(this.value)">
             <option value="">— Select student —</option>
             ${students.map(s => {
@@ -451,7 +451,7 @@ function adm_assignStudentModal() {
           <div id="as_addr_preview" class="mt-1.5 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 hidden"></div>
         </div>
         <div>
-          <label class="input-label">Bus Route *</label>
+          <label class="input-label" for="as_route">Bus Route *</label>
           <select id="as_route" class="input">
             <option value="">— Select route —</option>
             ${routes.map(r => {
@@ -461,7 +461,7 @@ function adm_assignStudentModal() {
           </select>
         </div>
         <div>
-          <label class="input-label">Direction *</label>
+          <label class="input-label" for="as_direction">Direction *</label>
           <select id="as_direction" class="input">
             <option value="both">Both ways (morning pickup + afternoon drop-off)</option>
             <option value="pickup">Morning pickup only</option>
@@ -469,14 +469,14 @@ function adm_assignStudentModal() {
           </select>
         </div>
         <div>
-          <label class="input-label">Pickup Order *</label>
+          <label class="input-label" for="as_order">Pickup Order *</label>
           <input id="as_order" type="number" min="1" class="input" placeholder="e.g. 1 = first house driver visits, 2 = second…" />
-          <p class="text-xs text-slate-400 mt-1">Position in the route. Sets the order on the driver's manifest and printed route sheet.</p>
+          <p class="text-xs text-slate-500 mt-1">Position in the route. Sets the order on the driver's manifest and printed route sheet.</p>
         </div>
         <div>
-          <label class="input-label">Pickup Address</label>
+          <label class="input-label" for="as_addr">Pickup Address</label>
           <input id="as_addr" class="input" placeholder="Leave blank to use parent's home address on file" />
-          <p class="text-xs text-slate-400 mt-1">Only fill this if their pickup point differs from their registered home address.</p>
+          <p class="text-xs text-slate-500 mt-1">Only fill this if their pickup point differs from their registered home address.</p>
         </div>
       </div>
     `,
@@ -498,7 +498,7 @@ function adm_saveAssignment() {
   if (!routeId)   { toast('Please select a route', 'danger');   return; }
   if (!pickupOrder) { toast('Please enter the pickup order number', 'danger'); return; }
 
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
 
   // Check for existing assignment
   const existing = DB.query('busAssignments', a => a.studentId === studentId);
@@ -556,16 +556,16 @@ function adm_editAssignmentModal(assignmentId) {
       <div class="space-y-3">
         ${homeAddr ? `<div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-600"><span class="font-semibold text-slate-700">Home address on file:</span> ${homeAddr}</div>` : `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-800">No home address on file for this parent.</div>`}
         <div>
-          <label class="input-label">Pickup Order *</label>
+          <label class="input-label" for="ea_order">Pickup Order *</label>
           <input id="ea_order" type="number" min="1" class="input" value="${a.pickupOrder || ''}" placeholder="e.g. 3 = 3rd house the driver visits" />
         </div>
         <div>
-          <label class="input-label">Pickup Address (override)</label>
+          <label class="input-label" for="ea_addr">Pickup Address (override)</label>
           <input id="ea_addr" class="input" value="${a.pickupAddress || ''}" placeholder="${homeAddr || 'Enter address if different from home address'}" />
-          <p class="text-xs text-slate-400 mt-1">Leave blank to use home address.</p>
+          <p class="text-xs text-slate-500 mt-1">Leave blank to use home address.</p>
         </div>
         <div>
-          <label class="input-label">Direction</label>
+          <label class="input-label" for="ea_dir">Direction</label>
           <select id="ea_dir" class="input">
             <option value="both" ${a.direction==='both'?'selected':''}>Both ways</option>
             <option value="pickup" ${a.direction==='pickup'?'selected':''}>Morning pickup only</option>
@@ -592,7 +592,7 @@ function adm_saveEditAssignment(assignmentId) {
 function adm_removeAssignment(assignmentId) {
   const a = DB.find('busAssignments', assignmentId);
   const s = a ? DB.find('students', a.studentId) : null;
-  confirm(
+  confirmDialog(
     `Remove bus assignment for ${s ? s.name : 'this student'}?`,
     () => {
       DB.remove('busAssignments', assignmentId);
@@ -653,7 +653,7 @@ function adm_revokePickup(pickupId) {
   const p = DB.find('authorizedPickups', pickupId);
   if (!p) return;
   const student = DB.find('students', p.studentId);
-  confirm(
+  confirmDialog(
     `Revoke authorization for ${p.name} to pick up ${student ? student.name : 'this student'}?`,
     () => {
       DB.remove('authorizedPickups', pickupId);
@@ -729,9 +729,9 @@ function adm_renderBusStatusTab(routes, schoolId) {
                     <span class="font-bold text-slate-900">${route.name}</span>
                     <span class="badge ${info.badge}">${info.label}</span>
                   </div>
-                  <div class="text-xs text-slate-400">${route.vehiclePlate || 'No plate'} · ${assignments.length} students · Departs ${route.departureTime || '—'} · Returns ${route.returnTime || '—'}</div>
+                  <div class="text-xs text-slate-500">${route.vehiclePlate || 'No plate'} · ${assignments.length} students · Departs ${route.departureTime || '—'} · Returns ${route.returnTime || '—'}</div>
                   ${statusRec && statusRec.note ? `<div class="text-sm text-slate-600 mt-1 italic">"${statusRec.note}"</div>` : ''}
-                  ${statusRec && statusRec.updatedAt ? `<div class="text-xs text-slate-400 mt-0.5">Last updated ${statusRec.updatedAt.slice(11, 16)}</div>` : ''}
+                  ${statusRec && statusRec.updatedAt ? `<div class="text-xs text-slate-500 mt-0.5">Last updated ${statusRec.updatedAt.slice(11, 16)}</div>` : ''}
                 </div>
                 <div class="flex gap-2 flex-wrap flex-shrink-0">
                   ${Object.entries(STATUS).map(([k, v]) => `
@@ -747,23 +747,23 @@ function adm_renderBusStatusTab(routes, schoolId) {
             <!-- House-to-house pickup manifest -->
             <div class="p-4">
               <div class="flex items-center justify-between mb-3">
-                <div class="text-xs font-semibold uppercase text-slate-400">Pickup Manifest — ${manifest.length} student${manifest.length !== 1 ? 's' : ''} in pickup order</div>
+                <div class="text-xs font-semibold uppercase text-slate-500">Pickup Manifest — ${manifest.length} student${manifest.length !== 1 ? 's' : ''} in pickup order</div>
                 <button class="btn btn-secondary text-xs !py-1.5" onclick="printRouteSheet('${route.id}')">${icon('download','w-3.5 h-3.5')} Print Route Sheet</button>
               </div>
               ${manifest.length === 0
-                ? `<p class="text-sm text-slate-400">No students assigned to this route yet.</p>`
+                ? `<p class="text-sm text-slate-500">No students assigned to this route yet.</p>`
                 : `<div class="space-y-2">
                     ${manifest.filter(m => m.pickupOrder !== 999).map((m, i) => `
                       <div class="flex gap-3 items-start">
                         <div class="flex flex-col items-center flex-shrink-0">
-                          <div class="w-7 h-7 rounded-full bg-navy-800 text-white flex items-center justify-center font-bold text-xs">${m.pickupOrder}</div>
+                          <div class="w-7 h-7 rounded-full bg-brand-700 text-white flex items-center justify-center font-bold text-xs">${m.pickupOrder}</div>
                           ${i < manifest.filter(x=>x.pickupOrder!==999).length - 1 ? `<div class="w-px flex-1 bg-slate-200 mt-0.5" style="min-height:16px"></div>` : ''}
                         </div>
                         <div class="flex-1 pb-2 min-w-0">
                           <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
                             <div class="flex items-center gap-2 flex-wrap mb-1">
                               <span class="font-semibold text-sm text-slate-800">${m.name}</span>
-                              <span class="text-xs text-slate-400">${m.className}</span>
+                              <span class="text-xs text-slate-500">${m.className}</span>
                               ${m.direction !== 'both' ? `<span class="badge badge-warn text-xs">${m.direction === 'pickup' ? 'AM only' : 'PM only'}</span>` : ''}
                             </div>
                             <div class="flex items-center gap-3 flex-wrap">
@@ -796,7 +796,7 @@ function adm_renderBusStatusTab(routes, schoolId) {
 }
 
 function adm_updateBusStatus(routeId, status) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const today = new Date().toISOString().slice(0, 10);
   const existing = DB.query('busStatus', s => s.schoolId === schoolId && s.routeId === routeId && s.date === today)[0];
   const route = DB.find('busRoutes', routeId);
@@ -840,7 +840,7 @@ function adm_addBusNote(routeId) {
   modal({
     title: 'Add Note to Bus Update',
     size: 'sm',
-    body: `<div><label class="input-label">Note (e.g. "Stuck in traffic at Lekki bridge")</label>
+    body: `<div><label class="input-label" for="bn_note">Note (e.g. "Stuck in traffic at Lekki bridge")</label>
       <textarea id="bn_note" class="input" rows="3" placeholder="Optional message for parents..."></textarea></div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
              <button class="btn btn-primary" onclick="adm_saveBusNote('${routeId}')">Save Note</button>`
@@ -850,7 +850,7 @@ function adm_addBusNote(routeId) {
 function adm_saveBusNote(routeId) {
   const note = (document.getElementById('bn_note') || {}).value.trim();
   if (!note) { toast('Enter a note', 'danger'); return; }
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const today = new Date().toISOString().slice(0, 10);
   const existing = DB.query('busStatus', s => s.schoolId === schoolId && s.routeId === routeId && s.date === today)[0];
   if (existing) {
@@ -926,7 +926,7 @@ function view_par_transport(params) {
       ${children.length > 1 ? `
         <div class="flex gap-2 flex-wrap">
           ${children.map(c => `<button onclick="APP.params.studentId = '${c.id}'; APP.render();"
-            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-navy-800 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
+            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${c.id === activeId ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">${c.name}</button>`).join('')}
         </div>
       ` : ''}
 
@@ -942,15 +942,15 @@ function view_par_transport(params) {
               </div>
               <div class="grid grid-cols-3 gap-3 text-sm text-center flex-shrink-0">
                 <div class="bg-slate-50 rounded-xl p-3">
-                  <div class="text-xs text-slate-400 font-semibold uppercase mb-0.5">Departure</div>
+                  <div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Departure</div>
                   <div class="font-bold text-slate-900">${route.departureTime || '—'}</div>
                 </div>
                 <div class="bg-slate-50 rounded-xl p-3">
-                  <div class="text-xs text-slate-400 font-semibold uppercase mb-0.5">Return</div>
+                  <div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Return</div>
                   <div class="font-bold text-slate-900">${route.returnTime || '—'}</div>
                 </div>
                 <div class="bg-slate-50 rounded-xl p-3">
-                  <div class="text-xs text-slate-400 font-semibold uppercase mb-0.5">Driver</div>
+                  <div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Driver</div>
                   <div class="font-bold text-slate-900 truncate">${driverName}</div>
                 </div>
               </div>
@@ -961,13 +961,13 @@ function view_par_transport(params) {
                 <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 ${busStatusInfo.dot}"></span>
                 <span class="text-sm font-semibold ${busStatusInfo.color}">${busStatusInfo.label}</span>
                 ${busStatusRecord.note ? `<span class="text-sm text-slate-500 ml-1">— ${busStatusRecord.note}</span>` : ''}
-                ${busStatusRecord.updatedAt ? `<span class="text-xs text-slate-400 ml-auto">${busStatusRecord.updatedAt.slice(11,16)}</span>` : ''}
+                ${busStatusRecord.updatedAt ? `<span class="text-xs text-slate-500 ml-auto">${busStatusRecord.updatedAt.slice(11,16)}</span>` : ''}
               </div>
             ` : ''}
           </div>
         ` : `
           <div class="card p-5 flex items-center gap-4 bg-slate-50 border border-slate-200">
-            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">${icon('package','w-5 h-5 text-slate-400')}</div>
+            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">${icon('package','w-5 h-5 text-slate-500')}</div>
             <div>
               <div class="font-semibold text-slate-700">${child ? child.name : 'This child'} is not registered for the school bus.</div>
               <div class="text-sm text-slate-500">Contact the school office to enrol in a bus route.</div>
@@ -998,24 +998,24 @@ function view_par_transport(params) {
         ${approvedPickups.length > 0 ? `
           <div class="space-y-2">
             ${approvedPickups.map(p => `
-              <div class="card p-4 flex items-center gap-4">
+              <div class="card p-5 flex items-center gap-4">
                 <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0 text-emerald-600">${icon('check','w-5 h-5')}</div>
                 <div class="flex-1 min-w-0">
                   <div class="font-semibold text-slate-900">${p.name}</div>
                   <div class="text-sm text-slate-500">${p.relationship} · ${p.phone}</div>
-                  <div class="text-xs text-slate-400 mt-0.5">Approved ${fdate(p.approvedAt, { relative: true })}</div>
+                  <div class="text-xs text-slate-500 mt-0.5">Approved ${fdate(p.approvedAt, { relative: true })}</div>
                 </div>
-                <button class="btn btn-ghost !p-1.5 text-rose-500 hover:bg-rose-50 flex-shrink-0" title="Remove this authorized person"
+                <button class="btn btn-ghost !p-1.5 text-rose-500 hover:bg-rose-50 flex-shrink-0" aria-label="Remove this authorized person" title="Remove this authorized person"
                   onclick="par_removePickup('${p.id}')">${icon('trash','w-4 h-4')}</button>
               </div>
             `).join('')}
           </div>
         ` : `
           ${pendingPickups.length === 0 ? `
-            <div class="card p-5 text-center text-slate-400">
+            <div class="card p-5 text-center text-slate-500">
               <div class="mb-2">${icon('students','w-8 h-8 mx-auto text-slate-300')}</div>
               <div class="text-sm font-medium text-slate-500">No authorized pickup persons yet.</div>
-              <div class="text-xs text-slate-400 mt-1">Add people who are allowed to pick up ${child ? child.name : 'your child'} from school.</div>
+              <div class="text-xs text-slate-500 mt-1">Add people who are allowed to pick up ${child ? child.name : 'your child'} from school.</div>
             </div>
           ` : ''}
         `}
@@ -1035,11 +1035,11 @@ function par_addPickupModal(studentId) {
           Your request will be reviewed by the school admin before the person is authorized.
         </div>
         <div>
-          <label class="input-label">Full Name *</label>
+          <label class="input-label" for="pu_name">Full Name *</label>
           <input id="pu_name" class="input" placeholder="e.g. Mrs. Grace Adeyemi" />
         </div>
         <div>
-          <label class="input-label">Relationship to Child *</label>
+          <label class="input-label" for="pu_rel">Relationship to Child *</label>
           <select id="pu_rel" class="input">
             <option value="">— Select relationship —</option>
             <option value="Parent/Guardian">Parent / Guardian</option>
@@ -1051,7 +1051,7 @@ function par_addPickupModal(studentId) {
           </select>
         </div>
         <div>
-          <label class="input-label">Phone Number *</label>
+          <label class="input-label" for="pu_phone">Phone Number *</label>
           <input id="pu_phone" class="input" type="tel" placeholder="e.g. 08012345678" />
         </div>
       </div>
@@ -1073,7 +1073,7 @@ function par_savePickup(studentId) {
   if (!phone) { toast('Phone number is required', 'danger'); return; }
 
   const student  = DB.find('students', studentId);
-  const schoolId = student ? student.schoolId : (AUTH.current.schoolId || 'sch_brightlights');
+  const schoolId = student ? student.schoolId : currentSchoolId();
 
   DB.insert('authorizedPickups', {
     id: uid('pu'), schoolId, studentId,
@@ -1102,7 +1102,7 @@ function par_savePickup(studentId) {
 function par_removePickup(pickupId) {
   const p = DB.find('authorizedPickups', pickupId);
   if (!p) return;
-  confirm(
+  confirmDialog(
     `Remove ${p.name} from authorized pickup persons?`,
     () => {
       DB.remove('authorizedPickups', pickupId);
@@ -1184,7 +1184,7 @@ function adm_renderDismissalTab(schoolId, todayDismissals, activeStudents) {
       <!-- Filters -->
       <div class="flex gap-2 flex-wrap items-center">
         <div class="relative flex-1 min-w-40">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${icon('search','w-4 h-4')}</span>
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">${icon('search','w-4 h-4')}</span>
           <input type="text" class="input pl-9" placeholder="Search student…" value="${APP.params.dismissQ || ''}" oninput="APP.params.dismissQ=this.value; APP.render()" />
         </div>
         <select class="input w-auto" onchange="APP.params.dismissClass=this.value; APP.render()">
@@ -1196,9 +1196,9 @@ function adm_renderDismissalTab(schoolId, todayDismissals, activeStudents) {
       <!-- Student list -->
       <div class="card overflow-hidden">
         <table class="tbl">
-          <thead><tr><th>Student</th><th>Class</th><th>Dismissal</th><th>Time</th><th>Handler</th><th></th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Dismissal</th><th scope="col">Time</th><th scope="col">Handler</th><th scope="col"></th></tr></thead>
           <tbody>
-            ${displayStudents.length === 0 ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No students found</td></tr>` : displayStudents.map(s => {
+            ${displayStudents.length === 0 ? `<tr><td colspan="6" class="text-center text-slate-500 py-8">No students found</td></tr>` : displayStudents.map(s => {
               const cls = DB.find('classes', s.classId);
               const rec = todayDismissals.find(d => d.studentId === s.id);
               const handlerType = rec ? rec.handlerType : null;
@@ -1211,7 +1211,7 @@ function adm_renderDismissalTab(schoolId, todayDismissals, activeStudents) {
                 <td class="font-mono text-xs text-slate-500">${rec ? rec.dismissedAt : '—'}</td>
                 <td class="text-xs text-slate-500">${rec ? (handlerType === 'teacher' ? icon('teacher','w-3.5 h-3.5 inline') + ' Teacher' : handlerType === 'parent' ? icon('user','w-3.5 h-3.5 inline') + ' Parent' : 'Admin') : '—'}</td>
                 <td>${rec
-                  ? `<button class="btn btn-ghost !p-1.5 text-rose-500 text-xs" onclick="adm_undoDismissal('${s.id}')" title="Undo dismissal">Undo</button>`
+                  ? `<button class="btn btn-ghost !p-1.5 text-rose-500 text-xs" onclick="adm_undoDismissal('${s.id}')" aria-label="Undo dismissal" title="Undo dismissal">Undo</button>`
                   : `<button class="btn btn-primary !py-1.5 text-xs" onclick="adm_dismissStudent('${s.id}', '${isLatePickupTime ? 'parent' : 'admin'}')">${icon('check','w-3.5 h-3.5')} Dismiss</button>`}</td>
               </tr>`;
             }).join('')}
@@ -1223,7 +1223,7 @@ function adm_renderDismissalTab(schoolId, todayDismissals, activeStudents) {
 }
 
 function adm_dismissStudent(studentId, handlerType) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const s = DB.find('students', studentId);
   const timeStr = new Date().toTimeString().slice(0, 5);
   const existing = DB.query('studentDismissals', d => d.schoolId === schoolId && d.studentId === studentId && d.date === today())[0];
@@ -1248,7 +1248,7 @@ function adm_dismissStudent(studentId, handlerType) {
 }
 
 function adm_undoDismissal(studentId) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const rec = DB.query('studentDismissals', d => d.schoolId === schoolId && d.studentId === studentId && d.date === today())[0];
   if (!rec) return;
   DB.remove('studentDismissals', rec.id);
@@ -1257,7 +1257,7 @@ function adm_undoDismissal(studentId) {
 }
 
 function adm_bulkDismissAll() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const activeStudents = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
   const todayRecs = DB.query('studentDismissals', d => d.schoolId === schoolId && d.date === today());
   const notYet = activeStudents.filter(s => !todayRecs.find(d => d.studentId === s.id));
@@ -1280,14 +1280,14 @@ function adm_dismissalConfigModal() {
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">School End Time</label>
+            <label class="input-label" for="dism_end">School End Time</label>
             <input type="time" id="dism_end" class="input" value="${cfg.schoolEndTime}" />
-            <p class="text-xs text-slate-400 mt-1">Regular dismissal time</p>
+            <p class="text-xs text-slate-500 mt-1">Regular dismissal time</p>
           </div>
           <div>
-            <label class="input-label">Late Pickup Threshold</label>
+            <label class="input-label" for="dism_late">Late Pickup Threshold</label>
             <input type="time" id="dism_late" class="input" value="${cfg.lateThreshold}" />
-            <p class="text-xs text-slate-400 mt-1">After this, parent/admin must handle</p>
+            <p class="text-xs text-slate-500 mt-1">After this, parent/admin must handle</p>
           </div>
         </div>
       </div>
@@ -1308,7 +1308,7 @@ function adm_saveDismissalConfig() {
 
 /* ---------- Print Route Sheet ---------- */
 function printRouteSheet(routeId) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const school   = DB.find('schools', schoolId);
   const route    = DB.find('busRoutes', routeId);
   if (!route) return;
@@ -1337,7 +1337,7 @@ function printRouteSheet(routeId) {
 
   const stopRows = manifest.map((m, i) => `
     <tr style="${i % 2 === 0 ? '' : 'background:#f1f5f9'}">
-      <td style="padding:7px 10px;font-size:13px;font-weight:700;color:#005e46;text-align:center">${m.pickupOrder === 999 ? '—' : m.pickupOrder}</td>
+      <td style="padding:7px 10px;font-size:13px;font-weight:700;color:#1e3a8a;text-align:center">${m.pickupOrder === 999 ? '—' : m.pickupOrder}</td>
       <td style="padding:7px 10px;font-size:12px;font-weight:600">${m.name}</td>
       <td style="padding:7px 10px;font-size:12px;color:#475569">${m.className}</td>
       <td style="padding:7px 10px;font-size:12px;color:#0f172a">${m.parentPhone || '—'}</td>
@@ -1378,12 +1378,12 @@ function printRouteSheet(routeId) {
     <div class="info-cell"><div class="info-label">Total Students</div><div class="info-value">${assignments.length}</div></div>
   </div>
   <table>
-    <thead><tr>
-      <th style="width:30px">#</th>
-      <th>Student Name</th>
-      <th>Class</th>
-      <th>Parent Phone</th>
-      <th>Home Address</th>
+    <th scope="col"ead><tr>
+      <th scope="col" style="width:30px">#</th>
+      <th scope="col">Student Name</th>
+      <th scope="col">Class</th>
+      <th scope="col">Parent Phone</th>
+      <th scope="col">Home Address</th>
     </tr></thead>
     <tbody>
       ${stopRows}

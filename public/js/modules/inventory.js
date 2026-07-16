@@ -27,7 +27,7 @@ function view_adm_inventory() {
           <td><span class="badge badge-neutral">${item.category || '—'}</span></td>
           <td>
             <span class="font-bold ${isLow ? 'text-rose-600' : ''}">${qty}</span>
-            <span class="text-slate-400 text-xs"> / min ${minS}</span>
+            <span class="text-slate-500 text-xs"> / min ${minS}</span>
             ${isLow ? `<span class="badge badge-danger ml-1 text-xs">LOW</span>` : ''}
           </td>
           <td>${money(item.unitCost || 0)}</td>
@@ -149,11 +149,11 @@ function inv_restockModal(itemId) {
           <input id="inv-restock-qty" class="input" type="number" min="1" placeholder="e.g. 20" /></div>
         <div><label class="input-label" for="inv-restock-supplier">Supplier</label>
           <input id="inv-restock-supplier" class="input" value="${item.supplier || ''}" placeholder="e.g. ABC Supplies Ltd" /></div>
-        <div><label class="input-label" for="inv-restock-price">Purchase Price per Unit <span class="text-slate-400 text-xs">(optional — updates unit cost)</span></label>
+        <div><label class="input-label" for="inv-restock-price">Purchase Price per Unit <span class="text-slate-500 text-xs">(optional — updates unit cost)</span></label>
           <input id="inv-restock-price" class="input" type="number" min="0" placeholder="e.g. 450" /></div>
         <div><label class="input-label" for="inv-restock-date">Date Received</label>
           <input id="inv-restock-date" class="input" type="date" value="${today()}" /></div>
-        <div><label class="input-label" for="inv-restock-notes">Notes <span class="text-slate-400 text-xs">(optional)</span></label>
+        <div><label class="input-label" for="inv-restock-notes">Notes <span class="text-slate-500 text-xs">(optional)</span></label>
           <textarea id="inv-restock-notes" class="input" rows="2" placeholder="Any additional notes…"></textarea></div>
       </div>`,
     footer: `
@@ -207,7 +207,7 @@ function inv_writeOffModal(itemId) {
             <option value="Stolen">Stolen</option>
             <option value="Other">Other</option>
           </select></div>
-        <div><label class="input-label" for="inv-writeoff-notes">Notes <span id="inv-writeoff-notes-req" class="text-slate-400 text-xs">(optional)</span></label>
+        <div><label class="input-label" for="inv-writeoff-notes">Notes <span id="inv-writeoff-notes-req" class="text-slate-500 text-xs">(optional)</span></label>
           <textarea id="inv-writeoff-notes" class="input" rows="2" placeholder="Additional details…"></textarea></div>
       </div>`,
     footer: `
@@ -221,7 +221,7 @@ function inv_toggleWriteOffNotes() {
   const reqEl    = document.getElementById('inv-writeoff-notes-req');
   if (!reasonEl || !reqEl) return;
   if (reasonEl.value === 'Other') { reqEl.textContent = '(required)'; reqEl.className = 'text-rose-600 text-xs'; }
-  else { reqEl.textContent = '(optional)'; reqEl.className = 'text-slate-400 text-xs'; }
+  else { reqEl.textContent = '(optional)'; reqEl.className = 'text-slate-500 text-xs'; }
 }
 
 function inv_doWriteOff(itemId) {
@@ -342,7 +342,7 @@ function viewInventoryHistory(itemId) {
                 <td><span class="badge ${h.type==='Issue'?'badge-warn':h.type==='Write-Off'?'badge-danger':'badge-success'}">${h.type}</span></td>
                 <td class="font-bold font-mono ${h.delta < 0 ? 'text-rose-600' : 'text-emerald-600'}">${h.delta > 0 ? '+' : ''}${h.delta}</td>
                 <td class="text-sm">${h.reason || '—'}</td>
-                <td class="text-xs text-slate-400">${h.timestamp ? h.timestamp.slice(0,10) : '—'}</td>
+                <td class="text-xs text-slate-500">${h.timestamp ? h.timestamp.slice(0,10) : '—'}</td>
               </tr>`).join('')}
             </tbody>
           </table>

@@ -83,7 +83,7 @@ function publicSuccess(title, ref, message) {
         <h3 class="text-xl font-bold text-slate-900 mb-1">${title}</h3>
         <p class="text-sm text-slate-500 mb-4">${message}</p>
         <div class="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2">
-          <span class="text-xs uppercase tracking-wide text-slate-400 font-semibold">Reference</span>
+          <span class="text-xs uppercase tracking-wide text-slate-500 font-semibold">Reference</span>
           <span class="font-mono font-bold text-slate-800">${ref}</span>
         </div>
       </div>`,
@@ -99,7 +99,7 @@ function bookTourModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Pick a day and time to visit. The school will confirm your slot and share directions.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -224,7 +224,7 @@ function renderTourPage() {
             </div>
           </div>
 
-          <p class="text-xs text-slate-400 text-center mt-5">Prefer to talk first? Your school will confirm the slot by email or phone.</p>
+          <p class="text-xs text-slate-500 text-center mt-5">Prefer to talk first? Your school will confirm the slot by email or phone.</p>
         </div>
       </div>
     </div>
@@ -263,10 +263,10 @@ function admissionsModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Submit your child's details to begin the application. The school reviews it and reaches out to schedule a visit and next steps.
         </div>
-        <div class="text-xs font-semibold uppercase text-slate-400 pt-1">Child's details</div>
+        <div class="text-xs font-semibold uppercase text-slate-500 pt-1">Child's details</div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label" for="ad_child">Child's Full Name *</label><input id="ad_child" class="input" placeholder="e.g. Tobi Okafor" /></div>
           <div><label class="input-label" for="ad_dob">Date of Birth *</label><input id="ad_dob" type="date" class="input" max="${today()}" /></div>
@@ -280,7 +280,7 @@ function admissionsModal() {
           </div>
         </div>
         <div><label class="input-label" for="ad_prev">Previous School</label><input id="ad_prev" class="input" placeholder="Optional" /></div>
-        <div class="text-xs font-semibold uppercase text-slate-400 pt-1">Parent / Guardian</div>
+        <div class="text-xs font-semibold uppercase text-slate-500 pt-1">Parent / Guardian</div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label" for="ad_parent">Full Name *</label><input id="ad_parent" class="input" placeholder="e.g. Mr. Tunde Okafor" /></div>
           <div><label class="input-label" for="ad_phone">Phone *</label><input id="ad_phone" class="input" placeholder="+234…" /></div>
@@ -334,7 +334,7 @@ function careersModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Interested in joining the team? Tell us about yourself and we'll be in touch when a matching role opens.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -431,11 +431,11 @@ function renderLogin() {
                 <input type="text" class="input" id="loginIdentifier" placeholder="you@school.ng  ·  BL/2025/001" autocomplete="username" />
               </div>
               <button class="btn btn-primary w-full" id="loginContinueBtn">Continue</button>
-              <p class="text-xs text-slate-400 text-center" id="loginFieldHint">Staff &amp; parents use email · students use their admission number</p>
+              <p class="text-xs text-slate-500 text-center" id="loginFieldHint">Staff &amp; parents use email · students use their admission number</p>
             </div>
 
             <div class="mt-5 pt-5 border-t border-slate-100 text-center">
-              <p class="text-xs text-slate-400">Prospective parent?
+              <p class="text-xs text-slate-500">Prospective parent?
                 <button type="button" class="text-slate-500 font-medium hover:text-slate-700 underline" onclick="openTourPage()">Book a tour</button>
                 or
                 <button type="button" class="text-slate-500 font-medium hover:text-slate-700 underline" onclick="admissionsModal()">apply for admission</button>
@@ -453,7 +453,7 @@ function renderLogin() {
           </div>
 
           <div class="mt-6 pt-5 border-t border-slate-100 text-center">
-            <p class="text-xs text-slate-400">By signing in, you agree to CASPAA's Terms and Privacy Policy. Your data is encrypted with AES-256.</p>
+            <p class="text-xs text-slate-500">By signing in, you agree to CASPAA's Terms and Privacy Policy. Your data is encrypted with AES-256.</p>
           </div>
         </div>
         </div>
@@ -572,7 +572,7 @@ function bindLoginHandlers() {
           <label class="input-label" for="loginPassword">Password</label>
           <div class="relative">
             <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" autocomplete="current-password" />
-            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" aria-label="Show or hide password">
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" aria-label="Show or hide password">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
           </div>
@@ -582,7 +582,7 @@ function bindLoginHandlers() {
           <button type="button" class="text-sm text-brand-700 font-semibold" onclick="toast('If that account exists, a reset link has been sent.','info')">Forgot password?</button>
         </div>
         <button class="btn btn-primary w-full" id="loginSubmitBtn">Sign in</button>
-        <p class="text-xs text-slate-400 text-center">Demo accounts use password <strong>demo1234</strong></p>`;
+        <p class="text-xs text-slate-500 text-center">Demo accounts use password <strong>demo1234</strong></p>`;
     }
 
     step1.classList.add('hidden');
@@ -658,7 +658,7 @@ function signupSchoolModal() {
     size: 'lg',
     body: `
       <div class="signup-form space-y-4">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Register your school with your <strong>official school email</strong> and upload a verification document. To keep the platform secure, our team reviews every school before the dashboard is unlocked — usually within 1 business day.
         </div>
         <div><label class="input-label" for="su_name">School Name *</label><input id="su_name" class="input" placeholder="e.g. Sunrise Academy" /></div>
@@ -676,13 +676,13 @@ function signupSchoolModal() {
         </div>
         <div><label class="input-label" for="su_doc">School Verification Document *</label>
           <input id="su_doc" type="file" class="input" accept=".pdf,.jpg,.jpeg,.png" />
-          <p class="text-xs text-slate-400 mt-1">CAC certificate, Ministry of Education approval, or similar proof. Required to verify your school.</p>
+          <p class="text-xs text-slate-500 mt-1">CAC certificate, Ministry of Education approval, or similar proof. Required to verify your school.</p>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label" for="su_pw">Password *</label>
             <div class="relative">
               <input id="su_pw" type="password" class="input pr-10" placeholder="Min 8 characters" />
-              <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('su_pw', this)" aria-label="Show or hide password">${eye}</button>
+              <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600" onclick="togglePwVisibility('su_pw', this)" aria-label="Show or hide password">${eye}</button>
             </div>
           </div>
           <div><label class="input-label" for="su_pw2">Confirm Password *</label><input id="su_pw2" type="password" class="input" placeholder="Repeat password" /></div>
@@ -769,23 +769,23 @@ function renderVerificationPending(school) {
             : `Thanks, ${(school.proprietor || '').split(' ')[0]}. Our team is reviewing <strong>${school.name}</strong>. You'll get full access as soon as it's approved — usually within 1 business day.`}
         </p>
 
-        ${rejected && v.reason ? `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-800 text-left mb-4"><strong>Reviewer note:</strong> ${v.reason}</div>` : ''}
+        ${rejected && v.reason ? `<div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-800 text-left mb-4"><strong>Reviewer note:</strong> ${v.reason}</div>` : ''}
 
         <div class="bg-slate-50 rounded-xl p-4 text-left mb-5">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold uppercase text-slate-500">Status</span>
             <span class="badge ${rejected ? 'badge-danger' : 'badge-warn'}">${rejected ? 'Rejected' : 'Under review'}</span>
           </div>
-          <div class="text-sm text-slate-600"><span class="text-slate-400">School:</span> ${school.name}</div>
-          <div class="text-sm text-slate-600"><span class="text-slate-400">Official email:</span> ${school.email}</div>
-          <div class="text-sm text-slate-600"><span class="text-slate-400">Documents:</span> ${docs.length ? docs.map(d => d.name).join(', ') : '—'}</div>
+          <div class="text-sm text-slate-600"><span class="text-slate-500">School:</span> ${school.name}</div>
+          <div class="text-sm text-slate-600"><span class="text-slate-500">Official email:</span> ${school.email}</div>
+          <div class="text-sm text-slate-600"><span class="text-slate-500">Documents:</span> ${docs.length ? docs.map(d => d.name).join(', ') : '—'}</div>
         </div>
 
         <div class="flex flex-col gap-2">
           <button class="btn btn-primary w-full" onclick="addVerificationDoc()">${icon('paperclip','w-4 h-4')} ${rejected ? 'Re-submit document' : 'Add another document'}</button>
           <button class="btn btn-secondary w-full" onclick="AUTH.logout()">${icon('logout','w-4 h-4')} Sign out</button>
         </div>
-        <p class="text-xs text-slate-400 mt-4">Need help? Contact the CASPAA team at support@caspaa.com</p>
+        <p class="text-xs text-slate-500 mt-4">Need help? Contact the CASPAA team at support@caspaa.com</p>
       </div>
     </div>
   `;
@@ -844,7 +844,7 @@ function promptFirstLoginPasswordChange(account) {
           <label class="input-label" for="fl_pw_new">New Password</label>
           <div class="relative">
             <input type="password" id="fl_pw_new" class="input pr-10" placeholder="Minimum 8 characters" />
-            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_new',this)" aria-label="Show or hide password">
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_new',this)" aria-label="Show or hide password">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
           </div>
@@ -853,7 +853,7 @@ function promptFirstLoginPasswordChange(account) {
           <label class="input-label" for="fl_pw_confirm">Confirm Password</label>
           <div class="relative">
             <input type="password" id="fl_pw_confirm" class="input pr-10" placeholder="Repeat new password" />
-            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_confirm',this)" aria-label="Show or hide password">
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_confirm',this)" aria-label="Show or hide password">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
           </div>

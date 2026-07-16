@@ -28,13 +28,13 @@ function enquiriesBanner() {
        </button>`
     : '';
   return `
-    <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-4 lg:p-5 text-white">
+    <div class="bg-gradient-to-br from-brand-600 to-brand-700 rounded-2xl p-4 lg:p-5 text-white">
       <div class="flex items-center justify-between gap-4 flex-wrap">
         <div class="flex items-center gap-3">
           <div class="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center">${icon('bell','w-6 h-6')}</div>
           <div>
             <div class="font-bold text-lg leading-tight">You have ${total} new enquir${total === 1 ? 'y' : 'ies'}</div>
-            <div class="text-blue-100 text-sm">Submitted from your public portal — review and respond.</div>
+            <div class="text-brand-100 text-sm">Submitted from your public portal — review and respond.</div>
           </div>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
@@ -86,17 +86,17 @@ function tourStatusBadge(s) {
 
 function renderTourTable(tours) {
   if (!tours.length) return `<div class="card p-12 text-center text-slate-500">
-      <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">${icon('calendar','w-7 h-7')}</div>
+      <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-500">${icon('calendar','w-7 h-7')}</div>
       <div class="font-semibold text-slate-700">No tour requests yet</div>
       <div class="text-sm mt-1">When a parent books a tour from your portal, it appears here.</div>
     </div>`;
   return `<div class="card overflow-hidden"><table class="tbl">
-      <thead><tr><th>Parent</th><th>Child · Class</th><th>Requested Slot</th><th>Ref</th><th>Status</th><th class="text-right">Action</th></tr></thead>
+      <th scope="col"ead><tr><th scope="col">Parent</th><th scope="col">Child · Class</th><th scope="col">Requested Slot</th><th scope="col">Ref</th><th scope="col">Status</th><th scope="col" class="text-right">Action</th></tr></thead>
       <tbody>
         ${tours.map(t => `<tr class="cursor-pointer" onclick="viewTourBooking('${t.id}')">
           <td><div class="font-medium text-sm">${t.parentName}</div><div class="text-xs text-slate-500">${t.phone} · ${t.email}</div></td>
           <td class="text-sm">${t.childName || '—'}<div class="text-xs text-slate-500">${t.classOfInterest || ''}</div></td>
-          <td class="text-sm">${fdate(t.confirmedDate || t.date)} <span class="text-slate-400">at</span> ${t.confirmedTime || t.time}${t.confirmedDate ? '' : ''}${t.note ? `<div class="text-xs text-slate-400 truncate max-w-[220px]" title="${(t.note||'').replace(/"/g,'&quot;')}">“${t.note}”</div>` : ''}</td>
+          <td class="text-sm">${fdate(t.confirmedDate || t.date)} <span class="text-slate-500">at</span> ${t.confirmedTime || t.time}${t.confirmedDate ? '' : ''}${t.note ? `<div class="text-xs text-slate-500 truncate max-w-[220px]" title="${(t.note||'').replace(/"/g,'&quot;')}">“${t.note}”</div>` : ''}</td>
           <td class="text-xs font-mono text-slate-500">${t.ref || '—'}</td>
           <td>${tourStatusBadge(t.status)}</td>
           <td class="text-right whitespace-nowrap">
@@ -142,8 +142,8 @@ function viewTourBooking(id) {
           <div class="text-xs uppercase font-semibold text-slate-500 mb-2">Confirm the visit</div>
           <p class="text-xs text-slate-500 mb-3">Keep the requested slot, or set a new one. Confirming notifies the parent by email &amp; SMS (simulated).</p>
           <div class="grid grid-cols-2 gap-3">
-            <div><label class="input-label">Date</label><input id="tv_date" type="date" class="input" value="${t.confirmedDate || t.date}" min="${today()}" /></div>
-            <div><label class="input-label">Time</label>
+            <div><label class="input-label" for="tv_date">Date</label><input id="tv_date" type="date" class="input" value="${t.confirmedDate || t.date}" min="${today()}" /></div>
+            <div><label class="input-label" for="tv_time">Time</label>
               <select id="tv_time" class="input">${TOUR_SLOTS.map(s => `<option ${s === (t.confirmedTime || t.time) ? 'selected' : ''}>${s}</option>`).join('')}</select>
             </div>
           </div>
@@ -186,17 +186,17 @@ function careerStatusBadge(s) {
 
 function renderCareerTable(careers) {
   if (!careers.length) return `<div class="card p-12 text-center text-slate-500">
-      <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">${icon('teacher','w-7 h-7')}</div>
+      <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-500">${icon('teacher','w-7 h-7')}</div>
       <div class="font-semibold text-slate-700">No career enquiries yet</div>
       <div class="text-sm mt-1">Interest submitted from your portal's Careers form appears here.</div>
     </div>`;
   return `<div class="card overflow-hidden"><table class="tbl">
-      <thead><tr><th>Candidate</th><th>Role · Experience</th><th>Links</th><th>Ref</th><th>Status</th><th class="text-right">Action</th></tr></thead>
+      <th scope="col"ead><tr><th scope="col">Candidate</th><th scope="col">Role · Experience</th><th scope="col">Links</th><th scope="col">Ref</th><th scope="col">Status</th><th scope="col" class="text-right">Action</th></tr></thead>
       <tbody>
         ${careers.map(c => `<tr>
           <td><div class="font-medium text-sm">${c.name}</div><div class="text-xs text-slate-500">${c.phone} · ${c.email}</div></td>
           <td class="text-sm">${c.role || '—'}<div class="text-xs text-slate-500">${c.experience ? c.experience + ' yrs' : ''}</div></td>
-          <td class="text-sm">${c.link ? `<a href="${c.link}" target="_blank" rel="noopener" class="text-brand-700 underline">CV / link</a>` : '—'}${c.note ? `<div class="text-xs text-slate-400 truncate max-w-[200px]" title="${(c.note||'').replace(/"/g,'&quot;')}">“${c.note}”</div>` : ''}</td>
+          <td class="text-sm">${c.link ? `<a href="${c.link}" target="_blank" rel="noopener" class="text-brand-700 underline">CV / link</a>` : '—'}${c.note ? `<div class="text-xs text-slate-500 truncate max-w-[200px]" title="${(c.note||'').replace(/"/g,'&quot;')}">“${c.note}”</div>` : ''}</td>
           <td class="text-xs font-mono text-slate-500">${c.ref || '—'}</td>
           <td>${careerStatusBadge(c.status)}</td>
           <td class="text-right whitespace-nowrap">

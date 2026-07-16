@@ -16,7 +16,7 @@ function view_tch_diary(params) {
 
   const activeClassId = (params && params.classId) || classes[0].id;
   const students = COMPUTE.studentsByClass(activeClassId);
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
 
   return `
     ${pageHeader({ title: 'Communication Diary', subtitle: 'Write structured notes to parents — per student, per day' })}
@@ -28,21 +28,21 @@ function view_tch_diary(params) {
     ${students.length === 0 ? emptyState({ title: 'No students in this class', body: 'Enrol students to start writing diary entries.', icon: 'students' }) : `
       <div class="space-y-2">
         ${students.map(s => {
-          const entries = DB.query('diaryEntries', e => e.studentId === s.id && e.teacherId === teacherId && e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
+          const entries = DB.query('diaryEntries', e => e.studentId === s.id && e.teacherId === teacherId && e.schoolId === currentSchoolId())
                            .sort((a,b) => b.date.localeCompare(a.date));
           const unreadReplies = entries.filter(e => e.parentReply && !e.teacherReadReply).length;
           const lastEntry = entries[0];
           const parent = s.parentId ? DB.find('parents', s.parentId) : null;
-          return `<div class="card p-4">
+          return `<div class="card p-5">
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
                 ${avatar(s, 'sm')}
                 <div class="min-w-0">
                   <div class="font-bold text-slate-900">${s.name}</div>
-                  <div class="text-xs text-slate-400">${parent ? parent.name : 'No parent linked'} · ${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} this term</div>
+                  <div class="text-xs text-slate-500">${parent ? parent.name : 'No parent linked'} · ${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} this term</div>
                   ${lastEntry ? `<div class="text-xs mt-0.5 ${lastEntry.parentRead ? 'text-emerald-600' : 'text-amber-600'}">
                     Last entry: ${fdate(lastEntry.date, {short:true})} — ${lastEntry.category} — ${lastEntry.parentRead ? 'Read by parent' : 'Unread by parent'}
-                  </div>` : `<div class="text-xs text-slate-400 mt-0.5">No entries yet</div>`}
+                  </div>` : `<div class="text-xs text-slate-500 mt-0.5">No entries yet</div>`}
                 </div>
               </div>
               <div class="flex items-center gap-2 flex-shrink-0">
@@ -61,7 +61,7 @@ function diary_viewStudent(studentId, classId) {
   const s = DB.find('students', studentId);
   const parent = s && s.parentId ? DB.find('parents', s.parentId) : null;
   const teacherId = AUTH.current.id;
-  const entries = DB.query('diaryEntries', e => e.studentId === studentId && e.teacherId === teacherId && e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
+  const entries = DB.query('diaryEntries', e => e.studentId === studentId && e.teacherId === teacherId && e.schoolId === currentSchoolId())
                     .sort((a,b) => b.date.localeCompare(a.date));
 
   // Mark all unread replies as read
@@ -70,7 +70,7 @@ function diary_viewStudent(studentId, classId) {
   });
 
   const entriesHtml = entries.length === 0
-    ? `<div class="text-center text-sm text-slate-400 py-6">No diary entries yet for ${s ? s.name : 'this student'}.</div>`
+    ? `<div class="text-center text-sm text-slate-500 py-6">No diary entries yet for ${s ? s.name : 'this student'}.</div>`
     : entries.map(e => {
         const catColors = { Homework: 'bg-brand-50 text-brand-700 border-brand-200', Behaviour: 'bg-amber-50 text-amber-700 border-amber-200', Academic: 'bg-emerald-50 text-emerald-700 border-emerald-200', Health: 'bg-red-50 text-red-700 border-red-200', General: 'bg-slate-50 text-slate-700 border-slate-200' };
         const cc = catColors[e.category] || catColors.General;
@@ -88,7 +88,7 @@ function diary_viewStudent(studentId, classId) {
           ${e.parentReply ? `<div class="bg-slate-50 rounded-xl p-3 border-l-4 border-brand-400">
             <div class="text-xs font-semibold text-slate-500 mb-1">${parent ? parent.name : 'Parent'} replied · ${fdate(e.parentRepliedAt, {relative:true})}</div>
             <p class="text-sm text-slate-700">${e.parentReply}</p>
-          </div>` : `<div class="text-xs text-slate-400 italic">No parent reply yet.</div>`}
+          </div>` : `<div class="text-xs text-slate-500 italic">No parent reply yet.</div>`}
         </div>`;
       }).join('');
 
@@ -124,7 +124,7 @@ function diary_saveEntry(studentId, classId) {
   if (!note) { toast('Note cannot be empty', 'danger'); return; }
 
   const entry = {
-    id: uid('de'), schoolId: AUTH.current.schoolId || 'sch_brightlights',
+    id: uid('de'), schoolId: currentSchoolId(),
     studentId, teacherId: AUTH.current.id, category: cat,
     note, date, parentRead: false, parentReadAt: null,
     parentReply: null, parentRepliedAt: null, teacherReadReply: false,
@@ -159,7 +159,7 @@ function view_par_diary(params) {
 
   const activeId = (params && params.studentId) || children[0].id;
   const student  = DB.find('students', activeId);
-  const entries  = DB.query('diaryEntries', e => e.studentId === activeId && e.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))
+  const entries  = DB.query('diaryEntries', e => e.studentId === activeId && e.schoolId === currentSchoolId())
                      .sort((a,b) => b.date.localeCompare(a.date));
   const unread   = entries.filter(e => !e.parentRead).length;
 
@@ -189,13 +189,13 @@ function view_par_diary(params) {
             const teacher = DB.find('teachers', e.teacherId);
             const cc = catColors[e.category] || catColors.General;
             const cb = catBadge[e.category] || catBadge.General;
-            return `<div class="card p-4 border-l-4 ${cc}">
+            return `<div class="card p-5 border-l-4 ${cc}">
               <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
                 <div class="flex items-center gap-2">
                   <span class="text-xs font-bold px-2 py-0.5 rounded-full border ${cb}">${e.category}</span>
                   <span class="text-xs text-slate-500">${fdate(e.date, {long:true})}</span>
                 </div>
-                <span class="text-xs text-slate-400">${teacher ? teacher.name : 'Teacher'}</span>
+                <span class="text-xs text-slate-500">${teacher ? teacher.name : 'Teacher'}</span>
               </div>
               <p class="text-sm text-slate-800 leading-relaxed mb-3">${e.note}</p>
               ${e.parentReply

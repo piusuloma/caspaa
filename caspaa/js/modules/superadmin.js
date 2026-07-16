@@ -37,25 +37,21 @@ function view_sa_dashboard() {
   const topByValue = schools.slice().sort((a, b) => b.monthlyFee * 12 - a.monthlyFee * 12).slice(0, 10);
 
   window.afterRender = () => {
-    const el1 = document.getElementById('saChart1');
-    if (el1 && typeof ApexCharts !== 'undefined') {
-      // Defer so the grid column width is settled before ApexCharts measures it
-      setTimeout(() => {
-        el1.innerHTML = '';
-        new ApexCharts(el1, {
-          chart: { type: 'area', height: 250, width: '100%', parentHeightOffset: 0, toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'Figtree, system-ui, sans-serif', animations: { enabled: true, easing: 'easeinout', speed: 700 } },
-          series: [{ name: 'MRR', data: [1500000, 1800000, 2100000, 2500000, 2900000, mrr] }],
-          colors: ['#00b386'],
-          stroke: { curve: 'smooth', width: 3, lineCap: 'round' },
-          fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.02, stops: [0, 95, 100] } },
-          markers: { size: 0, colors: ['#00b386'], strokeColors: '#fff', strokeWidth: 2, hover: { size: 6 } },
-          dataLabels: { enabled: false },
-          grid: { borderColor: '#eef2f6', strokeDashArray: 4, xaxis: { lines: { show: false } }, padding: { top: 4, right: 14, bottom: 0, left: 6 } },
-          xaxis: { categories: ['Jul','Aug','Sep','Oct','Nov','Dec'], axisBorder: { show: false }, axisTicks: { show: false }, tooltip: { enabled: false }, labels: { style: { colors: '#94a3b8', fontSize: '12px', fontWeight: 500 } } },
-          yaxis: { labels: { formatter: v => '₦' + (v/1000000).toFixed(1) + 'M', style: { colors: '#94a3b8', fontSize: '12px' } } },
-          tooltip: { theme: 'light', x: { show: true }, y: { formatter: v => '₦' + Number(v).toLocaleString('en-NG') }, marker: { show: true } }
-        }).render();
-      }, 60);
+    const ctx1 = document.getElementById('saChart1');
+    if (ctx1) {
+      new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: ['Jul','Aug','Sep','Oct','Nov','Dec'],
+          datasets: [{
+            label: 'MRR',
+            data: [1500000, 1800000, 2100000, 2500000, 2900000, mrr],
+            borderColor: '#00b386', backgroundColor: 'rgba(16,185,129,0.12)',
+            tension: 0.35, fill: true, borderWidth: 3
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => '₦' + (v/1000000).toFixed(1) + 'M' } } } }
+      });
     }
   };
 
@@ -108,7 +104,7 @@ function view_sa_dashboard() {
   return `
     <div class="space-y-5">
       <!-- HERO: single big metric, everything else secondary -->
-      <div class="bg-navy-900 rounded-2xl p-6 lg:p-8 text-white">
+      <div class="bg-gradient-to-br from-slate-900 to-brand-900 rounded-2xl p-6 lg:p-8 text-white">
         <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
             <p class="text-brand-200 text-sm">Welcome back, ${AUTH.current.name.split(' ')[0]}</p>
@@ -133,19 +129,19 @@ function view_sa_dashboard() {
       <!-- 4 KPI cards (was 8+) -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         ${statCard({ label: 'ARR', value: money(arr), icon: 'trending_up', color: 'brand' })}
-        ${statCard({ label: 'Payment Volume', value: money(allTxns.reduce((s,t)=>s+t.amount,0)), icon: 'fees', color: 'brand' })}
+        ${statCard({ label: 'Payment Volume', value: money(allTxns.reduce((s,t)=>s+t.amount,0)), icon: 'fees', color: 'blue' })}
         ${statCard({ label: 'Loan Book', value: money(loanBook), icon: 'loan', color: 'gold', trend: par > 10 ? { direction: 'down', label: `PAR ${par}%` } : { direction: 'up', label: `PAR ${par}%` } })}
         ${statCard({ label: 'Open Tickets', value: DB.query('supportTickets', t => t.status !== 'resolved').length, icon: 'chat', color: slaBreaching ? 'rose' : 'brand', trend: slaBreaching ? { direction: 'down', label: `${slaBreaching} at risk` } : null })}
       </div>
 
       <!-- Main chart + Action queue -->
       <div class="grid lg:grid-cols-3 gap-4">
-        <div class="card p-5 lg:col-span-2 overflow-hidden">
+        <div class="card p-5 lg:col-span-2">
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-bold text-slate-900">MRR Growth (6 months)</h3>
             <button class="text-sm text-brand-700 font-semibold" onclick="APP.go('sa_revenue')">Revenue details →</button>
           </div>
-          <div id="saChart1" style="min-height:250px;overflow:hidden"></div>
+          <div style="height: 240px;"><canvas id="saChart1"></canvas></div>
         </div>
 
         <!-- Needs Attention -->
@@ -153,7 +149,7 @@ function view_sa_dashboard() {
           <h3 class="font-bold text-slate-900 mb-3 flex items-center gap-2">${icon('bell','w-4 h-4 text-rose-500')} Needs Attention</h3>
           ${needsAttention.length === 0 ? `<div class="bg-emerald-50 rounded-xl p-4 text-center text-sm text-emerald-800">${icon('check','w-6 h-6 mx-auto mb-1')}<div class="font-semibold">All clear today.</div></div>` : `
             <div class="space-y-2">
-              ${needsAttention.map(n => `<button class="w-full flex items-center gap-3 p-2.5 bg-${n.tone}-50 hover:bg-${n.tone}-100 rounded-xl text-left transition" onclick="APP.go('${n.view}', ${JSON.stringify(n.params).replace(/"/g, '&quot;')})">
+              ${needsAttention.map(n => `<button class="w-full flex items-center gap-3 p-2.5 bg-${n.tone}-50 hover:bg-${n.tone}-100 border border-${n.tone}-200 rounded-xl text-left transition" onclick="APP.go('${n.view}', ${JSON.stringify(n.params).replace(/"/g, '&quot;')})">
                 <div class="w-9 h-9 rounded-lg bg-${n.tone}-200 text-${n.tone}-800 flex items-center justify-center font-bold flex-shrink-0">${n.count}</div>
                 <div class="flex-1 min-w-0">
                   <div class="font-semibold text-${n.tone}-900 text-sm truncate">${n.label}</div>
@@ -171,7 +167,7 @@ function view_sa_dashboard() {
         <div class="flex items-center justify-between mb-3">
           <div>
             <h3 class="font-bold text-slate-900">Schools at a Glance</h3>
-            <p class="text-xs text-slate-500">Status dot shows composite health · click any card to drill in</p>
+            <p class="text-xs text-slate-500">Color = composite health · click any card to drill in</p>
           </div>
           <button class="text-sm text-brand-700 font-semibold" onclick="APP.go('sa_schools')">All schools →</button>
         </div>
@@ -180,23 +176,25 @@ function view_sa_dashboard() {
             const h = computeSchoolHealth(s);
             const onboarding = computeOnboardingCompletion(s);
             const renewalDays = s.nextRenewal ? Math.ceil((new Date(s.nextRenewal) - new Date()) / 86400000) : null;
-            const dotClasses = { emerald: 'bg-green-500', amber: 'bg-amber-500', rose: 'bg-red-500' };
-            return `<button class="text-left p-4 rounded-lg border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm transition" onclick="viewSchoolDetail('${s.id}')">
-              <div class="flex items-start justify-between gap-2 mb-3">
+            const toneClasses = { emerald: 'bg-emerald-50 border-emerald-200', amber: 'bg-amber-50 border-amber-200', rose: 'bg-rose-50 border-rose-200' };
+            const dotClasses = { emerald: 'bg-emerald-500', amber: 'bg-amber-500', rose: 'bg-rose-500' };
+            const textClasses = { emerald: 'text-emerald-900', amber: 'text-amber-900', rose: 'text-rose-900' };
+            return `<button class="text-left p-3 rounded-xl border-2 ${toneClasses[h.tone]} hover:shadow transition" onclick="viewSchoolDetail('${s.id}')">
+              <div class="flex items-start justify-between mb-2">
                 <div class="flex items-center gap-2 min-w-0">
-                  <span class="w-2 h-2 rounded-full ${dotClasses[h.tone]} flex-shrink-0" title="Health ${h.score}%"></span>
-                  <div class="font-semibold text-sm text-slate-900 truncate">${s.name}</div>
+                  <div class="w-2.5 h-2.5 rounded-full ${dotClasses[h.tone]} flex-shrink-0"></div>
+                  <div class="font-bold text-sm ${textClasses[h.tone]} truncate">${s.name}</div>
                 </div>
                 ${statusBadge(s.status)}
               </div>
-              <div class="grid grid-cols-3 gap-2 mb-3">
-                <div><div class="text-[11px] text-slate-400">Health</div><div class="font-semibold text-sm text-slate-800">${h.score}%</div></div>
-                <div><div class="text-[11px] text-slate-400">Onboarding</div><div class="font-semibold text-sm text-slate-800">${onboarding}%</div></div>
-                <div><div class="text-[11px] text-slate-400">Students</div><div class="font-semibold text-sm text-slate-800">${s.students}</div></div>
+              <div class="grid grid-cols-3 gap-2 mb-2 text-xs">
+                <div><div class="text-slate-500">Health</div><div class="font-bold ${textClasses[h.tone]}">${h.score}%</div></div>
+                <div><div class="text-slate-500">Onboarding</div><div class="font-bold">${onboarding}%</div></div>
+                <div><div class="text-slate-500">Students</div><div class="font-bold">${s.students}</div></div>
               </div>
-              <div class="flex items-center justify-between text-xs pt-2.5 border-t border-slate-100">
-                <span class="text-slate-500">${s.subscriptionPlan}</span>
-                <span class="${renewalDays !== null && renewalDays <= 7 ? 'text-red-600 font-semibold' : 'text-slate-400'}">${renewalDays === null ? '' : renewalDays <= 0 ? 'Overdue' : `Renews ${renewalDays}d`}</span>
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <span>${s.subscriptionPlan}</span>
+                <span class="${renewalDays !== null && renewalDays <= 7 ? 'text-rose-700 font-bold' : ''}">${renewalDays === null ? '' : renewalDays <= 0 ? 'Overdue' : `Renews ${renewalDays}d`}</span>
               </div>
             </button>`;
           }).join('')}
@@ -214,7 +212,7 @@ function exportRemittancesCSV() {
     const sch = DB.find('schools', r.schoolId);
     return [sch ? sch.name : '', r.period, r.amount, r.status, r.remittedAt || ''];
   });
-  downloadCSV(headers, rows, 'caspaa_remittances');
+  downloadCSVDated(headers, rows, 'caspaa_remittances');
 }
 
 function exportTopSchoolsCSV(mode) {
@@ -226,10 +224,10 @@ function exportTopSchoolsCSV(mode) {
   const rows = schools.slice(0, 10).map((s, i) => mode === 'value'
     ? [i + 1, s.name, s.proprietor, s.subscriptionPlan, s.monthlyFee * 12, s.status]
     : [i + 1, s.name, s.proprietor, s.students, s.subscriptionPlan, s.status]);
-  downloadCSV(headers, rows, mode === 'value' ? 'caspaa_top_schools_by_value' : 'caspaa_top_schools_by_volume');
+  downloadCSVDated(headers, rows, mode === 'value' ? 'caspaa_top_schools_by_value' : 'caspaa_top_schools_by_volume');
 }
 
-function downloadCSV(headers, rows, filename) {
+function downloadCSVDated(headers, rows, filename) {
   const csv = [headers, ...rows].map(r => r.map(v => {
     const str = String(v == null ? '' : v);
     return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
@@ -332,7 +330,7 @@ function viewSchoolDetail(schoolId) {
 
   const subscriptionTab = `
     <div class="space-y-4">
-      <div class="bg-navy-800 text-white rounded-2xl p-4">
+      <div class="bg-gradient-to-br from-brand-700 to-brand-800 text-white rounded-2xl p-4">
         <div class="flex items-center justify-between">
           <div>
             <div class="text-xs text-brand-200 uppercase font-semibold">Current Plan</div>
@@ -379,7 +377,7 @@ function viewSchoolDetail(schoolId) {
       <div class="pt-3 border-t border-slate-100">
         <h4 class="text-xs uppercase font-semibold text-slate-500 mb-2">Recent Invoices</h4>
         <table class="tbl">
-          <thead><tr><th>Period</th><th>Amount</th><th>Due</th><th>Status</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Period</th><th scope="col">Amount</th><th scope="col">Due</th><th scope="col">Status</th></tr></thead>
           <tbody>
             ${schoolInvs.slice(0, 6).map(i => `<tr>
               <td>${i.period}</td>
@@ -496,7 +494,7 @@ function exportSchoolsCSV() {
     s.joinedAt, s.nextRenewal || '', s.autoRenew ? 'Yes' : 'No',
     s.kyc ? s.kyc.regNumber : '', s.kyc && s.kyc.cacUploaded ? 'Verified' : 'Pending'
   ]);
-  downloadCSV(headers, rows, 'caspaa_schools');
+  downloadCSVDated(headers, rows, 'caspaa_schools');
 }
 
 function toggleSchoolStatus(schoolId, status) {
@@ -558,16 +556,16 @@ function onboardSchoolModal() {
         </div>
 
         <h4 class="text-xs uppercase font-semibold text-slate-500 mt-2">School Profile</h4>
-        <div><label class="input-label">School Name *</label><input id="ns_name" class="input" /></div>
+        <div><label class="input-label" for="ns_name">School Name *</label><input id="ns_name" class="input" /></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Proprietor *</label><input id="ns_prop" class="input" /></div>
-          <div><label class="input-label">Phone *</label><input id="ns_phone" class="input" placeholder="+234…" /></div>
+          <div><label class="input-label" for="ns_prop">Proprietor *</label><input id="ns_prop" class="input" /></div>
+          <div><label class="input-label" for="ns_phone">Phone *</label><input id="ns_phone" class="input" placeholder="+234…" /></div>
         </div>
-        <div><label class="input-label">Email *</label><input id="ns_email" type="email" class="input" /></div>
-        <div><label class="input-label">Address *</label><input id="ns_addr" class="input" /></div>
+        <div><label class="input-label" for="ns_email">Email *</label><input id="ns_email" type="email" class="input" /></div>
+        <div><label class="input-label" for="ns_addr">Address *</label><input id="ns_addr" class="input" /></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Expected Students</label><input id="ns_stu" type="number" class="input" placeholder="100" /></div>
-          <div><label class="input-label">Subscription Plan *</label>
+          <div><label class="input-label" for="ns_stu">Expected Students</label><input id="ns_stu" type="number" class="input" placeholder="100" /></div>
+          <div><label class="input-label" for="ns_plan">Subscription Plan *</label>
             <select id="ns_plan" class="input">
               <option value="Essential">Essential — ₦45,000/mo (up to 100 students)</option>
               <option value="Professional" selected>Professional — ₦95,000/mo (up to 300 students)</option>
@@ -578,10 +576,10 @@ function onboardSchoolModal() {
 
         <h4 class="text-xs uppercase font-semibold text-slate-500 mt-3">KYC (Know Your Customer)</h4>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">CAC Registration No.</label><input id="ns_reg" class="input" placeholder="e.g. RC-228491" /></div>
-          <div><label class="input-label">Owner NIN</label><input id="ns_nin" class="input" placeholder="11-digit NIN" /></div>
+          <div><label class="input-label" for="ns_reg">CAC Registration No.</label><input id="ns_reg" class="input" placeholder="e.g. RC-228491" /></div>
+          <div><label class="input-label" for="ns_nin">Owner NIN</label><input id="ns_nin" class="input" placeholder="11-digit NIN" /></div>
         </div>
-        <div><label class="input-label">Accreditation Body</label><input id="ns_accred" class="input" placeholder="e.g. Lagos State Ministry of Education" /></div>
+        <div><label class="input-label" for="ns_accred">Accreditation Body</label><input id="ns_accred" class="input" placeholder="e.g. Lagos State Ministry of Education" /></div>
         <label class="flex items-center gap-2 text-sm">
           <input type="checkbox" id="ns_cac" checked />
           <span>CAC document uploaded (simulated)</span>
@@ -646,8 +644,8 @@ function view_sa_revenue() {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'SaaS MRR', value: money(mrr), icon: 'fees', color: 'brand' })}
       ${statCard({ label: 'Payment Fees', value: money(paymentComm), icon: 'fees', color: 'gold' })}
-      ${statCard({ label: 'Lending Interest', value: money(lendingComm), icon: 'loan', color: 'brand' })}
-      ${statCard({ label: 'Referral Fees', value: money(referralComm), icon: 'trending_up', color: 'brand' })}
+      ${statCard({ label: 'Lending Interest', value: money(lendingComm), icon: 'loan', color: 'blue' })}
+      ${statCard({ label: 'Referral Fees', value: money(referralComm), icon: 'trending_up', color: 'purple' })}
     </div>
 
     ${tabs([
@@ -669,7 +667,7 @@ function view_sa_revenue_subscriptions() {
   return `
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>School</th><th>Plan</th><th>Students</th><th>Monthly Fee</th><th>ARR</th><th>Next Renewal</th><th>Status</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">School</th><th scope="col">Plan</th><th scope="col">Students</th><th scope="col">Monthly Fee</th><th scope="col">ARR</th><th scope="col">Next Renewal</th><th scope="col">Status</th></tr></thead>
         <tbody>
           ${schools.map(s => {
             const days = s.nextRenewal ? Math.ceil((new Date(s.nextRenewal) - new Date()) / 86400000) : null;
@@ -709,7 +707,7 @@ function view_sa_revenue_invoices() {
     </div>
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Invoice</th><th>School</th><th>Period</th><th>Plan</th><th>Amount</th><th>Due</th><th>Status</th><th>Reminders</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Invoice</th><th scope="col">School</th><th scope="col">Period</th><th scope="col">Plan</th><th scope="col">Amount</th><th scope="col">Due</th><th scope="col">Status</th><th scope="col">Reminders</th><th scope="col"></th></tr></thead>
         <tbody>
           ${filtered.map(inv => {
             const s = DB.find('schools', inv.schoolId);
@@ -724,9 +722,9 @@ function view_sa_revenue_invoices() {
               <td>${overdue ? '<span class="badge badge-danger">Overdue</span>' : statusBadge(inv.status)}</td>
               <td class="text-sm">${inv.remindersSent || 0}</td>
               <td class="text-right whitespace-nowrap">
-                <button class="btn btn-ghost !p-1.5" title="Download" onclick="downloadSchoolInvoice('${inv.id}')">${icon('download','w-3.5 h-3.5')}</button>
-                ${inv.status === 'pending' ? `<button class="btn btn-ghost !p-1.5" title="Send reminder" onclick="sendInvoiceReminder('${inv.id}')">${icon('bell','w-3.5 h-3.5')}</button>
-                <button class="btn btn-ghost !p-1.5 text-emerald-700" title="Mark paid" onclick="markSchoolInvoicePaid('${inv.id}')">${icon('check','w-3.5 h-3.5')}</button>` : ''}
+                <button class="btn btn-ghost !p-1.5" aria-label="Download" title="Download" onclick="downloadSchoolInvoice('${inv.id}')">${icon('download','w-3.5 h-3.5')}</button>
+                ${inv.status === 'pending' ? `<button class="btn btn-ghost !p-1.5" aria-label="Send reminder" title="Send reminder" onclick="sendInvoiceReminder('${inv.id}')">${icon('bell','w-3.5 h-3.5')}</button>
+                <button class="btn btn-ghost !p-1.5 text-emerald-700" aria-label="Mark paid" title="Mark paid" onclick="markSchoolInvoicePaid('${inv.id}')">${icon('check','w-3.5 h-3.5')}</button>` : ''}
               </td>
             </tr>`;
           }).join('')}
@@ -753,7 +751,7 @@ function view_sa_revenue_commissions() {
     </div>
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Date</th><th>Type</th><th>School</th><th>Source</th><th>Amount</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col">School</th><th scope="col">Source</th><th scope="col">Amount</th></tr></thead>
         <tbody>
           ${filtered.sort((a,b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 50).map(c => {
             const s = DB.find('schools', c.schoolId);
@@ -829,15 +827,15 @@ function downloadSchoolInvoice(invoiceId) {
         <tr><td><strong>Due Date:</strong></td><td align="right">${fdate(inv.dueDate, { long: true })}</td></tr>
       </table>
       <table border="1" cellpadding="10" style="border-collapse:collapse;width:100%;font-size:14px">
-        <thead style="background:#f3f4f6"><tr><th align="left">Description</th><th align="right">Amount</th></tr></thead>
+        <th scope="col"ead style="background:#f3f4f6"><tr><th scope="col" align="left">Description</th><th scope="col" align="right">Amount</th></tr></thead>
         <tbody>
           <tr><td>${inv.plan} Subscription — ${inv.period}</td><td align="right">${money(inv.amount)}</td></tr>
         </tbody>
-        <tfoot style="background:${inv.status === 'paid' ? '#d1fae5' : '#fee2e2'};font-weight:bold">
+        <tfoot style="background:${inv.status === 'paid' ? '#c3f0e2' : '#fee2e2'};font-weight:bold">
           <tr><td>${inv.status === 'paid' ? 'PAID' : 'TOTAL DUE'}</td><td align="right">${money(inv.amount)}</td></tr>
         </tfoot>
       </table>
-      ${inv.status === 'paid' ? `<p style="margin-top:20px;color:#065f46">Paid on ${fdate(inv.paidAt, { long: true })}. Thank you.</p>` : `<p style="margin-top:20px;color:#991b1b">Please remit payment by ${fdate(inv.dueDate, { long: true })} to avoid service interruption.</p>`}
+      ${inv.status === 'paid' ? `<p style="margin-top:20px;color:#00966f">Paid on ${fdate(inv.paidAt, { long: true })}. Thank you.</p>` : `<p style="margin-top:20px;color:#991b1b">Please remit payment by ${fdate(inv.dueDate, { long: true })} to avoid service interruption.</p>`}
       <p style="margin-top:30px;text-align:center;color:#999;font-size:11px">Computer-generated invoice — no signature required.</p>
     </div>
   `;
@@ -851,7 +849,7 @@ function exportSchoolInvoicesCSV() {
     const s = DB.find('schools', i.schoolId);
     return [i.id, s ? s.name : '', i.period, i.plan, i.amount, i.status, i.dueDate, i.paidAt || '', i.remindersSent || 0];
   });
-  downloadCSV(headers, rows, 'caspaa_school_invoices');
+  downloadCSVDated(headers, rows, 'caspaa_school_invoices');
 }
 
 /* ---------- Lending Book (tabbed) ---------- */
@@ -869,8 +867,8 @@ function view_sa_lending() {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Active Loans', value: active.length, icon: 'loan', color: 'brand' })}
       ${statCard({ label: 'Total Disbursed', value: money(book), icon: 'fees', color: 'gold' })}
-      ${statCard({ label: 'Interest Income', value: money(interest), icon: 'trending_up', color: 'brand' })}
-      ${statCard({ label: 'Repaid So Far', value: money(repaid), icon: 'check', color: 'brand' })}
+      ${statCard({ label: 'Interest Income', value: money(interest), icon: 'trending_up', color: 'blue' })}
+      ${statCard({ label: 'Repaid So Far', value: money(repaid), icon: 'check', color: 'purple' })}
     </div>
 
     ${tabs([
@@ -895,7 +893,7 @@ function renderLoanBookTab() {
     </div>
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Loan ID</th><th>School</th><th>Parent</th><th>Amount</th><th>Term</th><th>Score</th><th>Status</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Loan ID</th><th scope="col">School</th><th scope="col">Parent</th><th scope="col">Amount</th><th scope="col">Term</th><th scope="col">Score</th><th scope="col">Status</th></tr></thead>
         <tbody>
           ${loans.map(l => {
             const p = DB.find('parents', l.parentId);
@@ -931,7 +929,7 @@ function renderDisbursementTab() {
       ${statCard({ label: 'Failed', value: disbursements.filter(d => d.status === 'failed').length, icon: 'trending_down', color: 'rose' })}
     </div>
 
-    ${pending.length ? `<div class="card p-4 mb-4 bg-amber-50">
+    ${pending.length ? `<div class="card p-5 mb-4 bg-amber-50">
       <h4 class="font-bold text-amber-900 mb-2">${pending.length} approved loan${pending.length>1?'s':''} awaiting disbursement</h4>
       <div class="space-y-2">
         ${pending.map(l => {
@@ -947,7 +945,7 @@ function renderDisbursementTab() {
           </div>`;
         }).join('')}
       </div>
-    </div>` : `<div class="card p-4 mb-4 bg-emerald-50 text-sm text-emerald-900 flex items-center gap-2">
+    </div>` : `<div class="card p-5 mb-4 bg-emerald-50 text-sm text-emerald-900 flex items-center gap-2">
       ${icon('check','w-5 h-5')} <span>All approved loans have been disbursed.</span>
     </div>`}
 
@@ -957,7 +955,7 @@ function renderDisbursementTab() {
     </div>
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Reference</th><th>Recipient (School)</th><th>Account</th><th>Amount</th><th>Method</th><th>Status</th><th>Completed</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Reference</th><th scope="col">Recipient (School)</th><th scope="col">Account</th><th scope="col">Amount</th><th scope="col">Method</th><th scope="col">Status</th><th scope="col">Completed</th></tr></thead>
         <tbody>
           ${disbursements.map(d => `<tr>
             <td><code class="text-xs">${d.reference}</code></td>
@@ -1056,7 +1054,7 @@ function renderLoanAnalyticsTab() {
     const c1 = document.getElementById('loanAnaChart1');
     if (c1) new Chart(c1, {
       type: 'doughnut',
-      data: { labels: Object.keys(buckets), datasets: [{ data: Object.values(buckets), backgroundColor: ['#00b386', '#10b981', '#f59e0b', '#dc2626'], borderWidth: 0 }] },
+      data: { labels: Object.keys(buckets), datasets: [{ data: Object.values(buckets), backgroundColor: ['#00b386', '#00c08f', '#f59e0b', '#dc2626'], borderWidth: 0 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
     });
     const c2 = document.getElementById('loanAnaChart2');
@@ -1072,7 +1070,7 @@ function renderLoanAnalyticsTab() {
       }
       new Chart(c2, {
         type: 'bar',
-        data: { labels: months, datasets: [{ label: 'Repaid', data: repaymentData, backgroundColor: '#10b981', borderRadius: 6 }] },
+        data: { labels: months, datasets: [{ label: 'Repaid', data: repaymentData, backgroundColor: '#00c08f', borderRadius: 6 }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => '₦' + (v/1000).toFixed(0) + 'k' } } } }
       });
     }
@@ -1081,7 +1079,7 @@ function renderLoanAnalyticsTab() {
   return `
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Loan Volume', value: money(totalApproved), icon: 'fees', color: 'brand' })}
-      ${statCard({ label: 'Repayment Rate', value: totalDue ? Math.round((totalRepaid / totalDue) * 100) + '%' : '—', icon: 'trending_up', color: 'brand' })}
+      ${statCard({ label: 'Repayment Rate', value: totalDue ? Math.round((totalRepaid / totalDue) * 100) + '%' : '—', icon: 'trending_up', color: 'blue' })}
       ${statCard({ label: 'Overdue Installments', value: overdueRepayments.length, icon: 'bell', color: overdueRepayments.length ? 'rose' : 'brand' })}
       ${statCard({ label: 'Portfolio at Risk', value: par + '%', icon: 'trending_down', color: par > 10 ? 'rose' : 'gold' })}
     </div>
@@ -1104,7 +1102,7 @@ function renderLoanAnalyticsTab() {
         <button class="btn btn-secondary text-sm" onclick="sendDelinquencyReminders()">${icon('bell','w-3.5 h-3.5')} Send reminders</button>
       </div>
       <table class="tbl">
-        <thead><tr><th>Loan</th><th>Parent</th><th>Amount Due</th><th>Days Overdue</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Loan</th><th scope="col">Parent</th><th scope="col">Amount Due</th><th scope="col">Days Overdue</th></tr></thead>
         <tbody>
           ${overdueRepayments.map(o => {
             const p = DB.find('parents', o.loan.parentId);
@@ -1134,14 +1132,14 @@ function exportLoanBookCSV() {
     const s = DB.find('schools', l.schoolId);
     return [l.id, s ? s.name : '', p ? p.name : '', l.amount, l.term, l.interestRate, l.creditScore || '', l.status, l.appliedAt, l.approvedAt || ''];
   });
-  downloadCSV(headers, rows, 'caspaa_loan_book');
+  downloadCSVDated(headers, rows, 'caspaa_loan_book');
 }
 
 function exportDisbursementsCSV() {
   const disb = DB.get('disbursements');
   const headers = ['Reference', 'Loan ID', 'Recipient', 'Account', 'Amount', 'Method', 'Status', 'Initiated', 'Completed'];
   const rows = disb.map(d => [d.reference, d.loanId, d.recipientName, d.recipientAccount, d.amount, d.method, d.status, d.initiatedAt, d.completedAt || '']);
-  downloadCSV(headers, rows, 'caspaa_disbursements');
+  downloadCSVDated(headers, rows, 'caspaa_disbursements');
 }
 
 /* ---------- Analytics (tabbed) ---------- */
@@ -1163,7 +1161,7 @@ function view_sa_analytics() {
       <span class="text-sm font-semibold text-slate-700">${icon('calendar','w-4 h-4 inline mr-1')} Date range:</span>
       <div class="flex items-center gap-2 flex-1 flex-wrap">
         <input type="date" class="input !w-40 text-sm" value="${dateFrom}" max="${dateTo}" onchange="APP.params.anaFrom = this.value; APP.render()" />
-        <span class="text-slate-400 text-sm">to</span>
+        <span class="text-slate-500 text-sm">to</span>
         <input type="date" class="input !w-40 text-sm" value="${dateTo}" min="${dateFrom}" max="${today()}" onchange="APP.params.anaTo = this.value; APP.render()" />
       </div>
       <div class="flex gap-1 flex-wrap">
@@ -1174,7 +1172,7 @@ function view_sa_analytics() {
         <button class="btn btn-ghost !py-1 !px-2 text-xs text-rose-600" onclick="APP.params.anaFrom=null; APP.params.anaTo=null; APP.render()">Reset</button>
       </div>
     </div>
-    <p class="text-xs text-slate-400 mb-4">Showing data from <strong>${fdate(dateFrom, { long: true })}</strong> to <strong>${fdate(dateTo, { long: true })}</strong></p>
+    <p class="text-xs text-slate-500 mb-4">Showing data from <strong>${fdate(dateFrom, { long: true })}</strong> to <strong>${fdate(dateTo, { long: true })}</strong></p>
 
     <div>
       ${tab === 'usage' ? renderUsageTab(dateFrom, dateTo) :
@@ -1203,7 +1201,7 @@ function renderBusinessTab(dateFrom, dateTo) {
         type: 'bar',
         data: {
           labels: schools.map(s => s.name.split(' ').slice(0, 2).join(' ')),
-          datasets: [{ label: 'Students', data: schools.map(s => s.students), backgroundColor: '#10b981', borderRadius: 6 }]
+          datasets: [{ label: 'Students', data: schools.map(s => s.students), backgroundColor: '#00c08f', borderRadius: 6 }]
         },
         options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
       });
@@ -1225,9 +1223,9 @@ function renderBusinessTab(dateFrom, dateTo) {
   return `
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Active Users (DAU)', value: '1,247', icon: 'students', color: 'brand', trend: { direction: 'up', label: '+12%' } })}
-      ${statCard({ label: 'MAU', value: '4,820', icon: 'students', color: 'brand' })}
+      ${statCard({ label: 'MAU', value: '4,820', icon: 'students', color: 'blue' })}
       ${statCard({ label: 'NPS', value: '62', icon: 'trending_up', color: 'gold' })}
-      ${statCard({ label: 'Crash-free', value: '99.7%', icon: 'check', color: 'brand' })}
+      ${statCard({ label: 'Crash-free', value: '99.7%', icon: 'check', color: 'purple' })}
     </div>
     <div class="card p-5 mb-4">
       <h3 class="font-bold text-slate-900 mb-3">Schools by Location</h3>
@@ -1290,13 +1288,13 @@ function renderUsageTab(dateFrom, dateTo) {
     const c1 = document.getElementById('usageChart1');
     if (c1) new Chart(c1, {
       type: 'line',
-      data: { labels: days.map(d => fdate(d, { short: true })), datasets: [{ label: 'DAU', data: dauByDay, borderColor: '#00b386', backgroundColor: 'rgba(0, 179, 134,0.15)', tension: 0.35, fill: true, borderWidth: 2 }] },
+      data: { labels: days.map(d => fdate(d, { short: true })), datasets: [{ label: 'DAU', data: dauByDay, borderColor: '#00b386', backgroundColor: 'rgba(16,185,129,0.15)', tension: 0.35, fill: true, borderWidth: 2 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
     const c2 = document.getElementById('usageChart2');
     if (c2) new Chart(c2, {
       type: 'bar',
-      data: { labels: sortedFeatures.map(f => f[0]), datasets: [{ label: 'Events', data: sortedFeatures.map(f => f[1]), backgroundColor: '#10b981', borderRadius: 6 }] },
+      data: { labels: sortedFeatures.map(f => f[0]), datasets: [{ label: 'Events', data: sortedFeatures.map(f => f[1]), backgroundColor: '#00c08f', borderRadius: 6 }] },
       options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
     });
   };
@@ -1306,9 +1304,9 @@ function renderUsageTab(dateFrom, dateTo) {
   return `
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'Daily Active Users', value: dauByDay[dauByDay.length - 1] || 0, icon: 'students', color: 'brand', trend: { direction: 'up', label: 'last 24h' } })}
-      ${statCard({ label: 'Weekly Active Users', value: Math.max(...dauByDay), icon: 'students', color: 'brand' })}
+      ${statCard({ label: 'Weekly Active Users', value: Math.max(...dauByDay), icon: 'students', color: 'blue' })}
       ${statCard({ label: 'Feature Events (14d)', value: totalEvents.toLocaleString(), icon: 'dashboard', color: 'gold' })}
-      ${statCard({ label: 'Avg Logins / school / week', value: '5.2', icon: 'check', color: 'brand' })}
+      ${statCard({ label: 'Avg Logins / school / week', value: '5.2', icon: 'check', color: 'purple' })}
     </div>
     <div class="grid lg:grid-cols-2 gap-4 mb-4">
       <div class="card p-5">
@@ -1323,7 +1321,7 @@ function renderUsageTab(dateFrom, dateTo) {
     <div class="card p-5">
       <h3 class="font-bold text-slate-900 mb-3">School Login Frequency (last 14 days)</h3>
       <table class="tbl">
-        <thead><tr><th>School</th><th>Active Days</th><th>Engagement</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">School</th><th scope="col">Active Days</th><th scope="col">Engagement</th></tr></thead>
         <tbody>
           ${schoolFreq.map(({ school, active }) => `<tr>
             <td><div class="flex items-center gap-2">${avatar(school.name, 'sm')}<span class="font-medium">${school.name}</span></div></td>
@@ -1342,9 +1340,9 @@ function renderSystemTab() {
   return `
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       ${statCard({ label: 'API Uptime (90d)', value: (m.apiUptime || 99.9) + '%', icon: 'check', color: 'brand' })}
-      ${statCard({ label: 'Avg Response Time', value: (m.avgResponseMs || 200) + 'ms', icon: 'trending_up', color: 'brand' })}
+      ${statCard({ label: 'Avg Response Time', value: (m.avgResponseMs || 200) + 'ms', icon: 'trending_up', color: 'blue' })}
       ${statCard({ label: 'Failed Payment Rate', value: (m.failedPaymentRate || 0) + '%', icon: 'trending_down', color: m.failedPaymentRate > 3 ? 'rose' : 'gold' })}
-      ${statCard({ label: 'Crash-free Sessions', value: (m.crashFreeSessions || 99) + '%', icon: 'check', color: 'brand' })}
+      ${statCard({ label: 'Crash-free Sessions', value: (m.crashFreeSessions || 99) + '%', icon: 'check', color: 'purple' })}
     </div>
 
     <div class="grid lg:grid-cols-2 gap-4 mb-4">
@@ -1428,7 +1426,7 @@ function exportAnalyticsCSV() {
     const revenue = DB.query('transactions', t => t.schoolId === s.id && t.status === 'successful').reduce((sum, t) => sum + t.amount, 0);
     return [s.name, s.subscriptionPlan, s.students, s.status, s.monthlyFee * 12, s.joinedAt, revenue];
   });
-  downloadCSV(headers, rows, 'caspaa_business_analytics');
+  downloadCSVDated(headers, rows, 'caspaa_business_analytics');
 }
 
 /* ---------- Support Desk ---------- */
@@ -1451,7 +1449,7 @@ function view_sa_support() {
 
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
       ${statCard({ label: 'Open', value: tickets.filter(t => t.status === 'open').length, icon: 'bell', color: 'gold' })}
-      ${statCard({ label: 'In Progress', value: tickets.filter(t => t.status === 'in_progress').length, icon: 'chat', color: 'brand' })}
+      ${statCard({ label: 'In Progress', value: tickets.filter(t => t.status === 'in_progress').length, icon: 'chat', color: 'blue' })}
       ${statCard({ label: 'Escalated', value: tickets.filter(t => t.status === 'escalated').length, icon: 'trending_up', color: 'rose' })}
       ${statCard({ label: 'Resolved', value: tickets.filter(t => t.status === 'resolved').length, icon: 'check', color: 'brand' })}
       ${statCard({ label: 'SLA at Risk', value: slaBreaching.length, icon: 'bell', color: slaBreaching.length ? 'rose' : 'brand' })}
@@ -1467,7 +1465,7 @@ function view_sa_support() {
 
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Ticket</th><th>School</th><th>Subject</th><th>Priority</th><th>Channel</th><th>SLA</th><th>Status</th><th>Assigned</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Ticket</th><th scope="col">School</th><th scope="col">Subject</th><th scope="col">Priority</th><th scope="col">Channel</th><th scope="col">SLA</th><th scope="col">Status</th><th scope="col">Assigned</th><th scope="col"></th></tr></thead>
         <tbody>
           ${filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(t => {
             const sch = DB.find('schools', t.schoolId);
@@ -1525,7 +1523,7 @@ function viewTicket(ticketId) {
             <div class="font-bold ${t.status === 'resolved' ? 'text-emerald-700' : slaRemaining <= 0 ? 'text-rose-700' : slaRemaining < t.slaHours * 0.2 ? 'text-amber-700' : 'text-slate-700'}">
               ${t.status === 'resolved' ? 'Met' : (slaRemaining <= 0 ? `Breached ${Math.abs(Math.round(slaRemaining))}h ago` : `${Math.round(slaRemaining)}h left`)}
             </div>
-            <div class="text-xs text-slate-400 mt-1">Opened ${fdate(t.createdAt, { relative: true })}</div>
+            <div class="text-xs text-slate-500 mt-1">Opened ${fdate(t.createdAt, { relative: true })}</div>
           </div>
         </div>
 
@@ -1567,7 +1565,7 @@ function viewTicket(ticketId) {
                   <div class="flex items-center gap-2">
                     <span class="font-semibold text-sm">${author ? author.name : 'Support'}</span>
                     ${n.internal ? '<span class="badge badge-warn">internal</span>' : '<span class="badge badge-info">shared</span>'}
-                    <span class="text-xs text-slate-400 ml-auto">${fdate(n.timestamp, { relative: true })}</span>
+                    <span class="text-xs text-slate-500 ml-auto">${fdate(n.timestamp, { relative: true })}</span>
                   </div>
                   <div class="text-sm mt-1">${n.text}</div>
                 </div>
@@ -1624,20 +1622,20 @@ function newTicketModal() {
     title: 'Open New Support Ticket',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">School</label>
+        <div><label class="input-label" for="tkt_school">School</label>
           <select id="tkt_school" class="input">${schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
         </div>
-        <div><label class="input-label">Requester (name)</label><input id="tkt_requester" class="input" placeholder="e.g. Mr. Olusegun Adebayo" /></div>
-        <div><label class="input-label">Subject</label><input id="tkt_subject" class="input" /></div>
-        <div><label class="input-label">Description</label><textarea id="tkt_desc" rows="3" class="input"></textarea></div>
+        <div><label class="input-label" for="tkt_requester">Requester (name)</label><input id="tkt_requester" class="input" placeholder="e.g. Mr. Olusegun Adebayo" /></div>
+        <div><label class="input-label" for="tkt_subject">Subject</label><input id="tkt_subject" class="input" /></div>
+        <div><label class="input-label" for="tkt_desc">Description</label><textarea id="tkt_desc" rows="3" class="input"></textarea></div>
         <div class="grid grid-cols-3 gap-3">
-          <div><label class="input-label">Priority</label>
+          <div><label class="input-label" for="tkt_priority">Priority</label>
             <select id="tkt_priority" class="input"><option>low</option><option selected>medium</option><option>high</option></select>
           </div>
-          <div><label class="input-label">Channel</label>
+          <div><label class="input-label" for="tkt_channel">Channel</label>
             <select id="tkt_channel" class="input"><option>platform</option><option>whatsapp</option><option>email</option></select>
           </div>
-          <div><label class="input-label">SLA (hours)</label><input id="tkt_sla" type="number" class="input" value="24" /></div>
+          <div><label class="input-label" for="tkt_sla">SLA (hours)</label><input id="tkt_sla" type="number" class="input" value="24" /></div>
         </div>
       </div>
     `,
@@ -1693,7 +1691,7 @@ function view_sa_team() {
 
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Member</th><th>Role</th><th>Email</th><th>Permissions</th><th>Last Active</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Member</th><th scope="col">Role</th><th scope="col">Email</th><th scope="col">Permissions</th><th scope="col">Last Active</th><th scope="col"></th></tr></thead>
         <tbody>
           ${team.map(m => `<tr>
             <td><div class="flex items-center gap-2">${avatar(m.name, 'sm')}<div><div class="font-semibold text-sm">${m.name}</div><div class="text-xs text-slate-500">Joined ${fdate(m.createdAt, { short: true })}</div></div></div></td>
@@ -1702,8 +1700,8 @@ function view_sa_team() {
             <td><div class="text-xs">${m.permissions.includes('*') ? '<span class="badge badge-success">All access</span>' : m.permissions.length + ' module' + (m.permissions.length !== 1 ? 's' : '')}</div></td>
             <td class="text-xs text-slate-500">${fdate(m.lastActive, { relative: true })}</td>
             <td class="text-right">
-              <button class="btn btn-ghost !p-1.5" title="Edit permissions" onclick="editTeamMember('${m.id}')">${icon('edit','w-4 h-4')}</button>
-              ${m.id !== 'sa_001' ? `<button class="btn btn-ghost !p-1.5 text-rose-600" title="Remove" onclick="removeTeamMember('${m.id}')">${icon('trash','w-4 h-4')}</button>` : ''}
+              <button class="btn btn-ghost !p-1.5" aria-label="Edit permissions" title="Edit permissions" onclick="editTeamMember('${m.id}')">${icon('edit','w-4 h-4')}</button>
+              ${m.id !== 'sa_001' ? `<button class="btn btn-ghost !p-1.5 text-rose-600" aria-label="Remove" title="Remove" onclick="removeTeamMember('${m.id}')">${icon('trash','w-4 h-4')}</button>` : ''}
             </td>
           </tr>`).join('')}
         </tbody>
@@ -1788,7 +1786,7 @@ function saveTeamMemberPermissions(memberId) {
 
 function removeTeamMember(memberId) {
   const m = DB.find('platformTeam', memberId);
-  confirm(`Remove ${m.name} from the CASPAA team? Their access will be revoked immediately.`, () => {
+  confirmDialog(`Remove ${m.name} from the CASPAA team? Their access will be revoked immediately.`, () => {
     DB.remove('platformTeam', memberId);
     APP.render();
     toast('Team member removed', 'info');
@@ -1800,9 +1798,9 @@ function addTeamMemberModal() {
     title: 'Add CASPAA Team Member',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Full Name</label><input id="tm_name" class="input" /></div>
-        <div><label class="input-label">Email</label><input id="tm_email" type="email" class="input" placeholder="@caspaa.com" /></div>
-        <div><label class="input-label">Role</label>
+        <div><label class="input-label" for="tm_name">Full Name</label><input id="tm_name" class="input" /></div>
+        <div><label class="input-label" for="tm_email">Email</label><input id="tm_email" type="email" class="input" placeholder="@caspaa.com" /></div>
+        <div><label class="input-label" for="tm_role">Role</label>
           <select id="tm_role" class="input" onchange="onTeamRoleChange()">
             <option>Operations</option>
             <option>Finance</option>
@@ -1858,7 +1856,7 @@ function view_sa_audit() {
     ${pageHeader({ title: 'Audit Log', subtitle: 'Every action tracked across the platform' })}
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Target</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">When</th><th scope="col">Actor</th><th scope="col">Action</th><th scope="col">Target</th></tr></thead>
         <tbody>
           ${logs.map(l => `<tr>
             <td class="text-sm text-slate-500">${fdate(l.timestamp, { time: true })}</td>

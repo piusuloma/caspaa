@@ -71,7 +71,7 @@ function view_par_dashboard() {
       </div>
 
       <!-- Pending consent alert -->
-      ${pendingConsent ? `<button class="w-full flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-left hover:bg-amber-100 transition" onclick="APP.go('par_consent')">
+      ${pendingConsent ? `<button class="w-full flex items-center gap-3 bg-amber-50 rounded-xl p-4 text-left hover:bg-amber-100 transition" onclick="APP.go('par_consent')">
         <span class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">${icon('check','w-5 h-5')}</span>
         <div class="flex-1 min-w-0">
           <div class="font-semibold text-amber-900">${pendingConsent} consent form${pendingConsent !== 1 ? 's' : ''} awaiting your approval</div>
@@ -105,7 +105,7 @@ function view_par_dashboard() {
                 <h2 class="font-bold text-slate-900">My Children</h2>
               </div>
               <div class="card p-6 text-center">
-                <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">${icon('user','w-6 h-6')}</div>
+                <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 mb-3">${icon('user','w-6 h-6')}</div>
                 <div class="font-semibold text-slate-700 mb-1">No children enrolled yet</div>
                 <div class="text-sm text-slate-500">Contact the school admissions office to start an application.</div>
               </div>`;
@@ -124,7 +124,7 @@ function view_par_dashboard() {
             <div class="flex items-center justify-between mb-3">
               <h2 class="font-bold text-slate-900">Admission Tracker</h2>
             </div>
-            <button class="w-full card p-4 text-left hover:shadow-md transition border border-brand-100" onclick="APP.go('par_fees')">
+            <button class="w-full card p-4 text-left hover:shadow-md transition" onclick="APP.go('par_fees')">
               <div class="flex items-center gap-3 mb-2">
                 ${avatar(myApp.applicantName, 'md')}
                 <div class="flex-1">
@@ -143,7 +143,7 @@ function view_par_dashboard() {
       ${(() => {
         const achievers = children.filter(c => c.awards || c.achievements || c.badges);
         if (!achievers.length) return '';
-        return `<div class="card bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 p-4">
+        return `<div class="card bg-gradient-to-br from-amber-50 to-amber-50 p-4">
           <div class="flex items-center gap-2 mb-3">
             <span class="w-8 h-8 rounded-lg bg-amber-400 text-white flex items-center justify-center text-base">🏆</span>
             <h3 class="font-bold text-amber-900">Recent Achievements</h3>
@@ -168,11 +168,11 @@ function view_par_dashboard() {
       <!-- Parent assistance banner -->
       ${(() => {
         const school = DB.find('schools', currentSchoolId()) || {};
-        return `<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
-          <span class="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">${icon('chat','w-5 h-5')}</span>
+        return `<div class="bg-brand-50 rounded-xl p-4 flex gap-3">
+          <span class="w-10 h-10 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0">${icon('chat','w-5 h-5')}</span>
           <div class="flex-1 min-w-0">
-            <div class="font-semibold text-blue-900">Need help?</div>
-            <div class="text-sm text-blue-700 mt-0.5">For queries on fees, records, or your child's welfare, contact the school directly.</div>
+            <div class="font-semibold text-brand-900">Need help?</div>
+            <div class="text-sm text-brand-700 mt-0.5">For queries on fees, records, or your child's welfare, contact the school directly.</div>
             ${school.phone ? `<div class="mt-2 flex flex-wrap gap-2">
               <a href="tel:${school.phone}" class="btn btn-secondary !text-xs !py-1.5">${icon('bell','w-3 h-3')} ${school.phone}</a>
               ${school.email ? `<a href="mailto:${school.email}" class="btn btn-secondary !text-xs !py-1.5">${icon('chat','w-3 h-3')} Email school</a>` : ''}
@@ -197,11 +197,11 @@ function view_par_dashboard() {
           <div class="font-semibold text-sm text-slate-900">Consent</div>
         </button>
         <button class="card card-hover p-5 text-center" onclick="APP.go('par_messages')">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-2">${icon('chat','w-6 h-6')}</div>
+          <div class="w-12 h-12 mx-auto rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center mb-2">${icon('chat','w-6 h-6')}</div>
           <div class="font-semibold text-sm text-slate-900">Message Teacher</div>
         </button>
         <button class="card card-hover p-5 text-center" onclick="APP.go('par_announce')">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-2">${icon('bell','w-6 h-6')}</div>
+          <div class="w-12 h-12 mx-auto rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center mb-2">${icon('bell','w-6 h-6')}</div>
           <div class="font-semibold text-sm text-slate-900">Announcements</div>
         </button>
       </div>
@@ -217,7 +217,7 @@ function view_par_dashboard() {
           ${announcements.map(a => `<div class="border-l-4 border-brand-500 pl-3 py-1">
             <div class="font-semibold text-sm text-slate-900">${a.title}</div>
             <div class="text-sm text-slate-600 line-clamp-2">${a.body}</div>
-            <div class="text-xs text-slate-400 mt-1">${fdate(a.timestamp, { relative: true })}</div>
+            <div class="text-xs text-slate-500 mt-1">${fdate(a.timestamp, { relative: true })}</div>
           </div>`).join('')}
         </div>`}
       </div>
@@ -257,7 +257,7 @@ function parentWelcomeWizard() {
       <div class="space-y-3">
         <div><label class="input-label" for="pw_old">Temporary password (we sent this)</label>
           <input id="pw_old" type="password" class="input" placeholder="${parent.credentials ? parent.credentials.tempPassword : ''}" />
-          <p class="text-xs text-slate-400 mt-1">${parent.credentials ? 'Pre-fill hint: ' + parent.credentials.tempPassword : ''}</p>
+          <p class="text-xs text-slate-500 mt-1">${parent.credentials ? 'Pre-fill hint: ' + parent.credentials.tempPassword : ''}</p>
         </div>
         <div><label class="input-label" for="pw_new">New password</label><input id="pw_new" type="password" class="input" placeholder="At least 8 characters" /></div>
         <div><label class="input-label" for="pw_new2">Confirm new password</label><input id="pw_new2" type="password" class="input" placeholder="Re-enter new password" /></div>
@@ -303,7 +303,7 @@ function parentWelcomeWizard() {
           </div>`;
         }).join('')}
       </div>
-      ${totalOutstanding > 0 ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900 mt-3">
+      ${totalOutstanding > 0 ? `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900 mt-3">
         ${icon('fees','w-4 h-4 inline')} Your first invoice (<strong>${money(totalOutstanding)} outstanding</strong>) is ready. We made paying easy — card, transfer, USSD, or visit the school office.
       </div>` : ''}
     `;
@@ -373,9 +373,9 @@ function renderChildCard(child) {
           <div class="text-xs text-brand-700 font-semibold">ATTENDANCE</div>
           <div class="font-bold text-brand-900">${attRate}%</div>
         </div>
-        <div class="bg-blue-50 rounded-lg p-2">
-          <div class="text-xs text-blue-700 font-semibold">AVG SCORE</div>
-          <div class="font-bold text-blue-900">${avg}%</div>
+        <div class="bg-brand-50 rounded-lg p-2">
+          <div class="text-xs text-brand-700 font-semibold">AVG SCORE</div>
+          <div class="font-bold text-brand-900">${avg}%</div>
         </div>
       </div>
       ${inv ? `<div class="bg-slate-50 rounded-lg p-3 mb-3">
@@ -439,7 +439,7 @@ function _childTab(studentId, tab) {
                 <div class="text-xs text-slate-500">CA1: ${r.ca1} · CA2: ${r.ca2} · Exam: ${r.exam}</div>
               </div>
               <div class="text-right">
-                <div class="font-bold text-lg">${r.total}<span class="text-sm text-slate-400">/100</span></div>
+                <div class="font-bold text-lg">${r.total}<span class="text-sm text-slate-500">/100</span></div>
                 <span class="badge ${r.grade==='A'?'badge-success':r.grade==='F'?'badge-danger':'badge-info'}">${r.grade}</span>
               </div>
             </div>`;
@@ -459,7 +459,7 @@ function _childTab(studentId, tab) {
         <div class="space-y-1">
           ${recentAtt.length ? recentAtt.map(a => `<div class="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg text-sm">
             <span>${fdate(a.date, { long: true })}</span>${statusBadge(a.status)}</div>`).join('')
-            : '<p class="text-sm text-slate-400 text-center py-3">No attendance records yet.</p>'}
+            : '<p class="text-sm text-slate-500 text-center py-3">No attendance records yet.</p>'}
         </div>`;
 
       if (tab === 'assessments') return `
@@ -483,7 +483,7 @@ function _childTab(studentId, tab) {
                    : `<span class="badge badge-warn">Pending</span>`}
                 </div>
               </div>`;
-            }).join('')}</div>` : `<p class="text-sm text-slate-400 text-center py-2">No assignments right now.</p>`}
+            }).join('')}</div>` : `<p class="text-sm text-slate-500 text-center py-2">No assignments right now.</p>`}
           </div>
           <div>
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">CBT Exams (${cbtExams.length})</div>
@@ -497,12 +497,12 @@ function _childTab(studentId, tab) {
                 </div>
                 <div class="ml-3 flex-shrink-0 text-right">
                   ${sub ? (sub.status === 'graded'
-                    ? `<div class="font-bold text-brand-700 text-sm">${sub.totalScore}/${sub.maxScore}</div><div class="text-xs text-slate-400">Graded</div>`
+                    ? `<div class="font-bold text-brand-700 text-sm">${sub.totalScore}/${sub.maxScore}</div><div class="text-xs text-slate-500">Graded</div>`
                     : `<span class="badge badge-info">Submitted</span>`)
                   : `<span class="badge badge-warn">Not taken</span>`}
                 </div>
               </div>`;
-            }).join('')}</div>` : `<p class="text-sm text-slate-400 text-center py-2">No CBT exams assigned.</p>`}
+            }).join('')}</div>` : `<p class="text-sm text-slate-500 text-center py-2">No CBT exams assigned.</p>`}
           </div>
           <div>
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Quick Tests (${ftTests.length})</div>
@@ -515,11 +515,11 @@ function _childTab(studentId, tab) {
                   <div class="text-xs text-slate-500">${subj ? subj.name : '—'} · ${t.duration || '?'} min · Due ${fdate(t.dueDate, { short: true })}</div>
                 </div>
                 <div class="ml-3 flex-shrink-0 text-right">
-                  ${sub ? `<div class="font-bold text-emerald-700 text-sm">${sub.score}/${sub.total}</div><div class="text-xs text-slate-400">${sub.percentage}%</div>`
+                  ${sub ? `<div class="font-bold text-emerald-700 text-sm">${sub.score}/${sub.total}</div><div class="text-xs text-slate-500">${sub.percentage}%</div>`
                         : `<span class="badge badge-warn">Not done</span>`}
                 </div>
               </div>`;
-            }).join('')}</div>` : `<p class="text-sm text-slate-400 text-center py-2">No quick tests assigned.</p>`}
+            }).join('')}</div>` : `<p class="text-sm text-slate-500 text-center py-2">No quick tests assigned.</p>`}
           </div>
         </div>`;
 
@@ -613,8 +613,8 @@ function printTranscript(studentId) {
 
   const html = `
     <div style="max-width:820px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:24px">
-        <h1 style="margin:0;color:#047857">${((DB.find('schools', currentSchoolId()) || {}).name || 'School').toUpperCase()}</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:24px">
+        <h1 style="margin:0;color:#00b386">${((DB.find('schools', currentSchoolId()) || {}).name || 'School').toUpperCase()}</h1>
         <p style="margin:4px 0;color:#666">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:12px 0 0;font-size:22px">OFFICIAL ACADEMIC TRANSCRIPT</h2>
       </div>
@@ -627,7 +627,7 @@ function printTranscript(studentId) {
         : termOrder.map(term => {
             const rows = byTerm[term];
             const termAvg = Math.round(rows.reduce((s, r) => s + r.total, 0) / rows.length);
-            return `<h3 style="margin:24px 0 8px;color:#047857;border-bottom:1px solid #ddd;padding-bottom:4px">${term}</h3>
+            return `<h3 style="margin:24px 0 8px;color:#00b386;border-bottom:1px solid #ddd;padding-bottom:4px">${term}</h3>
         <table border="1" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:13px">
           <th scope="col"ead style="background:#f3f4f6">
             <tr><th scope="col" align="left">Subject</th><th scope="col">CA1</th><th scope="col">CA2</th><th scope="col">Exam</th><th scope="col">Total</th><th scope="col">Grade</th></tr>
@@ -642,9 +642,9 @@ function printTranscript(studentId) {
         </table>`;
           }).join('')
       }
-      <div style="margin-top:24px;background:#d1fae5;padding:14px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+      <div style="margin-top:24px;background:#c3f0e2;padding:14px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
         <strong style="font-size:16px">CUMULATIVE AVERAGE</strong>
-        <strong style="font-size:20px;color:#047857">${overallAvg}%</strong>
+        <strong style="font-size:20px;color:#00b386">${overallAvg}%</strong>
       </div>
       <div style="margin-top:60px;display:flex;justify-content:space-between">
         <div><strong>Principal</strong><br/><br/>____________________<br/><span style="font-size:11px;color:#666">Signature &amp; Stamp</span></div>
@@ -667,8 +667,8 @@ function printReportCard(studentId) {
   const reportComment = DB.query('reportComments', c => c.studentId === studentId && c.term === DB.settings().currentTerm)[0];
   const html = `
     <div style="max-width:780px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:24px">
-        <h1 style="margin:0;color:#047857">${((DB.find('schools', currentSchoolId()) || {}).name || 'School').toUpperCase()}</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:24px">
+        <h1 style="margin:0;color:#00b386">${((DB.find('schools', currentSchoolId()) || {}).name || 'School').toUpperCase()}</h1>
         <p style="margin:4px 0;color:#666">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:12px 0 0;font-size:20px">STUDENT REPORT CARD</h2>
         <p style="margin:4px 0">${DB.settings().currentTerm}</p>
@@ -693,8 +693,8 @@ function printReportCard(studentId) {
         </tfoot>
       </table>
       ${reportComment ? `
-          <div style="margin-top:20px;padding:12px;background:#f0fdf4;border-left:4px solid #047857;border-radius:4px">
-            <strong style="font-size:12px;color:#065f46">CLASS TEACHER'S COMMENT</strong>
+          <div style="margin-top:20px;padding:12px;background:#f0fdf4;border-left:4px solid #00b386;border-radius:4px">
+            <strong style="font-size:12px;color:#00966f">CLASS TEACHER'S COMMENT</strong>
             <p style="margin:6px 0 0;font-size:13px;color:#1e293b">${reportComment.comment}</p>
           </div>` : ''}
       <div style="margin-top:28px;display:flex;justify-content:space-between">
@@ -781,7 +781,7 @@ function view_par_fees() {
               return `
                 ${standard.map(l => `<div class="flex justify-between text-sm"><span class="text-slate-600">${l.name}</span><span class="font-mono">${money(l.amount)}</span></div>`).join('')}
                 ${activities.length ? `<div class="mt-1.5 pt-1.5 border-t border-dashed border-slate-200">
-                  <div class="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-1">Extracurricular</div>
+                  <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">Extracurricular</div>
                   ${activities.map(l => `<div class="flex justify-between text-sm"><span class="text-slate-600">${l.name}</span><span class="font-mono">${money(l.amount)}</span></div>`).join('')}
                 </div>` : ''}
                 ${discounts.map(l => `<div class="flex justify-between text-sm text-emerald-700"><span>🎓 ${l.name}</span><span class="font-mono">-${money(Math.abs(l.amount))}</span></div>`).join('')}
@@ -800,7 +800,7 @@ function view_par_fees() {
 
           ${(() => {
             const credit = getStudentCredit(s.id);
-            return credit > 0 ? `<div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 mt-3 text-sm">
+            return credit > 0 ? `<div class="flex items-center justify-between bg-emerald-50 rounded-xl px-3 py-2 mt-3 text-sm">
               <div class="flex items-center gap-2 text-emerald-800 font-semibold">${icon('check','w-4 h-4')} Advance Payment: ${money(credit)}</div>
               ${inv.balance > 0 ? `<button class="text-xs underline text-emerald-700 font-semibold" onclick="applyStudentCredit('${inv.id}')">Apply to balance →</button>` : '<span class="text-xs text-emerald-600">Auto-applies to next invoice</span>'}
             </div>` : '';
@@ -841,17 +841,17 @@ function renderProspectFeeGate(app) {
           const done = i <= currentIdx;
           const active = i === currentIdx;
           return `<div class="flex flex-col items-center gap-1.5 text-center flex-1 relative z-10">
-            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${done ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400'} ${active ? 'ring-2 ring-brand-300 ring-offset-1' : ''}">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${done ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'} ${active ? 'ring-2 ring-brand-300 ring-offset-1' : ''}">
               ${done ? icon('check','w-4 h-4') : (i + 1)}
             </div>
-            <div class="text-xs leading-tight max-w-[4.5rem] ${done ? 'text-brand-700 font-semibold' : 'text-slate-400'}">${step.label}</div>
+            <div class="text-xs leading-tight max-w-[4.5rem] ${done ? 'text-brand-700 font-semibold' : 'text-slate-500'}">${step.label}</div>
           </div>`;
         }).join('')}
       </div>
     </div>
 
     ${app.status === 'visit_scheduled' ? `
-    <div class="card p-5 mb-4 border border-brand-200 bg-brand-50">
+    <div class="card p-5 mb-4 bg-brand-50">
       <div class="flex items-start gap-3">
         <div class="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center text-brand-700 flex-shrink-0">${icon('calendar','w-5 h-5')}</div>
         <div class="flex-1">
@@ -867,7 +867,7 @@ function renderProspectFeeGate(app) {
     </div>` : ''}
 
     ${app.status === 'visit_confirmed' ? `
-    <div class="card p-5 mb-4 border border-emerald-200 bg-emerald-50">
+    <div class="card p-5 mb-4 bg-emerald-50">
       <div class="flex items-center gap-2">
         <span class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">${icon('check','w-5 h-5')}</span>
         <div>
@@ -907,7 +907,7 @@ function renderProspectFeeGate(app) {
     </div>`}` : ''}
 
     ${app.status === 'pending' ? `
-    <div class="card p-5 mb-4 border border-amber-200 bg-amber-50">
+    <div class="card p-5 mb-4 bg-amber-50">
       <div class="flex items-start gap-3">
         <div class="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 flex-shrink-0">${icon('bell','w-5 h-5')}</div>
         <div>
@@ -918,22 +918,22 @@ function renderProspectFeeGate(app) {
     </div>` : ''}
 
     ${app.status === 'reviewing' ? `
-    <div class="card p-5 mb-4 border border-blue-200 bg-blue-50">
+    <div class="card p-5 mb-4 bg-brand-50">
       <div class="flex items-start gap-3">
-        <div class="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 flex-shrink-0">${icon('search','w-5 h-5')}</div>
+        <div class="w-9 h-9 bg-brand-100 rounded-xl flex items-center justify-center text-brand-600 flex-shrink-0">${icon('search','w-5 h-5')}</div>
         <div>
-          <div class="font-semibold text-blue-900">Your application is being reviewed</div>
-          <div class="text-sm text-blue-800 mt-0.5">The admissions office is actively looking at your application. They may reach out for additional documents or to schedule a school visit. You will be notified here as soon as there is an update.</div>
+          <div class="font-semibold text-brand-900">Your application is being reviewed</div>
+          <div class="text-sm text-brand-800 mt-0.5">The admissions office is actively looking at your application. They may reach out for additional documents or to schedule a school visit. You will be notified here as soon as there is an update.</div>
         </div>
       </div>
     </div>` : ''}
 
     ${app.status !== 'visit_scheduled' && app.status !== 'visit_confirmed' ? `
     <div class="card p-5 text-center border border-slate-200">
-      <div class="w-14 h-14 mx-auto mb-3 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400">${icon('fees','w-7 h-7')}</div>
+      <div class="w-14 h-14 mx-auto mb-3 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-500">${icon('fees','w-7 h-7')}</div>
       <h3 class="font-bold text-slate-700 mb-1">Fees visible after your school visit</h3>
       <p class="text-sm text-slate-500 max-w-xs mx-auto">Fee information is unlocked once the admissions team confirms your visit has taken place.</p>
-      ${school ? `<p class="text-xs text-slate-400 mt-3">Questions? Call ${school.phone || school.email || 'the admissions office'}</p>` : ''}
+      ${school ? `<p class="text-xs text-slate-500 mt-3">Questions? Call ${school.phone || school.email || 'the admissions office'}</p>` : ''}
     </div>` : ''}
   `;
 }
@@ -959,7 +959,7 @@ function viewInvoice(invoiceId) {
             <div class="font-semibold">${DB.find('parents', s.parentId).name}</div>
             <div class="text-xs">For: ${s.name}</div>
             <div class="text-xs">${cls ? cls.name : ''}</div>
-            <div class="text-xs text-slate-400">Adm. No: ${s.admissionNo || '—'}</div>
+            <div class="text-xs text-slate-500">Adm. No: ${s.admissionNo || '—'}</div>
           </div>
           <div class="text-right">
             <div class="text-xs text-slate-500">INVOICE NO.</div>
@@ -981,7 +981,7 @@ function viewInvoice(invoiceId) {
               return `
                 ${standard.map(l => `<tr class="border-b"><td class="py-2 text-slate-700">${l.name}</td><td class="text-right font-mono py-2">${money(l.amount)}</td></tr>`).join('')}
                 ${activities.length ? `
-                  <tr><td colspan="2" class="pt-3 pb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Extracurricular Activities</td></tr>
+                  <tr><td colspan="2" class="pt-3 pb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Extracurricular Activities</td></tr>
                   ${activities.map(l => `<tr class="border-b border-dashed border-slate-100"><td class="py-2 text-slate-700 pl-2">${l.name}</td><td class="text-right font-mono py-2">${money(l.amount)}</td></tr>`).join('')}
                   <tr class="border-b"><td class="py-1 text-xs text-slate-500 pl-2">Activities subtotal</td><td class="text-right font-mono py-1 text-xs text-slate-500">${money(actTotal)}</td></tr>
                 ` : ''}
@@ -1015,7 +1015,7 @@ function installmentPlanModal(invoiceId) {
     title: 'Installment Plan — ' + s.name,
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Split the outstanding balance of <strong>${money(inv.balance)}</strong> across several scheduled payments. The school keeps track of due dates and sends reminders automatically.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -1039,7 +1039,7 @@ function installmentPlanModal(invoiceId) {
           </select>
         </div>
         <div id="ip_preview"></div>
-        ${hasExisting ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">A plan already exists. Saving will replace it.</div>` : ''}
+        ${hasExisting ? `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">A plan already exists. Saving will replace it.</div>` : ''}
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -1101,12 +1101,12 @@ function applyDiscountModal(invoiceId) {
     title: 'Apply Discount / Scholarship',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           The discount appears as a negative line item on the invoice. The student's balance reduces immediately.
         </div>
-        ${promptExpired ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        ${promptExpired ? `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           ${icon('bell','w-4 h-4 inline')} The <strong>Prompt Payment Discount</strong> deadline was ${fdate(dcDeadline, { long: true })} — this discount type is no longer available.
-        </div>` : dcDeadline ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        </div>` : dcDeadline ? `<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           ${icon('check','w-4 h-4 inline')} Prompt Payment Discount available until <strong>${fdate(dcDeadline, { long: true })}</strong>.
         </div>` : ''}
         <div>
@@ -1234,7 +1234,7 @@ function payInvoiceModal(invoiceId) {
         <div class="mt-3 font-bold text-slate-900">${s.name}</div>
         <div class="text-xs text-slate-500">Outstanding balance</div>
         <div class="text-3xl font-extrabold text-brand-700 mt-1">${money(inv.balance)}</div>
-        ${credit > 0 ? `<div class="mt-2 inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-3 py-1 text-sm font-semibold">
+        ${credit > 0 ? `<div class="mt-2 inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 rounded-full px-3 py-1 text-sm font-semibold">
           ${icon('check','w-3.5 h-3.5')} Advance Payment: ${money(credit)}
           <button class="ml-1 text-xs underline font-normal hover:text-emerald-900" onclick="applyStudentCredit('${inv.id}')">Apply now →</button>
         </div>` : ''}
@@ -1249,13 +1249,13 @@ function payInvoiceModal(invoiceId) {
       <div>
         <label class="input-label">Payment Method</label>
         <div class="space-y-2">
-          <label class="flex items-center gap-3 p-3 border-2 border-brand-500 rounded-xl cursor-pointer bg-brand-50">
+          <label class="flex items-center gap-3 p-3 rounded-xl cursor-pointer bg-brand-50">
             <input type="radio" name="payMethod" value="card" checked class="text-brand-600" />
             <div class="flex-1">
               <div class="font-semibold text-sm">Debit / Credit Card</div>
               <div class="text-xs text-slate-500">Verve, Mastercard, Visa</div>
             </div>
-            <div class="text-xs text-slate-400">Instant</div>
+            <div class="text-xs text-slate-500">Instant</div>
           </label>
           <label class="flex items-center gap-3 p-3 border-2 border-slate-200 rounded-xl cursor-pointer hover:border-brand-500">
             <input type="radio" name="payMethod" value="transfer" class="text-brand-600" />
@@ -1263,7 +1263,7 @@ function payInvoiceModal(invoiceId) {
               <div class="font-semibold text-sm">Bank Transfer</div>
               <div class="text-xs text-slate-500">Pay to a dedicated account</div>
             </div>
-            <div class="text-xs text-slate-400">Instant</div>
+            <div class="text-xs text-slate-500">Instant</div>
           </label>
           <label class="flex items-center gap-3 p-3 border-2 border-slate-200 rounded-xl cursor-pointer hover:border-brand-500">
             <input type="radio" name="payMethod" value="ussd" class="text-brand-600" />
@@ -1271,12 +1271,12 @@ function payInvoiceModal(invoiceId) {
               <div class="font-semibold text-sm">USSD</div>
               <div class="text-xs text-slate-500">Dial code on your phone</div>
             </div>
-            <div class="text-xs text-slate-400">No internet</div>
+            <div class="text-xs text-slate-500">No internet</div>
           </label>
         </div>
       </div>
 
-      <p class="text-xs text-slate-400 text-center mt-3">Secured payment · Your card details are never stored.</p>
+      <p class="text-xs text-slate-500 text-center mt-3">Secured payment · Your card details are never stored.</p>
     `,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -1346,7 +1346,7 @@ function failPayment(invoiceId, amount, method) {
       <div class="text-center py-5">
         <div class="w-20 h-20 mx-auto rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4">${icon('x','w-12 h-12')}</div>
         <h2 class="text-lg font-bold text-slate-900">${money(amount)} could not be charged</h2>
-        <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 mt-4 text-sm text-rose-900 text-left">
+        <div class="bg-rose-50 rounded-xl p-3 mt-4 text-sm text-rose-900 text-left">
           <div class="font-semibold mb-1">${r.code.replace(/_/g, ' ')}</div>
           <div>${r.message}</div>
         </div>
@@ -1404,7 +1404,7 @@ function completePayment(invoiceId, amount, method) {
         <div class="w-20 h-20 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">${icon('check','w-12 h-12')}</div>
         <h2 class="text-2xl font-bold text-slate-900">${money(amount)}</h2>
         <p class="text-slate-500 mt-1">paid successfully</p>
-        ${creditToAdd > 0 ? `<div class="mt-3 bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        ${creditToAdd > 0 ? `<div class="mt-3 bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           ${icon('check','w-4 h-4 inline')} <strong>${money(creditToAdd)}</strong> recorded as advance payment — will be automatically applied to your next invoice.
         </div>` : ''}
         <div class="bg-slate-50 rounded-xl p-3 mt-3 text-left text-sm">
@@ -1413,7 +1413,7 @@ function completePayment(invoiceId, amount, method) {
           <div class="flex justify-between py-1"><span class="text-slate-500">Date</span><span>${fdate(txn.timestamp, { time: true })}</span></div>
           <div class="flex justify-between py-1"><span class="text-slate-500">Status</span>${statusBadge('successful')}</div>
         </div>
-        ${hasMore ? `<div class="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        ${hasMore ? `<div class="mt-4 bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Next up: <strong>${nextChild.name}</strong> · ${_payQueue.length} more invoice${_payQueue.length>1?'s':''} to pay
         </div>` : ''}
       </div>
@@ -1438,8 +1438,8 @@ function downloadReceipt(invoiceId) {
   const txns = DB.query('transactions', t => t.invoiceId === invoiceId);
   const html = `
     <div style="max-width:600px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#047857">${((DB.find('schools', currentSchoolId()) || {}).name || 'School').toUpperCase()}</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#00b386">${((DB.find('schools', currentSchoolId()) || {}).name || 'School').toUpperCase()}</h1>
         <p style="margin:4px 0;color:#666;font-size:13px">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:14px 0 4px;font-size:18px">OFFICIAL PAYMENT RECEIPT</h2>
       </div>
@@ -1457,9 +1457,9 @@ function downloadReceipt(invoiceId) {
         <tbody>
           ${txns.map(t => `<tr style="border-bottom:1px solid #eee"><td style="padding:8px">${fdate(t.timestamp, { short: true })}</td><td>${t.method.toUpperCase()}</td><td><code style="font-size:11px">${t.reference}</code></td><td align="right" style="padding:8px"><strong>${money(t.amount)}</strong></td></tr>`).join('')}
         </tbody>
-        <tfoot style="font-weight:bold;background:#d1fae5">
+        <tfoot style="font-weight:bold;background:#c3f0e2">
           <tr><td colspan="3" style="padding:10px">Total Paid</td><td align="right" style="padding:10px">${money(inv.paid)}</td></tr>
-          <tr><td colspan="3" style="padding:10px">Balance</td><td align="right" style="padding:10px;color:${inv.balance > 0 ? '#dc2626' : '#059669'}">${money(inv.balance)}</td></tr>
+          <tr><td colspan="3" style="padding:10px">Balance</td><td align="right" style="padding:10px;color:${inv.balance > 0 ? '#dc2626' : '#00b386'}">${money(inv.balance)}</td></tr>
         </tfoot>
       </table>
       <p style="margin-top:30px;text-align:center;color:#999;font-size:11px">This is a computer-generated receipt and does not require a signature.<br/>Powered by CASPAA School Operating System</p>
@@ -1582,7 +1582,7 @@ function renderLoanCard(loan) {
           <p class="text-xs text-slate-500">Applied ${fdate(loan.appliedAt, { relative: true })}</p>
         </div>
       </div>
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+      <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-800">
         Our risk engine is reviewing your application. Decision usually within 24 hours.
       </div>
     </div>`;
@@ -1596,7 +1596,7 @@ function renderLoanCard(loan) {
           <p class="text-xs text-slate-500">Decision ${fdate(loan.decidedAt || loan.appliedAt, { relative: true })}</p>
         </div>
       </div>
-      ${loan.rejectionReason ? `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-900">
+      ${loan.rejectionReason ? `<div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-900">
         <strong>Reason:</strong> ${loan.rejectionReason}${loan.rejectionNote ? `<br/><span class="text-xs">${loan.rejectionNote}</span>` : ''}
       </div>` : ''}
     </div>`;
@@ -1630,14 +1630,14 @@ function renderLoanCard(loan) {
       </div>
       <button class="btn btn-primary !py-1.5" onclick="payLoanInstallment('${loan.id}')">Pay Now</button>
     </div>
-    <label class="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm cursor-pointer">
+    <label class="flex items-center justify-between p-3 bg-brand-50 rounded-xl text-sm cursor-pointer">
       <div>
-        <div class="font-semibold text-blue-900">Auto-debit on due date</div>
-        <div class="text-xs text-blue-700">We'll charge your saved card automatically when payment is due</div>
+        <div class="font-semibold text-brand-900">Auto-debit on due date</div>
+        <div class="text-xs text-brand-700">We'll charge your saved card automatically when payment is due</div>
       </div>
       <input type="checkbox" class="w-5 h-5 accent-brand-600" ${loan.autoDebit ? 'checked' : ''} onchange="toggleLoanAutoDebit('${loan.id}', this.checked)" />
     </label>
-    ` : `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800">${icon('check','w-4 h-4 inline')} Loan fully repaid. Thank you!</div>`}
+    ` : `<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-800">${icon('check','w-4 h-4 inline')} Loan fully repaid. Thank you!</div>`}
   </div>`;
 }
 
@@ -1653,7 +1653,7 @@ function applyLoanModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <strong>How it works:</strong> Tell us how much you need, choose a repayment term, and we'll give you an instant decision. No paperwork required.
         </div>
 
@@ -1676,7 +1676,7 @@ function applyLoanModal() {
           <label class="input-label" for="ln_amount">Loan Amount Needed</label>
           <input id="ln_amount" type="number" class="input text-xl font-bold" placeholder="250000" />
           <input id="ln_slider" type="range" min="50000" max="1000000" step="10000" value="250000" class="w-full mt-2" oninput="document.getElementById('ln_amount').value = this.value; updateLoanCalc()" />
-          <div class="flex justify-between text-xs text-slate-400 mt-1">
+          <div class="flex justify-between text-xs text-slate-500 mt-1">
             <span>${money(50000)}</span><span>${money(1000000)}</span>
           </div>
         </div>
@@ -1684,7 +1684,7 @@ function applyLoanModal() {
         <div>
           <label class="input-label">Repayment Term</label>
           <div class="grid grid-cols-4 gap-2">
-            <button class="ln-term px-3 py-2 rounded-lg border-2 border-brand-500 bg-brand-50 text-brand-700 font-semibold text-sm" data-term="3" onclick="selectTerm(3)">3 months</button>
+            <button class="ln-term px-3 py-2 rounded-lg bg-brand-50 text-brand-700 font-semibold text-sm" data-term="3" onclick="selectTerm(3)">3 months</button>
             <button class="ln-term px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-semibold text-sm" data-term="6" onclick="selectTerm(6)">6 months</button>
             <button class="ln-term px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-semibold text-sm" data-term="9" onclick="selectTerm(9)">9 months</button>
             <button class="ln-term px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-semibold text-sm" data-term="12" onclick="selectTerm(12)">12 months</button>
@@ -1718,7 +1718,7 @@ function selectTerm(months) {
   _selectedTerm = months;
   document.querySelectorAll('.ln-term').forEach(b => {
     if (parseInt(b.dataset.term) === months) {
-      b.className = 'ln-term px-3 py-2 rounded-lg border-2 border-brand-500 bg-brand-50 text-brand-700 font-semibold text-sm';
+      b.className = 'ln-term px-3 py-2 rounded-lg bg-brand-50 text-brand-700 font-semibold text-sm';
     } else {
       b.className = 'ln-term px-3 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-semibold text-sm';
     }
@@ -1754,7 +1754,7 @@ function submitLoanApplication() {
     title: 'Reviewing your application…',
     body: `
       <div class="text-center py-6">
-        <div class="spinner mx-auto mb-4" style="width:40px;height:40px;border-color:#047857 transparent transparent transparent;border-width:4px"></div>
+        <div class="spinner mx-auto mb-4" style="width:40px;height:40px;border-color:#00b386 transparent transparent transparent;border-width:4px"></div>
         <p class="font-semibold text-slate-900">Running risk assessment</p>
         <p class="text-sm text-slate-500 mt-1">This usually takes 10-15 seconds</p>
         <div id="riskSteps" class="text-left mt-4 space-y-2 text-sm"></div>
@@ -1833,7 +1833,7 @@ function finalizeLoanDecision(amount, term, childrenSel) {
         <div class="flex justify-between"><span class="text-slate-500">First payment due</span><strong>${fdate(repayments[0].dueDate, { long: true })}</strong></div>
         <div class="flex justify-between"><span class="text-slate-500">Interest rate</span><strong>5%</strong></div>
       </div>
-      <p class="text-xs text-slate-400 mt-3 text-center">The school will receive ${money(amount)} directly. Your fees are now covered.</p>
+      <p class="text-xs text-slate-500 mt-3 text-center">The school will receive ${money(amount)} directly. Your fees are now covered.</p>
     `,
     footer: `<button class="btn btn-primary w-full" onclick="document.getElementById('modalBackdrop')?.click(); APP.render()">View My Loan</button>`
   });
@@ -1908,7 +1908,7 @@ function view_par_results() {
               <div class="text-xs text-slate-500 mt-0.5">CA1: ${r.ca1} · CA2: ${r.ca2} · Exam: ${r.exam}</div>
             </div>
             <div class="text-right">
-              <div class="text-lg font-bold ${color}">${r.total}<span class="text-sm text-slate-400">/100</span></div>
+              <div class="text-lg font-bold ${color}">${r.total}<span class="text-sm text-slate-500">/100</span></div>
               <span class="badge ${r.grade==='A'?'badge-success':r.grade==='F'?'badge-danger':'badge-info'}">${r.grade}</span>
             </div>
           </div>`;
@@ -1936,7 +1936,7 @@ function view_par_results() {
             </div>
           </div>`;
         }).join('')}
-      </div>` : `<p class="text-sm text-slate-400 text-center py-3">No assignments right now.</p>`}
+      </div>` : `<p class="text-sm text-slate-500 text-center py-3">No assignments right now.</p>`}
     </div>
 
     <!-- CBT Exams -->
@@ -1954,13 +1954,13 @@ function view_par_results() {
             <div class="ml-3 flex-shrink-0 text-right">
               ${sub
                 ? (sub.status === 'graded'
-                    ? `<div class="font-bold text-brand-700">${sub.totalScore}/${sub.maxScore}</div><div class="text-xs text-slate-400">Graded</div>`
+                    ? `<div class="font-bold text-brand-700">${sub.totalScore}/${sub.maxScore}</div><div class="text-xs text-slate-500">Graded</div>`
                     : `<span class="badge badge-info">Submitted</span>`)
                 : `<span class="badge badge-warn">Not taken</span>`}
             </div>
           </div>`;
         }).join('')}
-      </div>` : `<p class="text-sm text-slate-400 text-center py-3">No CBT exams published for this term.</p>`}
+      </div>` : `<p class="text-sm text-slate-500 text-center py-3">No CBT exams published for this term.</p>`}
     </div>
 
     <!-- Quick Tests -->
@@ -1977,12 +1977,12 @@ function view_par_results() {
             </div>
             <div class="ml-3 flex-shrink-0 text-right">
               ${sub
-                ? `<div class="font-bold text-emerald-700">${sub.score}/${sub.total}</div><div class="text-xs text-slate-400">${sub.percentage}%</div>`
+                ? `<div class="font-bold text-emerald-700">${sub.score}/${sub.total}</div><div class="text-xs text-slate-500">${sub.percentage}%</div>`
                 : `<span class="badge badge-warn">Not done</span>`}
             </div>
           </div>`;
         }).join('')}
-      </div>` : `<p class="text-sm text-slate-400 text-center py-3">No quick tests assigned yet.</p>`}
+      </div>` : `<p class="text-sm text-slate-500 text-center py-3">No quick tests assigned yet.</p>`}
     </div>
   `;
 }
@@ -2053,7 +2053,7 @@ function view_par_timetable() {
                 const entries = days.map(d => tt.find(x => x.day === d && x.period === p));
                 const rows = [];
                 if (p === break1After + 1) rows.push(`<tr class="bg-amber-50"><td colspan="6" class="text-center text-xs text-amber-800 font-semibold py-1.5">${break1Label}</td></tr>`);
-                else if (p === break2After + 1) rows.push(`<tr class="bg-sky-50"><td colspan="6" class="text-center text-xs text-sky-800 font-semibold py-1.5">${break2Label}</td></tr>`);
+                else if (p === break2After + 1) rows.push(`<tr class="bg-brand-50"><td colspan="6" class="text-center text-xs text-brand-800 font-semibold py-1.5">${break2Label}</td></tr>`);
                 rows.push(`<tr>
                   <td><strong class="text-slate-900">P${p}</strong><br><span class="text-xs text-slate-500">${periodTimes[p] || ''}</span></td>
                   ${entries.map(e => {
@@ -2133,7 +2133,7 @@ function view_par_consent() {
                   ${avatar(kid.name, 'sm')}
                   <div class="flex-1 min-w-0">
                     <div class="font-semibold text-sm">${kid.name}</div>
-                    ${r ? `<div class="text-xs text-slate-500">Signed by ${r.signature} · ${fdate(r.timestamp, { time: true })}</div>` : `<div class="text-xs text-slate-400">Awaiting your response</div>`}
+                    ${r ? `<div class="text-xs text-slate-500">Signed by ${r.signature} · ${fdate(r.timestamp, { time: true })}</div>` : `<div class="text-xs text-slate-500">Awaiting your response</div>`}
                   </div>
                   ${r
                     ? (r.agreed ? `<span class="badge badge-success">Approved ✓</span>` : `<span class="badge badge-danger">Declined</span>`)

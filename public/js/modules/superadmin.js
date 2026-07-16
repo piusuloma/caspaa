@@ -46,7 +46,7 @@ function view_sa_dashboard() {
           datasets: [{
             label: 'MRR',
             data: [1500000, 1800000, 2100000, 2500000, 2900000, mrr],
-            borderColor: '#047857', backgroundColor: 'rgba(16,185,129,0.12)',
+            borderColor: '#00b386', backgroundColor: 'rgba(16,185,129,0.12)',
             tension: 0.35, fill: true, borderWidth: 3
           }]
         },
@@ -147,7 +147,7 @@ function view_sa_dashboard() {
         <!-- Needs Attention -->
         <div class="card p-5">
           <h3 class="font-bold text-slate-900 mb-3 flex items-center gap-2">${icon('bell','w-4 h-4 text-rose-500')} Needs Attention</h3>
-          ${needsAttention.length === 0 ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center text-sm text-emerald-800">${icon('check','w-6 h-6 mx-auto mb-1')}<div class="font-semibold">All clear today.</div></div>` : `
+          ${needsAttention.length === 0 ? `<div class="bg-emerald-50 rounded-xl p-4 text-center text-sm text-emerald-800">${icon('check','w-6 h-6 mx-auto mb-1')}<div class="font-semibold">All clear today.</div></div>` : `
             <div class="space-y-2">
               ${needsAttention.map(n => `<button class="w-full flex items-center gap-3 p-2.5 bg-${n.tone}-50 hover:bg-${n.tone}-100 border border-${n.tone}-200 rounded-xl text-left transition" onclick="APP.go('${n.view}', ${JSON.stringify(n.params).replace(/"/g, '&quot;')})">
                 <div class="w-9 h-9 rounded-lg bg-${n.tone}-200 text-${n.tone}-800 flex items-center justify-center font-bold flex-shrink-0">${n.count}</div>
@@ -551,7 +551,7 @@ function onboardSchoolModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Required: school name, proprietor details, CAC registration, accreditation. School starts on a 14-day free trial.
         </div>
 
@@ -813,8 +813,8 @@ function downloadSchoolInvoice(invoiceId) {
   const s = DB.find('schools', inv.schoolId);
   const html = `
     <div style="max-width:680px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#047857">CASPAA</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#00b386">CASPAA</h1>
         <p style="margin:4px 0;color:#666;font-size:13px">School Operating System · Lagos, Nigeria</p>
         <h2 style="margin:14px 0 4px;font-size:18px">SUBSCRIPTION INVOICE</h2>
       </div>
@@ -831,11 +831,11 @@ function downloadSchoolInvoice(invoiceId) {
         <tbody>
           <tr><td>${inv.plan} Subscription — ${inv.period}</td><td align="right">${money(inv.amount)}</td></tr>
         </tbody>
-        <tfoot style="background:${inv.status === 'paid' ? '#d1fae5' : '#fee2e2'};font-weight:bold">
+        <tfoot style="background:${inv.status === 'paid' ? '#c3f0e2' : '#fee2e2'};font-weight:bold">
           <tr><td>${inv.status === 'paid' ? 'PAID' : 'TOTAL DUE'}</td><td align="right">${money(inv.amount)}</td></tr>
         </tfoot>
       </table>
-      ${inv.status === 'paid' ? `<p style="margin-top:20px;color:#065f46">Paid on ${fdate(inv.paidAt, { long: true })}. Thank you.</p>` : `<p style="margin-top:20px;color:#991b1b">Please remit payment by ${fdate(inv.dueDate, { long: true })} to avoid service interruption.</p>`}
+      ${inv.status === 'paid' ? `<p style="margin-top:20px;color:#00966f">Paid on ${fdate(inv.paidAt, { long: true })}. Thank you.</p>` : `<p style="margin-top:20px;color:#991b1b">Please remit payment by ${fdate(inv.dueDate, { long: true })} to avoid service interruption.</p>`}
       <p style="margin-top:30px;text-align:center;color:#999;font-size:11px">Computer-generated invoice — no signature required.</p>
     </div>
   `;
@@ -929,7 +929,7 @@ function renderDisbursementTab() {
       ${statCard({ label: 'Failed', value: disbursements.filter(d => d.status === 'failed').length, icon: 'trending_down', color: 'rose' })}
     </div>
 
-    ${pending.length ? `<div class="card p-5 mb-4 bg-amber-50 border border-amber-200">
+    ${pending.length ? `<div class="card p-5 mb-4 bg-amber-50">
       <h4 class="font-bold text-amber-900 mb-2">${pending.length} approved loan${pending.length>1?'s':''} awaiting disbursement</h4>
       <div class="space-y-2">
         ${pending.map(l => {
@@ -945,7 +945,7 @@ function renderDisbursementTab() {
           </div>`;
         }).join('')}
       </div>
-    </div>` : `<div class="card p-5 mb-4 bg-emerald-50 border border-emerald-200 text-sm text-emerald-900 flex items-center gap-2">
+    </div>` : `<div class="card p-5 mb-4 bg-emerald-50 text-sm text-emerald-900 flex items-center gap-2">
       ${icon('check','w-5 h-5')} <span>All approved loans have been disbursed.</span>
     </div>`}
 
@@ -979,7 +979,7 @@ function initiateDisbursement(loanId) {
     title: 'Verify & Disburse',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Confirm the recipient and amount. Funds move via NIBSS transfer to the school's verified account. This action is logged in the audit trail.
         </div>
         <div class="bg-slate-50 rounded-xl p-3 space-y-1.5 text-sm">
@@ -1054,7 +1054,7 @@ function renderLoanAnalyticsTab() {
     const c1 = document.getElementById('loanAnaChart1');
     if (c1) new Chart(c1, {
       type: 'doughnut',
-      data: { labels: Object.keys(buckets), datasets: [{ data: Object.values(buckets), backgroundColor: ['#047857', '#10b981', '#f59e0b', '#dc2626'], borderWidth: 0 }] },
+      data: { labels: Object.keys(buckets), datasets: [{ data: Object.values(buckets), backgroundColor: ['#00b386', '#00c08f', '#f59e0b', '#dc2626'], borderWidth: 0 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
     });
     const c2 = document.getElementById('loanAnaChart2');
@@ -1070,7 +1070,7 @@ function renderLoanAnalyticsTab() {
       }
       new Chart(c2, {
         type: 'bar',
-        data: { labels: months, datasets: [{ label: 'Repaid', data: repaymentData, backgroundColor: '#10b981', borderRadius: 6 }] },
+        data: { labels: months, datasets: [{ label: 'Repaid', data: repaymentData, backgroundColor: '#00c08f', borderRadius: 6 }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => '₦' + (v/1000).toFixed(0) + 'k' } } } }
       });
     }
@@ -1161,7 +1161,7 @@ function view_sa_analytics() {
       <span class="text-sm font-semibold text-slate-700">${icon('calendar','w-4 h-4 inline mr-1')} Date range:</span>
       <div class="flex items-center gap-2 flex-1 flex-wrap">
         <input type="date" class="input !w-40 text-sm" value="${dateFrom}" max="${dateTo}" onchange="APP.params.anaFrom = this.value; APP.render()" />
-        <span class="text-slate-400 text-sm">to</span>
+        <span class="text-slate-500 text-sm">to</span>
         <input type="date" class="input !w-40 text-sm" value="${dateTo}" min="${dateFrom}" max="${today()}" onchange="APP.params.anaTo = this.value; APP.render()" />
       </div>
       <div class="flex gap-1 flex-wrap">
@@ -1172,7 +1172,7 @@ function view_sa_analytics() {
         <button class="btn btn-ghost !py-1 !px-2 text-xs text-rose-600" onclick="APP.params.anaFrom=null; APP.params.anaTo=null; APP.render()">Reset</button>
       </div>
     </div>
-    <p class="text-xs text-slate-400 mb-4">Showing data from <strong>${fdate(dateFrom, { long: true })}</strong> to <strong>${fdate(dateTo, { long: true })}</strong></p>
+    <p class="text-xs text-slate-500 mb-4">Showing data from <strong>${fdate(dateFrom, { long: true })}</strong> to <strong>${fdate(dateTo, { long: true })}</strong></p>
 
     <div>
       ${tab === 'usage' ? renderUsageTab(dateFrom, dateTo) :
@@ -1190,7 +1190,7 @@ function renderBusinessTab(dateFrom, dateTo) {
       type: 'bar',
       data: {
         labels: ['Lekki', 'Ikoyi', 'Ikeja', 'VI', 'Magodo', 'Festac'],
-        datasets: [{ label: 'Schools', data: [3, 2, 2, 1, 1, 1], backgroundColor: '#047857', borderRadius: 6 }]
+        datasets: [{ label: 'Schools', data: [3, 2, 2, 1, 1, 1], backgroundColor: '#00b386', borderRadius: 6 }]
       },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
@@ -1201,7 +1201,7 @@ function renderBusinessTab(dateFrom, dateTo) {
         type: 'bar',
         data: {
           labels: schools.map(s => s.name.split(' ').slice(0, 2).join(' ')),
-          datasets: [{ label: 'Students', data: schools.map(s => s.students), backgroundColor: '#10b981', borderRadius: 6 }]
+          datasets: [{ label: 'Students', data: schools.map(s => s.students), backgroundColor: '#00c08f', borderRadius: 6 }]
         },
         options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
       });
@@ -1288,13 +1288,13 @@ function renderUsageTab(dateFrom, dateTo) {
     const c1 = document.getElementById('usageChart1');
     if (c1) new Chart(c1, {
       type: 'line',
-      data: { labels: days.map(d => fdate(d, { short: true })), datasets: [{ label: 'DAU', data: dauByDay, borderColor: '#047857', backgroundColor: 'rgba(16,185,129,0.15)', tension: 0.35, fill: true, borderWidth: 2 }] },
+      data: { labels: days.map(d => fdate(d, { short: true })), datasets: [{ label: 'DAU', data: dauByDay, borderColor: '#00b386', backgroundColor: 'rgba(16,185,129,0.15)', tension: 0.35, fill: true, borderWidth: 2 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
     const c2 = document.getElementById('usageChart2');
     if (c2) new Chart(c2, {
       type: 'bar',
-      data: { labels: sortedFeatures.map(f => f[0]), datasets: [{ label: 'Events', data: sortedFeatures.map(f => f[1]), backgroundColor: '#10b981', borderRadius: 6 }] },
+      data: { labels: sortedFeatures.map(f => f[0]), datasets: [{ label: 'Events', data: sortedFeatures.map(f => f[1]), backgroundColor: '#00c08f', borderRadius: 6 }] },
       options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
     });
   };
@@ -1404,7 +1404,7 @@ function renderSystemTab() {
       <div class="space-y-2">
         ${logs.map(l => {
           const tone = l.level === 'error' ? 'rose' : l.level === 'warning' ? 'amber' : 'blue';
-          const toneClasses = { rose: 'bg-rose-50 text-rose-900 border-rose-200', amber: 'bg-amber-50 text-amber-900 border-amber-200', blue: 'bg-blue-50 text-blue-900 border-blue-200' };
+          const toneClasses = { rose: 'bg-rose-50 text-rose-900 border-rose-200', amber: 'bg-amber-50 text-amber-900 border-amber-200', blue: 'bg-brand-50 text-brand-900 border-brand-200' };
           return `<div class="flex items-start gap-3 p-3 rounded-xl border ${toneClasses[tone]}">
             <span class="badge badge-${tone === 'rose' ? 'danger' : tone === 'amber' ? 'warn' : 'info'} uppercase text-xs">${l.level}</span>
             <div class="flex-1 min-w-0">
@@ -1523,7 +1523,7 @@ function viewTicket(ticketId) {
             <div class="font-bold ${t.status === 'resolved' ? 'text-emerald-700' : slaRemaining <= 0 ? 'text-rose-700' : slaRemaining < t.slaHours * 0.2 ? 'text-amber-700' : 'text-slate-700'}">
               ${t.status === 'resolved' ? 'Met' : (slaRemaining <= 0 ? `Breached ${Math.abs(Math.round(slaRemaining))}h ago` : `${Math.round(slaRemaining)}h left`)}
             </div>
-            <div class="text-xs text-slate-400 mt-1">Opened ${fdate(t.createdAt, { relative: true })}</div>
+            <div class="text-xs text-slate-500 mt-1">Opened ${fdate(t.createdAt, { relative: true })}</div>
           </div>
         </div>
 
@@ -1565,7 +1565,7 @@ function viewTicket(ticketId) {
                   <div class="flex items-center gap-2">
                     <span class="font-semibold text-sm">${author ? author.name : 'Support'}</span>
                     ${n.internal ? '<span class="badge badge-warn">internal</span>' : '<span class="badge badge-info">shared</span>'}
-                    <span class="text-xs text-slate-400 ml-auto">${fdate(n.timestamp, { relative: true })}</span>
+                    <span class="text-xs text-slate-500 ml-auto">${fdate(n.timestamp, { relative: true })}</span>
                   </div>
                   <div class="text-sm mt-1">${n.text}</div>
                 </div>
@@ -1757,7 +1757,7 @@ function editTeamMember(memberId) {
             <div class="text-xs text-slate-500">${m.role} · ${m.email}</div>
           </div>
         </div>
-        ${isSuper ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        ${isSuper ? `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           This is the platform Super Admin. They have unrestricted access to all modules.
         </div>` : `<div>
           <label class="input-label">Granular Permissions (RBAC)</label>
@@ -1811,7 +1811,7 @@ function addTeamMemberModal() {
             <option>BI / Analytics</option>
           </select>
         </div>
-        <div class="text-sm text-slate-600 bg-blue-50 border border-blue-200 rounded-xl p-3">
+        <div class="text-sm text-slate-600 bg-brand-50 rounded-xl p-3">
           Default permissions will be assigned based on role. You can fine-tune them after creation.
         </div>
       </div>

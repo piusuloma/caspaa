@@ -174,6 +174,22 @@ select.input option { color: #0f172a; }
 .stat-trend.down { color: #dc2626; }
 
 /* Tables */
+/* Most tables sit directly inside `.card.overflow-hidden`, which CLIPPED any column
+   past the fold with no way to reach it. Let the card scroll instead — keeps native
+   table layout, unlike forcing display:block, and fixes ~100 call sites untouched. */
+.card:has(> .tbl), .card:has(> form > .tbl) { overflow-x: auto; }
+/* Money and counts only line up with tabular figures. */
+.tbl td, .tbl th { font-variant-numeric: tabular-nums; }
+/* 58 of 115 tables render bare column headers when their list is empty, which reads
+   as "broken" rather than "nothing here". Generic net, not a real empty state. */
+.tbl tbody:empty { display: block; }
+.tbl tbody:empty::after {
+  content: 'Nothing to show yet.';
+  display: block; padding: 2.5rem 1rem; text-align: center;
+  color: #64748b; font-size: 0.875rem;
+}
+/* Numeric columns read better right-aligned; opt in per cell. */
+.tbl .num { text-align: right; }
 .tbl { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.875rem; }
 .tbl th { text-align: left; padding: 12px var(--s-3); background: #f8fafc; color: #475569; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--line); }
 .tbl td { padding: 14px var(--s-3); border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
@@ -242,7 +258,13 @@ select.input option { color: #0f172a; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 /* Focus ring */
-button:focus-visible, a:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; border-radius: 6px; }
+/* Applied to every focusable thing, not just button/a, so inputs, selects, tabs
+   and [tabindex] elements all show focus. */
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible,
+[role="tab"]:focus-visible, [role="button"]:focus-visible {
+  outline: 2px solid var(--brand-500); outline-offset: 2px; border-radius: 6px;
+}
 
 /* Date inputs — calendar icon (flatpickr alt input + native date) */
 .fp-alt, input[type="date"] {
@@ -366,3 +388,22 @@ span.flatpickr-weekday { color: var(--muted); }
   animation: tw-blink 1s step-end infinite;
 }
 @keyframes tw-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* ============================================================
+   DASHBOARD ENTRANCE
+   Cards and stat tiles rise in when a view opens. Gated on
+   prefers-reduced-motion, and applied only on a VIEW CHANGE — APP.render()
+   also fires on every keystroke in a search box, and re-animating the results
+   under someone's cursor as they type would be worse than no motion at all.
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  .rise-in {
+    /* `both` holds opacity:0 through the stagger delay, then the animation
+       itself lands on opacity:1 — so a card can never be left invisible. */
+    animation: rise-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+}

@@ -47,6 +47,7 @@ const ICONS = {
   send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
   paperclip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
   bus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6m8-6v6M3 10h18M5 17h2m10 0h2M5 21V8c0-2 2-4 5-4h4c3 0 5 2 5 4v13"/></svg>',
+  wifi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',
   wifi_off: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',
   more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>'
 };
@@ -80,9 +81,9 @@ function toast(msg, type = 'success') {
   const t = document.createElement('div');
   t.className = `toast ${type}`;
   const iconMap = { success: 'check', danger: 'x', warn: 'bell', info: 'bell' };
-  const colorMap = { success: 'text-green-600', danger: 'text-red-600', warn: 'text-amber-600', info: 'text-brand-600' };
+  const colorMap = { success: 'text-emerald-600', danger: 'text-red-600', warn: 'text-amber-600', info: 'text-brand-600' };
   t.innerHTML = `
-    <div class="${colorMap[type] || 'text-green-600'}">${icon(iconMap[type] || 'check', 'w-5 h-5')}</div>
+    <div class="${colorMap[type] || 'text-emerald-600'}">${icon(iconMap[type] || 'check', 'w-5 h-5')}</div>
     <div class="flex-1 text-sm font-medium text-slate-800">${msg}</div>
   `;
   root.appendChild(t);
@@ -272,7 +273,7 @@ function statCard({ label, value, trend, icon: iconName, color = 'brand', toolti
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1 stat-label">
             ${label}
-            ${tooltipId ? `<button id="${tooltipId}" class="text-slate-400 hover:text-slate-600" aria-label="How is this calculated?" title="How is this calculated?">${icon('info','w-3 h-3')}</button>` : ''}
+            ${tooltipId ? `<button id="${tooltipId}" class="text-slate-500 hover:text-slate-600" aria-label="How is this calculated?" title="How is this calculated?">${icon('info','w-3 h-3')}</button>` : ''}
           </div>
           <div class="stat-value">${value}</div>
           ${trend ? `<div class="stat-trend ${trend.direction === 'up' ? 'up' : 'down'}">

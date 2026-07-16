@@ -81,7 +81,7 @@ function view_messages_shared(role) {
                     <div class="font-semibold text-sm text-slate-900 truncate">${other.name}</div>
                     <div class="text-xs text-slate-500 truncate">${last ? last.text : '(no messages)'}</div>
                   </div>
-                  <div class="text-xs text-slate-400">${last ? fdate(last.timestamp, { relative: true }) : ''}</div>
+                  <div class="text-xs text-slate-500">${last ? fdate(last.timestamp, { relative: true }) : ''}</div>
                 </div>
               </div>`;
             }).join('')}
@@ -134,7 +134,7 @@ function renderBubble(m, me) {
     : escapeHtml(m.text);
   return `<div class="bubble ${m.from === me ? 'mine' : 'theirs'}">
     ${inner}
-    <div class="text-xs ${m.from === me ? 'text-emerald-100' : 'text-slate-400'} mt-1">${fdate(m.timestamp, { relative: true })}</div>
+    <div class="text-xs ${m.from === me ? 'text-emerald-100' : 'text-slate-500'} mt-1">${fdate(m.timestamp, { relative: true })}</div>
   </div>`;
 }
 
@@ -215,7 +215,7 @@ function newChatModal(contactIds, groupLabel) {
             </div>
           </button>`;
         }).join('')}
-        ${contacts.length === 0 ? `<p class="text-sm text-slate-400 text-center py-4">No contacts available.</p>` : ''}
+        ${contacts.length === 0 ? `<p class="text-sm text-slate-500 text-center py-4">No contacts available.</p>` : ''}
       </div>
     `
   });
@@ -338,12 +338,12 @@ function saveAnnouncement() {
         <div class="text-sm text-slate-500">${title}</div>
       </div>
       <table class="tbl mt-3">
-        <th scope="col"ead><tr><th scope="col">Channel</th><th scope="col" class="text-right">Sent</th><th scope="col" class="text-right text-slate-400 text-xs font-normal">Note</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Channel</th><th scope="col" class="text-right">Sent</th><th scope="col" class="text-right text-slate-500 text-xs font-normal">Note</th></tr></thead>
         <tbody>
           ${channels.map(c => {
             const d = deliveryReport.sent[c] || 0;
             const note = c === 'in-app' ? 'Delivered' : 'Queued — delivery status not tracked';
-            return `<tr><td><strong>${c}</strong></td><td class="text-right text-emerald-700 font-bold">${d}</td><td class="text-right text-xs text-slate-400">${note}</td></tr>`;
+            return `<tr><td><strong>${c}</strong></td><td class="text-right text-emerald-700 font-bold">${d}</td><td class="text-right text-xs text-slate-500">${note}</td></tr>`;
           }).join('')}
         </tbody>
       </table>

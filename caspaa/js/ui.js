@@ -47,13 +47,16 @@ const ICONS = {
   send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
   paperclip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
   bus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6m8-6v6M3 10h18M5 17h2m10 0h2M5 21V8c0-2 2-4 5-4h4c3 0 5 2 5 4v13"/></svg>',
+  wifi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',
   wifi_off: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',
   more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>'
 };
 
+// Icons are always decorative here — the accessible name belongs on the button or
+// link wrapping them. Hiding them keeps screen readers from reading raw SVG guts.
 function icon(name, className = 'w-5 h-5') {
-  const svg = ICONS[name] || ICONS.dashboard;
-  return `<span class="${className} inline-flex">${svg}</span>`;
+  const svg = (ICONS[name] || ICONS.dashboard).replace('<svg ', '<svg aria-hidden="true" focusable="false" ');
+  return `<span class="${className} inline-flex" aria-hidden="true">${svg}</span>`;
 }
 
 /* ---------- Date pickers (flatpickr) ---------- */
@@ -78,9 +81,9 @@ function toast(msg, type = 'success') {
   const t = document.createElement('div');
   t.className = `toast ${type}`;
   const iconMap = { success: 'check', danger: 'x', warn: 'bell', info: 'bell' };
-  const colorMap = { success: 'text-green-600', danger: 'text-red-600', warn: 'text-amber-600', info: 'text-brand-600' };
+  const colorMap = { success: 'text-emerald-600', danger: 'text-red-600', warn: 'text-amber-600', info: 'text-brand-600' };
   t.innerHTML = `
-    <div class="${colorMap[type] || 'text-green-600'}">${icon(iconMap[type] || 'check', 'w-5 h-5')}</div>
+    <div class="${colorMap[type] || 'text-emerald-600'}">${icon(iconMap[type] || 'check', 'w-5 h-5')}</div>
     <div class="flex-1 text-sm font-medium text-slate-800">${msg}</div>
   `;
   root.appendChild(t);
@@ -88,28 +91,64 @@ function toast(msg, type = 'success') {
 }
 
 /* ---------- Modal ---------- */
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 function modal({ title, body, footer, size = '', onClose }) {
   const root = document.getElementById('modalRoot');
-  const close = () => { root.innerHTML = ''; if (onClose) onClose(); };
+  const titleId = 'modalTitle_' + Math.random().toString(36).slice(2, 8);
+  // Remember who opened this so focus can go back there on close — otherwise the
+  // keyboard user is dumped at the top of the document.
+  const opener = document.activeElement;
+  let onKeydown;
+
+  const close = () => {
+    document.removeEventListener('keydown', onKeydown, true);
+    root.innerHTML = '';
+    document.getElementById('app')?.removeAttribute('aria-hidden');
+    if (opener && typeof opener.focus === 'function' && document.contains(opener)) opener.focus();
+    if (onClose) onClose();
+  };
+
   root.innerHTML = `
     <div class="modal-backdrop" id="modalBackdrop">
-      <div class="modal-panel ${size}" onclick="event.stopPropagation()">
+      <div class="modal-panel ${size}" role="dialog" aria-modal="true" aria-labelledby="${titleId}" tabindex="-1" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h3 class="font-bold text-lg text-slate-900">${title}</h3>
-          <button class="btn btn-ghost !p-1.5" id="modalClose">${icon('x', 'w-5 h-5')}</button>
+          <h3 class="font-bold text-lg text-slate-900" id="${titleId}">${title}</h3>
+          <button class="btn btn-ghost !p-1.5" id="modalClose" aria-label="Close dialog">${icon('x', 'w-5 h-5')}</button>
         </div>
         <div class="px-5 py-4 overflow-y-auto scroll-area flex-1">${body}</div>
         ${footer ? `<div class="px-5 py-3 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">${footer}</div>` : ''}
       </div>
     </div>
   `;
+  const panel = root.querySelector('.modal-panel');
+  document.getElementById('app')?.setAttribute('aria-hidden', 'true');
   document.getElementById('modalBackdrop').addEventListener('click', close);
   document.getElementById('modalClose').addEventListener('click', close);
+  // Before the focus trap below: flatpickr swaps each date field for an alt
+  // input, so the trap must query FOCUSABLE after they exist or Tab skips them.
   initDatePickers();
+
+  // Escape to dismiss, and keep Tab inside the dialog.
+  onKeydown = (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+    if (e.key !== 'Tab') return;
+    const items = [...panel.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null);
+    if (!items.length) { e.preventDefault(); panel.focus(); return; }
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === panel)) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  document.addEventListener('keydown', onKeydown, true);
+
+  // Focus the first real control, falling back to the panel itself.
+  const firstField = panel.querySelector(FOCUSABLE + ':not(#modalClose)') || panel;
+  setTimeout(() => firstField.focus(), 0);
+
   return { close };
 }
 
-function confirm(msg, onYes, { yesLabel = 'Confirm', danger = false } = {}) {
+function confirmDialog(msg, onYes, { yesLabel = 'Confirm', danger = false } = {}) {
   modal({
     title: 'Please confirm',
     body: `<p class="text-slate-700">${msg}</p>`,
@@ -174,12 +213,14 @@ function emptyState({ icon: iconName = 'package', title, body, action }) {
 }
 
 /* ---------- Page header ---------- */
-// When _suppressHeader is true (set by hub views around sub-view calls),
-// only the action buttons are rendered (floated right). The title is owned by the hub.
+// Inside a hub the title belongs to the hub, so a sub-view's actions used to render as a
+// lone right-aligned strip under the tabs — an unanchored band floating against dead
+// space, on every hub page. Instead, hand the actions up to buildHub so it can sit them
+// on the tab row where they belong.
 function pageHeader({ title, subtitle, actions }) {
   if (window._suppressHeader) {
-    if (!actions) return '';
-    return `<div class="flex justify-end gap-2 flex-wrap mb-4">${actions}</div>`;
+    if (actions) window._hubActions = actions;
+    return '';
   }
   return `
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
@@ -209,7 +250,14 @@ function statCard({ label, value, trend, icon: iconName, color = 'brand', toolti
     gold: 'bg-amber-50 text-amber-700',
     blue: 'bg-brand-50 text-brand-700',
     rose: 'bg-rose-50 text-rose-700',
-    purple: 'bg-brand-50 text-brand-700'
+    purple: 'bg-brand-50 text-brand-700',
+    // Aliases callers already pass — previously fell through to class="undefined".
+    // Off-brand hues resolve to the brand scale; amber/red stay semantic.
+    slate: 'bg-slate-100 text-slate-700',
+    emerald: 'bg-brand-50 text-brand-700',
+    green: 'bg-brand-50 text-brand-700',
+    amber: 'bg-amber-50 text-amber-700',
+    red: 'bg-rose-50 text-rose-700'
   };
   const tooltipId = tooltip ? 'tip_' + Math.random().toString(36).slice(2, 8) : null;
   if (tooltipId) {
@@ -225,31 +273,52 @@ function statCard({ label, value, trend, icon: iconName, color = 'brand', toolti
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1 stat-label">
             ${label}
-            ${tooltipId ? `<button id="${tooltipId}" class="text-slate-400 hover:text-slate-600" title="How is this calculated?">${icon('info','w-3 h-3')}</button>` : ''}
+            ${tooltipId ? `<button id="${tooltipId}" class="text-slate-500 hover:text-slate-600" aria-label="How is this calculated?" title="How is this calculated?">${icon('info','w-3 h-3')}</button>` : ''}
           </div>
           <div class="stat-value">${value}</div>
           ${trend ? `<div class="stat-trend ${trend.direction === 'up' ? 'up' : 'down'}">
             ${icon(trend.direction === 'up' ? 'trending_up' : 'trending_down', 'w-3 h-3')}
             <span>${trend.label}</span>
-          </div>` : ''}
+          </div>`
+          // Reserve the trend line even when there isn't one. Stat cards sit in grid rows
+          // that stretch to the tallest item, so a card with a trend made its neighbours
+          // grow a ragged gap under the value. An empty slot keeps every value on the
+          // same baseline across the row.
+          : `<div class="stat-trend" aria-hidden="true">&nbsp;</div>`}
         </div>
-        ${iconName ? `<div class="w-10 h-10 rounded-xl flex items-center justify-center ${colorMap[color]} flex-shrink-0">${icon(iconName, 'w-5 h-5')}</div>` : ''}
+        ${iconName ? `<div class="w-10 h-10 rounded-xl flex items-center justify-center ${colorMap[color] || colorMap.brand} flex-shrink-0">${icon(iconName, 'w-5 h-5')}</div>` : ''}
       </div>
     </div>
   `;
 }
 
 /* ---------- Tab system ---------- */
+// Real tablist: buttons (not divs), roving tabindex, and arrow-key navigation per
+// the WAI-ARIA tabs pattern. Every caller inherits keyboard support for free.
 function tabs(tabList, activeKey, onChange) {
   const id = 'tabs_' + Math.random().toString(36).slice(2, 8);
   setTimeout(() => {
-    document.querySelectorAll(`#${id} .tab`).forEach(el => {
+    const els = [...document.querySelectorAll(`#${id} .tab`)];
+    els.forEach((el, i) => {
       el.onclick = () => onChange(el.dataset.key);
+      el.onkeydown = (e) => {
+        const map = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: els.length - 1 };
+        if (!(e.key in map)) return;
+        e.preventDefault();
+        // Wrap around, matching the ARIA pattern's expected behaviour.
+        const next = els[(map[e.key] + els.length) % els.length];
+        next.focus();
+        onChange(next.dataset.key);
+      };
     });
   }, 0);
   return `
-    <div id="${id}" class="tabs">
-      ${tabList.map(t => { const bv = typeof t.badge === 'function' ? t.badge() : t.badge; return `<div class="tab ${t.key === activeKey ? 'active' : ''}" data-key="${t.key}">${t.label}${bv ? `<span class="ml-2 badge badge-danger">${bv}</span>` : ''}</div>`; }).join('')}
+    <div id="${id}" class="tabs" role="tablist">
+      ${tabList.map(t => {
+        const bv = typeof t.badge === 'function' ? t.badge() : t.badge;
+        const active = t.key === activeKey;
+        return `<button type="button" role="tab" class="tab ${active ? 'active' : ''}" data-key="${t.key}" aria-selected="${active}" tabindex="${active ? '0' : '-1'}">${t.label}${bv ? `<span class="ml-2 badge badge-danger">${bv}</span>` : ''}</button>`;
+      }).join('')}
     </div>
   `;
 }

@@ -442,10 +442,10 @@ function tch_viewTestResults(testId) {
                         <span class="font-medium">${student.name}</span>
                       </div>
                     </td>
-                    <td class="px-4 py-3 text-center text-slate-400">—</td>
-                    <td class="px-4 py-3 text-center text-slate-400">—</td>
+                    <td class="px-4 py-3 text-center text-slate-500">—</td>
+                    <td class="px-4 py-3 text-center text-slate-500">—</td>
                     <td class="px-4 py-3 text-center"><span class="badge badge-info">Pending</span></td>
-                    <td class="px-4 py-3 text-right text-slate-400 text-xs">Not submitted</td>
+                    <td class="px-4 py-3 text-right text-slate-500 text-xs">Not submitted</td>
                   </tr>`;
                 }
               }).join('')}
@@ -809,7 +809,7 @@ function stu_showScoreModal(testId, score, total, percentage) {
           <div class="text-lg font-semibold mt-2">${score} / ${total} correct</div>
         </div>
         <p class="text-sm text-slate-600">${message}</p>
-        <p class="text-xs text-slate-400">Your answers have been saved. Your teacher can view your results.</p>
+        <p class="text-xs text-slate-500">Your answers have been saved. Your teacher can view your results.</p>
       </div>
     `,
     footer: `
@@ -867,7 +867,7 @@ function stu_viewMyResult(testId) {
           <div class="font-semibold text-sm text-slate-900">${idx + 1}. ${q.text}</div>
           <div class="pl-2 space-y-1 text-sm">
             <div class="text-xs text-slate-500 font-semibold uppercase">Your Answer</div>
-            <div class="bg-slate-50 rounded-lg p-2 text-slate-800 min-h-[2rem]">${hasAnswer ? studentAns : '<span class="text-slate-400 italic">(not answered)</span>'}</div>
+            <div class="bg-slate-50 rounded-lg p-2 text-slate-800 min-h-[2rem]">${hasAnswer ? studentAns : '<span class="text-slate-500 italic">(not answered)</span>'}</div>
             <div class="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mt-1">
               ${icon('bell', 'w-3.5 h-3.5')} Reviewed by teacher &middot; 1/1 (pending review)
             </div>

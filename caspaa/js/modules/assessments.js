@@ -54,7 +54,7 @@ function assess_tch_cbtList() {
       const subs = DB.query('cbtSubmissions', x => x.examId === e.id);
       const pending   = subs.filter(x => x.status === 'submitted').length;
       const classSize = COMPUTE.studentsByClass(e.classId).length;
-      return `<div class="card p-4 flex flex-col gap-2">
+      return `<div class="card p-5 flex flex-col gap-2">
         <div class="flex items-center gap-1.5 flex-wrap">
           <span class="badge badge-info">${cls ? cls.name : '—'}</span>
           <span class="badge badge-neutral">${subj ? subj.name : '—'}</span>
@@ -105,7 +105,7 @@ function assess_tch_formativeList() {
             const subj = subjects.find(s => s.id === test.subjectId);
             const subs = DB.query('formativeSubmissions', s => s.testId === test.id);
             const classSize = COMPUTE.studentsByClass(test.classId).length;
-            return `<div class="card p-4 flex flex-col gap-2">
+            return `<div class="card p-5 flex flex-col gap-2">
               <div class="flex items-start justify-between">
                 <div class="min-w-0">
                   <div class="font-bold text-slate-900 truncate">${test.title}</div>
@@ -114,9 +114,9 @@ function assess_tch_formativeList() {
                 <span class="badge flex-shrink-0 ml-2 ${test.status==='active'?'badge-success':test.status==='draft'?'badge-warn':'badge-neutral'}">${test.status}</span>
               </div>
               <div class="grid grid-cols-3 gap-1 text-center text-xs">
-                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${(test.questions||[]).length}</div><div class="text-slate-400">Qs</div></div>
-                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${test.duration}m</div><div class="text-slate-400">Time</div></div>
-                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${subs.length}/${classSize}</div><div class="text-slate-400">Done</div></div>
+                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${(test.questions||[]).length}</div><div class="text-slate-500">Qs</div></div>
+                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${test.duration}m</div><div class="text-slate-500">Time</div></div>
+                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${subs.length}/${classSize}</div><div class="text-slate-500">Done</div></div>
               </div>
               <div class="flex gap-2 flex-wrap pt-1 border-t border-slate-100">
                 <button class="btn btn-secondary !py-1 text-xs" onclick="tch_viewTestResults('${test.id}')">${icon('results','w-3.5 h-3.5')} Results</button>
@@ -185,7 +185,7 @@ function assess_stu_assignments(s, sName) {
       const overdue = !sub && new Date(a.dueDate) < new Date();
       const subj    = DB.find('subjects', a.subjectId);
       const teacher = DB.find('teachers', a.teacherId);
-      return `<div class="card p-4 flex items-start justify-between gap-3">
+      return `<div class="card p-5 flex items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2 mb-1 flex-wrap">
             <span class="badge badge-neutral">${subj ? subj.name : '—'}</span>
@@ -196,14 +196,14 @@ function assess_stu_assignments(s, sName) {
           </div>
           <div class="font-bold text-slate-900">${a.title}</div>
           <p class="text-sm text-slate-500 mt-0.5 line-clamp-2">${a.description}</p>
-          <div class="text-xs text-slate-400 mt-1.5">Due ${fdate(a.dueDate,{long:true})} · ${teacher ? teacher.name : '—'}</div>
+          <div class="text-xs text-slate-500 mt-1.5">Due ${fdate(a.dueDate,{long:true})} · ${teacher ? teacher.name : '—'}</div>
           ${graded && sub.feedback ? `<div class="mt-2 bg-emerald-50 rounded-lg p-2 text-xs text-emerald-800"><strong>Feedback:</strong> ${sub.feedback}</div>` : ''}
         </div>
         <div class="flex-shrink-0 text-center">
           ${sub
             ? (graded
-                ? `<div class="text-2xl font-extrabold text-emerald-700">${sub.grade}<span class="text-sm text-slate-400">/100</span></div>`
-                : `<span class="text-xs text-slate-400">Awaiting grade</span>`)
+                ? `<div class="text-2xl font-extrabold text-emerald-700">${sub.grade}<span class="text-sm text-slate-500">/100</span></div>`
+                : `<span class="text-xs text-slate-500">Awaiting grade</span>`)
             : `<button class="btn btn-primary text-sm" onclick="stu_submitAssignmentModal('${a.id}')">${icon('upload','w-4 h-4')} Submit</button>`}
         </div>
       </div>`;
@@ -221,7 +221,7 @@ function assess_stu_cbt(s) {
       const subj = DB.find('subjects', e.subjectId);
       const objCount    = e.questions.filter(q => q.type === 'objective').length;
       const theoryCount = e.questions.filter(q => q.type === 'theory').length;
-      return `<div class="card p-4 flex items-start justify-between gap-3">
+      return `<div class="card p-5 flex items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2 mb-1 flex-wrap">
             <span class="badge badge-neutral">${subj ? subj.name : '—'}</span>
@@ -235,7 +235,7 @@ function assess_stu_cbt(s) {
         </div>
         <div class="flex-shrink-0 text-right">
           ${sub
-            ? `<div class="text-2xl font-extrabold text-brand-700">${sub.totalScore}<span class="text-sm text-slate-400">/${sub.maxScore}</span></div>
+            ? `<div class="text-2xl font-extrabold text-brand-700">${sub.totalScore}<span class="text-sm text-slate-500">/${sub.maxScore}</span></div>
                <button class="btn btn-secondary !py-1 !px-2 text-xs mt-1" onclick="stu_viewCbtResult('${sub.id}')">View</button>`
             : `<button class="btn btn-primary text-sm" onclick="stu_startCbt('${e.id}')">${icon('classes','w-4 h-4')} Start</button>`}
         </div>
@@ -269,19 +269,19 @@ function assess_stu_formative(s, sName) {
           ${list.map(test => {
             const subj = subjects.find(s => s.id === test.subjectId);
             const sub  = DB.query('formativeSubmissions', x => x.testId === test.id && x.studentId === s.id)[0];
-            return `<div class="card p-4 flex flex-col gap-2">
+            return `<div class="card p-5 flex flex-col gap-2">
               <div class="font-bold text-slate-900">${test.title}</div>
               <div class="text-xs text-slate-500">${subj ? subj.name : '—'}</div>
               <div class="grid grid-cols-2 gap-1 text-xs text-center">
-                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${(test.questions||[]).length}</div><div class="text-slate-400">Questions</div></div>
-                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${test.duration}m</div><div class="text-slate-400">Duration</div></div>
+                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${(test.questions||[]).length}</div><div class="text-slate-500">Questions</div></div>
+                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${test.duration}m</div><div class="text-slate-500">Duration</div></div>
               </div>
               ${sub
                 ? `<div class="bg-emerald-50 rounded-xl p-2 text-center">
                     <div class="text-lg font-extrabold text-emerald-700">${sub.score}/${sub.total} <span class="text-sm">(${sub.percentage}%)</span></div>
                     <button class="text-xs text-brand-700 underline mt-1" onclick="stu_viewMyResult('${test.id}')">View answers</button>
                    </div>`
-                : `<div class="text-xs text-slate-400">Due: ${fdate(test.dueDate,{short:true})}</div>
+                : `<div class="text-xs text-slate-500">Due: ${fdate(test.dueDate,{short:true})}</div>
                    <button class="btn btn-primary w-full" onclick="stu_startTest('${test.id}')">${icon('book','w-4 h-4')} Start Test</button>`}
             </div>`;
           }).join('')}
@@ -293,7 +293,7 @@ function assess_stu_formative(s, sName) {
 
 function assess_bulkUploadModal(targetType) {
   const isCbt = targetType === 'cbt';
-  const classes  = (typeof teacherClasses === 'function' ? teacherClasses() : DB.query('classes', c => c.schoolId === (AUTH.current.schoolId || 'sch_brightlights')));
+  const classes  = (typeof teacherClasses === 'function' ? teacherClasses() : DB.query('classes', c => c.schoolId === currentSchoolId()));
   const subjects = DB.get('subjects');
   const label    = isCbt ? 'CBT Exam' : 'Quick Test';
 
@@ -305,14 +305,14 @@ function assess_bulkUploadModal(targetType) {
         <!-- Meta fields -->
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Class *</label>
+            <label class="input-label" for="bu_class">Class *</label>
             <select id="bu_class" class="input">
               <option value="">— Select class —</option>
               ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
             </select>
           </div>
           <div>
-            <label class="input-label">Subject *</label>
+            <label class="input-label" for="bu_subject">Subject *</label>
             <select id="bu_subject" class="input">
               <option value="">— Select subject —</option>
               ${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
@@ -321,16 +321,16 @@ function assess_bulkUploadModal(targetType) {
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Title *</label>
+            <label class="input-label" for="bu_title">Title *</label>
             <input id="bu_title" class="input" placeholder="e.g. Chapter 5 — Forces Quiz" />
           </div>
           <div>
-            <label class="input-label">Duration (minutes)</label>
+            <label class="input-label" for="bu_duration">Duration (minutes)</label>
             <input id="bu_duration" type="number" class="input" value="${isCbt ? 30 : 15}" min="1" />
           </div>
         </div>
         <div>
-          <label class="input-label">Due Date *</label>
+          <label class="input-label" for="bu_due">Due Date *</label>
           <input id="bu_due" type="date" class="input" value="${daysAhead(7)}" />
         </div>
 
@@ -354,7 +354,7 @@ Capital of Nigeria?, Kano, Lagos, Abuja, Ibadan, C, 1
 For Theory (leave options blank):
 question text, , , , , theory, marks
 Explain Newton's first law., , , , , theory, 5"></textarea>
-          <p class="text-xs text-slate-400 mt-1">Columns: Question, Opt A, Opt B, Opt C, Opt D, Correct (A–D) or "theory", Marks (default 1)</p>
+          <p class="text-xs text-slate-500 mt-1">Columns: Question, Opt A, Opt B, Opt C, Opt D, Correct (A–D) or "theory", Marks (default 1)</p>
         </div>
 
         <div id="bu_preview" class="hidden"></div>
@@ -432,8 +432,8 @@ function assess_previewCsv(targetType) {
           <span class="font-semibold text-slate-600">${i+1}.</span>
           <span class="badge ${q.type==='objective'?'badge-info':'badge-neutral'} ml-1">${q.type==='objective'?'MCQ':'Theory'}</span>
           <span class="text-slate-700 ml-1">${q.text}</span>
-          ${q.type==='objective' ? `<div class="text-slate-400 mt-0.5 pl-4">${q.options.map((o,oi) => `<span class="${oi===q.answer?'text-emerald-700 font-bold':''}">${['A','B','C','D'][oi]}) ${o}</span>`).join(' · ')}</div>` : ''}
-          <span class="text-slate-400">(${q.marks} mark${q.marks!==1?'s':''})</span>
+          ${q.type==='objective' ? `<div class="text-slate-500 mt-0.5 pl-4">${q.options.map((o,oi) => `<span class="${oi===q.answer?'text-emerald-700 font-bold':''}">${['A','B','C','D'][oi]}) ${o}</span>`).join(' · ')}</div>` : ''}
+          <span class="text-slate-500">(${q.marks} mark${q.marks!==1?'s':''})</span>
         </div>
       `).join('')}
     </div>
@@ -455,7 +455,7 @@ function assess_saveBulk(targetType) {
   const questions = assess_parseCsvQuestions(csv);
   if (!questions.length) { toast('No valid questions found in CSV — check the format', 'danger'); return; }
 
-  const schoolId  = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId  = currentSchoolId();
   const teacherId = AUTH.current.id;
 
   if (targetType === 'cbt') {
