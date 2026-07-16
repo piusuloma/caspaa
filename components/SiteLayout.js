@@ -94,29 +94,63 @@ export function Check({ className = 'text-brand-600' }) {
   )
 }
 
+// The header floats transparently over the hero and fades to white on scroll.
+// Every page under this layout opens on a bg-navy-600 section, which is what
+// makes the white-on-transparent state legible; a page starting on a light
+// section would need `solid` forced on.
 function Nav() {
   const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    // Past ~24px the hero has moved under the bar, so the white plate comes in.
+    const onScroll = () => setScrolled(window.scrollY > 24)
+    onScroll() // catch a restored scroll position on load / back-navigation
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // The open mobile drawer is a white panel, so the bar must go solid with it
+  // regardless of scroll — otherwise its links would be white on white.
+  const solid = scrolled || open
+
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-100">
+    <header
+      className={`fixed top-0 inset-x-0 z-40 transition-colors duration-300 ${
+        solid ? 'bg-white/90 backdrop-blur border-b border-slate-100' : 'bg-transparent border-b border-transparent'
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
-        <Logo />
-        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
+        <Logo light={!solid} />
+        <nav className={`hidden md:flex items-center gap-8 text-sm font-semibold ${solid ? 'text-slate-600' : 'text-white/80'}`}>
           {NAV_LINKS.map((l) => (
-            <Link key={l.href} href={l.href} className="hover:text-navy-600 transition">
+            <Link
+              key={l.href}
+              href={l.href}
+              className={`transition-colors ${solid ? 'hover:text-navy-600' : 'hover:text-white'}`}
+            >
               {l.label}
             </Link>
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-3">
-          <a href="/signin" className="text-sm font-semibold text-slate-600 hover:text-navy-600">
+          <a
+            href="/signin"
+            className={`text-sm font-semibold transition-colors ${
+              solid ? 'text-slate-600 hover:text-navy-600' : 'text-white/80 hover:text-white'
+            }`}
+          >
             Sign in
           </a>
           <PrimaryButton href="/contact" className="px-4 py-2.5">Book a Demo</PrimaryButton>
         </div>
         <button
-          className="md:hidden w-10 h-10 grid place-items-center rounded-lg border border-slate-200"
+          className={`md:hidden w-10 h-10 grid place-items-center rounded-lg border transition-colors ${
+            solid ? 'border-slate-200 text-slate-700' : 'border-white/30 text-white'
+          }`}
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
+          aria-expanded={open}
         >
           <span className="text-xl leading-none">{open ? '✕' : '☰'}</span>
         </button>

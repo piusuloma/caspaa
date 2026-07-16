@@ -70,7 +70,7 @@ function DashboardMock() {
 
 function Section({ id, className = '', children }) {
   return (
-    <section id={id} className={`py-20 md:py-24 ${className}`}>
+    <section id={id} className={`py-20 md:py-24 scroll-mt-16 ${className}`}>
       <div className="max-w-7xl mx-auto px-5">{children}</div>
     </section>
   )
@@ -81,7 +81,7 @@ function Hero() {
     <section className="relative overflow-hidden bg-navy-600 text-white">
       <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-navy-400/30 blur-3xl" />
       <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-accent-600/10 blur-3xl" />
-      <div className="relative max-w-7xl mx-auto px-5 py-20 md:py-28 grid lg:grid-cols-2 gap-12 items-center">
+      <div className="relative max-w-7xl mx-auto px-5 pt-36 pb-20 md:pt-44 md:pb-28 grid lg:grid-cols-2 gap-12 items-center">
         <div>
           <div data-reveal><Eyebrow light>{HERO.eyebrow}</Eyebrow></div>
           <h1 data-reveal data-reveal-delay="1" className="text-4xl md:text-5xl font-extrabold leading-[1.1] tracking-tight">

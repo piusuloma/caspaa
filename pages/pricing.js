@@ -76,7 +76,7 @@ export default function PricingPage() {
     <SiteLayout title="Pricing" description="Simple, per-student pricing that scales with your school. Standard, Premium and Ultimate plans.">
       {/* Header */}
       <section className="bg-navy-600 text-white">
-        <div className="max-w-7xl mx-auto px-5 py-16 md:py-20 text-center">
+        <div className="max-w-7xl mx-auto px-5 pt-32 pb-16 md:pt-36 md:pb-20 text-center">
           <Eyebrow light>SIMPLE, PER-STUDENT PRICING</Eyebrow>
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Pricing that scales with your school.</h1>
           <p className="mt-4 text-lg text-brand-100 max-w-2xl mx-auto">

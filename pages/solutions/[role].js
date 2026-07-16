@@ -27,7 +27,7 @@ export default function RolePage({ index }) {
     <SiteLayout title={`For ${role.tab}`} description={`${role.headline} — ${role.body}`}>
       {/* Hero */}
       <section className="bg-navy-600 text-white">
-        <div className="max-w-7xl mx-auto px-5 py-16 md:py-24 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-5 pt-32 pb-16 md:pt-40 md:pb-24 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <Eyebrow light>FOR {role.name.toUpperCase()}</Eyebrow>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1]">{role.headline}</h1>

@@ -35,7 +35,7 @@ export default function ContactPage() {
   return (
     <SiteLayout title="Book a Demo" description="Book a free CASPAA demo or talk to our team about your school.">
       <section className="bg-navy-600 text-white">
-        <div className="max-w-7xl mx-auto px-5 py-16 md:py-20 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-5 pt-32 pb-16 md:pt-36 md:pb-20 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <Eyebrow light>GET STARTED</Eyebrow>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
