@@ -412,12 +412,22 @@ span.flatpickr-weekday { color: var(--muted); }
    rather than pasted on. Staggered per card so they never move in lockstep.
    Purely decorative, so it stops entirely under reduced-motion. */
 @media (prefers-reduced-motion: no-preference) {
-  .float-card { animation: float-card 7s ease-in-out infinite; }
-  .float-card.d1 { animation-delay: -2.3s; }
-  .float-card.d2 { animation-delay: -4.6s; }
+  /* The drift lives on the OUTER wrapper and the tilt on the inner image.
+     Both are transforms — on one element the animation would simply overwrite
+     the tilt every frame. Two elements, one transform each. */
+  .float-card { animation: float-card 11s ease-in-out infinite; }
+  .float-card.d1 { animation-delay: -3.7s; }
+  .float-card.d2 { animation-delay: -7.4s; }
   @keyframes float-card {
     0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-10px); }
+    50%      { transform: translateY(-12px); }
+  }
+  /* Bend toward whichever edge the cursor is near. --rx/--ry are written by JS
+     from the pointer's position within the card. */
+  .tilt-face {
+    transform: perspective(760px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-style: preserve-3d;
   }
 }
 

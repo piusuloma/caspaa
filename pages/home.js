@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import SiteLayout, {
   Eyebrow,
@@ -88,6 +88,49 @@ function TypewriterTitle({ titles, fallback, className }) {
   )
 }
 
+// A floating stat card that bends toward the cursor.
+//
+// Two nested elements on purpose: the outer div carries the drift animation and
+// the inner image carries the tilt. Both are transforms, so on a single element
+// the keyframes would overwrite the tilt on every frame.
+//
+// Writes CSS custom properties instead of setting transform directly, so the
+// tilt composes with whatever .tilt-face already applies and stays in CSS.
+function HeroCard({ src, alt, className, delayClass = '' }) {
+  const ref = useRef(null)
+
+  const bend = (e) => {
+    const el = ref.current
+    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const r = el.getBoundingClientRect()
+    const px = (e.clientX - r.left) / r.width - 0.5   // -0.5 (left edge) .. 0.5 (right)
+    const py = (e.clientY - r.top) / r.height - 0.5
+    // Invert X so the card leans away from the cursor, like a real sheet pressed
+    // at its edge. Amplitude stays low; more reads as a novelty.
+    el.style.setProperty('--ry', (px * 16).toFixed(2) + 'deg')
+    el.style.setProperty('--rx', (py * -16).toFixed(2) + 'deg')
+  }
+  const flatten = () => {
+    const el = ref.current
+    if (!el) return
+    el.style.setProperty('--ry', '0deg')
+    el.style.setProperty('--rx', '0deg')
+  }
+
+  return (
+    <div className={`hidden lg:block absolute z-20 float-card ${delayClass} ${className}`}>
+      <img
+        ref={ref}
+        src={src}
+        alt={alt}
+        onMouseMove={bend}
+        onMouseLeave={flatten}
+        className="tilt-face w-full h-auto rounded-xl shadow-2xl shadow-black/40 select-none"
+      />
+    </div>
+  )
+}
+
 function Section({ id, className = '', children }) {
   return (
     <section id={id} className={`py-24 md:py-32 scroll-mt-16 ${className}`}>
@@ -123,22 +166,24 @@ function Hero() {
             alt="A school administrator holding a laptop"
             width="1100"
             height="1387"
-            className="relative z-10 w-full max-w-xs sm:max-w-sm lg:max-w-md xl:max-w-lg mx-auto h-auto select-none pointer-events-none"
+            className="relative z-10 w-full max-w-[15rem] sm:max-w-xs lg:max-w-xs xl:max-w-sm mx-auto h-auto select-none pointer-events-none"
           />
-          <img
+          <HeroCard
             src="/images/chart-enrolment.webp"
             alt="Enrolment rate trending up"
-            className="hidden lg:block absolute z-20 -left-4 xl:-left-10 top-6 w-44 xl:w-52 rounded-xl shadow-2xl shadow-black/40 float-card select-none pointer-events-none"
+            className="left-10 xl:left-16 top-10 w-36 xl:w-40"
           />
-          <img
+          <HeroCard
             src="/images/chart-collection.webp"
             alt="Fee collection rate at 57 percent"
-            className="hidden lg:block absolute z-20 -left-2 xl:-left-6 bottom-8 w-36 xl:w-40 rounded-xl shadow-2xl shadow-black/40 float-card d1 select-none pointer-events-none"
+            delayClass="d1"
+            className="left-6 xl:left-10 bottom-10 w-28 xl:w-32"
           />
-          <img
+          <HeroCard
             src="/images/chart-retention.webp"
             alt="Retention rate at 90 percent"
-            className="hidden lg:block absolute z-20 right-0 xl:-right-4 bottom-24 w-44 xl:w-52 rounded-xl shadow-2xl shadow-black/40 float-card d2 select-none pointer-events-none"
+            delayClass="d2"
+            className="right-8 xl:right-14 bottom-24 w-36 xl:w-40"
           />
         </div>
       </div>
