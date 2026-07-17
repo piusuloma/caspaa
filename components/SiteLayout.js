@@ -66,7 +66,7 @@ export function PrimaryButton({ href, children, className = '' }) {
 export function GhostButton({ href, children, light = false, className = '' }) {
   const base = light
     ? 'text-white border-white/30 hover:bg-white/10'
-    : 'text-navy-600 border-brand-200 hover:bg-brand-50'
+    : 'text-site-600 border-site-200 hover:bg-site-50'
   return (
     <Link
       href={href}
@@ -79,13 +79,13 @@ export function GhostButton({ href, children, light = false, className = '' }) {
 
 export function Eyebrow({ children, light = false }) {
   return (
-    <p className={`text-xs font-bold tracking-[0.15em] mb-3 ${light ? 'text-accent-400' : 'text-brand-600'}`}>
+    <p className={`text-xs font-bold tracking-[0.15em] mb-3 ${light ? 'text-accent-400' : 'text-site-600'}`}>
       {children}
     </p>
   )
 }
 
-export function Check({ className = 'text-brand-600' }) {
+export function Check({ className = 'text-site-600' }) {
   return (
     <svg viewBox="0 0 20 20" className={`w-5 h-5 shrink-0 ${className}`} fill="currentColor" aria-hidden="true">
       <path
@@ -98,7 +98,7 @@ export function Check({ className = 'text-brand-600' }) {
 }
 
 // The header floats transparently over the hero and fades to white on scroll.
-// Every page under this layout opens on a bg-navy-600 section, which is what
+// Every page under this layout opens on a bg-site-600 section, which is what
 // makes the white-on-transparent state legible; a page starting on a light
 // section would need `solid` forced on.
 function Nav() {
@@ -141,8 +141,8 @@ function Nav() {
                 aria-current={active ? 'page' : undefined}
                 className={`relative py-1 transition-colors ${
                   active
-                    ? solid ? 'text-navy-600' : 'text-white'
-                    : solid ? 'hover:text-navy-600' : 'hover:text-white'
+                    ? solid ? 'text-site-600' : 'text-white'
+                    : solid ? 'hover:text-site-600' : 'hover:text-white'
                 }`}
               >
                 {l.label}
@@ -160,7 +160,7 @@ function Nav() {
           <a
             href="/signin"
             className={`text-sm font-semibold transition-colors ${
-              solid ? 'text-slate-600 hover:text-navy-600' : 'text-white/80 hover:text-white'
+              solid ? 'text-slate-600 hover:text-site-600' : 'text-white/80 hover:text-white'
             }`}
           >
             Sign in
@@ -187,7 +187,7 @@ function Nav() {
                 key={l.href}
                 href={l.href}
                 aria-current={active ? 'page' : undefined}
-                className={`py-1.5 font-semibold flex items-center gap-2 ${active ? 'text-navy-600' : 'text-slate-700'}`}
+                className={`py-1.5 font-semibold flex items-center gap-2 ${active ? 'text-site-600' : 'text-slate-700'}`}
                 onClick={() => setOpen(false)}
               >
                 <span
@@ -231,7 +231,7 @@ function Footer() {
     },
   ]
   return (
-    <footer className="bg-navy-600 text-slate-300">
+    <footer className="bg-site-600 text-slate-300">
       <div className="max-w-7xl mx-auto px-5 py-14 grid gap-10 md:grid-cols-5">
         <div className="md:col-span-2">
           <Logo light />

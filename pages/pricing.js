@@ -26,7 +26,7 @@ function PricingFaq() {
             aria-expanded={open === i}
           >
             {f.q}
-            <span className="text-brand-600 text-xl shrink-0 leading-none">{open === i ? '−' : '+'}</span>
+            <span className="text-site-600 text-xl shrink-0 leading-none">{open === i ? '−' : '+'}</span>
           </button>
           {open === i && <p className="px-5 pb-5 -mt-1 text-slate-600 text-sm slide-up">{f.a}</p>}
         </div>
@@ -42,7 +42,7 @@ function PlanCard({ plan }) {
     <div
       className={`relative rounded-3xl p-7 flex flex-col ${
         highlight
-          ? 'bg-navy-600 text-white ring-2 ring-accent-500 shadow-2xl lg:-translate-y-3'
+          ? 'bg-site-600 text-white ring-2 ring-accent-500 shadow-2xl lg:-translate-y-3'
           : gold
           ? 'bg-gradient-to-br from-accent-700 to-accent-900 text-white shadow-xl'
           : 'bg-white text-slate-800 ring-1 ring-slate-200 shadow-sm'
@@ -59,10 +59,10 @@ function PlanCard({ plan }) {
       <div className="mt-2 flex items-end gap-1">
         <span className="text-4xl font-extrabold">{plan.price}</span>
       </div>
-      <p className={`text-sm mt-1 ${highlight ? 'text-brand-100' : gold ? 'text-white/80' : 'text-slate-500'}`}>
+      <p className={`text-sm mt-1 ${highlight ? 'text-site-100' : gold ? 'text-white/80' : 'text-slate-500'}`}>
         {plan.unit}
       </p>
-      <p className={`mt-4 text-sm font-medium ${highlight ? 'text-brand-100' : gold ? 'text-white/90' : 'text-slate-600'}`}>
+      <p className={`mt-4 text-sm font-medium ${highlight ? 'text-site-100' : gold ? 'text-white/90' : 'text-slate-600'}`}>
         {plan.tagline}
       </p>
 
@@ -77,14 +77,14 @@ function PlanCard({ plan }) {
       </div>
 
       {plan.inherits && (
-        <p className={`mt-6 text-sm font-bold ${highlight ? 'text-accent-300' : gold ? 'text-white' : 'text-navy-600'}`}>
+        <p className={`mt-6 text-sm font-bold ${highlight ? 'text-accent-300' : gold ? 'text-white' : 'text-site-600'}`}>
           {plan.inherits}
         </p>
       )}
       <ul className="mt-4 space-y-2.5 flex-1">
         {plan.features.map((f) => (
           <li key={f} className="flex items-start gap-2.5 text-sm">
-            <Check className={gold ? 'text-white' : highlight ? 'text-accent-400' : 'text-brand-600'} />
+            <Check className={gold ? 'text-white' : highlight ? 'text-accent-400' : 'text-site-600'} />
             <span className={highlight || gold ? 'text-white/90' : 'text-slate-700'}>{f}</span>
           </li>
         ))}
@@ -93,7 +93,7 @@ function PlanCard({ plan }) {
       {plan.setup && (
         <div className={`mt-6 rounded-xl p-4 text-sm ${highlight ? 'bg-white/10' : 'bg-slate-50'}`}>
           <p className={`font-bold ${highlight ? 'text-white' : 'text-slate-800'}`}>One-off setup — {plan.setup.fee}</p>
-          <p className={highlight ? 'text-brand-100' : 'text-slate-500'}>Includes {plan.setup.training}</p>
+          <p className={highlight ? 'text-site-100' : 'text-slate-500'}>Includes {plan.setup.training}</p>
         </div>
       )}
     </div>
@@ -104,16 +104,16 @@ export default function PricingPage() {
   return (
     <SiteLayout title="Pricing" description="Simple, per-student pricing that scales with your school. Standard, Premium and Ultimate plans.">
       {/* Header */}
-      <section className="relative overflow-hidden bg-navy-600 text-white">
+      <section className="relative overflow-hidden bg-site-600 text-white">
         <SlotBackdrop src="/images/hero-backdrop.jpg" opacity="opacity-15" />
         <div className="relative max-w-7xl mx-auto px-5 pt-32 pb-16 md:pt-36 md:pb-20 text-center">
           <Eyebrow light>SIMPLE, PER-STUDENT PRICING</Eyebrow>
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Pricing that scales with your school.</h1>
-          <p className="mt-4 text-lg text-brand-100 max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-site-100 max-w-2xl mx-auto">
             Pay per student, per term. No hidden platform fees. Choose the plan that fits where your school is today —
             and upgrade as you grow.
           </p>
-          <p className="mt-3 text-sm text-brand-200">Prices are per student, per term · VAT exclusive.</p>
+          <p className="mt-3 text-sm text-site-200">Prices are per student, per term · VAT exclusive.</p>
         </div>
       </section>
 
@@ -145,7 +145,7 @@ export default function PricingPage() {
                 data-reveal
                 data-reveal-delay={String((i % 2) + 1)}
               >
-                <span className="w-7 h-7 rounded-lg bg-brand-50 text-navy-600 grid place-items-center shrink-0">
+                <span className="w-7 h-7 rounded-lg bg-site-50 text-site-600 grid place-items-center shrink-0">
                   <Icon name="info" className="w-4 h-4" />
                 </span>
                 <p className="text-sm text-slate-600 leading-snug">{n}</p>
@@ -154,12 +154,12 @@ export default function PricingPage() {
           </div>
 
           <div
-            className="mt-6 rounded-2xl bg-navy-600 text-white p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5"
+            className="mt-6 rounded-2xl bg-site-600 text-white p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5"
             data-reveal
           >
             <div>
               <p className="font-bold">Not sure which plan fits?</p>
-              <p className="text-sm text-brand-100 mt-0.5">Tell us your size and we'll size the plan to it.</p>
+              <p className="text-sm text-site-100 mt-0.5">Tell us your size and we'll size the plan to it.</p>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
               <a
@@ -190,12 +190,12 @@ export default function PricingPage() {
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200">
             <div className="grid grid-cols-2 text-sm font-bold">
               <div className="p-4 bg-slate-100 text-slate-500">Regular SMS</div>
-              <div className="p-4 bg-navy-600 text-white">CASPAA</div>
+              <div className="p-4 bg-site-600 text-white">CASPAA</div>
             </div>
             {COMPARISON.map((row, i) => (
               <div key={row[0]} className={`grid grid-cols-2 text-sm ${i % 2 ? 'bg-white' : 'bg-slate-50'}`}>
                 <div className="p-4 text-slate-500 border-t border-slate-100">{row[0]}</div>
-                <div className="p-4 text-slate-800 font-semibold border-t border-brand-100 bg-brand-50/40 flex items-center gap-2">
+                <div className="p-4 text-slate-800 font-semibold border-t border-site-100 bg-site-50/40 flex items-center gap-2">
                   <Check /> {row[1]}
                 </div>
               </div>

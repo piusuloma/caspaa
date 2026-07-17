@@ -27,13 +27,13 @@ export default function RolePage({ index }) {
   return (
     <SiteLayout title={`For ${role.tab}`} description={`${role.headline} — ${role.body}`}>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-navy-600 text-white">
+      <section className="relative overflow-hidden bg-site-600 text-white">
         <SlotBackdrop src="/images/solutions-backdrop.jpg" opacity="opacity-15" />
         <div className="relative max-w-7xl mx-auto px-5 pt-32 pb-16 md:pt-40 md:pb-24 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <Eyebrow light>FOR {role.name.toUpperCase()}</Eyebrow>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1]">{role.headline}</h1>
-            <p className="mt-5 text-lg text-brand-100 max-w-xl">{role.body}</p>
+            <p className="mt-5 text-lg text-site-100 max-w-xl">{role.body}</p>
             <p className="mt-5 text-accent-300 font-semibold italic">{role.punch}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <PrimaryButton href="/contact">Book a Free Demo</PrimaryButton>
@@ -41,7 +41,7 @@ export default function RolePage({ index }) {
             </div>
           </div>
           <div className="lg:pl-6">
-            <div className="rounded-3xl bg-navy-600 p-8 ring-1 ring-white/10">
+            <div className="rounded-3xl bg-site-600 p-8 ring-1 ring-white/10">
               <p className="text-accent-400 font-bold text-sm mb-4">What {role.tab.toLowerCase()} get</p>
               <ul className="grid gap-3">
                 {role.bullets.map((b) => (
@@ -68,8 +68,8 @@ export default function RolePage({ index }) {
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {role.bullets.map((b) => (
               <div key={b} className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                <span className="w-10 h-10 rounded-xl bg-brand-50 grid place-items-center">
-                  <Check className="text-brand-600" />
+                <span className="w-10 h-10 rounded-xl bg-site-50 grid place-items-center">
+                  <Check className="text-site-600" />
                 </span>
                 <p className="mt-4 font-semibold text-slate-900">{b}</p>
               </div>
@@ -89,11 +89,11 @@ export default function RolePage({ index }) {
               <Link
                 key={r.slug}
                 href={`/solutions/${r.slug}`}
-                className="rounded-2xl bg-white ring-1 ring-slate-100 p-5 hover:shadow-md hover:ring-brand-200 transition"
+                className="rounded-2xl bg-white ring-1 ring-slate-100 p-5 hover:shadow-md hover:ring-site-200 transition"
               >
                 <p className="font-bold text-slate-900">For {r.tab}</p>
                 <p className="mt-1 text-sm text-slate-500 line-clamp-2">{r.headline}</p>
-                <span className="mt-3 inline-block text-sm font-semibold text-navy-600">Learn more →</span>
+                <span className="mt-3 inline-block text-sm font-semibold text-site-600">Learn more →</span>
               </Link>
             ))}
           </div>
@@ -101,10 +101,10 @@ export default function RolePage({ index }) {
       </section>
 
       {/* CTA */}
-      <section className="bg-navy-600 text-white">
+      <section className="bg-site-600 text-white">
         <div className="max-w-5xl mx-auto px-5 py-16 text-center">
           <h2 className="text-3xl font-extrabold tracking-tight">Ready to see it in action?</h2>
-          <p className="mt-3 text-brand-100">Book a free demo tailored to your school.</p>
+          <p className="mt-3 text-site-100">Book a free demo tailored to your school.</p>
           <PrimaryButton href="/contact" className="mt-6">Book Your Free Demo</PrimaryButton>
         </div>
       </section>

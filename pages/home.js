@@ -141,9 +141,9 @@ function Section({ id, className = '', children }) {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-navy-600 text-white">
+    <section className="relative overflow-hidden bg-site-600 text-white">
       <SlotBackdrop src="/images/hero-backdrop.jpg" opacity="opacity-15" />
-      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-navy-400/30 blur-3xl" />
+      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-site-400/30 blur-3xl" />
       <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-accent-600/10 blur-3xl" />
       <div className="relative max-w-7xl mx-auto px-5 pt-36 pb-20 md:pt-44 md:pb-28 grid lg:grid-cols-2 gap-12 items-center">
         <div>
@@ -153,12 +153,12 @@ function Hero() {
             fallback={HERO.title}
             className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight"
           />
-          <p data-reveal data-reveal-delay="2" className="mt-5 text-lg text-brand-100 max-w-xl">{HERO.subtitle}</p>
+          <p data-reveal data-reveal-delay="2" className="mt-5 text-lg text-site-100 max-w-xl">{HERO.subtitle}</p>
           <div data-reveal data-reveal-delay="3" className="mt-8 flex flex-wrap gap-3">
             <PrimaryButton href="/contact">Book a Free Demo</PrimaryButton>
             <GhostButton href="/pricing" light>See Pricing →</GhostButton>
           </div>
-          <p data-reveal data-reveal-delay="4" className="mt-5 text-sm text-brand-200">{HERO.microtrust}</p>
+          <p data-reveal data-reveal-delay="4" className="mt-5 text-sm text-site-200">{HERO.microtrust}</p>
         </div>
         <div className="lg:pl-6 relative" data-reveal="right" data-reveal-delay="2">
           <img
@@ -193,15 +193,15 @@ function Hero() {
 
 function TrustBar() {
   return (
-    <section className="bg-brand-50 border-y border-brand-100">
+    <section className="bg-site-50 border-y border-site-100">
       <div className="max-w-7xl mx-auto px-5 py-10">
-        <p className="text-center text-xs font-bold tracking-[0.15em] text-brand-600 mb-6">
+        <p className="text-center text-xs font-bold tracking-[0.15em] text-site-600 mb-6">
           TRUSTED BY FORWARD-THINKING AFRICAN SCHOOLS
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 max-w-3xl mx-auto">
           {METRICS.map((m, i) => (
             <div key={m.label} className="text-center" data-reveal data-reveal-delay={String((i % 4) + 1)}>
-              <p className="text-3xl font-extrabold text-navy-600">{m.value}</p>
+              <p className="text-3xl font-extrabold text-site-600">{m.value}</p>
               <p className="text-xs text-slate-500 mt-1">{m.label}</p>
             </div>
           ))}
@@ -239,7 +239,7 @@ function Problem() {
       <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {PROBLEMS.map((p, i) => (
           <div key={p.title} className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm mkt-card" data-reveal data-reveal-delay={String((i % 4) + 1)}>
-            <div className="w-11 h-11 rounded-xl bg-brand-50 text-navy-600 grid place-items-center">
+            <div className="w-11 h-11 rounded-xl bg-site-50 text-site-600 grid place-items-center">
               <Icon name={p.icon} className="w-5 h-5" />
             </div>
             <h3 className="mt-3 font-bold text-slate-900">{p.title}</h3>
@@ -247,7 +247,7 @@ function Problem() {
           </div>
         ))}
       </div>
-      <p className="mt-10 text-xl font-bold text-navy-600" data-reveal>There’s a better way to run a school.</p>
+      <p className="mt-10 text-xl font-bold text-site-600" data-reveal>There’s a better way to run a school.</p>
     </Section>
   )
 }
@@ -303,9 +303,9 @@ function PlatformMarquee() {
               <div
                 key={`${t.title}-${i}`}
                 aria-hidden={dup || undefined}
-                className="group w-[360px] shrink-0 rounded-2xl bg-white p-7 ring-1 ring-slate-200 shadow-sm transition-colors duration-300 hover:bg-navy-600"
+                className="group w-[360px] shrink-0 rounded-2xl bg-white p-7 ring-1 ring-slate-200 shadow-sm transition-colors duration-300 hover:bg-site-600"
               >
-                <div className="w-12 h-12 rounded-xl bg-brand-50 text-navy-600 grid place-items-center transition-colors duration-300 group-hover:bg-white/10 group-hover:text-accent-400">
+                <div className="w-12 h-12 rounded-xl bg-site-50 text-site-600 grid place-items-center transition-colors duration-300 group-hover:bg-white/10 group-hover:text-accent-400">
                   <Icon name={t.icon} className="w-6 h-6" />
                 </div>
                 <h3 className="mt-4 text-lg font-bold text-slate-900 transition-colors duration-300 group-hover:text-white">
@@ -344,18 +344,18 @@ function Roles() {
             key={r.slug}
             onClick={() => setActive(i)}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-              i === active ? 'bg-navy-600 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              i === active ? 'bg-site-600 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
             {r.tab}
           </button>
         ))}
       </div>
-      <div className="mt-8 rounded-3xl bg-navy-600 text-white p-8 md:p-12 grid lg:grid-cols-2 gap-10 items-center">
+      <div className="mt-8 rounded-3xl bg-site-600 text-white p-8 md:p-12 grid lg:grid-cols-2 gap-10 items-center">
         <div>
           <p className="text-accent-400 font-bold text-sm">{role.name}</p>
           <h3 className="mt-2 text-2xl md:text-3xl font-extrabold">{role.headline}</h3>
-          <p className="mt-4 text-brand-100">{role.body}</p>
+          <p className="mt-4 text-site-100">{role.body}</p>
           <p className="mt-5 text-accent-300 font-semibold italic">{role.punch}</p>
           <GhostButton href={`/solutions/${role.slug}`} light className="mt-6">
             Learn more →
@@ -386,7 +386,7 @@ function FeatureDeepDives() {
               <Eyebrow>{f.eyebrow}</Eyebrow>
               <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">{f.title}</h3>
               <p className="mt-4 text-slate-600">{f.body}</p>
-              <div className="mt-5 inline-flex items-center gap-2 bg-brand-50 text-navy-600 rounded-full px-4 py-2 text-sm font-bold">
+              <div className="mt-5 inline-flex items-center gap-2 bg-site-50 text-site-600 rounded-full px-4 py-2 text-sm font-bold">
                 {f.stat}
               </div>
             </div>
@@ -418,12 +418,12 @@ function Comparison() {
       <div className="mt-10 max-w-4xl mx-auto overflow-hidden rounded-2xl ring-1 ring-slate-200" data-reveal="scale">
         <div className="grid grid-cols-2 text-sm font-bold">
           <div className="p-4 bg-slate-100 text-slate-500">Regular School Management System</div>
-          <div className="p-4 bg-navy-600 text-white">CASPAA School Operating System</div>
+          <div className="p-4 bg-site-600 text-white">CASPAA School Operating System</div>
         </div>
         {COMPARISON.map((row, i) => (
           <div key={row[0]} className={`grid grid-cols-2 text-sm ${i % 2 ? 'bg-white' : 'bg-slate-50'}`}>
             <div className="p-4 text-slate-500 border-t border-slate-100">{row[0]}</div>
-            <div className="p-4 text-slate-800 font-semibold border-t border-brand-100 bg-brand-50/40 flex items-center gap-2">
+            <div className="p-4 text-slate-800 font-semibold border-t border-site-100 bg-site-50/40 flex items-center gap-2">
               <Check /> {row[1]}
             </div>
           </div>
@@ -438,7 +438,7 @@ function Comparison() {
 
 function Advantages() {
   return (
-    <Section className="bg-navy-600 text-white">
+    <Section className="bg-site-600 text-white">
       <div className="text-center max-w-2xl mx-auto" data-reveal>
         <Eyebrow light>OUR UNIQUE ADVANTAGES</Eyebrow>
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
@@ -472,7 +472,7 @@ function Outcomes() {
       <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {OUTCOMES.map((o, i) => (
           <div key={o.title} className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm hover:shadow-md mkt-card" data-reveal data-reveal-delay={String((i % 3) + 1)}>
-            <div className="w-11 h-11 rounded-xl bg-brand-50 text-navy-600 grid place-items-center">
+            <div className="w-11 h-11 rounded-xl bg-site-50 text-site-600 grid place-items-center">
               <Icon name={o.icon} className="w-5 h-5" />
             </div>
             <h3 className="mt-3 font-bold text-slate-900">{o.title}</h3>
@@ -496,7 +496,7 @@ function Onboarding() {
       <div className="mt-12 grid gap-6 md:grid-cols-4">
         {STEPS.map((s, i) => (
           <div key={s.n} className="relative rounded-2xl bg-white p-6 ring-1 ring-slate-100 mkt-card" data-reveal data-reveal-delay={String((i % 4) + 1)}>
-            <div className="w-10 h-10 rounded-full bg-navy-600 text-white grid place-items-center font-extrabold">{s.n}</div>
+            <div className="w-10 h-10 rounded-full bg-site-600 text-white grid place-items-center font-extrabold">{s.n}</div>
             <h3 className="mt-4 font-bold text-slate-900">{s.title}</h3>
             <p className="mt-2 text-sm text-slate-600">{s.body}</p>
           </div>
@@ -512,14 +512,14 @@ function Onboarding() {
 function Security() {
   return (
     <Section id="security">
-      <div className="relative overflow-hidden rounded-3xl bg-navy-600 text-white p-8 md:p-12" data-reveal="scale">
+      <div className="relative overflow-hidden rounded-3xl bg-site-600 text-white p-8 md:p-12" data-reveal="scale">
         <SlotBackdrop src="/images/security.jpg" opacity="opacity-20" />
         <div className="relative max-w-2xl">
           <Eyebrow light>BUILT ON TRUST</Eyebrow>
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
             Bank-grade security for your school’s most sensitive data.
           </h2>
-          <p className="mt-4 text-brand-100">
+          <p className="mt-4 text-site-100">
             Student records and payment data are protected end-to-end. CASPAA uses secure payment infrastructure,
             encrypted data handling, and role-based access so the right people see the right things — and nothing more.
           </p>
@@ -555,7 +555,7 @@ function Faq() {
                 onClick={() => setOpen(open === i ? -1 : i)}
               >
                 {f.q}
-                <span className="text-brand-600 text-xl shrink-0">{open === i ? '−' : '+'}</span>
+                <span className="text-site-600 text-xl shrink-0">{open === i ? '−' : '+'}</span>
               </button>
               {open === i && <p className="px-5 pb-5 -mt-1 text-slate-600 text-sm slide-up">{f.a}</p>}
             </div>
@@ -568,13 +568,13 @@ function Faq() {
 
 function FinalCta() {
   return (
-    <section className="relative overflow-hidden bg-navy-600 text-white">
+    <section className="relative overflow-hidden bg-site-600 text-white">
       <SlotBackdrop src="/images/cta-backdrop.jpg" opacity="opacity-15" />
       <div className="relative max-w-5xl mx-auto px-5 py-20 text-center">
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight" data-reveal>
           Ready to run your school the modern way?
         </h2>
-        <p className="mt-4 text-lg text-brand-100 max-w-2xl mx-auto" data-reveal data-reveal-delay="1">
+        <p className="mt-4 text-lg text-site-100 max-w-2xl mx-auto" data-reveal data-reveal-delay="1">
           Join the schools transforming how they operate, collect fees and engage parents — online and offline. See
           CASPAA on your own workflows in a free, no-obligation demo.
         </p>

@@ -44,13 +44,13 @@ export default function SignInFinder() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
 
-      <div className="min-h-screen relative overflow-hidden bg-navy-600 text-white flex flex-col">
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-navy-400/30 blur-3xl" />
+      <div className="min-h-screen relative overflow-hidden bg-site-600 text-white flex flex-col">
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-site-400/30 blur-3xl" />
         <div className="absolute bottom-0 -left-20 w-72 h-72 rounded-full bg-accent-600/10 blur-3xl" />
 
         <header className="relative z-10 max-w-6xl w-full mx-auto px-5 h-16 flex items-center justify-between">
           <Logo light />
-          <Link href="/home" className="text-sm font-semibold text-brand-100 hover:text-white">← Back to site</Link>
+          <Link href="/home" className="text-sm font-semibold text-site-100 hover:text-white">← Back to site</Link>
         </header>
 
         <main className="relative z-10 flex-1 flex items-center justify-center px-5 py-10">
@@ -68,7 +68,7 @@ export default function SignInFinder() {
                   <input
                     value={sub}
                     onChange={(e) => { setSub(e.target.value); setErr('') }}
-                    className="flex-1 min-w-0 px-4 py-3 rounded-l-xl border border-slate-200 bg-white text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                    className="flex-1 min-w-0 px-4 py-3 rounded-l-xl border border-slate-200 bg-white text-sm focus:outline-none focus:border-site-500 focus:ring-2 focus:ring-site-500/20"
                     placeholder="your-school"
                     autoCapitalize="none"
                     spellCheck="false"
@@ -79,7 +79,7 @@ export default function SignInFinder() {
                   </span>
                 </div>
                 <p className="mt-2 text-xs text-slate-400">
-                  You'll go to <span className="font-semibold text-navy-600">{preview}.caspaa.org</span>
+                  You'll go to <span className="font-semibold text-site-600">{preview}.caspaa.org</span>
                 </p>
                 {err && <div className="mt-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-sm px-3 py-2">{err}</div>}
                 <button
@@ -92,17 +92,17 @@ export default function SignInFinder() {
 
               <div className="mt-6 pt-5 border-t border-slate-100 space-y-2.5">
                 <p className="flex items-start gap-2 text-sm text-slate-600">
-                  <Check className="text-brand-600" />
+                  <Check className="text-site-600" />
                   <span>Installed the CASPAA app? Just open it — it works offline.</span>
                 </p>
                 <p className="text-sm text-slate-500">
                   New to CASPAA?{' '}
-                  <Link href="/contact" className="text-navy-600 font-semibold hover:underline">Sign up your school →</Link>
+                  <Link href="/contact" className="text-site-600 font-semibold hover:underline">Sign up your school →</Link>
                 </p>
               </div>
             </div>
 
-            <p className="mt-6 text-center text-xs text-brand-200">
+            <p className="mt-6 text-center text-xs text-site-200">
               Can't remember your school's address? Email{' '}
               <a className="underline hover:text-white" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
             </p>
