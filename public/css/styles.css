@@ -407,3 +407,16 @@ span.flatpickr-weekday { color: var(--muted); }
     to   { opacity: 1; transform: none; }
   }
 }
+
+/* Hero stat cards — a slow drift so they read as floating over the scene
+   rather than pasted on. Staggered per card so they never move in lockstep.
+   Purely decorative, so it stops entirely under reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .float-card { animation: float-card 7s ease-in-out infinite; }
+  .float-card.d1 { animation-delay: -2.3s; }
+  .float-card.d2 { animation-delay: -4.6s; }
+  @keyframes float-card {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+}

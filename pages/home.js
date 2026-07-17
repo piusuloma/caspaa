@@ -117,13 +117,28 @@ function Hero() {
           </div>
           <p data-reveal data-reveal-delay="4" className="mt-5 text-sm text-brand-200">{HERO.microtrust}</p>
         </div>
-        <div className="lg:pl-6" data-reveal="right" data-reveal-delay="2">
+        <div className="lg:pl-6 relative" data-reveal="right" data-reveal-delay="2">
           <img
             src="/images/hero-woman.webp"
             alt="A school administrator holding a laptop"
             width="1100"
             height="1387"
-            className="w-full max-w-xs sm:max-w-sm lg:max-w-md xl:max-w-lg mx-auto h-auto select-none pointer-events-none"
+            className="relative z-10 w-full max-w-xs sm:max-w-sm lg:max-w-md xl:max-w-lg mx-auto h-auto select-none pointer-events-none"
+          />
+          <img
+            src="/images/chart-enrolment.webp"
+            alt="Enrolment rate trending up"
+            className="hidden lg:block absolute z-20 -left-4 xl:-left-10 top-6 w-44 xl:w-52 rounded-xl shadow-2xl shadow-black/40 float-card select-none pointer-events-none"
+          />
+          <img
+            src="/images/chart-collection.webp"
+            alt="Fee collection rate at 57 percent"
+            className="hidden lg:block absolute z-20 -left-2 xl:-left-6 bottom-8 w-36 xl:w-40 rounded-xl shadow-2xl shadow-black/40 float-card d1 select-none pointer-events-none"
+          />
+          <img
+            src="/images/chart-retention.webp"
+            alt="Retention rate at 90 percent"
+            className="hidden lg:block absolute z-20 right-0 xl:-right-4 bottom-24 w-44 xl:w-52 rounded-xl shadow-2xl shadow-black/40 float-card d2 select-none pointer-events-none"
           />
         </div>
       </div>
