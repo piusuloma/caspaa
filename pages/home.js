@@ -166,24 +166,24 @@ function Hero() {
             alt="A school administrator holding a laptop"
             width="1100"
             height="1387"
-            className="relative z-10 w-full max-w-[15rem] sm:max-w-xs lg:max-w-xs xl:max-w-sm mx-auto h-auto select-none pointer-events-none"
+            className="relative z-10 w-full max-w-[17rem] sm:max-w-sm lg:max-w-sm xl:max-w-md mx-auto h-auto select-none pointer-events-none"
           />
           <HeroCard
             src="/images/chart-enrolment.webp"
             alt="Enrolment rate trending up"
-            className="left-10 xl:left-16 top-10 w-36 xl:w-40"
+            className="left-6 xl:left-12 top-10 w-40 xl:w-48"
           />
           <HeroCard
             src="/images/chart-collection.webp"
             alt="Fee collection rate at 57 percent"
             delayClass="d1"
-            className="left-6 xl:left-10 bottom-10 w-28 xl:w-32"
+            className="left-2 xl:left-6 bottom-10 w-32 xl:w-36"
           />
           <HeroCard
             src="/images/chart-retention.webp"
             alt="Retention rate at 90 percent"
             delayClass="d2"
-            className="right-8 xl:right-14 bottom-24 w-36 xl:w-40"
+            className="right-4 xl:right-10 bottom-24 w-40 xl:w-48"
           />
         </div>
       </div>
