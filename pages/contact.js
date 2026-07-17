@@ -36,7 +36,7 @@ export default function ContactPage() {
 
   return (
     <SiteLayout title="Book a Demo" description="Book a free CASPAA demo or talk to our team about your school.">
-      <section className="relative overflow-hidden bg-site-600 text-white">
+      <section className="relative overflow-hidden bg-site-800 text-white">
         <SlotBackdrop src="/images/cta-backdrop.jpg" opacity="opacity-15" />
         <div className="relative max-w-7xl mx-auto px-5 pt-32 pb-16 md:pt-36 md:pb-20 grid lg:grid-cols-2 gap-12 items-center">
           <div>
@@ -51,7 +51,7 @@ export default function ContactPage() {
             <div className="mt-8 space-y-4">
               {STEPS.map((s) => (
                 <div key={s.n} className="flex items-start gap-3">
-                  <span className="w-7 h-7 rounded-full bg-accent-600 text-site-600 grid place-items-center text-sm font-extrabold shrink-0">
+                  <span className="w-7 h-7 rounded-full bg-accent-600 text-site-700 grid place-items-center text-sm font-extrabold shrink-0">
                     {s.n}
                   </span>
                   <div>
@@ -63,11 +63,11 @@ export default function ContactPage() {
             </div>
             <div className="mt-8 text-sm text-site-100 space-y-1">
               <p className="flex items-center gap-2">
-                <Icon name="mail" className="w-4 h-4 shrink-0 text-accent-400" />
+                <Icon name="mail" className="w-4 h-4 shrink-0 text-accent-300" />
                 <a className="underline hover:text-white" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
               </p>
               <p className="flex items-center gap-2">
-                <Icon name="phone" className="w-4 h-4 shrink-0 text-accent-400" />
+                <Icon name="phone" className="w-4 h-4 shrink-0 text-accent-300" />
                 {CONTACT.phones.join(' · ')}
               </p>
             </div>
@@ -78,14 +78,14 @@ export default function ContactPage() {
             {sent ? (
               <div className="text-center py-10">
                 <div className="w-14 h-14 rounded-full bg-site-50 grid place-items-center mx-auto">
-                  <Check className="text-site-600" />
+                  <Check className="text-site-700" />
                 </div>
                 <h2 className="mt-4 text-xl font-extrabold text-slate-900">Thanks — your request is ready to send.</h2>
                 <p className="mt-2 text-sm text-slate-600">
                   Your email app should have opened with the details filled in. If it didn’t, email us directly at{' '}
-                  <a className="text-site-600 font-semibold" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>.
+                  <a className="text-site-700 font-semibold" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>.
                 </p>
-                <button onClick={() => setSent(false)} className="mt-6 text-sm font-semibold text-site-600 hover:underline">
+                <button onClick={() => setSent(false)} className="mt-6 text-sm font-semibold text-site-700 hover:underline">
                   ← Edit your request
                 </button>
               </div>
@@ -128,7 +128,7 @@ export default function ContactPage() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl bg-accent-800 hover:bg-accent-900 text-white font-bold text-sm shadow-lg mkt-btn"
+                  className="w-full py-3.5 rounded-xl bg-accent-400 hover:bg-accent-300 text-[#04252a] font-bold text-sm shadow-lg mkt-btn"
                 >
                   Request my demo
                 </button>

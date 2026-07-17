@@ -141,10 +141,10 @@ function Section({ id, className = '', children }) {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-site-600 text-white">
+    <section className="relative overflow-hidden bg-site-800 text-white">
       <SlotBackdrop src="/images/hero-backdrop.jpg" opacity="opacity-15" />
-      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-site-400/30 blur-3xl" />
-      <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-accent-600/10 blur-3xl" />
+      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-site-500/30 blur-3xl" />
+      <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-accent-400/10 blur-3xl" />
       <div className="relative max-w-7xl mx-auto px-5 pt-36 pb-20 md:pt-44 md:pb-28 grid lg:grid-cols-2 gap-12 items-center">
         <div>
           <div data-reveal><Eyebrow light>{HERO.eyebrow}</Eyebrow></div>
@@ -195,13 +195,13 @@ function TrustBar() {
   return (
     <section className="bg-site-50 border-y border-site-100">
       <div className="max-w-7xl mx-auto px-5 py-10">
-        <p className="text-center text-xs font-bold tracking-[0.15em] text-site-600 mb-6">
+        <p className="text-center text-xs font-bold tracking-[0.15em] text-site-700 mb-6">
           TRUSTED BY FORWARD-THINKING AFRICAN SCHOOLS
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 max-w-3xl mx-auto">
           {METRICS.map((m, i) => (
             <div key={m.label} className="text-center" data-reveal data-reveal-delay={String((i % 4) + 1)}>
-              <p className="text-3xl font-extrabold text-site-600">{m.value}</p>
+              <p className="text-3xl font-extrabold text-site-700">{m.value}</p>
               <p className="text-xs text-slate-500 mt-1">{m.label}</p>
             </div>
           ))}
@@ -247,7 +247,7 @@ function Problem() {
           </div>
         ))}
       </div>
-      <p className="mt-10 text-xl font-bold text-site-600" data-reveal>There’s a better way to run a school.</p>
+      <p className="mt-10 text-xl font-bold text-site-700" data-reveal>There’s a better way to run a school.</p>
     </Section>
   )
 }
@@ -303,9 +303,9 @@ function PlatformMarquee() {
               <div
                 key={`${t.title}-${i}`}
                 aria-hidden={dup || undefined}
-                className="group w-[360px] shrink-0 rounded-2xl bg-white p-7 ring-1 ring-slate-200 shadow-sm transition-colors duration-300 hover:bg-site-600"
+                className="group w-[360px] shrink-0 rounded-2xl bg-white p-7 ring-1 ring-slate-200 shadow-sm transition-colors duration-300 hover:bg-site-800"
               >
-                <div className="w-12 h-12 rounded-xl bg-site-50 text-site-600 grid place-items-center transition-colors duration-300 group-hover:bg-white/10 group-hover:text-accent-400">
+                <div className="w-12 h-12 rounded-xl bg-site-50 text-site-600 grid place-items-center transition-colors duration-300 group-hover:bg-white/10 group-hover:text-accent-300">
                   <Icon name={t.icon} className="w-6 h-6" />
                 </div>
                 <h3 className="mt-4 text-lg font-bold text-slate-900 transition-colors duration-300 group-hover:text-white">
@@ -344,16 +344,16 @@ function Roles() {
             key={r.slug}
             onClick={() => setActive(i)}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-              i === active ? 'bg-site-600 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              i === active ? 'bg-site-800 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
             {r.tab}
           </button>
         ))}
       </div>
-      <div className="mt-8 rounded-3xl bg-site-600 text-white p-8 md:p-12 grid lg:grid-cols-2 gap-10 items-center">
+      <div className="mt-8 rounded-3xl bg-site-800 text-white p-8 md:p-12 grid lg:grid-cols-2 gap-10 items-center">
         <div>
-          <p className="text-accent-400 font-bold text-sm">{role.name}</p>
+          <p className="text-accent-300 font-bold text-sm">{role.name}</p>
           <h3 className="mt-2 text-2xl md:text-3xl font-extrabold">{role.headline}</h3>
           <p className="mt-4 text-site-100">{role.body}</p>
           <p className="mt-5 text-accent-300 font-semibold italic">{role.punch}</p>
@@ -418,7 +418,7 @@ function Comparison() {
       <div className="mt-10 max-w-4xl mx-auto overflow-hidden rounded-2xl ring-1 ring-slate-200" data-reveal="scale">
         <div className="grid grid-cols-2 text-sm font-bold">
           <div className="p-4 bg-slate-100 text-slate-500">Regular School Management System</div>
-          <div className="p-4 bg-site-600 text-white">CASPAA School Operating System</div>
+          <div className="p-4 bg-site-800 text-white">CASPAA School Operating System</div>
         </div>
         {COMPARISON.map((row, i) => (
           <div key={row[0]} className={`grid grid-cols-2 text-sm ${i % 2 ? 'bg-white' : 'bg-slate-50'}`}>
@@ -438,7 +438,7 @@ function Comparison() {
 
 function Advantages() {
   return (
-    <Section className="bg-site-600 text-white">
+    <Section className="bg-site-800 text-white">
       <div className="text-center max-w-2xl mx-auto" data-reveal>
         <Eyebrow light>OUR UNIQUE ADVANTAGES</Eyebrow>
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
@@ -448,12 +448,12 @@ function Advantages() {
       <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
         {ADVANTAGES.map((a, i) => (
           <div key={a} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3" data-reveal data-reveal-delay={String((i % 6) + 1)}>
-            <Check className="text-accent-400" />
+            <Check className="text-accent-300" />
             <span className="text-sm text-white/90">{a}</span>
           </div>
         ))}
       </div>
-      <p className="text-center mt-10 text-xl font-bold text-accent-400" data-reveal>
+      <p className="text-center mt-10 text-xl font-bold text-accent-300" data-reveal>
         Smart schools run on systems. Great schools run on CASPAA.
       </p>
     </Section>
@@ -496,7 +496,7 @@ function Onboarding() {
       <div className="mt-12 grid gap-6 md:grid-cols-4">
         {STEPS.map((s, i) => (
           <div key={s.n} className="relative rounded-2xl bg-white p-6 ring-1 ring-slate-100 mkt-card" data-reveal data-reveal-delay={String((i % 4) + 1)}>
-            <div className="w-10 h-10 rounded-full bg-site-600 text-white grid place-items-center font-extrabold">{s.n}</div>
+            <div className="w-10 h-10 rounded-full bg-site-800 text-white grid place-items-center font-extrabold">{s.n}</div>
             <h3 className="mt-4 font-bold text-slate-900">{s.title}</h3>
             <p className="mt-2 text-sm text-slate-600">{s.body}</p>
           </div>
@@ -512,7 +512,7 @@ function Onboarding() {
 function Security() {
   return (
     <Section id="security">
-      <div className="relative overflow-hidden rounded-3xl bg-site-600 text-white p-8 md:p-12" data-reveal="scale">
+      <div className="relative overflow-hidden rounded-3xl bg-site-800 text-white p-8 md:p-12" data-reveal="scale">
         <SlotBackdrop src="/images/security.jpg" opacity="opacity-20" />
         <div className="relative max-w-2xl">
           <Eyebrow light>BUILT ON TRUST</Eyebrow>
@@ -527,7 +527,7 @@ function Security() {
         <div className="relative mt-8 flex flex-wrap gap-3">
           {SECURITY.map((s) => (
             <span key={s.label} className="inline-flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-4 py-2 text-sm font-semibold">
-              <Icon name={s.icon} className="w-4 h-4 text-accent-400" /> {s.label}
+              <Icon name={s.icon} className="w-4 h-4 text-accent-300" /> {s.label}
             </span>
           ))}
         </div>
@@ -555,7 +555,7 @@ function Faq() {
                 onClick={() => setOpen(open === i ? -1 : i)}
               >
                 {f.q}
-                <span className="text-site-600 text-xl shrink-0">{open === i ? '−' : '+'}</span>
+                <span className="text-site-700 text-xl shrink-0">{open === i ? '−' : '+'}</span>
               </button>
               {open === i && <p className="px-5 pb-5 -mt-1 text-slate-600 text-sm slide-up">{f.a}</p>}
             </div>
@@ -568,7 +568,7 @@ function Faq() {
 
 function FinalCta() {
   return (
-    <section className="relative overflow-hidden bg-site-600 text-white">
+    <section className="relative overflow-hidden bg-site-800 text-white">
       <SlotBackdrop src="/images/cta-backdrop.jpg" opacity="opacity-15" />
       <div className="relative max-w-5xl mx-auto px-5 py-20 text-center">
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight" data-reveal>
@@ -582,7 +582,7 @@ function FinalCta() {
           <PrimaryButton href="/contact">Book Your Free Demo</PrimaryButton>
           <GhostButton href="/contact" light>Talk to Sales — 0803 201 1561</GhostButton>
         </div>
-        <p className="mt-6 text-accent-400 font-bold" data-reveal data-reveal-delay="3">Smart schools run on systems. Great schools run on CASPAA.</p>
+        <p className="mt-6 text-accent-300 font-bold" data-reveal data-reveal-delay="3">Smart schools run on systems. Great schools run on CASPAA.</p>
       </div>
     </section>
   )

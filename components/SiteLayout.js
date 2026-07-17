@@ -56,7 +56,7 @@ export function PrimaryButton({ href, children, className = '' }) {
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-accent-800 hover:bg-accent-900 text-white font-bold text-sm shadow-lg shadow-accent-800/25 hover:shadow-xl hover:shadow-accent-800/35 mkt-btn ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-accent-400 hover:bg-accent-300 text-[#04252a] font-bold text-sm shadow-lg shadow-accent-400/25 hover:shadow-xl hover:shadow-accent-400/40 mkt-btn ${className}`}
     >
       {children}
     </Link>
@@ -66,7 +66,7 @@ export function PrimaryButton({ href, children, className = '' }) {
 export function GhostButton({ href, children, light = false, className = '' }) {
   const base = light
     ? 'text-white border-white/30 hover:bg-white/10'
-    : 'text-site-600 border-site-200 hover:bg-site-50'
+    : 'text-site-700 border-site-200 hover:bg-site-50'
   return (
     <Link
       href={href}
@@ -79,7 +79,7 @@ export function GhostButton({ href, children, light = false, className = '' }) {
 
 export function Eyebrow({ children, light = false }) {
   return (
-    <p className={`text-xs font-bold tracking-[0.15em] mb-3 ${light ? 'text-accent-400' : 'text-site-600'}`}>
+    <p className={`text-xs font-bold tracking-[0.15em] mb-3 ${light ? 'text-accent-300' : 'text-site-700'}`}>
       {children}
     </p>
   )
@@ -98,7 +98,7 @@ export function Check({ className = 'text-site-600' }) {
 }
 
 // The header floats transparently over the hero and fades to white on scroll.
-// Every page under this layout opens on a bg-site-600 section, which is what
+// Every page under this layout opens on a bg-site-800 section, which is what
 // makes the white-on-transparent state legible; a page starting on a light
 // section would need `solid` forced on.
 function Nav() {
@@ -141,8 +141,8 @@ function Nav() {
                 aria-current={active ? 'page' : undefined}
                 className={`relative py-1 transition-colors ${
                   active
-                    ? solid ? 'text-site-600' : 'text-white'
-                    : solid ? 'hover:text-site-600' : 'hover:text-white'
+                    ? solid ? 'text-site-700' : 'text-white'
+                    : solid ? 'hover:text-site-700' : 'hover:text-white'
                 }`}
               >
                 {l.label}
@@ -160,7 +160,7 @@ function Nav() {
           <a
             href="/signin"
             className={`text-sm font-semibold transition-colors ${
-              solid ? 'text-slate-600 hover:text-site-600' : 'text-white/80 hover:text-white'
+              solid ? 'text-slate-600 hover:text-site-700' : 'text-white/80 hover:text-white'
             }`}
           >
             Sign in
@@ -187,7 +187,7 @@ function Nav() {
                 key={l.href}
                 href={l.href}
                 aria-current={active ? 'page' : undefined}
-                className={`py-1.5 font-semibold flex items-center gap-2 ${active ? 'text-site-600' : 'text-slate-700'}`}
+                className={`py-1.5 font-semibold flex items-center gap-2 ${active ? 'text-site-700' : 'text-slate-700'}`}
                 onClick={() => setOpen(false)}
               >
                 <span
@@ -231,18 +231,18 @@ function Footer() {
     },
   ]
   return (
-    <footer className="bg-site-600 text-slate-300">
+    <footer className="bg-site-800 text-slate-300">
       <div className="max-w-7xl mx-auto px-5 py-14 grid gap-10 md:grid-cols-5">
         <div className="md:col-span-2">
           <Logo light />
           <p className="mt-4 text-sm text-slate-400 max-w-xs">{CONTACT.tagline}</p>
           <div className="mt-5 text-sm space-y-1">
             <p className="flex items-center gap-2">
-              <Icon name="mail" className="w-4 h-4 shrink-0 text-accent-400" />
+              <Icon name="mail" className="w-4 h-4 shrink-0 text-accent-300" />
               <a className="hover:text-white" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
             </p>
             <p className="flex items-center gap-2">
-              <Icon name="phone" className="w-4 h-4 shrink-0 text-accent-400" />
+              <Icon name="phone" className="w-4 h-4 shrink-0 text-accent-300" />
               {CONTACT.phones.join(' · ')}
             </p>
           </div>

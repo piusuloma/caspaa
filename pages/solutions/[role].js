@@ -27,7 +27,7 @@ export default function RolePage({ index }) {
   return (
     <SiteLayout title={`For ${role.tab}`} description={`${role.headline} — ${role.body}`}>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-site-600 text-white">
+      <section className="relative overflow-hidden bg-site-800 text-white">
         <SlotBackdrop src="/images/solutions-backdrop.jpg" opacity="opacity-15" />
         <div className="relative max-w-7xl mx-auto px-5 pt-32 pb-16 md:pt-40 md:pb-24 grid lg:grid-cols-2 gap-12 items-center">
           <div>
@@ -41,12 +41,12 @@ export default function RolePage({ index }) {
             </div>
           </div>
           <div className="lg:pl-6">
-            <div className="rounded-3xl bg-site-600 p-8 ring-1 ring-white/10">
-              <p className="text-accent-400 font-bold text-sm mb-4">What {role.tab.toLowerCase()} get</p>
+            <div className="rounded-3xl bg-site-800 p-8 ring-1 ring-white/10">
+              <p className="text-accent-300 font-bold text-sm mb-4">What {role.tab.toLowerCase()} get</p>
               <ul className="grid gap-3">
                 {role.bullets.map((b) => (
                   <li key={b} className="flex items-start gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/10">
-                    <Check className="text-accent-400" />
+                    <Check className="text-accent-300" />
                     <span className="text-sm text-white/90">{b}</span>
                   </li>
                 ))}
@@ -69,7 +69,7 @@ export default function RolePage({ index }) {
             {role.bullets.map((b) => (
               <div key={b} className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
                 <span className="w-10 h-10 rounded-xl bg-site-50 grid place-items-center">
-                  <Check className="text-site-600" />
+                  <Check className="text-site-700" />
                 </span>
                 <p className="mt-4 font-semibold text-slate-900">{b}</p>
               </div>
@@ -93,7 +93,7 @@ export default function RolePage({ index }) {
               >
                 <p className="font-bold text-slate-900">For {r.tab}</p>
                 <p className="mt-1 text-sm text-slate-500 line-clamp-2">{r.headline}</p>
-                <span className="mt-3 inline-block text-sm font-semibold text-site-600">Learn more →</span>
+                <span className="mt-3 inline-block text-sm font-semibold text-site-700">Learn more →</span>
               </Link>
             ))}
           </div>
@@ -101,7 +101,7 @@ export default function RolePage({ index }) {
       </section>
 
       {/* CTA */}
-      <section className="bg-site-600 text-white">
+      <section className="bg-site-800 text-white">
         <div className="max-w-5xl mx-auto px-5 py-16 text-center">
           <h2 className="text-3xl font-extrabold tracking-tight">Ready to see it in action?</h2>
           <p className="mt-3 text-site-100">Book a free demo tailored to your school.</p>

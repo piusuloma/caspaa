@@ -26,7 +26,7 @@ function PricingFaq() {
             aria-expanded={open === i}
           >
             {f.q}
-            <span className="text-site-600 text-xl shrink-0 leading-none">{open === i ? '−' : '+'}</span>
+            <span className="text-site-700 text-xl shrink-0 leading-none">{open === i ? '−' : '+'}</span>
           </button>
           {open === i && <p className="px-5 pb-5 -mt-1 text-slate-600 text-sm slide-up">{f.a}</p>}
         </div>
@@ -42,14 +42,14 @@ function PlanCard({ plan }) {
     <div
       className={`relative rounded-3xl p-7 flex flex-col ${
         highlight
-          ? 'bg-site-600 text-white ring-2 ring-accent-500 shadow-2xl lg:-translate-y-3'
+          ? 'bg-site-800 text-white ring-2 ring-accent-400 shadow-2xl lg:-translate-y-3'
           : gold
-          ? 'bg-gradient-to-br from-accent-700 to-accent-900 text-white shadow-xl'
+          ? 'bg-accent-800 text-white shadow-xl'
           : 'bg-white text-slate-800 ring-1 ring-slate-200 shadow-sm'
       }`}
     >
       {highlight && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent-800 text-white text-xs font-extrabold px-3 py-1 rounded-full shadow">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent-400 text-[#04252a] text-xs font-extrabold px-3 py-1 rounded-full shadow">
           MOST POPULAR
         </span>
       )}
@@ -77,14 +77,14 @@ function PlanCard({ plan }) {
       </div>
 
       {plan.inherits && (
-        <p className={`mt-6 text-sm font-bold ${highlight ? 'text-accent-300' : gold ? 'text-white' : 'text-site-600'}`}>
+        <p className={`mt-6 text-sm font-bold ${highlight ? 'text-accent-300' : gold ? 'text-white' : 'text-site-700'}`}>
           {plan.inherits}
         </p>
       )}
       <ul className="mt-4 space-y-2.5 flex-1">
         {plan.features.map((f) => (
           <li key={f} className="flex items-start gap-2.5 text-sm">
-            <Check className={gold ? 'text-white' : highlight ? 'text-accent-400' : 'text-site-600'} />
+            <Check className={gold ? 'text-white' : highlight ? 'text-accent-300' : 'text-site-600'} />
             <span className={highlight || gold ? 'text-white/90' : 'text-slate-700'}>{f}</span>
           </li>
         ))}
@@ -104,7 +104,7 @@ export default function PricingPage() {
   return (
     <SiteLayout title="Pricing" description="Simple, per-student pricing that scales with your school. Standard, Premium and Ultimate plans.">
       {/* Header */}
-      <section className="relative overflow-hidden bg-site-600 text-white">
+      <section className="relative overflow-hidden bg-site-800 text-white">
         <SlotBackdrop src="/images/hero-backdrop.jpg" opacity="opacity-15" />
         <div className="relative max-w-7xl mx-auto px-5 pt-32 pb-16 md:pt-36 md:pb-20 text-center">
           <Eyebrow light>SIMPLE, PER-STUDENT PRICING</Eyebrow>
@@ -154,7 +154,7 @@ export default function PricingPage() {
           </div>
 
           <div
-            className="mt-6 rounded-2xl bg-site-600 text-white p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5"
+            className="mt-6 rounded-2xl bg-site-800 text-white p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5"
             data-reveal
           >
             <div>
@@ -164,13 +164,13 @@ export default function PricingPage() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
               <a
                 href={`mailto:${CONTACT.email}`}
-                className="inline-flex items-center gap-2 text-sm font-semibold hover:text-accent-400 transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-semibold hover:text-accent-300 transition-colors"
               >
-                <Icon name="mail" className="w-4 h-4 shrink-0 text-accent-400" />
+                <Icon name="mail" className="w-4 h-4 shrink-0 text-accent-300" />
                 {CONTACT.email}
               </a>
               <span className="inline-flex items-center gap-2 text-sm font-semibold">
-                <Icon name="phone" className="w-4 h-4 shrink-0 text-accent-400" />
+                <Icon name="phone" className="w-4 h-4 shrink-0 text-accent-300" />
                 {CONTACT.phones.join(' · ')}
               </span>
             </div>
@@ -190,7 +190,7 @@ export default function PricingPage() {
           <div className="overflow-hidden rounded-2xl ring-1 ring-slate-200">
             <div className="grid grid-cols-2 text-sm font-bold">
               <div className="p-4 bg-slate-100 text-slate-500">Regular SMS</div>
-              <div className="p-4 bg-site-600 text-white">CASPAA</div>
+              <div className="p-4 bg-site-800 text-white">CASPAA</div>
             </div>
             {COMPARISON.map((row, i) => (
               <div key={row[0]} className={`grid grid-cols-2 text-sm ${i % 2 ? 'bg-white' : 'bg-slate-50'}`}>
