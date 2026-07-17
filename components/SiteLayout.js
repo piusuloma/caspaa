@@ -287,7 +287,7 @@ export default function SiteLayout({ children, title, description }) {
         />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
-      <div className="min-h-screen bg-white text-slate-800">
+      <div className="mkt-shell min-h-screen bg-white text-slate-800">
         <Nav />
         <main>{children}</main>
         <Footer />

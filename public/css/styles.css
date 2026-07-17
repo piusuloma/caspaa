@@ -420,3 +420,14 @@ span.flatpickr-weekday { color: var(--muted); }
     50%      { transform: translateY(-10px); }
   }
 }
+
+/* The scroll-reveal parks horizontal reveals 36px off-axis until they fire. On
+   viewports where the 1280px container fills the width, that 36px minus the
+   20px gutter leaves 16px sticking out, and the whole page gains a horizontal
+   scrollbar until those elements reveal. Clip it at the shell.
+
+   `clip`, deliberately not `hidden`: overflow-x:hidden with overflow-y:visible
+   computes overflow-y to auto, which would turn this div into the scroll
+   container. window.scrollY would then never change — freezing the header's
+   transparent state and breaking every scroll-reveal on the page. */
+.mkt-shell { overflow-x: clip; }
