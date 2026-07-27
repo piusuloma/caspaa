@@ -35,7 +35,7 @@ function view_tch_assessments(params) {
     ${pageHeader({ title: 'Assessments', subtitle: 'Assignments, CBT exams, and formative quick tests in one place', actions })}
     <div class="flex gap-2 mb-5 flex-wrap">
       ${tabDefs.map(t => `<button onclick="APP.params.assessTab='${t.key}';APP.render()"
-        class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${tab===t.key?'bg-brand-700 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">
+        class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${tab===t.key?'bg-navy-800 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">
         ${t.label}
       </button>`).join('')}
     </div>
@@ -114,9 +114,9 @@ function assess_tch_formativeList() {
                 <span class="badge flex-shrink-0 ml-2 ${test.status==='active'?'badge-success':test.status==='draft'?'badge-warn':'badge-neutral'}">${test.status}</span>
               </div>
               <div class="grid grid-cols-3 gap-1 text-center text-xs">
-                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${(test.questions||[]).length}</div><div class="text-slate-400">Qs</div></div>
-                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${test.duration}m</div><div class="text-slate-400">Time</div></div>
-                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${subs.length}/${classSize}</div><div class="text-slate-400">Done</div></div>
+                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${(test.questions||[]).length}</div><div class="text-slate-500">Qs</div></div>
+                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${test.duration}m</div><div class="text-slate-500">Time</div></div>
+                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${subs.length}/${classSize}</div><div class="text-slate-500">Done</div></div>
               </div>
               <div class="flex gap-2 flex-wrap pt-1 border-t border-slate-100">
                 <button class="btn btn-secondary !py-1 text-xs" onclick="tch_viewTestResults('${test.id}')">${icon('results','w-3.5 h-3.5')} Results</button>
@@ -166,7 +166,7 @@ function view_stu_assessments(params) {
       ${tabDefs.map(t => {
         const n = badges[t.key];
         return `<button onclick="APP.params.stuAssessTab='${t.key}';APP.render()"
-          class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${tab===t.key?'bg-brand-700 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">
+          class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${tab===t.key?'bg-navy-800 text-white border-brand-700':'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}">
           ${t.label}${n ? ` <span class="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${tab===t.key?'bg-white text-brand-700':'bg-rose-500 text-white'}">${n}</span>` : ''}
         </button>`;
       }).join('')}
@@ -196,14 +196,14 @@ function assess_stu_assignments(s, sName) {
           </div>
           <div class="font-bold text-slate-900">${a.title}</div>
           <p class="text-sm text-slate-500 mt-0.5 line-clamp-2">${a.description}</p>
-          <div class="text-xs text-slate-400 mt-1.5">Due ${fdate(a.dueDate,{long:true})} · ${teacher ? teacher.name : '—'}</div>
+          <div class="text-xs text-slate-500 mt-1.5">Due ${fdate(a.dueDate,{long:true})} · ${teacher ? teacher.name : '—'}</div>
           ${graded && sub.feedback ? `<div class="mt-2 bg-emerald-50 rounded-lg p-2 text-xs text-emerald-800"><strong>Feedback:</strong> ${sub.feedback}</div>` : ''}
         </div>
         <div class="flex-shrink-0 text-center">
           ${sub
             ? (graded
-                ? `<div class="text-2xl font-extrabold text-emerald-700">${sub.grade}<span class="text-sm text-slate-400">/100</span></div>`
-                : `<span class="text-xs text-slate-400">Awaiting grade</span>`)
+                ? `<div class="text-2xl font-extrabold text-emerald-700">${sub.grade}<span class="text-sm text-slate-500">/100</span></div>`
+                : `<span class="text-xs text-slate-500">Awaiting grade</span>`)
             : `<button class="btn btn-primary text-sm" onclick="stu_submitAssignmentModal('${a.id}')">${icon('upload','w-4 h-4')} Submit</button>`}
         </div>
       </div>`;
@@ -235,7 +235,7 @@ function assess_stu_cbt(s) {
         </div>
         <div class="flex-shrink-0 text-right">
           ${sub
-            ? `<div class="text-2xl font-extrabold text-brand-700">${sub.totalScore}<span class="text-sm text-slate-400">/${sub.maxScore}</span></div>
+            ? `<div class="text-2xl font-extrabold text-brand-700">${sub.totalScore}<span class="text-sm text-slate-500">/${sub.maxScore}</span></div>
                <button class="btn btn-secondary !py-1 !px-2 text-xs mt-1" onclick="stu_viewCbtResult('${sub.id}')">View</button>`
             : `<button class="btn btn-primary text-sm" onclick="stu_startCbt('${e.id}')">${icon('classes','w-4 h-4')} Start</button>`}
         </div>
@@ -273,15 +273,15 @@ function assess_stu_formative(s, sName) {
               <div class="font-bold text-slate-900">${test.title}</div>
               <div class="text-xs text-slate-500">${subj ? subj.name : '—'}</div>
               <div class="grid grid-cols-2 gap-1 text-xs text-center">
-                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${(test.questions||[]).length}</div><div class="text-slate-400">Questions</div></div>
-                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${test.duration}m</div><div class="text-slate-400">Duration</div></div>
+                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${(test.questions||[]).length}</div><div class="text-slate-500">Questions</div></div>
+                <div class="bg-slate-50 rounded-lg py-1.5"><div class="font-bold">${test.duration}m</div><div class="text-slate-500">Duration</div></div>
               </div>
               ${sub
                 ? `<div class="bg-emerald-50 rounded-xl p-2 text-center">
                     <div class="text-lg font-extrabold text-emerald-700">${sub.score}/${sub.total} <span class="text-sm">(${sub.percentage}%)</span></div>
                     <button class="text-xs text-brand-700 underline mt-1" onclick="stu_viewMyResult('${test.id}')">View answers</button>
                    </div>`
-                : `<div class="text-xs text-slate-400">Due: ${fdate(test.dueDate,{short:true})}</div>
+                : `<div class="text-xs text-slate-500">Due: ${fdate(test.dueDate,{short:true})}</div>
                    <button class="btn btn-primary w-full" onclick="stu_startTest('${test.id}')">${icon('book','w-4 h-4')} Start Test</button>`}
             </div>`;
           }).join('')}
@@ -354,7 +354,7 @@ Capital of Nigeria?, Kano, Lagos, Abuja, Ibadan, C, 1
 For Theory (leave options blank):
 question text, , , , , theory, marks
 Explain Newton's first law., , , , , theory, 5"></textarea>
-          <p class="text-xs text-slate-400 mt-1">Columns: Question, Opt A, Opt B, Opt C, Opt D, Correct (A–D) or "theory", Marks (default 1)</p>
+          <p class="text-xs text-slate-500 mt-1">Columns: Question, Opt A, Opt B, Opt C, Opt D, Correct (A–D) or "theory", Marks (default 1)</p>
         </div>
 
         <div id="bu_preview" class="hidden"></div>
@@ -418,7 +418,7 @@ function assess_previewCsv(targetType) {
   if (!preview) return;
 
   if (!questions.length) {
-    preview.className = 'block bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-700';
+    preview.className = 'block bg-rose-50 rounded-xl p-3 text-sm text-rose-700';
     preview.innerHTML = 'No valid questions found. Check your CSV format.';
     return;
   }
@@ -432,8 +432,8 @@ function assess_previewCsv(targetType) {
           <span class="font-semibold text-slate-600">${i+1}.</span>
           <span class="badge ${q.type==='objective'?'badge-info':'badge-neutral'} ml-1">${q.type==='objective'?'MCQ':'Theory'}</span>
           <span class="text-slate-700 ml-1">${q.text}</span>
-          ${q.type==='objective' ? `<div class="text-slate-400 mt-0.5 pl-4">${q.options.map((o,oi) => `<span class="${oi===q.answer?'text-emerald-700 font-bold':''}">${['A','B','C','D'][oi]}) ${o}</span>`).join(' · ')}</div>` : ''}
-          <span class="text-slate-400">(${q.marks} mark${q.marks!==1?'s':''})</span>
+          ${q.type==='objective' ? `<div class="text-slate-500 mt-0.5 pl-4">${q.options.map((o,oi) => `<span class="${oi===q.answer?'text-emerald-700 font-bold':''}">${['A','B','C','D'][oi]}) ${o}</span>`).join(' · ')}</div>` : ''}
+          <span class="text-slate-500">(${q.marks} mark${q.marks!==1?'s':''})</span>
         </div>
       `).join('')}
     </div>

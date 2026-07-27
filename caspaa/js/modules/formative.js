@@ -26,7 +26,7 @@ function view_tch_formative(params) {
     const qCount      = (test.questions || []).length;
 
     return `
-      <div class="card p-4 flex flex-col gap-3">
+      <div class="card p-5 flex flex-col gap-3">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <div class="font-bold text-slate-900 truncate">${test.title}</div>
@@ -99,7 +99,7 @@ function view_tch_formative(params) {
           const count = allTests.filter(x => x.status === t.key).length;
           const isActive = activeTab === t.key;
           return `<button
-            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
+            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-navy-800 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
             onclick="APP.params.ftTab = '${t.key}'; APP.render()">
             ${t.label} <span class="ml-1 opacity-70">${count}</span>
           </button>`;
@@ -136,14 +136,14 @@ function tch_createTestModal() {
       <div class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Class *</label>
+            <label class="input-label" for="ft_class">Class *</label>
             <select id="ft_class" class="input">
               <option value="">— Select class —</option>
               ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
             </select>
           </div>
           <div>
-            <label class="input-label">Subject *</label>
+            <label class="input-label" for="ft_subject">Subject *</label>
             <select id="ft_subject" class="input">
               <option value="">— Select subject —</option>
               ${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
@@ -152,17 +152,17 @@ function tch_createTestModal() {
         </div>
 
         <div>
-          <label class="input-label">Test Title *</label>
+          <label class="input-label" for="ft_title">Test Title *</label>
           <input id="ft_title" class="input" placeholder="e.g. Chapter 3 — Motion Quiz" />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Duration (minutes)</label>
+            <label class="input-label" for="ft_duration">Duration (minutes)</label>
             <input id="ft_duration" type="number" class="input" value="15" min="1" />
           </div>
           <div>
-            <label class="input-label">Due Date *</label>
+            <label class="input-label" for="ft_due">Due Date *</label>
             <input id="ft_due" type="date" class="input" value="${daysAhead(3)}" />
           </div>
         </div>
@@ -335,7 +335,7 @@ function tch_publishTest(testId) {
 
 function tch_closeTest(testId) {
   const test = DB.find('formativeTests', testId);
-  confirm(`Close "${test.title}"? Students will no longer be able to submit answers.`, () => {
+  confirmDialog(`Close "${test.title}"? Students will no longer be able to submit answers.`, () => {
     DB.update('formativeTests', testId, { status: 'closed' });
     toast('Test closed', 'info');
     APP.render();
@@ -344,7 +344,7 @@ function tch_closeTest(testId) {
 
 function tch_deleteTest(testId) {
   const test = DB.find('formativeTests', testId);
-  confirm(`Delete "${test.title}"? This will also remove all student submissions.`, () => {
+  confirmDialog(`Delete "${test.title}"? This will also remove all student submissions.`, () => {
     DB.query('formativeSubmissions', s => s.testId === testId).forEach(s => DB.remove('formativeSubmissions', s.id));
     DB.remove('formativeTests', testId);
     toast('Test deleted', 'info');
@@ -409,13 +409,13 @@ function tch_viewTestResults(testId) {
 
         <div class="card overflow-hidden">
           <table class="w-full text-sm">
-            <thead>
+            <th scope="col"ead>
               <tr class="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                <th class="px-4 py-2.5 text-left font-semibold">Student</th>
-                <th class="px-4 py-2.5 text-center font-semibold">Score</th>
-                <th class="px-4 py-2.5 text-center font-semibold">Percentage</th>
-                <th class="px-4 py-2.5 text-center font-semibold">Grade</th>
-                <th class="px-4 py-2.5 text-right font-semibold">Submitted</th>
+                <th scope="col" class="px-4 py-2.5 text-left font-semibold">Student</th>
+                <th scope="col" class="px-4 py-2.5 text-center font-semibold">Score</th>
+                <th scope="col" class="px-4 py-2.5 text-center font-semibold">Percentage</th>
+                <th scope="col" class="px-4 py-2.5 text-center font-semibold">Grade</th>
+                <th scope="col" class="px-4 py-2.5 text-right font-semibold">Submitted</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -442,10 +442,10 @@ function tch_viewTestResults(testId) {
                         <span class="font-medium">${student.name}</span>
                       </div>
                     </td>
-                    <td class="px-4 py-3 text-center text-slate-400">—</td>
-                    <td class="px-4 py-3 text-center text-slate-400">—</td>
+                    <td class="px-4 py-3 text-center text-slate-500">—</td>
+                    <td class="px-4 py-3 text-center text-slate-500">—</td>
                     <td class="px-4 py-3 text-center"><span class="badge badge-info">Pending</span></td>
-                    <td class="px-4 py-3 text-right text-slate-400 text-xs">Not submitted</td>
+                    <td class="px-4 py-3 text-right text-slate-500 text-xs">Not submitted</td>
                   </tr>`;
                 }
               }).join('')}
@@ -502,7 +502,7 @@ function view_stu_formative(params) {
     const cls  = classes.find(c => c.id === test.classId);
     const subj = subjects.find(s => s.id === test.subjectId);
     return `
-      <div class="card p-4 flex flex-col gap-3">
+      <div class="card p-5 flex flex-col gap-3">
         <div>
           <div class="font-bold text-slate-900">${test.title}</div>
           <div class="text-xs text-slate-500 mt-0.5">${cls ? cls.name : '—'} &middot; ${subj ? subj.name : '—'}</div>
@@ -532,7 +532,7 @@ function view_stu_formative(params) {
     const sub  = DB.query('formativeSubmissions', s => s.testId === test.id && s.studentId === studentId)[0];
     if (!sub) return '';
     return `
-      <div class="card p-4 flex flex-col gap-3">
+      <div class="card p-5 flex flex-col gap-3">
         <div>
           <div class="font-bold text-slate-900">${test.title}</div>
           <div class="text-xs text-slate-500 mt-0.5">${subj ? subj.name : '—'}</div>
@@ -570,7 +570,7 @@ function view_stu_formative(params) {
         ${[{ key: 'pending', label: 'Pending', count: pendingTests.length + overdueTests.length }, { key: 'completed', label: 'Completed', count: completedTests.length }].map(t => {
           const isActive = activeTab === t.key;
           return `<button
-            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
+            class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-navy-800 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
             onclick="APP.params.stuFtTab = '${t.key}'; APP.render()">
             ${t.label} <span class="ml-1 opacity-70">${t.count}</span>
           </button>`;
@@ -591,7 +591,7 @@ function view_stu_formative(params) {
                     const cls  = classes.find(c => c.id === test.classId);
                     const subj = subjects.find(s => s.id === test.subjectId);
                     return `
-                      <div class="card p-4 flex flex-col gap-3 border-rose-300 bg-rose-50">
+                      <div class="card p-5 flex flex-col gap-3 border-rose-300 bg-rose-50">
                         <div class="flex items-start justify-between gap-2">
                           <div>
                             <div class="font-bold text-slate-900">${test.title}</div>
@@ -687,7 +687,7 @@ function stu_startTest(testId) {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="flex items-start gap-3 bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           ${icon('bell', 'w-4 h-4 flex-shrink-0 mt-0.5')}
           <span>Once you submit your answers, you cannot change them. Read each question carefully before submitting.</span>
         </div>
@@ -739,7 +739,7 @@ function stu_submitTest(testId) {
     const proceed = window._ftIgnoreUnanswered;
     if (!proceed) {
       // Show a confirm if there are unanswered questions
-      confirm(`${unanswered} question${unanswered > 1 ? 's are' : ' is'} unanswered. Submit anyway?`, () => {
+      confirmDialog(`${unanswered} question${unanswered > 1 ? 's are' : ' is'} unanswered. Submit anyway?`, () => {
         window._ftIgnoreUnanswered = true;
         stu_submitTest(testId);
         window._ftIgnoreUnanswered = false;
@@ -809,7 +809,7 @@ function stu_showScoreModal(testId, score, total, percentage) {
           <div class="text-lg font-semibold mt-2">${score} / ${total} correct</div>
         </div>
         <p class="text-sm text-slate-600">${message}</p>
-        <p class="text-xs text-slate-400">Your answers have been saved. Your teacher can view your results.</p>
+        <p class="text-xs text-slate-500">Your answers have been saved. Your teacher can view your results.</p>
       </div>
     `,
     footer: `
@@ -867,8 +867,8 @@ function stu_viewMyResult(testId) {
           <div class="font-semibold text-sm text-slate-900">${idx + 1}. ${q.text}</div>
           <div class="pl-2 space-y-1 text-sm">
             <div class="text-xs text-slate-500 font-semibold uppercase">Your Answer</div>
-            <div class="bg-slate-50 rounded-lg p-2 text-slate-800 min-h-[2rem]">${hasAnswer ? studentAns : '<span class="text-slate-400 italic">(not answered)</span>'}</div>
-            <div class="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-1">
+            <div class="bg-slate-50 rounded-lg p-2 text-slate-800 min-h-[2rem]">${hasAnswer ? studentAns : '<span class="text-slate-500 italic">(not answered)</span>'}</div>
+            <div class="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mt-1">
               ${icon('bell', 'w-3.5 h-3.5')} Reviewed by teacher &middot; 1/1 (pending review)
             </div>
           </div>

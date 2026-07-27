@@ -17,7 +17,7 @@ function view_adm_bulk_notify(params) {
   const tabBar = tabs.map(t => {
     const isActive = tab === t.key;
     return `<button
-      class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
+      class="px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${isActive ? 'bg-navy-800 text-white border-brand-700' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400'}"
       onclick="APP.params.notifyTab='${t.key}';APP.render()">
       ${t.label}
     </button>`;
@@ -74,7 +74,7 @@ function notify_composeEmailTab() {
           </div>
 
           <!-- Recipient count banner -->
-          <div id="email_count_banner" class="mb-3 text-sm font-semibold text-brand-700 bg-brand-50 border border-brand-200 rounded-xl px-3 py-2 hidden"></div>
+          <div id="email_count_banner" class="mb-3 text-sm font-semibold text-brand-700 bg-brand-50 rounded-xl px-3 py-2 hidden"></div>
 
           <!-- Subject -->
           <div class="mb-3">
@@ -90,7 +90,7 @@ function notify_composeEmailTab() {
             <textarea id="email_body" class="input text-sm" rows="9"
               placeholder="Dear Parent,&#10;&#10;We would like to inform you that…&#10;&#10;Thank you,&#10;The Management"
               oninput="notify_updateEmailPreview()"></textarea>
-            <p class="text-xs text-slate-400 mt-1">The school logo header and contact footer are added automatically.</p>
+            <p class="text-xs text-slate-500 mt-1">The school logo header and contact footer are added automatically.</p>
           </div>
 
           <button class="btn btn-primary w-full" onclick="notify_previewEmail()">
@@ -102,26 +102,26 @@ function notify_composeEmailTab() {
       <!-- Live preview -->
       <div class="flex flex-col gap-3">
         <div class="card p-0 overflow-hidden">
-          <div class="bg-brand-700 text-white text-center py-4 px-6">
+          <div class="bg-navy-800 text-white text-center py-4 px-6">
             <div class="font-bold text-lg tracking-wide">${schoolName}</div>
             <div class="text-brand-200 text-xs mt-0.5">Official Communication</div>
           </div>
           <div class="p-6">
-            <p class="text-xs text-slate-400 uppercase font-semibold mb-1 tracking-widest">Subject</p>
-            <p id="email_preview_subject" class="font-semibold mb-4 text-base italic text-slate-400">
+            <p class="text-xs text-slate-500 uppercase font-semibold mb-1 tracking-widest">Subject</p>
+            <p id="email_preview_subject" class="font-semibold mb-4 text-base italic text-slate-500">
               (Subject will appear here)
             </p>
             <hr class="border-slate-100 mb-4" />
-            <div id="email_preview_body" class="text-sm text-slate-600 whitespace-pre-wrap min-h-[8rem] leading-relaxed italic text-slate-400">
+            <div id="email_preview_body" class="text-sm text-slate-600 whitespace-pre-wrap min-h-[8rem] leading-relaxed italic text-slate-500">
               (Email body will appear here as you type…)
             </div>
             <hr class="border-slate-100 mt-6 mb-3" />
-            <p class="text-xs text-slate-400 text-center">
+            <p class="text-xs text-slate-500 text-center">
               ${schoolName} · Sent via CASPAA School System
             </p>
           </div>
         </div>
-        <p class="text-xs text-slate-400 text-center">Live preview — updates as you type</p>
+        <p class="text-xs text-slate-500 text-center">Live preview — updates as you type</p>
       </div>
 
     </div>
@@ -235,7 +235,7 @@ function notify_updateEmailPreview() {
     previewSub.textContent = val || '(Subject will appear here)';
     previewSub.className = val
       ? 'font-semibold mb-4 text-base text-slate-700'
-      : 'font-semibold mb-4 text-base italic text-slate-400';
+      : 'font-semibold mb-4 text-base italic text-slate-500';
   }
 
   if (bodyEl && previewBod) {
@@ -243,7 +243,7 @@ function notify_updateEmailPreview() {
     previewBod.textContent = val || '(Email body will appear here as you type…)';
     previewBod.className = val
       ? 'text-sm text-slate-600 whitespace-pre-wrap min-h-[8rem] leading-relaxed'
-      : 'text-sm whitespace-pre-wrap min-h-[8rem] leading-relaxed italic text-slate-400';
+      : 'text-sm whitespace-pre-wrap min-h-[8rem] leading-relaxed italic text-slate-500';
   }
 
   notify_updateEmailCount();
@@ -311,11 +311,11 @@ function notify_previewEmail() {
           </div>
         </div>
         <div class="border border-slate-200 rounded-xl overflow-hidden text-sm">
-          <div class="bg-brand-700 text-white text-center py-3 px-4">
+          <div class="bg-navy-800 text-white text-center py-3 px-4">
             <div class="font-bold">${schoolName}</div>
           </div>
           <div class="p-4 bg-white space-y-2">
-            <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Subject</p>
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Subject</p>
             <p class="font-semibold text-slate-800">${subject}</p>
             <hr class="border-slate-100" />
             <div class="text-slate-600 whitespace-pre-wrap leading-relaxed text-xs max-h-40 overflow-y-auto">${emailBody}</div>

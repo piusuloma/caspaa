@@ -98,8 +98,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2) Everything else (JS, CSS, fonts, CDN, images) → cache-first,
-  //    ignoring the query string so "?v=…" cache-busted assets still hit.
+  // 2) Everything else (fonts, CDN libs, images) → cache-first,
+  //     ignoring the query string so "?v=…" cache-busted assets still hit.
   event.respondWith(
     caches.match(request, { ignoreSearch: true }).then((cached) => {
       const network = fetch(request)

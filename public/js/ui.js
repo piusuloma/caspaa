@@ -39,10 +39,15 @@ const ICONS = {
   package: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
   trending_up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
   trending_down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>',
-  ai: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 9h.01"/><path d="M15 9h.01"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>',
+  ai: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M19 14l.7 2.1L22 17l-2.3.9L19 20l-.7-2.1L16 17l2.3-.9z"/></svg>',
+  sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M19 14l.7 2.1L22 17l-2.3.9L19 20l-.7-2.1L16 17l2.3-.9z"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>',
+  monitor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+  wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>',
   send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
   paperclip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
   bus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6m8-6v6M3 10h18M5 17h2m10 0h2M5 21V8c0-2 2-4 5-4h4c3 0 5 2 5 4v13"/></svg>',
+  wifi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',
   wifi_off: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',
   more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>'
 };
@@ -54,15 +59,31 @@ function icon(name, className = 'w-5 h-5') {
   return `<span class="${className} inline-flex" aria-hidden="true">${svg}</span>`;
 }
 
+/* ---------- Date pickers (flatpickr) ---------- */
+function initDatePickers() {
+  if (typeof window.flatpickr === 'undefined') return;
+  document.querySelectorAll('input[type="date"]:not([data-fp])').forEach(el => {
+    el.setAttribute('data-fp', '1');
+    window.flatpickr(el, {
+      dateFormat: 'Y-m-d',
+      altInput: true,
+      altInputClass: 'input fp-alt',
+      altFormat: 'M j, Y',
+      allowInput: true,
+      disableMobile: true
+    });
+  });
+}
+
 /* ---------- Toast ---------- */
 function toast(msg, type = 'success') {
   const root = document.getElementById('toasts');
   const t = document.createElement('div');
   t.className = `toast ${type}`;
   const iconMap = { success: 'check', danger: 'x', warn: 'bell', info: 'bell' };
-  const colorMap = { success: 'text-brand-600', danger: 'text-red-600', warn: 'text-amber-600', info: 'text-blue-600' };
+  const colorMap = { success: 'text-emerald-600', danger: 'text-red-600', warn: 'text-amber-600', info: 'text-brand-600' };
   t.innerHTML = `
-    <div class="${colorMap[type] || 'text-brand-600'}">${icon(iconMap[type] || 'check', 'w-5 h-5')}</div>
+    <div class="${colorMap[type] || 'text-emerald-600'}">${icon(iconMap[type] || 'check', 'w-5 h-5')}</div>
     <div class="flex-1 text-sm font-medium text-slate-800">${msg}</div>
   `;
   root.appendChild(t);
@@ -104,6 +125,9 @@ function modal({ title, body, footer, size = '', onClose }) {
   document.getElementById('app')?.setAttribute('aria-hidden', 'true');
   document.getElementById('modalBackdrop').addEventListener('click', close);
   document.getElementById('modalClose').addEventListener('click', close);
+  // Before the focus trap below: flatpickr swaps each date field for an alt
+  // input, so the trap must query FOCUSABLE after they exist or Tab skips them.
+  initDatePickers();
 
   // Escape to dismiss, and keep Tab inside the dialog.
   onKeydown = (e) => {
@@ -224,10 +248,11 @@ function statCard({ label, value, trend, icon: iconName, color = 'brand', toolti
   const colorMap = {
     brand: 'bg-brand-50 text-brand-700',
     gold: 'bg-amber-50 text-amber-700',
-    blue: 'bg-blue-50 text-blue-700',
+    blue: 'bg-brand-50 text-brand-700',
     rose: 'bg-rose-50 text-rose-700',
-    purple: 'bg-purple-50 text-purple-700',
+    purple: 'bg-brand-50 text-brand-700',
     // Aliases callers already pass — previously fell through to class="undefined".
+    // Off-brand hues resolve to the brand scale; amber/red stay semantic.
     slate: 'bg-slate-100 text-slate-700',
     emerald: 'bg-brand-50 text-brand-700',
     green: 'bg-brand-50 text-brand-700',
@@ -248,7 +273,7 @@ function statCard({ label, value, trend, icon: iconName, color = 'brand', toolti
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1 stat-label">
             ${label}
-            ${tooltipId ? `<button id="${tooltipId}" class="text-slate-400 hover:text-slate-600" aria-label="How is this calculated?" title="How is this calculated?">${icon('info','w-3 h-3')}</button>` : ''}
+            ${tooltipId ? `<button id="${tooltipId}" class="text-slate-500 hover:text-slate-600" aria-label="How is this calculated?" title="How is this calculated?">${icon('info','w-3 h-3')}</button>` : ''}
           </div>
           <div class="stat-value">${value}</div>
           ${trend ? `<div class="stat-trend ${trend.direction === 'up' ? 'up' : 'down'}">
@@ -362,8 +387,8 @@ function setOffline(state) {
     const pending = DB.settings().pendingSync;
     if (pending > 0) {
       el.classList.remove('hidden');
-      el.querySelector('div').className = 'px-3 py-1.5 rounded-full text-xs font-medium shadow-lg flex items-center gap-2 bg-blue-100 text-blue-800';
-      el.querySelector('span.w-2').className = 'w-2 h-2 rounded-full bg-blue-500 animate-pulse';
+      el.querySelector('div').className = 'px-3 py-1.5 rounded-full text-xs font-medium shadow-lg flex items-center gap-2 bg-brand-100 text-brand-800';
+      el.querySelector('span.w-2').className = 'w-2 h-2 rounded-full bg-brand-500 animate-pulse';
       el.querySelector('.text-label').textContent = `Syncing ${pending} item${pending > 1 ? 's' : ''}…`;
       setTimeout(() => {
         DB.settings({ pendingSync: 0 });

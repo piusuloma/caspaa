@@ -27,7 +27,7 @@ function view_adm_inventory() {
           <td><span class="badge badge-neutral">${item.category || '—'}</span></td>
           <td>
             <span class="font-bold ${isLow ? 'text-rose-600' : ''}">${qty}</span>
-            <span class="text-slate-400 text-xs"> / min ${minS}</span>
+            <span class="text-slate-500 text-xs"> / min ${minS}</span>
             ${isLow ? `<span class="badge badge-danger ml-1 text-xs">LOW</span>` : ''}
           </td>
           <td>${money(item.unitCost || 0)}</td>
@@ -37,8 +37,8 @@ function view_adm_inventory() {
             <div class="flex items-center gap-1.5 flex-wrap">
               <button class="btn btn-secondary !py-1 !px-2.5 text-xs" onclick="inv_issueModal('${item.id}')">Issue</button>
               <button class="btn btn-primary !py-1 !px-2.5 text-xs" onclick="inv_restockModal('${item.id}')">Restock</button>
-              <button class="btn btn-secondary !py-1 !px-2" title="History" onclick="viewInventoryHistory('${item.id}')">${icon('reports','w-3.5 h-3.5')}</button>
-              <button class="btn btn-danger !py-1 !px-2" title="Write Off" onclick="inv_writeOffModal('${item.id}')">${icon('trash','w-3.5 h-3.5')}</button>
+              <button class="btn btn-secondary !py-1 !px-2" aria-label="History" title="History" onclick="viewInventoryHistory('${item.id}')">${icon('reports','w-3.5 h-3.5')}</button>
+              <button class="btn btn-danger !py-1 !px-2" aria-label="Write Off" title="Write Off" onclick="inv_writeOffModal('${item.id}')">${icon('trash','w-3.5 h-3.5')}</button>
             </div>
           </td>
         </tr>`;
@@ -54,14 +54,14 @@ function view_adm_inventory() {
     })}
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-      ${statCard({ label: 'Total Items', value: items.length, icon: 'package', color: 'blue' })}
+      ${statCard({ label: 'Total Items', value: items.length, icon: 'package', color: 'brand' })}
       ${statCard({ label: 'Stock Value', value: money(totalValue), icon: 'fees', color: 'green' })}
       ${statCard({ label: 'Low Stock', value: lowStockItems.length, icon: 'bell', color: lowStockItems.length > 0 ? 'red' : 'green' })}
-      ${statCard({ label: 'Categories', value: [...new Set(items.map(i => i.category).filter(Boolean))].length, icon: 'book', color: 'purple' })}
+      ${statCard({ label: 'Categories', value: [...new Set(items.map(i => i.category).filter(Boolean))].length, icon: 'book', color: 'brand' })}
     </div>
 
     ${lowStockItems.length ? `
-      <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+      <div class="flex items-start gap-3 bg-amber-50 rounded-xl p-4 mb-5">
         ${icon('bell','w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5')}
         <div class="flex-1 min-w-0">
           <div class="font-semibold text-amber-900 mb-0.5">Low Stock — ${lowStockItems.length} item${lowStockItems.length > 1 ? 's' : ''} below minimum</div>
@@ -69,12 +69,12 @@ function view_adm_inventory() {
         </div>
       </div>` : ''}
 
-    <div class="card p-4">
+    <div class="card p-5">
       <div class="flex gap-2 flex-wrap mb-4">${tabsHtml}</div>
       <div class="overflow-x-auto">
         <table class="tbl w-full">
-          <thead>
-            <tr><th>Item</th><th>Category</th><th>Stock</th><th>Unit Cost</th><th>Value</th><th>Supplier</th><th>Actions</th></tr>
+          <th scope="col"ead>
+            <tr><th scope="col">Item</th><th scope="col">Category</th><th scope="col">Stock</th><th scope="col">Unit Cost</th><th scope="col">Value</th><th scope="col">Supplier</th><th scope="col">Actions</th></tr>
           </thead>
           <tbody>${tableBody}</tbody>
         </table>
@@ -97,13 +97,13 @@ function inv_issueModal(itemId) {
         Current stock: <strong>${qty}</strong>${qty < (item.minStock || 0) ? ` <span class="badge badge-danger ml-1">LOW</span>` : ''}
       </div>
       <div class="space-y-3">
-        <div><label class="input-label">Quantity to Issue *</label>
+        <div><label class="input-label" for="inv-issue-qty">Quantity to Issue *</label>
           <input id="inv-issue-qty" class="input" type="number" min="1" max="${qty}" placeholder="e.g. 5" /></div>
-        <div><label class="input-label">Issued To *</label>
+        <div><label class="input-label" for="inv-issue-to">Issued To *</label>
           <input id="inv-issue-to" class="input" placeholder="e.g. JSS 2A Classroom, Mr. Adamu Ibrahim" /></div>
-        <div><label class="input-label">Purpose *</label>
+        <div><label class="input-label" for="inv-issue-purpose">Purpose *</label>
           <input id="inv-issue-purpose" class="input" placeholder="e.g. Classroom setup, New term distribution" /></div>
-        <div><label class="input-label">Date</label>
+        <div><label class="input-label" for="inv-issue-date">Date</label>
           <input id="inv-issue-date" class="input" type="date" value="${today()}" /></div>
       </div>`,
     footer: `
@@ -145,15 +145,15 @@ function inv_restockModal(itemId) {
         Current stock: <strong>${item.quantity || 0}</strong>
       </div>
       <div class="space-y-3">
-        <div><label class="input-label">Quantity Received *</label>
+        <div><label class="input-label" for="inv-restock-qty">Quantity Received *</label>
           <input id="inv-restock-qty" class="input" type="number" min="1" placeholder="e.g. 20" /></div>
-        <div><label class="input-label">Supplier</label>
+        <div><label class="input-label" for="inv-restock-supplier">Supplier</label>
           <input id="inv-restock-supplier" class="input" value="${item.supplier || ''}" placeholder="e.g. ABC Supplies Ltd" /></div>
-        <div><label class="input-label">Purchase Price per Unit <span class="text-slate-400 text-xs">(optional — updates unit cost)</span></label>
+        <div><label class="input-label" for="inv-restock-price">Purchase Price per Unit <span class="text-slate-500 text-xs">(optional — updates unit cost)</span></label>
           <input id="inv-restock-price" class="input" type="number" min="0" placeholder="e.g. 450" /></div>
-        <div><label class="input-label">Date Received</label>
+        <div><label class="input-label" for="inv-restock-date">Date Received</label>
           <input id="inv-restock-date" class="input" type="date" value="${today()}" /></div>
-        <div><label class="input-label">Notes <span class="text-slate-400 text-xs">(optional)</span></label>
+        <div><label class="input-label" for="inv-restock-notes">Notes <span class="text-slate-500 text-xs">(optional)</span></label>
           <textarea id="inv-restock-notes" class="input" rows="2" placeholder="Any additional notes…"></textarea></div>
       </div>`,
     footer: `
@@ -190,15 +190,15 @@ function inv_writeOffModal(itemId) {
     title: 'Write Off — ' + item.name,
     size: 'md',
     body: `
-      <div class="flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2.5 text-sm text-rose-900 mb-4">
+      <div class="flex items-start gap-3 bg-rose-50 rounded-xl px-3 py-2.5 text-sm text-rose-900 mb-4">
         ${icon('alert_triangle','w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5')}
         <span><strong>Warning:</strong> Write-offs permanently reduce stock. This action is logged and cannot be undone.</span>
       </div>
       <div class="bg-slate-100 rounded-xl px-3 py-2.5 text-sm mb-4">Current stock: <strong>${item.quantity || 0}</strong></div>
       <div class="space-y-3">
-        <div><label class="input-label">Quantity to Write Off *</label>
+        <div><label class="input-label" for="inv-writeoff-qty">Quantity to Write Off *</label>
           <input id="inv-writeoff-qty" class="input" type="number" min="1" max="${item.quantity || 0}" placeholder="e.g. 3" /></div>
-        <div><label class="input-label">Reason *</label>
+        <div><label class="input-label" for="inv-writeoff-reason">Reason *</label>
           <select id="inv-writeoff-reason" class="input" onchange="inv_toggleWriteOffNotes()">
             <option value="">— Select a reason —</option>
             <option value="Damaged">Damaged</option>
@@ -207,7 +207,7 @@ function inv_writeOffModal(itemId) {
             <option value="Stolen">Stolen</option>
             <option value="Other">Other</option>
           </select></div>
-        <div><label class="input-label">Notes <span id="inv-writeoff-notes-req" class="text-slate-400 text-xs">(optional)</span></label>
+        <div><label class="input-label" for="inv-writeoff-notes">Notes <span id="inv-writeoff-notes-req" class="text-slate-500 text-xs">(optional)</span></label>
           <textarea id="inv-writeoff-notes" class="input" rows="2" placeholder="Additional details…"></textarea></div>
       </div>`,
     footer: `
@@ -221,7 +221,7 @@ function inv_toggleWriteOffNotes() {
   const reqEl    = document.getElementById('inv-writeoff-notes-req');
   if (!reasonEl || !reqEl) return;
   if (reasonEl.value === 'Other') { reqEl.textContent = '(required)'; reqEl.className = 'text-rose-600 text-xs'; }
-  else { reqEl.textContent = '(optional)'; reqEl.className = 'text-slate-400 text-xs'; }
+  else { reqEl.textContent = '(optional)'; reqEl.className = 'text-slate-500 text-xs'; }
 }
 
 function inv_doWriteOff(itemId) {
@@ -251,19 +251,19 @@ function addInventoryModal() {
     title: 'Add Inventory Item',
     size: 'md',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Item Name *</label><input id="inv_name" class="input" placeholder="e.g. A4 Notebooks" /></div>
+      <div><label class="input-label" for="inv_name">Item Name *</label><input id="inv_name" class="input" placeholder="e.g. A4 Notebooks" /></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Category</label>
+        <div><label class="input-label" for="inv_cat">Category</label>
           <select id="inv_cat" class="input">
             ${(DB.settings().inventoryCategories || ['Books','Stationery','Equipment','Uniforms','Furniture','Sports','Other']).map(c => `<option>${c}</option>`).join('')}
           </select></div>
-        <div><label class="input-label">Initial Quantity</label><input id="inv_qty" class="input" type="number" min="0" placeholder="0" /></div>
+        <div><label class="input-label" for="inv_qty">Initial Quantity</label><input id="inv_qty" class="input" type="number" min="0" placeholder="0" /></div>
       </div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Unit Cost (₦)</label><input id="inv_cost" class="input" type="number" min="0" placeholder="0" /></div>
-        <div><label class="input-label">Min. Stock Level</label><input id="inv_min" class="input" type="number" min="0" placeholder="5" /></div>
+        <div><label class="input-label" for="inv_cost">Unit Cost (₦)</label><input id="inv_cost" class="input" type="number" min="0" placeholder="0" /></div>
+        <div><label class="input-label" for="inv_min">Min. Stock Level</label><input id="inv_min" class="input" type="number" min="0" placeholder="5" /></div>
       </div>
-      <div><label class="input-label">Supplier</label><input id="inv_supplier" class="input" placeholder="e.g. ABC Supplies Ltd" /></div>
+      <div><label class="input-label" for="inv_supplier">Supplier</label><input id="inv_supplier" class="input" placeholder="e.g. ABC Supplies Ltd" /></div>
     </div>`,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -336,13 +336,13 @@ function viewInventoryHistory(itemId) {
       ? `<p class="text-slate-500 text-sm p-4 text-center">No history recorded yet.</p>`
       : `<div class="card overflow-hidden">
           <table class="tbl">
-            <thead><tr><th>Type</th><th>Change</th><th>Reason</th><th>Date</th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Type</th><th scope="col">Change</th><th scope="col">Reason</th><th scope="col">Date</th></tr></thead>
             <tbody>
               ${history.map(h => `<tr>
                 <td><span class="badge ${h.type==='Issue'?'badge-warn':h.type==='Write-Off'?'badge-danger':'badge-success'}">${h.type}</span></td>
                 <td class="font-bold font-mono ${h.delta < 0 ? 'text-rose-600' : 'text-emerald-600'}">${h.delta > 0 ? '+' : ''}${h.delta}</td>
                 <td class="text-sm">${h.reason || '—'}</td>
-                <td class="text-xs text-slate-400">${h.timestamp ? h.timestamp.slice(0,10) : '—'}</td>
+                <td class="text-xs text-slate-500">${h.timestamp ? h.timestamp.slice(0,10) : '—'}</td>
               </tr>`).join('')}
             </tbody>
           </table>

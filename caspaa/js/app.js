@@ -8,6 +8,8 @@ const APP = {
   view: 'dashboard',
   params: {},
   sidebarOpen: false,
+  // Public (logged-out) full-page view: null = sign-in, 'tour' = Book a Tour.
+  publicView: null,
 
   /* ---------- Navigation menus per role ---------- */
   navFor(role) {
@@ -26,6 +28,8 @@ const APP = {
       schooladmin: [
         { key: 'adm_dashboard',     label: 'Dashboard',         icon: 'dashboard' },
         { key: 'adm_people',        label: 'Students',          icon: 'students' },
+        { key: 'adm_admissions',    label: 'Admissions',        icon: 'students' },
+        { key: 'adm_frontdesk',     label: 'Front Desk',        icon: 'bell' },
         { key: 'adm_workforce',     label: 'Staff & HR',        icon: 'teacher' },
         { key: 'adm_academic',      label: 'Academic',          icon: 'classes' },
         { key: 'adm_finance_hub',   label: 'Finance',           icon: 'fees' },
@@ -45,6 +49,8 @@ const APP = {
       principal: [
         { key: 'adm_dashboard',  label: 'Dashboard',      icon: 'dashboard' },
         { key: 'adm_people',     label: 'Students',       icon: 'students' },
+        { key: 'adm_admissions', label: 'Admissions',     icon: 'students' },
+        { key: 'adm_frontdesk',  label: 'Front Desk',     icon: 'bell' },
         { key: 'adm_workforce',  label: 'Staff & HR',     icon: 'teacher' },
         { key: 'adm_academic',   label: 'Academic',       icon: 'classes' },
         { key: 'adm_reports',    label: 'Reports',        icon: 'reports' },
@@ -150,9 +156,27 @@ const APP = {
   /* ---------- Master render ---------- */
   render() {
     if (!AUTH.isLoggedIn()) {
+      // Public full-page routes (no account needed) render instead of sign-in.
+      if (this.publicView === 'tour') {
+        document.getElementById('app').innerHTML = renderTourPage();
+        initDatePickers();
+        window.scrollTo(0, 0);
+        return;
+      }
       document.getElementById('app').innerHTML = renderLogin();
       bindLoginHandlers();
+      initDatePickers();
       return;
+    }
+
+    // Gate: a self-registered school proprietor gets no dashboard access
+    // until CASPAA verifies their documents (hybrid-gated onboarding).
+    if (typeof pendingVerificationGate === 'function') {
+      const gated = pendingVerificationGate();
+      if (gated) {
+        document.getElementById('app').innerHTML = renderVerificationPending(gated);
+        return;
+      }
     }
 
     // Default view if none set
@@ -163,17 +187,24 @@ const APP = {
     const user = AUTH.current;
     const nav = this.navFor(user.role);
 
+    // render() replaces the whole shell via innerHTML, which destroys the element the user
+    // is typing into — every search box lost focus after ONE character, and callers worked
+    // around it locally (badly, forcing the caret to the end). Remember what was focused
+    // and where the caret was, then put it back after the rebuild. Fixes all of them at
+    // once and keeps mid-string editing intact.
+    const active = document.activeElement;
+    const restore = active && active.id && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)
+      ? { id: active.id, start: active.selectionStart, end: active.selectionEnd, scroll: active.scrollLeft }
+      : null;
+
     document.getElementById('app').innerHTML = `
       <div class="min-h-screen flex bg-slate-50">
 
         <!-- Sidebar (desktop) -->
-        <aside class="hidden lg:flex w-64 bg-slate-900 flex-col fixed h-screen">
-          <div class="px-5 py-5 border-b border-slate-800 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center text-xl font-extrabold text-white">C</div>
-            <div>
-              <div class="text-white font-extrabold tracking-tight">CASPAA</div>
-              <div class="text-xs text-slate-400">${roleLabel(user.role)}</div>
-            </div>
+        <aside class="hidden lg:flex w-64 bg-white border-r border-slate-200 flex-col fixed h-screen">
+          <div class="px-5 py-5 border-b border-slate-200">
+            <img src="logo/caspaa-navy.svg" alt="CASPAA" class="h-6 w-auto" />
+            <div class="text-xs text-slate-500 mt-2">${roleLabel(user.role)}</div>
           </div>
           <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scroll-area">
             ${nav.map(n => `
@@ -183,8 +214,8 @@ const APP = {
               </a>
             `).join('')}
           </nav>
-          <div class="p-3 border-t border-slate-800">
-            <a class="nav-item" onclick="AUTH.logout()">
+          <div class="p-3 border-t border-slate-200">
+            <a class="nav-item signout" onclick="AUTH.logout()">
               ${icon('logout', 'w-5 h-5')}
               <span>Sign out</span>
             </a>
@@ -195,13 +226,10 @@ const APP = {
         ${this.sidebarOpen ? `
           <div class="lg:hidden fixed inset-0 z-40">
             <div class="absolute inset-0 bg-slate-900/60" onclick="APP.sidebarOpen=false; APP.render()"></div>
-            <aside class="absolute left-0 top-0 bottom-0 w-72 bg-slate-900 flex flex-col">
-              <div class="px-5 py-5 border-b border-slate-800 flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center text-xl font-extrabold text-white">C</div>
-                <div>
-                  <div class="text-white font-extrabold tracking-tight">CASPAA</div>
-                  <div class="text-xs text-slate-400">${roleLabel(user.role)}</div>
-                </div>
+            <aside class="absolute left-0 top-0 bottom-0 w-72 bg-white flex flex-col">
+              <div class="px-5 py-5 border-b border-slate-200">
+                <img src="logo/caspaa-navy.svg" alt="CASPAA" class="h-6 w-auto" />
+                <div class="text-xs text-slate-500 mt-2">${roleLabel(user.role)}</div>
               </div>
               <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scroll-area">
                 ${nav.map(n => `
@@ -211,18 +239,22 @@ const APP = {
                   </a>
                 `).join('')}
               </nav>
-              <div class="p-3 border-t border-slate-800">
-                <a class="nav-item" onclick="AUTH.logout()">${icon('logout', 'w-5 h-5')} <span>Sign out</span></a>
+              <div class="p-3 border-t border-slate-200">
+                <a class="nav-item signout" onclick="AUTH.logout()">${icon('logout', 'w-5 h-5')} <span>Sign out</span></a>
               </div>
             </aside>
           </div>
         ` : ''}
 
         <!-- Main panel -->
-        <div class="flex-1 lg:ml-64 flex flex-col min-h-screen">
+        <!-- min-w-0: a flex item defaults to min-width:auto, so it refuses to shrink below
+             its content's min-content width and pushes the whole page into horizontal
+             scroll (sidebar and header drift with it). This lets wide content scroll
+             inside its own container instead of dragging the layout. -->
+        <div class="flex-1 min-w-0 lg:ml-64 flex flex-col min-h-screen">
 
           ${isImpersonating() ? `
-            <div class="bg-amber-100 border-b border-amber-300 px-4 py-2 flex items-center justify-between gap-3 text-sm">
+            <div class="bg-amber-100 px-4 py-2 flex items-center justify-between gap-3 text-sm">
               <div class="flex items-center gap-2 text-amber-900">
                 ${icon('user', 'w-4 h-4')}
                 <span>You are viewing as <strong>${user.name}</strong> (admin preview)</span>
@@ -235,7 +267,7 @@ const APP = {
           <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
             <div class="flex items-center justify-between px-4 lg:px-6 h-14 gap-3">
               <div class="flex items-center gap-3 min-w-0">
-                <button class="lg:hidden btn btn-ghost !p-1.5" onclick="APP.sidebarOpen=true; APP.render()">${icon('menu')}</button>
+                <button class="lg:hidden btn btn-ghost !p-1.5" aria-label="Open navigation menu" onclick="APP.sidebarOpen=true; APP.render()">${icon('menu')}</button>
                 <h2 class="font-bold text-slate-900 text-base lg:text-lg truncate">${this.viewTitle()}</h2>
               </div>
               <button class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm text-slate-500 min-w-[160px] lg:min-w-[260px]" onclick="openGlobalSearch()">
@@ -244,13 +276,19 @@ const APP = {
                 <kbd class="hidden lg:inline text-xs bg-white border border-slate-300 rounded px-1.5 py-0.5 font-mono">/</kbd>
               </button>
               <div class="flex items-center gap-2">
-                <button class="sm:hidden btn btn-ghost !p-2" onclick="openGlobalSearch()" title="Search">${icon('search', 'w-5 h-5')}</button>
-                <button class="btn btn-ghost !p-2 relative" onclick="showNotifications()">
+                <button class="sm:hidden btn btn-ghost !p-2" onclick="openGlobalSearch()" aria-label="Search" title="Search">${icon('search', 'w-5 h-5')}</button>
+                ${(() => {
+                  // The unread count is signalled only by a red dot; put it in the
+                  // accessible name too so it isn't colour-only information.
+                  const unread = COMPUTE.unreadCount(user.id);
+                  return `<button class="btn btn-ghost !p-2 relative" onclick="showNotifications()"
+                    aria-label="Notifications${unread > 0 ? ` — ${unread} unread` : ''}" title="Notifications">
                   ${icon('bell', 'w-5 h-5')}
-                  ${COMPUTE.unreadCount(user.id) > 0 ? `<span class="absolute top-0.5 right-0.5 w-2 h-2 bg-rose-500 rounded-full"></span>` : ''}
-                </button>
-                <button class="btn btn-ghost !p-2" onclick="toggleOffline()" title="Toggle offline mode">
-                  ${icon(isOffline() ? 'wifi_off' : 'check', 'w-5 h-5')}
+                  ${unread > 0 ? `<span class="absolute top-0.5 right-0.5 w-2 h-2 bg-rose-500 rounded-full"></span>` : ''}
+                </button>`;
+                })()}
+                <button class="btn btn-ghost !p-2 ${isOffline() ? 'text-rose-600' : 'text-emerald-600'}" onclick="toggleOffline()" aria-label="${isOffline() ? 'Offline mode — tap to go online' : 'Online — tap to go offline'}" title="${isOffline() ? 'Offline mode — tap to go online' : 'Online — tap to go offline'}">
+                  ${icon(isOffline() ? 'wifi_off' : 'wifi', 'w-5 h-5')}
                 </button>
                 <button onclick="showProfile()" class="flex items-center gap-2 hover:bg-slate-100 rounded-xl pl-1 pr-2 py-1 transition">
                   ${avatar(user.name, 'sm')}
@@ -285,11 +323,26 @@ const APP = {
       </div>
     `;
 
+    // Put the caret back where the user left it (see `restore` above).
+    if (restore) {
+      const el = document.getElementById(restore.id);
+      if (el && typeof el.focus === 'function') {
+        el.focus({ preventScroll: true });
+        // Only text-ish inputs expose selection; number/date/select throw on setSelectionRange.
+        if (restore.start != null && typeof el.setSelectionRange === 'function') {
+          try { el.setSelectionRange(restore.start, restore.end); } catch (e) { /* unsupported type */ }
+        }
+        if (restore.scroll) el.scrollLeft = restore.scroll;
+      }
+    }
+
     // Bind any post-render handlers from view code
     if (typeof window.afterRender === 'function') {
       try { window.afterRender(); } catch(e){ console.error(e); }
       window.afterRender = null;
     }
+    initDatePickers();
+    animateViewIn();
   },
 
   /* ---------- View dispatcher ---------- */
@@ -336,15 +389,15 @@ function showNotifications() {
     body: notifs.length === 0
       ? emptyState({ title: 'All caught up', body: 'No notifications to show.', icon: 'bell' })
       : `<div class="space-y-2">${notifs.map(n => {
-          const toneClass = n.type === 'warn' ? 'bg-amber-100 text-amber-700' : n.type === 'danger' ? 'bg-rose-100 text-rose-700' : n.type === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700';
+          const toneClass = n.type === 'warn' ? 'bg-amber-100 text-amber-700' : n.type === 'danger' ? 'bg-rose-100 text-rose-700' : n.type === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-100 text-brand-700';
           const linkAttr = n.link && n.link.view ? `onclick="openNotification('${n.id}')" style="cursor:pointer"` : '';
-          return `<div class="p-3 rounded-xl ${n.read ? 'bg-slate-50' : 'bg-brand-50 border border-brand-100'}" ${linkAttr}>
+          return `<div class="p-3 rounded-xl ${n.read ? 'bg-slate-50' : 'bg-brand-50'}" ${linkAttr}>
             <div class="flex items-start gap-3">
               <div class="w-8 h-8 rounded-lg ${toneClass} flex items-center justify-center flex-shrink-0">${icon('bell', 'w-4 h-4')}</div>
               <div class="flex-1 min-w-0">
                 <div class="font-semibold text-sm text-slate-900">${n.title}</div>
                 <div class="text-sm text-slate-600">${n.body}</div>
-                <div class="text-xs text-slate-400 mt-1 flex items-center gap-2">
+                <div class="text-xs text-slate-500 mt-1 flex items-center gap-2">
                   <span>${fdate(n.timestamp, { relative: true })}</span>
                   ${n.link && n.link.view ? `<span class="text-brand-700 font-semibold">→ Open</span>` : ''}
                 </div>
@@ -391,22 +444,10 @@ function showProfile() {
         <span class="badge badge-info mt-2">${roleLabel(u.role)}</span>
       </div>
 
-      ${otherRoles.length ? `<div class="mt-2 pt-3 border-t border-slate-100">
-        <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Switch role <span class="font-normal lowercase">(for demo)</span></div>
-        <div class="space-y-1.5">
-          ${otherRoles.map(a => `<button class="w-full flex items-center gap-3 p-2.5 rounded-xl border-2 border-slate-100 hover:border-brand-500 hover:bg-brand-50 transition text-left" onclick="quickSwitchRole('${a.id}')">
-            ${avatar(a.name, 'sm')}
-            <div class="flex-1 min-w-0">
-              <div class="font-semibold text-sm text-slate-900 truncate">${a.title}</div>
-              <div class="text-xs text-slate-500 truncate">${a.subtitle}</div>
-            </div>
-            <span class="text-brand-600">${icon('arrow_left', 'w-4 h-4 rotate-180')}</span>
-          </button>`).join('')}
-        </div>
-      </div>` : ''}
-
       <div class="space-y-2 mt-3 pt-3 border-t border-slate-100">
+        ${['schooladmin','principal'].includes(u.role) ? `<button class="btn btn-secondary w-full justify-start" onclick="document.getElementById('modalBackdrop')?.click(); APP.go('adm_onboarding')">${icon('check','w-4 h-4')} School setup guide</button>` : ''}
         <button class="btn btn-secondary w-full justify-start" onclick="showLoginSessions()">${icon('user','w-4 h-4')} Active sessions &amp; security</button>
+        <button class="btn btn-secondary w-full justify-start" onclick="caspaaInstallApp()">${icon('package', 'w-4 h-4')} Install CASPAA app</button>
         <button class="btn btn-secondary w-full justify-start" onclick="resetDemo()">${icon('settings', 'w-4 h-4')} Reset demo data</button>
         <button class="btn btn-danger w-full justify-start" onclick="document.getElementById('modalBackdrop')?.click(); AUTH.logout()">${icon('logout', 'w-4 h-4')} Sign out</button>
       </div>
@@ -421,14 +462,14 @@ function showLoginSessions() {
   const other = all.filter(s => !s.current);
 
   const renderSession = (s, isCurrent) => `
-    <div class="flex items-start gap-3 p-3 ${isCurrent ? 'bg-emerald-50 border border-emerald-200' : 'bg-slate-50'} rounded-xl">
+    <div class="flex items-start gap-3 p-3 ${isCurrent ? 'bg-emerald-50' : 'bg-slate-50'} rounded-xl">
       <div class="w-10 h-10 rounded-lg ${isCurrent ? 'bg-emerald-200 text-emerald-700' : 'bg-slate-200 text-slate-600'} flex items-center justify-center flex-shrink-0">${icon('user','w-5 h-5')}</div>
       <div class="flex-1 min-w-0">
         <div class="font-semibold text-sm">${s.device}${isCurrent ? ' <span class="badge badge-success ml-1">This device</span>' : ''}</div>
         <div class="text-xs text-slate-500 mt-0.5">${s.location} · IP ${s.ip}</div>
-        <div class="text-xs text-slate-400 mt-1">Signed in ${fdate(s.loggedInAt, { relative: true })} ${s.twoFA ? '· <span class="text-emerald-700">2FA verified</span>' : '· <span class="text-amber-700">No 2FA</span>'}</div>
+        <div class="text-xs text-slate-500 mt-1">Signed in ${fdate(s.loggedInAt, { relative: true })} ${s.twoFA ? '· <span class="text-emerald-700">2FA verified</span>' : '· <span class="text-amber-700">No 2FA</span>'}</div>
       </div>
-      ${!isCurrent ? `<button class="btn btn-ghost !p-1.5 text-rose-600" title="Revoke this session" onclick="revokeSession('${s.id}')">${icon('x','w-4 h-4')}</button>` : ''}
+      ${!isCurrent ? `<button class="btn btn-ghost !p-1.5 text-rose-600" aria-label="Revoke this session" title="Revoke this session" onclick="revokeSession('${s.id}')">${icon('x','w-4 h-4')}</button>` : ''}
     </div>
   `;
 
@@ -443,9 +484,9 @@ function showLoginSessions() {
             <div class="text-xs text-brand-700 font-semibold uppercase">Active sessions</div>
             <div class="text-2xl font-bold text-brand-900">${current.length}</div>
           </div>
-          <div class="p-3 bg-blue-50 rounded-xl">
-            <div class="text-xs text-blue-700 font-semibold uppercase">Devices</div>
-            <div class="text-2xl font-bold text-blue-900">${[...new Set(all.map(s => s.device))].length}</div>
+          <div class="p-3 bg-brand-50 rounded-xl">
+            <div class="text-xs text-brand-700 font-semibold uppercase">Devices</div>
+            <div class="text-2xl font-bold text-brand-900">${[...new Set(all.map(s => s.device))].length}</div>
           </div>
           <div class="p-3 bg-emerald-50 rounded-xl">
             <div class="text-xs text-emerald-700 font-semibold uppercase">2FA-verified</div>
@@ -463,7 +504,7 @@ function showLoginSessions() {
             ${other.map(s => renderSession(s, false)).join('')}
           </div>
         </div>` : ''}
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           <strong>Recognize all of these?</strong> If anything looks unfamiliar, revoke the session and change your password immediately.
         </div>
       </div>
@@ -502,7 +543,7 @@ function quickSwitchRole(accountId) {
 }
 
 function resetDemo() {
-  confirm('This will erase all changes you made and restore the demo to its original seeded state. Continue?', () => {
+  confirmDialog('This will erase all changes you made and restore the demo to its original seeded state. Continue?', () => {
     DB.reset();
     AUTH.logout();
     toast('Demo data has been reset', 'success');
@@ -549,7 +590,7 @@ function openGlobalSearch() {
     size: 'lg',
     body: `
       <div class="relative">
-        <span class="absolute left-3 top-3 text-slate-400">${icon('search','w-5 h-5')}</span>
+        <span class="absolute left-3 top-3 text-slate-500">${icon('search','w-5 h-5')}</span>
         <input id="globalSearchInput" class="input pl-11 text-base" placeholder="Search students, staff, classes, invoices, loans…" autocomplete="off" />
       </div>
       <div id="globalSearchResults" class="mt-3 max-h-96 overflow-y-auto"></div>
@@ -570,7 +611,7 @@ function runGlobalSearch() {
   const q = (document.getElementById('globalSearchInput').value || '').trim().toLowerCase();
   const out = document.getElementById('globalSearchResults');
   if (!out) return;
-  if (q.length < 1) { out.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Start typing to search across the platform.</p>'; return; }
+  if (q.length < 1) { out.innerHTML = '<p class="text-sm text-slate-500 text-center py-8">Start typing to search across the platform.</p>'; return; }
 
   const matches = (text) => (text || '').toLowerCase().includes(q);
   const sections = [];
@@ -670,6 +711,55 @@ function showMobileMore() {
       </div>
     `
   });
+}
+
+/* ---------- PWA install (uses the beforeinstallprompt captured in pages/index.js) ---------- */
+function caspaaInstallApp() {
+  const promptEvent = window.__caspaaInstallPrompt;
+  if (!promptEvent) {
+    // Already installed, unsupported browser, or criteria not yet met.
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+      toast('CASPAA is already installed on this device.', 'info');
+    } else {
+      toast('Install isn\'t available yet — use your browser\'s "Install app" / "Add to Home screen" option.', 'info');
+    }
+    return;
+  }
+  document.getElementById('modalBackdrop')?.click();
+  promptEvent.prompt();
+  promptEvent.userChoice.then((choice) => {
+    if (choice && choice.outcome === 'accepted') toast('Installing CASPAA…', 'success');
+    window.__caspaaInstallPrompt = null;
+  });
+}
+
+// Staggers the cards of a newly-opened view in.
+//
+// Keyed on the view, NOT on every render: APP.render() also runs on each
+// keystroke in a search box, and replaying the animation under the cursor
+// while someone types would be actively hostile. Same view -> no replay.
+//
+// Only the first rows are staggered; anything below the fold has finished
+// animating long before it is scrolled to, so the delay buys nothing and just
+// risks a visible pop.
+let _animatedView = null;
+function animateViewIn() {
+  try {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (APP.view === _animatedView) return;
+    _animatedView = APP.view;
+    const root = document.getElementById('mainArea');
+    if (!root) return;
+    const items = root.querySelectorAll(':scope > .rise-scope, .stat, .card');
+    let i = 0;
+    items.forEach((el) => {
+      if (i > 9) return;
+      if (el.closest('.modal-panel')) return;
+      el.classList.add('rise-in');
+      el.style.animationDelay = (i * 45) + 'ms';
+      i += 1;
+    });
+  } catch (e) { /* motion is decorative — never let it break a render */ }
 }
 
 function toggleOffline() {

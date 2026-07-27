@@ -222,7 +222,7 @@ function seedDatabase() {
   });
 
   // Assignments
-  const _asnSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 820"><defs><pattern id="nb" patternUnits="userSpaceOnUse" width="600" height="27"><line x1="0" y1="26.5" x2="600" y2="26.5" stroke="#bfdbfe" stroke-width="1"/></pattern></defs><rect width="600" height="820" fill="#fffef7"/><rect width="600" height="820" fill="url(#nb)"/><line x1="72" y1="0" x2="72" y2="820" stroke="#fca5a5" stroke-width="1.5"/><text x="88" y="22" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">Name: Ade Lawal</text><text x="320" y="22" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">Class: JSS 1</text><text x="88" y="49" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">Subject: Mathematics</text><text x="320" y="49" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">Date: 22 June 2026</text><line x1="72" y1="59" x2="572" y2="59" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 2"/><text x="300" y="86" font-family="Arial,sans-serif" font-size="15" font-weight="bold" fill="#0f172a" text-anchor="middle">ALGEBRA PRACTICE — SET 3</text><text x="300" y="107" font-family="Arial,sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Show all working steps</text><line x1="72" y1="116" x2="572" y2="116" stroke="#94a3b8" stroke-width="1"/><text x="88" y="143" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Q1.  Solve for x :  2x + 5 = 13</text><text x="108" y="170" font-family="Arial,sans-serif" font-size="13" fill="#475569">Subtract 5 from both sides:</text><text x="128" y="197" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">2x  =  13 − 5  =  8</text><text x="128" y="224" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">x  =  8 ÷ 2</text><text x="128" y="251" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#047857">∴  x = 4  ✓</text><text x="88" y="294" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Q2.  Solve for y :  3y − 7 = 14</text><text x="108" y="321" font-family="Arial,sans-serif" font-size="13" fill="#475569">Add 7 to both sides:</text><text x="128" y="348" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">3y  =  14 + 7  =  21</text><text x="128" y="375" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">y  =  21 ÷ 3</text><text x="128" y="402" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#047857">∴  y = 7  ✓</text><text x="88" y="445" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Q3.  Solve for a :  5a + 3 = 28</text><text x="108" y="472" font-family="Arial,sans-serif" font-size="13" fill="#475569">Subtract 3 from both sides:</text><text x="128" y="499" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">5a  =  28 − 3  =  25</text><text x="128" y="526" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">a  =  25 ÷ 5</text><text x="128" y="553" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#047857">∴  a = 5  ✓</text><text x="88" y="596" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Q4.  Solve for b :  4(b − 2) = 16</text><text x="108" y="623" font-family="Arial,sans-serif" font-size="13" fill="#475569">Expand brackets:</text><text x="128" y="650" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">4b − 8  =  16</text><text x="128" y="677" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">4b  =  16 + 8  =  24</text><text x="128" y="704" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">b  =  24 ÷ 4</text><text x="128" y="731" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#047857">∴  b = 6  ✓</text><text x="88" y="774" font-family="Arial,sans-serif" font-size="12" fill="#64748b" font-style="italic">All 15 exercises completed on separate pages. See attached.</text></svg>`;
+  const _asnSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 820"><defs><pattern id="nb" patternUnits="userSpaceOnUse" width="600" height="27"><line x1="0" y1="26.5" x2="600" y2="26.5" stroke="#c3f0e2" stroke-width="1"/></pattern></defs><rect width="600" height="820" fill="#fffef7"/><rect width="600" height="820" fill="url(#nb)"/><line x1="72" y1="0" x2="72" y2="820" stroke="#fca5a5" stroke-width="1.5"/><text x="88" y="22" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">Name: Ade Lawal</text><text x="320" y="22" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">Class: JSS 1</text><text x="88" y="49" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">Subject: Mathematics</text><text x="320" y="49" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">Date: 22 June 2026</text><line x1="72" y1="59" x2="572" y2="59" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 2"/><text x="300" y="86" font-family="Arial,sans-serif" font-size="15" font-weight="bold" fill="#0f172a" text-anchor="middle">ALGEBRA PRACTICE — SET 3</text><text x="300" y="107" font-family="Arial,sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Show all working steps</text><line x1="72" y1="116" x2="572" y2="116" stroke="#94a3b8" stroke-width="1"/><text x="88" y="143" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Q1.  Solve for x :  2x + 5 = 13</text><text x="108" y="170" font-family="Arial,sans-serif" font-size="13" fill="#475569">Subtract 5 from both sides:</text><text x="128" y="197" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">2x  =  13 − 5  =  8</text><text x="128" y="224" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">x  =  8 ÷ 2</text><text x="128" y="251" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#00b386">∴  x = 4  ✓</text><text x="88" y="294" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Q2.  Solve for y :  3y − 7 = 14</text><text x="108" y="321" font-family="Arial,sans-serif" font-size="13" fill="#475569">Add 7 to both sides:</text><text x="128" y="348" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">3y  =  14 + 7  =  21</text><text x="128" y="375" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">y  =  21 ÷ 3</text><text x="128" y="402" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#00b386">∴  y = 7  ✓</text><text x="88" y="445" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Q3.  Solve for a :  5a + 3 = 28</text><text x="108" y="472" font-family="Arial,sans-serif" font-size="13" fill="#475569">Subtract 3 from both sides:</text><text x="128" y="499" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">5a  =  28 − 3  =  25</text><text x="128" y="526" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">a  =  25 ÷ 5</text><text x="128" y="553" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#00b386">∴  a = 5  ✓</text><text x="88" y="596" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Q4.  Solve for b :  4(b − 2) = 16</text><text x="108" y="623" font-family="Arial,sans-serif" font-size="13" fill="#475569">Expand brackets:</text><text x="128" y="650" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">4b − 8  =  16</text><text x="128" y="677" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">4b  =  16 + 8  =  24</text><text x="128" y="704" font-family="Arial,sans-serif" font-size="13" fill="#1e293b">b  =  24 ÷ 4</text><text x="128" y="731" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#00b386">∴  b = 6  ✓</text><text x="88" y="774" font-family="Arial,sans-serif" font-size="12" fill="#64748b" font-style="italic">All 15 exercises completed on separate pages. See attached.</text></svg>`;
   const _asnImgData = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(_asnSvg)));
 
   const _asnPdfData = (() => {
@@ -710,17 +710,17 @@ function seedDatabase() {
 
   // Per-school role catalog (RBAC) — predefined roles + room for custom ones
   const schoolRoles = [
-    { id: 'role_proprietor', schoolId, name: 'Proprietor',     description: 'Full system control. Cannot be deleted.', system: true,  permissions: ['*'],                                                                            color: '#7c3aed' },
-    { id: 'role_principal',  schoolId, name: 'Principal',      description: 'Academic + administrative oversight, no finance.', system: true,  permissions: ['students','staff','academic','attendance','results','discipline','admissions','alumni','sickbay','communications'], color: '#0ea5e9' },
-    { id: 'role_vp',         schoolId, name: 'Vice Principal', description: 'Same as Principal, secondary signatory.',          system: false, permissions: ['students','staff','academic','attendance','results','discipline','admissions','sickbay','communications'], color: '#06b6d4' },
+    { id: 'role_proprietor', schoolId, name: 'Proprietor',     description: 'Full system control. Cannot be deleted.', system: true,  permissions: ['*'],                                                                            color: '#00966f' },
+    { id: 'role_principal',  schoolId, name: 'Principal',      description: 'Academic + administrative oversight, no finance.', system: true,  permissions: ['students','staff','academic','attendance','results','discipline','admissions','alumni','sickbay','communications'], color: '#00b386' },
+    { id: 'role_vp',         schoolId, name: 'Vice Principal', description: 'Same as Principal, secondary signatory.',          system: false, permissions: ['students','staff','academic','attendance','results','discipline','admissions','sickbay','communications'], color: '#00b386' },
     { id: 'role_bursar',     schoolId, name: 'Bursar',         description: 'Fees, invoices, financial reports.',                system: true,  permissions: ['fees','invoices','payments','reports','reconciliation'], color: '#f59e0b' },
-    { id: 'role_hod',        schoolId, name: 'Head of Dept.',  description: 'Manage subject curriculum + teachers within a department.', system: false, permissions: ['curriculum','results','attendance','communications'], color: '#10b981' },
-    { id: 'role_teacher',    schoolId, name: 'Teacher',        description: 'Mark attendance, enter results, post assignments.', system: true,  permissions: ['attendance','results','assignments','lesson_plans','messaging'],     color: '#059669' },
+    { id: 'role_hod',        schoolId, name: 'Head of Dept.',  description: 'Manage subject curriculum + teachers within a department.', system: false, permissions: ['curriculum','results','attendance','communications'], color: '#00c08f' },
+    { id: 'role_teacher',    schoolId, name: 'Teacher',        description: 'Mark attendance, enter results, post assignments.', system: true,  permissions: ['attendance','results','assignments','lesson_plans','messaging'],     color: '#00b386' },
     { id: 'role_form_t',     schoolId, name: 'Form Teacher',   description: 'Teacher + own-class daily attendance + discipline.', system: false, permissions: ['attendance','results','assignments','lesson_plans','messaging','discipline'], color: '#22c55e' },
     { id: 'role_librarian',  schoolId, name: 'Librarian',      description: 'Manage library catalog and loans.',                 system: false, permissions: ['library'],                                                color: '#a855f7' },
     { id: 'role_nurse',      schoolId, name: 'School Nurse',   description: 'Sick bay records and parent health notifications.', system: false, permissions: ['sickbay','communications'],                                color: '#ef4444' },
     { id: 'role_security',   schoolId, name: 'Security',       description: 'Visitor log and gate control.',                     system: false, permissions: ['visitors'],                                                color: '#6b7280' },
-    { id: 'role_parent',     schoolId, name: 'Parent',         description: 'View own child(ren) only.',                         system: true,  permissions: ['own_children','own_fees','messaging'],                     color: '#0891b2' }
+    { id: 'role_parent',     schoolId, name: 'Parent',         description: 'View own child(ren) only.',                         system: true,  permissions: ['own_children','own_fees','messaging'],                     color: '#00966f' }
   ];
 
   // CASPAA team members (platform side)
@@ -738,7 +738,7 @@ function seedDatabase() {
   // School branding defaults
   schools.forEach(s => {
     if (!s.branding) s.branding = {
-      primaryColor: s.id === 'sch_brightlights' ? '#047857' : (s.id === 'sch_horizon' ? '#1e40af' : '#0f766e'),
+      primaryColor: s.id === 'sch_brightlights' ? '#00b386' : (s.id === 'sch_horizon' ? '#007a5b' : '#0f766e'),
       logoText: s.name.split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase(),
       motto: s.id === 'sch_brightlights' ? 'Light the way to knowledge' : (s.id === 'sch_horizon' ? 'Reaching beyond horizons' : 'Excellence in education'),
       logoImage: null
@@ -1096,7 +1096,7 @@ function seedDatabase() {
   // ============ HOUSES (inter-house competition) ============
   const houses = [
     { id: 'house_red',   schoolId, name: 'Red House',   color: '#ef4444', icon: '🔴', motto: 'Courage and Strength' },
-    { id: 'house_blue',  schoolId, name: 'Blue House',  color: '#3b82f6', icon: '🔵', motto: 'Wisdom and Integrity' },
+    { id: 'house_blue',  schoolId, name: 'Blue House',  color: '#fd7d71', icon: '🔵', motto: 'Wisdom and Integrity' },
     { id: 'house_green', schoolId, name: 'Green House', color: '#22c55e', icon: '🟢', motto: 'Growth and Harmony' },
     { id: 'house_gold',  schoolId, name: 'Gold House',  color: '#f59e0b', icon: '🟡', motto: 'Excellence and Pride' }
   ];
@@ -1364,7 +1364,28 @@ const DB = {
     this.save();
     return this._data;
   },
-  save() { localStorage.setItem(DB_KEY, JSON.stringify(this._data)); },
+  // Writes mutate the in-memory cache first, so a failed persist leaves the UI
+  // showing data that is already gone on reload. Never fail silently here.
+  save() {
+    try {
+      localStorage.setItem(DB_KEY, JSON.stringify(this._data));
+      this._saveFailed = false;
+      return true;
+    } catch (e) {
+      const quota = e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22);
+      console.error('DB.save failed', e);
+      // Only shout once per failure streak — a bulk import would otherwise spam.
+      if (!this._saveFailed) {
+        this._saveFailed = true;
+        const msg = quota
+          ? 'Storage is full — your last change was NOT saved. Export a backup and clear old data before continuing.'
+          : 'Your last change could not be saved to this device.';
+        if (typeof toast === 'function') toast(msg, 'danger');
+        else if (typeof alert === 'function') alert(msg);
+      }
+      return false;
+    }
+  },
   reset() { localStorage.removeItem(DB_KEY); this._data = null; this.load(); },
   get(table) { return (this.load()[table] || []).slice(); },
   set(table, rows) { this.load()[table] = rows; this.save(); },
@@ -1411,7 +1432,24 @@ const DB = {
 const COMPUTE = {
   studentsByClass(classId) { return DB.query('students', s => s.classId === classId && s.status === 'active'); },
   parentChildren(parentId) { return DB.query('students', s => s.parentId === parentId); },
-  studentInvoice(studentId) { return DB.query('invoices', i => i.studentId === studentId)[0]; },
+  studentInvoices(studentId) { return DB.query('invoices', i => i.studentId === studentId); },
+  // Was `...[0]` — the first invoice ever created for the student, in insertion order.
+  // A returning student whose Term 1 was settled read as "owing ₦0" while Term 2 went
+  // uncollected, and finance could not accept a payment against it at all.
+  // Prefer the current term; otherwise fall back to whatever they still owe.
+  studentInvoice(studentId, term) {
+    const all = this.studentInvoices(studentId);
+    if (!all.length) return undefined;
+    const wanted = term || DB.settings().currentTerm;
+    return all.find(i => i.term === wanted)
+        || all.filter(i => i.balance > 0).pop()
+        || all[all.length - 1];
+  },
+  // The invoice a payment should land on: oldest unsettled first, so money clears
+  // the longest-standing debt rather than whichever row happened to be created first.
+  studentOwingInvoice(studentId) {
+    return this.studentInvoices(studentId).filter(i => i.balance > 0)[0];
+  },
   studentResults(studentId) { return DB.query('results', r => r.studentId === studentId); },
   studentAttendance(studentId) { return DB.query('attendance', a => a.studentId === studentId); },
   attendanceRate(studentId) {
@@ -1440,6 +1478,24 @@ const COMPUTE = {
   },
   outstandingFees(schoolId) {
     return DB.query('invoices', i => i.schoolId === schoolId).reduce((s, i) => s + i.balance, 0);
+  },
+  // The one definition of fee collection. Previously computed four different ways:
+  // two denominators (Σtotal vs Σpaid+Σbalance), two opposite empty-school fallbacks
+  // (0% and 100%), and one unbounded — which printed "192%" on Unit Economics while
+  // the dashboard printed 100% from the same data.
+  // Standard AR: collected ÷ billed, clamped, and 0 for a school that has billed nothing.
+  feeTotals(schoolId) {
+    const invoices = DB.query('invoices', i => i.schoolId === schoolId);
+    const billed = invoices.reduce((s, i) => s + (i.total || 0), 0);
+    const collected = invoices.reduce((s, i) => s + (i.paid || 0), 0);
+    const outstanding = invoices.reduce((s, i) => s + (i.balance || 0), 0);
+    return { invoices, billed, collected, outstanding, rate: this.collectionRate(billed, collected) };
+  },
+  collectionRate(billed, collected) {
+    if (!billed || billed <= 0) return 0;              // no bills => nothing to collect, not 100%
+    const pct = Math.round((collected / billed) * 100);
+    if (!Number.isFinite(pct)) return 0;               // guards 0/0 -> NaN reaching the gauge
+    return Math.max(0, Math.min(100, pct));            // an overpayment must not read as 192%
   },
   // Credit scoring
   computeCreditScore(parentId) {

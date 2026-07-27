@@ -20,11 +20,19 @@ function currentSchoolId() {
 function buildHub(title, subtitle, tabsList, defaultTab, paramKey) {
   const tab = APP.params[paramKey] || defaultTab;
   const activeTab = tabsList.find(t => t.key === tab) || tabsList[0];
+  // renderSubView runs first, so any actions its pageHeader declared are waiting for us.
+  window._hubActions = '';
   const subContent = renderSubView(activeTab.view);
+  const actions = window._hubActions;
+  window._hubActions = '';
+  const tabBar = tabs(tabsList.map(t => ({ key: t.key, label: t.label, badge: typeof t.badge === 'function' ? t.badge() : t.badge })), activeTab.key,
+    k => { APP.params[paramKey] = k; APP.render(); });
+  // Actions ride on the title row, which is otherwise empty to the right, and the tabs get
+  // the full width below. Sharing a band with the tabs looked tidy until a hub with seven
+  // tabs and four buttons clipped half the tabs behind the buttons.
   return `
-    ${pageHeader({ title, subtitle })}
-    ${tabs(tabsList.map(t => ({ key: t.key, label: t.label, badge: typeof t.badge === 'function' ? t.badge() : t.badge })), activeTab.key,
-      k => { APP.params[paramKey] = k; APP.render(); })}
+    ${pageHeader({ title, subtitle, actions })}
+    ${tabBar}
     <div class="pt-4">${subContent}</div>
   `;
 }
@@ -70,17 +78,17 @@ function view_adm_student_transfers() {
       ${trTab === 'in' ? `
         <div class="px-5 py-3 border-b border-slate-100">
           <h3 class="font-bold text-slate-900">Students Who Joined From Another School</h3>
-          <p class="text-xs text-slate-400 mt-0.5">These students are currently enrolled</p>
+          <p class="text-xs text-slate-500 mt-0.5">These students are currently enrolled</p>
         </div>
         <table class="tbl">
-          <thead><tr><th>Student</th><th>Class</th><th>Previous School</th><th>Last Class</th><th>Transfer Date</th><th>Reason</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Previous School</th><th scope="col">Last Class</th><th scope="col">Transfer Date</th><th scope="col">Reason</th></tr></thead>
           <tbody>
             ${transfersIn.length === 0
-              ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No transfer-in students recorded yet</td></tr>`
+              ? `<tr><td colspan="6" class="text-center text-slate-500 py-8">No transfer-in students recorded yet</td></tr>`
               : transfersIn.map(s => {
                   const cls = DB.find('classes', s.classId);
                   return `<tr onclick="viewStudentProfile('${s.id}')" class="cursor-pointer hover:bg-slate-50">
-                    <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-400">${s.admissionNo || ''}</div></div></div></td>
+                    <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-500">${s.admissionNo || ''}</div></div></div></td>
                     <td class="text-sm">${cls ? cls.name : '—'}</td>
                     <td class="text-sm">${s.transferFromSchool || '—'}</td>
                     <td class="text-sm text-slate-500">${s.transferFromClass || '—'}</td>
@@ -95,19 +103,19 @@ function view_adm_student_transfers() {
         <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h3 class="font-bold text-slate-900">Students Who Left to Another School</h3>
-            <p class="text-xs text-slate-400 mt-0.5">These students are no longer enrolled here</p>
+            <p class="text-xs text-slate-500 mt-0.5">These students are no longer enrolled here</p>
           </div>
           <button class="btn btn-secondary text-sm" onclick="exportLeaversCSV()">${icon('download','w-4 h-4')} Export CSV</button>
         </div>
         <table class="tbl">
-          <thead><tr><th>Student</th><th>Class</th><th>Destination School</th><th>Reason</th><th>Transfer Date</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Destination School</th><th scope="col">Reason</th><th scope="col">Transfer Date</th></tr></thead>
           <tbody>
             ${transfersOut.length === 0
-              ? `<tr><td colspan="5" class="text-center text-slate-400 py-8">No transfer-out students recorded yet</td></tr>`
+              ? `<tr><td colspan="5" class="text-center text-slate-500 py-8">No transfer-out students recorded yet</td></tr>`
               : transfersOut.map(s => {
                   const cls = DB.find('classes', s.classId);
                   return `<tr>
-                    <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-400">${s.admissionNo || ''}</div></div></div></td>
+                    <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-500">${s.admissionNo || ''}</div></div></div></td>
                     <td class="text-sm">${cls ? cls.name : '—'}</td>
                     <td class="text-sm">${s.transferDest || '—'}</td>
                     <td class="text-sm text-slate-500">${s.transferReason || '—'}</td>
@@ -143,13 +151,13 @@ function view_adm_student_suspensions() {
       ${shown.length === 0
         ? emptyState({ title: susTab === 'active' ? 'No active suspensions' : 'No past suspensions yet', icon: 'check' })
         : `<table class="tbl">
-            <thead><tr><th>Student</th><th>Class</th><th>Reason</th><th class="text-center">Days</th><th>Suspended</th><th>Resume Date</th><th class="text-center">Status</th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Reason</th><th scope="col" class="text-center">Days</th><th scope="col">Suspended</th><th scope="col">Resume Date</th><th scope="col" class="text-center">Status</th></tr></thead>
             <tbody>
               ${shown.map(sus => {
                 const stu = DB.find('students', sus.studentId);
                 const cls = stu ? DB.find('classes', stu.classId) : null;
                 return `<tr onclick="${stu ? `viewStudentProfile('${stu.id}')` : ''}" class="${stu ? 'cursor-pointer hover:bg-slate-50' : ''}">
-                  <td><div class="flex items-center gap-2">${avatar(stu ? stu.name : '?','sm')}<div><div class="font-medium text-sm">${stu ? stu.name : '—'}</div><div class="text-xs text-slate-400">${stu ? (stu.admissionNo || '') : ''}</div></div></div></td>
+                  <td><div class="flex items-center gap-2">${avatar(stu ? stu.name : '?','sm')}<div><div class="font-medium text-sm">${stu ? stu.name : '—'}</div><div class="text-xs text-slate-500">${stu ? (stu.admissionNo || '') : ''}</div></div></div></td>
                   <td class="text-sm">${cls ? cls.name : '—'}</td>
                   <td class="text-sm">${sus.reason || '—'}</td>
                   <td class="text-center">${sus.days || '—'}</td>
@@ -236,11 +244,11 @@ function view_adm_permissions() {
     <div class="card overflow-hidden">
       <div class="overflow-x-auto">
         <table class="tbl text-xs">
-          <thead>
+          <th scope="col"ead>
             <tr>
-              <th class="sticky left-0 bg-slate-800 text-white z-10 min-w-[160px]">Staff Member</th>
-              <th class="bg-slate-800 text-white min-w-[100px]">Role</th>
-              ${allPerms.map(p => `<th class="bg-slate-800 text-white text-center px-2" title="${p.label}">${p.label.slice(0,5)}</th>`).join('')}
+              <th scope="col" class="sticky left-0 bg-slate-800 text-white z-10 min-w-[160px]">Staff Member</th>
+              <th scope="col" class="bg-slate-800 text-white min-w-[100px]">Role</th>
+              ${allPerms.map(p => `<th scope="col" class="bg-slate-800 text-white text-center px-2" title="${p.label}">${p.label.slice(0,5)}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
@@ -267,7 +275,7 @@ function view_adm_permissions() {
         </table>
       </div>
     </div>
-    <div class="mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+    <div class="mt-3 bg-brand-50 rounded-xl p-3 text-xs text-brand-900">
       ${icon('info','w-4 h-4 inline mr-1')} To change a staff member's permissions, open their profile in <strong>Staff Directory</strong> and edit their role/permission toggles.
     </div>
   `;
@@ -282,18 +290,18 @@ function exportPermissionsReport() {
   const allPerms = ['students','staff','admissions','classes','curriculum','timetable','attendance','results','assignments','lessonPlans','discipline','fees','invoices','payments','reconciliation','reports','inventory','communications','messaging'];
   const html = `
     <div style="max-width:900px;margin:0 auto;font-family:system-ui;font-size:12px">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#00b386">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:16px">STAFF PERMISSIONS REPORT</h2>
         <p style="margin:0;color:#666">${DB.settings().currentTerm} · Generated ${fdate(today(), { long: true })}</p>
       </div>
       <table border="1" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:11px">
-        <thead style="background:#1e293b;color:white">
+        <th scope="col"ead style="background:#1e293b;color:white">
           <tr>
-            <th align="left">Staff Member</th>
-            <th align="left">Staff Type</th>
-            <th align="left">Role</th>
-            <th align="left">Modules Permitted</th>
+            <th scope="col" align="left">Staff Member</th>
+            <th scope="col" align="left">Staff Type</th>
+            <th scope="col" align="left">Role</th>
+            <th scope="col" align="left">Modules Permitted</th>
           </tr>
         </thead>
         <tbody>
@@ -383,7 +391,7 @@ function _renderCycles(cycles, activeCycleId) {
           const pct = aprs.length ? Math.round(done / aprs.length * 100) : 0;
           const cycleStatusMap = { draft: ['badge-neutral','Draft'], self_assessment: ['badge-warn','Self Assessment'], manager_review: ['badge-warn','Manager Review'], principal_review: ['badge-info','Principal Review'], outcomes: ['badge-info','Setting Outcomes'], closed: ['badge-success','Closed'] };
           const [badgeCls, badgeLbl] = cycleStatusMap[c.status] || ['badge-neutral', c.status];
-          return `<div class="card p-4 cursor-pointer hover:border-brand-300 border-2 border-transparent transition" onclick="APP.params.aprCycle='${c.id}'; APP.render()">
+          return `<div class="card p-5 cursor-pointer hover:border-brand-300 border-2 border-transparent transition" onclick="APP.params.aprCycle='${c.id}'; APP.render()">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2 mb-1 flex-wrap">
@@ -428,11 +436,11 @@ function _renderCycleDetail(cycleId) {
           const statuses = [['self_pending'],['manager_pending'],['principal_pending'],['outcome_pending'],['ack_pending','completed']];
           const allDone = aprs.length > 0 && aprs.every(a => !statuses[i].includes(a.status));
           const anyHere = aprs.some(a => statuses[i].includes(a.status));
-          const color = allDone ? 'bg-brand-600 text-white' : anyHere ? 'bg-amber-400 text-white' : 'bg-slate-100 text-slate-400';
+          const color = allDone ? 'bg-brand-600 text-white' : anyHere ? 'bg-amber-400 text-white' : 'bg-slate-100 text-slate-500';
           return `<div class="flex items-center flex-shrink-0">
             <div class="flex flex-col items-center">
               <div class="w-8 h-8 rounded-full ${color} flex items-center justify-center text-xs font-bold">${allDone ? '✓' : i+1}</div>
-              <div class="text-[10px] text-center mt-1 w-20 ${anyHere ? 'text-amber-700 font-semibold' : allDone ? 'text-brand-700' : 'text-slate-400'}">${s}</div>
+              <div class="text-[10px] text-center mt-1 w-20 ${anyHere ? 'text-amber-700 font-semibold' : allDone ? 'text-brand-700' : 'text-slate-500'}">${s}</div>
             </div>
             ${i < steps.length - 1 ? `<div class="w-8 h-0.5 ${allDone ? 'bg-brand-400' : 'bg-slate-200'} mb-4 flex-shrink-0"></div>` : ''}
           </div>`;
@@ -445,7 +453,7 @@ function _renderCycleDetail(cycleId) {
         const t = DB.find('teachers', apr.staffId);
         if (!t) return '';
         const finalOverall = apr.finalOverall || (apr.managerScores ? _aprOverall(apr.managerScores) : null);
-        return `<div class="card p-4">
+        return `<div class="card p-5">
           <div class="flex items-center gap-3 mb-3">
             ${avatar(t, 'md')}
             <div class="flex-1 min-w-0">
@@ -453,7 +461,7 @@ function _renderCycleDetail(cycleId) {
               <div class="text-xs text-slate-500">${t.staffType || 'Academic'} · ${t.role || 'Teacher'}</div>
             </div>
             ${_aprStatusBadge(apr.status)}
-            ${finalOverall ? `<div class="text-right flex-shrink-0"><div class="text-xl font-extrabold ${finalOverall>=80?'text-emerald-700':finalOverall>=60?'text-amber-700':'text-rose-700'}">${finalOverall}%</div><div class="text-xs text-slate-400">overall</div></div>` : ''}
+            ${finalOverall ? `<div class="text-right flex-shrink-0"><div class="text-xl font-extrabold ${finalOverall>=80?'text-emerald-700':finalOverall>=60?'text-amber-700':'text-rose-700'}">${finalOverall}%</div><div class="text-xs text-slate-500">overall</div></div>` : ''}
           </div>
 
           <!-- Step pills showing completion -->
@@ -490,13 +498,13 @@ function openAppraisalCycleModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Opening a cycle sends a notification to all selected staff asking them to complete their <strong>self-assessment</strong> by the deadline.
         </div>
-        <div><label class="input-label">Cycle Title</label><input id="cyc_title" class="input" value="${DB.settings().currentTerm} — Staff Performance Review" /></div>
+        <div><label class="input-label" for="cyc_title">Cycle Title</label><input id="cyc_title" class="input" value="${DB.settings().currentTerm} — Staff Performance Review" /></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Term</label><input id="cyc_term" class="input" value="${DB.settings().currentTerm}" /></div>
-          <div><label class="input-label">Self-Assessment Deadline</label><input id="cyc_deadline" type="date" class="input" value="${daysAhead(14)}" /></div>
+          <div><label class="input-label" for="cyc_term">Term</label><input id="cyc_term" class="input" value="${DB.settings().currentTerm}" /></div>
+          <div><label class="input-label" for="cyc_deadline">Self-Assessment Deadline</label><input id="cyc_deadline" type="date" class="input" value="${daysAhead(14)}" /></div>
         </div>
         <div>
           <label class="input-label">Select Staff to Appraise</label>
@@ -574,7 +582,7 @@ function aprManagerReviewModal(aprId) {
             </div>`).join('')}
           </div>
           ${apr.selfComment ? `<div class="mt-3 text-sm text-slate-700 italic">"${apr.selfComment}"</div>` : ''}
-        </details>` : `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">Staff has not yet submitted a self-assessment.</div>`}
+        </details>` : `<div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">Staff has not yet submitted a self-assessment.</div>`}
         <!-- Manager scores -->
         <div>
           <h4 class="font-semibold text-slate-900 mb-3">Your Assessment</h4>
@@ -582,7 +590,7 @@ function aprManagerReviewModal(aprId) {
             ${APR_METRICS.map(m => `<div>
               <div class="flex items-center justify-between mb-1">
                 <label class="input-label !mb-0">${m.label}</label>
-                <span class="text-xs text-slate-400">${m.desc}</span>
+                <span class="text-xs text-slate-500">${m.desc}</span>
               </div>
               <div class="flex items-center gap-3">
                 <input id="mgr_${m.key}" type="range" min="0" max="100" value="${m.key==='attendance'?punctuality:80}" class="flex-1 accent-brand-600" oninput="aprUpdateMgrTotal()" />
@@ -595,7 +603,7 @@ function aprManagerReviewModal(aprId) {
             <span class="text-xl font-extrabold text-brand-700" id="mgr_overall">—</span>
           </div>
         </div>
-        <div><label class="input-label">Manager Comment <span class="text-slate-400 font-normal">(required)</span></label>
+        <div><label class="input-label" for="mgr_comment">Manager Comment <span class="text-slate-500 font-normal">(required)</span></label>
           <textarea id="mgr_comment" rows="3" class="input" placeholder="Strengths, observations, areas for improvement…"></textarea>
         </div>
       </div>
@@ -663,15 +671,15 @@ function aprPrincipalModal(aprId) {
           </div>`).join('')}
         </div>
         <!-- Manager comment -->
-        <div class="bg-blue-50 rounded-xl p-3">
-          <div class="text-xs font-semibold text-blue-700 mb-1">Manager's Comment</div>
+        <div class="bg-brand-50 rounded-xl p-3">
+          <div class="text-xs font-semibold text-brand-700 mb-1">Manager's Comment</div>
           <div class="text-sm text-slate-700">${apr.managerComment}</div>
         </div>
         <!-- Principal comment -->
-        <div><label class="input-label">Principal's Comment <span class="text-slate-400 font-normal">(required)</span></label>
+        <div><label class="input-label" for="prn_comment">Principal's Comment <span class="text-slate-500 font-normal">(required)</span></label>
           <textarea id="prn_comment" rows="3" class="input" placeholder="Add your remarks, endorse or note any adjustments…"></textarea>
         </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
           ${icon('info','w-4 h-4 inline mr-1')} Approving locks in the manager scores as the final score and moves to Outcome setting.
         </div>
       </div>
@@ -717,12 +725,12 @@ function aprOutcomeModal(aprId) {
       <div class="space-y-4">
         <div class="grid grid-cols-4 gap-2 text-center text-xs mb-2">
           <div class="bg-emerald-50 rounded-lg p-2"><div class="font-bold text-emerald-700">80–100</div><div class="text-slate-500">Salary Increment</div></div>
-          <div class="bg-blue-50 rounded-lg p-2"><div class="font-bold text-blue-700">60–79</div><div class="text-slate-500">Commendation</div></div>
+          <div class="bg-brand-50 rounded-lg p-2"><div class="font-bold text-brand-700">60–79</div><div class="text-slate-500">Commendation</div></div>
           <div class="bg-amber-50 rounded-lg p-2"><div class="font-bold text-amber-700">45–59</div><div class="text-slate-500">Training</div></div>
           <div class="bg-rose-50 rounded-lg p-2"><div class="font-bold text-rose-700">0–44</div><div class="text-slate-500">PIP</div></div>
         </div>
         <div>
-          <label class="input-label">Outcome Type</label>
+          <label class="input-label" for="out_type">Outcome Type</label>
           <select id="out_type" class="input" onchange="aprOutcomeTypeChange()">
             <option value="increment" ${suggested==='increment'?'selected':''}>Salary Increment</option>
             <option value="commendation" ${suggested==='commendation'?'selected':''}>Letter of Commendation</option>
@@ -732,11 +740,11 @@ function aprOutcomeModal(aprId) {
           </select>
         </div>
         <div id="out_increment_row" class="${suggested==='increment'?'':'hidden'}">
-          <label class="input-label">Increment % <span class="text-slate-400 font-normal">(of current salary)</span></label>
+          <label class="input-label" for="out_increment">Increment % <span class="text-slate-500 font-normal">(of current salary)</span></label>
           <input id="out_increment" type="number" min="0" max="50" class="input" value="${score>=90?10:score>=80?7:5}" />
-          <p class="text-xs text-slate-400 mt-1">Current salary: ${money(t.salary || 0)} → New: <span id="out_new_salary">${money((t.salary||0) * 1.07)}</span></p>
+          <p class="text-xs text-slate-500 mt-1">Current salary: ${money(t.salary || 0)} → New: <span id="out_new_salary">${money((t.salary||0) * 1.07)}</span></p>
         </div>
-        <div><label class="input-label">Notes / Instructions for Staff</label>
+        <div><label class="input-label" for="out_note">Notes / Instructions for Staff</label>
           <textarea id="out_note" rows="3" class="input" placeholder="Details about the increment, commendation, training programme, or PIP targets…"></textarea>
         </div>
       </div>
@@ -787,7 +795,7 @@ function aprViewTimeline(aprId) {
   const cycle = DB.find('appraisalCycles', apr.cycleId);
   const timeline = [];
   if (cycle) timeline.push({ icon: '📋', label: 'Cycle opened', note: cycle.title, date: cycle.createdAt, color: 'bg-slate-100' });
-  if (apr.selfSubmittedAt) timeline.push({ icon: '✍️', label: 'Self-assessment submitted', note: `Score: ${_aprOverall(apr.selfScores)}%`, date: apr.selfSubmittedAt, color: 'bg-blue-50' });
+  if (apr.selfSubmittedAt) timeline.push({ icon: '✍️', label: 'Self-assessment submitted', note: `Score: ${_aprOverall(apr.selfScores)}%`, date: apr.selfSubmittedAt, color: 'bg-brand-50' });
   if (apr.managerSubmittedAt) timeline.push({ icon: '👨‍💼', label: 'Manager review submitted', note: `Score: ${_aprOverall(apr.managerScores)}%`, date: apr.managerSubmittedAt, color: 'bg-brand-50' });
   if (apr.principalAt) timeline.push({ icon: '✅', label: 'Principal approved', note: apr.principalComment, date: apr.principalAt, color: 'bg-emerald-50' });
   if (apr.outcome) {
@@ -808,10 +816,10 @@ function aprViewTimeline(aprId) {
           <div class="pb-4 flex-1 min-w-0">
             <div class="font-semibold text-sm text-slate-900">${ev.label}</div>
             ${ev.note ? `<div class="text-xs text-slate-600 mt-0.5">${ev.note}</div>` : ''}
-            <div class="text-xs text-slate-400 mt-0.5">${fdate(ev.date, { time: true })}</div>
+            <div class="text-xs text-slate-500 mt-0.5">${fdate(ev.date, { time: true })}</div>
           </div>
         </div>`).join('')}
-        ${timeline.length === 0 ? `<p class="text-sm text-slate-400">No activity yet.</p>` : ''}
+        ${timeline.length === 0 ? `<p class="text-sm text-slate-500">No activity yet.</p>` : ''}
       </div>
       ${apr.finalOverall ? `<div class="mt-3 bg-brand-50 rounded-xl p-4 text-center">
         <div class="text-3xl font-extrabold text-brand-700">${apr.finalOverall}%</div>
@@ -831,7 +839,7 @@ function aprNudgeStaff(aprId) {
 }
 
 function closeCycleConfirm(cycleId) {
-  confirm('Close this appraisal cycle? Incomplete appraisals will remain in their current state.', () => {
+  confirmDialog('Close this appraisal cycle? Incomplete appraisals will remain in their current state.', () => {
     DB.update('appraisalCycles', cycleId, { status: 'closed' });
     APP.render();
     toast('Appraisal cycle closed', 'info');
@@ -846,7 +854,7 @@ function _renderSalaryAdvances(advances) {
     </div>
     ${advances.length === 0 ? emptyState({ title: 'No salary advance requests', body: 'Requests from staff will appear here.', icon: 'fees' }) : `
       <div class="card overflow-hidden"><div class="overflow-x-auto"><table class="tbl">
-        <thead><tr><th>Staff</th><th>Amount</th><th>Reason</th><th>Requested</th><th class="text-center">Status</th><th class="text-right">Action</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Staff</th><th scope="col">Amount</th><th scope="col">Reason</th><th scope="col">Requested</th><th scope="col" class="text-center">Status</th><th scope="col" class="text-right">Action</th></tr></thead>
         <tbody>
           ${advances.map(a => {
             const t = DB.find('teachers', a.staffId);
@@ -857,9 +865,9 @@ function _renderSalaryAdvances(advances) {
               <td class="text-sm text-slate-500">${fdate(a.requestedAt, { short: true })}</td>
               <td class="text-center">${statusBadge(a.status)}</td>
               <td class="text-right whitespace-nowrap">${a.status === 'pending'
-                ? `<button class="btn btn-ghost !p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg" title="Approve" onclick="decideSalaryAdvance('${a.id}','approved')">${icon('check','w-4 h-4')}</button>
-                   <button class="btn btn-ghost !p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" title="Reject" onclick="decideSalaryAdvance('${a.id}','rejected')">${icon('x','w-4 h-4')}</button>`
-                : `<span class="text-xs text-slate-400">${a.decidedAt ? fdate(a.decidedAt, { short: true }) : ''}</span>`}</td>
+                ? `<button class="btn btn-ghost !p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg" aria-label="Approve" title="Approve" onclick="decideSalaryAdvance('${a.id}','approved')">${icon('check','w-4 h-4')}</button>
+                   <button class="btn btn-ghost !p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" aria-label="Reject" title="Reject" onclick="decideSalaryAdvance('${a.id}','rejected')">${icon('x','w-4 h-4')}</button>`
+                : `<span class="text-xs text-slate-500">${a.decidedAt ? fdate(a.decidedAt, { short: true }) : ''}</span>`}</td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -874,9 +882,9 @@ function newSalaryAdvanceModal() {
     title: 'Record Salary Advance Request',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Staff</label><select id="adv_staff" class="input">${teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select></div>
-        <div><label class="input-label">Amount (₦)</label><input id="adv_amount" type="number" class="input" placeholder="50000" /></div>
-        <div><label class="input-label">Reason</label><textarea id="adv_reason" rows="2" class="input" placeholder="e.g. Medical emergency"></textarea></div>
+        <div><label class="input-label" for="adv_staff">Staff</label><select id="adv_staff" class="input">${teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select></div>
+        <div><label class="input-label" for="adv_amount">Amount (₦)</label><input id="adv_amount" type="number" class="input" placeholder="50000" /></div>
+        <div><label class="input-label" for="adv_reason">Reason</label><textarea id="adv_reason" rows="2" class="input" placeholder="e.g. Medical emergency"></textarea></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -949,7 +957,7 @@ function view_adm_lesson_plans() {
         <option value="">All Classes</option>
         ${classes.map(c => `<option value="${c.id}" ${filterClass===c.id?'selected':''}>${c.name}</option>`).join('')}
       </select>
-      <span class="text-sm text-slate-400 self-center">${plans.length} plan${plans.length!==1?'s':''}</span>
+      <span class="text-sm text-slate-500 self-center">${plans.length} plan${plans.length!==1?'s':''}</span>
     </div>
     ${plans.length === 0
       ? emptyState({ title: 'No lesson plans yet', body: 'Teachers will appear here once they submit lesson plans from their Lessons & Content view.', icon: 'book' })
@@ -958,7 +966,7 @@ function view_adm_lesson_plans() {
             const teacher = teachers.find(t => t.id === l.teacherId);
             const cls     = classes.find(c => c.id === l.classId);
             const sub     = subjects.find(s => s.id === l.subjectId);
-            return `<div class="card p-4">
+            return `<div class="card p-5">
               <div class="flex items-start justify-between gap-4">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 flex-wrap mb-2">
@@ -973,12 +981,12 @@ function view_adm_lesson_plans() {
                     <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Activities</div><div class="text-slate-700">${l.activities}</div></div>
                     <div><div class="text-xs uppercase font-semibold text-slate-500 mb-1">Resources</div><div class="text-slate-700">${l.resources}</div></div>
                   </div>
-                  ${l.file ? `<a href="${l.file.data}" download="${l.file.name}" class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-sm hover:bg-emerald-100">
+                  ${l.file ? `<a href="${l.file.data}" download="${l.file.name}" class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg text-sm hover:bg-emerald-100">
                     ${icon('paperclip','w-4 h-4 text-emerald-600')}<span class="font-semibold text-emerald-900">${l.file.name}</span>${icon('download','w-3.5 h-3.5 text-emerald-700')}
                   </a>` : ''}
                 </div>
                 <div class="text-right flex-shrink-0">
-                  <div class="text-xs text-slate-400 mb-2">${fdate(l.createdAt, { short: true })}</div>
+                  <div class="text-xs text-slate-500 mb-2">${fdate(l.createdAt, { short: true })}</div>
                   <button class="btn btn-ghost text-xs !py-1" onclick="adm_commentLessonPlan('${l.id}')">${icon('chat','w-3.5 h-3.5')} ${l.principalNote ? 'Edit note' : 'Add note'}</button>
                 </div>
               </div>
@@ -989,7 +997,7 @@ function view_adm_lesson_plans() {
                     <div class="text-xs font-semibold text-brand-700 mb-0.5">Your note · ${fdate(l.principalNoteAt, { short: true })}</div>
                     <div class="text-sm text-slate-700">${l.principalNote}</div>
                   </div>
-                  <button class="btn btn-ghost !p-1 text-slate-400 hover:text-rose-500" onclick="adm_deleteLessonPlanNote('${l.id}')" title="Remove note">${icon('trash','w-3.5 h-3.5')}</button>
+                  <button class="btn btn-ghost !p-1 text-slate-500 hover:text-rose-500" onclick="adm_deleteLessonPlanNote('${l.id}')" aria-label="Remove note" title="Remove note">${icon('trash','w-3.5 h-3.5')}</button>
                 </div>` : ''}
             </div>`;
           }).join('')}
@@ -1031,7 +1039,7 @@ function view_adm_assignments() {
     ${assignments.length === 0 ? emptyState({ icon: 'book', title: 'No assignments yet', body: 'Assignments posted by teachers will appear here.' }) : `
     <div class="card overflow-x-auto">
       <table class="tbl">
-        <thead><tr><th>Assignment</th><th>Teacher</th><th>Class · Subject</th><th>Due</th><th class="text-center">Submitted</th><th class="text-center">Graded</th><th class="text-center">Returned</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Assignment</th><th scope="col">Teacher</th><th scope="col">Class · Subject</th><th scope="col">Due</th><th scope="col" class="text-center">Submitted</th><th scope="col" class="text-center">Graded</th><th scope="col" class="text-center">Returned</th><th scope="col"></th></tr></thead>
         <tbody>
           ${assignments.map(a => {
             const teacher  = teachers.find(t => t.id === a.teacherId);
@@ -1049,7 +1057,7 @@ function view_adm_assignments() {
               <td class="text-center text-sm font-mono">${a.submissions.length}${clsSize ? ' / ' + clsSize : ''}</td>
               <td class="text-center text-sm font-mono ${graded < a.submissions.length && a.submissions.length > 0 ? 'text-amber-600' : 'text-emerald-600'}">${graded}</td>
               <td class="text-center text-sm font-mono">${returned}</td>
-              <td class="pr-2 text-right"><button class="btn btn-ghost !py-1 !px-2.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity" onclick="admViewAssignment('${a.id}')">View</button></td>
+              <td class="pr-2 text-right"><button class="btn btn-ghost !py-1 !px-2.5 text-xs opacity-0 group-hover:opacity-100 focus:opacity-100 group-focus-within:opacity-100 transition-opacity" onclick="admViewAssignment('${a.id}')">View</button></td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -1077,15 +1085,15 @@ function admViewAssignment(assignmentId) {
       <div class="space-y-2 max-h-[50vh] overflow-y-auto scroll-area">
         ${students.map(s => {
           const sub2 = a.submissions.find(sub => sub.studentId === s.id);
-          if (!sub2) return `<div class="flex items-center justify-between p-3 rounded-xl border border-slate-100 text-sm text-slate-400">
+          if (!sub2) return `<div class="flex items-center justify-between p-3 rounded-xl border border-slate-100 text-sm text-slate-500">
             <div class="flex items-center gap-2">${avatar(s.name,'sm')}<span>${s.name}</span></div><span class="text-xs">Not submitted</span></div>`;
           return `<div class="flex items-center justify-between p-3 rounded-xl border border-slate-100">
             <div class="flex items-center gap-2">${avatar(s.name,'sm')}<div>
               <div class="text-sm font-medium">${s.name}</div>
-              <div class="text-xs text-slate-400">Submitted ${fdate(sub2.submittedAt, { relative: true })}</div>
+              <div class="text-xs text-slate-500">Submitted ${fdate(sub2.submittedAt, { relative: true })}</div>
             </div></div>
             <div class="flex items-center gap-3 text-sm">
-              ${sub2.grade != null ? `<span class="font-bold text-brand-700">${sub2.grade}/100</span>` : '<span class="text-slate-400 text-xs">Ungraded</span>'}
+              ${sub2.grade != null ? `<span class="font-bold text-brand-700">${sub2.grade}/100</span>` : '<span class="text-slate-500 text-xs">Ungraded</span>'}
               ${sub2.markStatus ? statusBadge(sub2.markStatus) : ''}
               ${sub2.returned ? `<span class="text-xs text-emerald-600 font-semibold">Returned</span>` : ''}
             </div>
@@ -1135,7 +1143,7 @@ function view_adm_cbt() {
     ${exams.length === 0 ? emptyState({ icon: 'results', title: 'No CBT exams yet', body: 'CBT exams created by teachers will appear here.' }) : `
     <div class="card overflow-x-auto">
       <table class="tbl">
-        <thead><tr><th>Exam</th><th>Teacher</th><th>Class · Subject</th><th class="text-center">Qs</th><th class="text-center">Duration</th><th>Due</th><th>Status</th><th class="text-center">Attempts</th><th class="text-center">Avg</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Exam</th><th scope="col">Teacher</th><th scope="col">Class · Subject</th><th scope="col" class="text-center">Qs</th><th scope="col" class="text-center">Duration</th><th scope="col">Due</th><th scope="col">Status</th><th scope="col" class="text-center">Attempts</th><th scope="col" class="text-center">Avg</th><th scope="col"></th></tr></thead>
         <tbody>
           ${exams.map(e => {
             const teacher = teachers.find(t => t.id === e.teacherId);
@@ -1153,8 +1161,8 @@ function view_adm_cbt() {
               <td class="text-sm text-slate-500">${fdate(e.dueDate, { short: true })}</td>
               <td>${statusBadge(e.status)}</td>
               <td class="text-center text-sm font-mono">${subs.length}</td>
-              <td class="text-center text-sm font-bold ${avg != null ? (avg >= 70 ? 'text-emerald-600' : avg >= 50 ? 'text-amber-600' : 'text-rose-600') : 'text-slate-400'}">${avg != null ? avg + '%' : '—'}</td>
-              <td class="pr-2 text-right"><button class="btn btn-ghost !py-1 !px-2.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity" onclick="admViewCbt('${e.id}')">Results</button></td>
+              <td class="text-center text-sm font-bold ${avg != null ? (avg >= 70 ? 'text-emerald-600' : avg >= 50 ? 'text-amber-600' : 'text-rose-600') : 'text-slate-500'}">${avg != null ? avg + '%' : '—'}</td>
+              <td class="pr-2 text-right"><button class="btn btn-ghost !py-1 !px-2.5 text-xs opacity-0 group-hover:opacity-100 focus:opacity-100 group-focus-within:opacity-100 transition-opacity" onclick="admViewCbt('${e.id}')">Results</button></td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -1183,16 +1191,16 @@ function admViewCbt(examId) {
       <div class="space-y-2 max-h-[50vh] overflow-y-auto scroll-area">
         ${students.map(s => {
           const attempt = subs.find(sub => sub.studentId === s.id);
-          if (!attempt) return `<div class="flex items-center justify-between p-3 rounded-xl border border-slate-100 text-sm text-slate-400">
+          if (!attempt) return `<div class="flex items-center justify-between p-3 rounded-xl border border-slate-100 text-sm text-slate-500">
             <div class="flex items-center gap-2">${avatar(s.name,'sm')}<span>${s.name}</span></div><span class="text-xs">No attempt</span></div>`;
           const pct = attempt.maxScore ? Math.round(attempt.totalScore / attempt.maxScore * 100) : null;
           return `<div class="flex items-center justify-between p-3 rounded-xl border border-slate-100">
             <div class="flex items-center gap-2">${avatar(s.name,'sm')}<div>
               <div class="text-sm font-medium">${s.name}</div>
-              <div class="text-xs text-slate-400">${fdate(attempt.submittedAt, { relative: true })}</div>
+              <div class="text-xs text-slate-500">${fdate(attempt.submittedAt, { relative: true })}</div>
             </div></div>
             <div class="flex items-center gap-2">
-              ${pct != null ? `<span class="font-bold text-lg ${pct >= 70 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-rose-600'}">${pct}%</span><span class="text-xs text-slate-400">${attempt.totalScore}/${attempt.maxScore}</span>` : statusBadge(attempt.status)}
+              ${pct != null ? `<span class="font-bold text-lg ${pct >= 70 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-rose-600'}">${pct}%</span><span class="text-xs text-slate-500">${attempt.totalScore}/${attempt.maxScore}</span>` : statusBadge(attempt.status)}
             </div>
           </div>`;
         }).join('')}
@@ -1228,7 +1236,7 @@ function view_adm_materials() {
         <option value="note" ${filterType==='note'?'selected':''}>Notes</option>
         <option value="video" ${filterType==='video'?'selected':''}>Videos</option>
       </select>
-      <span class="text-sm text-slate-400 self-center">${materials.length} material${materials.length!==1?'s':''}</span>
+      <span class="text-sm text-slate-500 self-center">${materials.length} material${materials.length!==1?'s':''}</span>
     </div>
     ${materials.length === 0 ? emptyState({ icon: 'book', title: 'No materials yet', body: 'Notes and videos shared by teachers will appear here.' }) : `
     <div class="space-y-3">
@@ -1237,20 +1245,20 @@ function view_adm_materials() {
         const cls     = classes.find(c  => c.id === m.classId);
         const sub     = subjects.find(s => s.id === m.subjectId);
         const isVideo = m.type === 'video';
-        return `<div class="card p-4">
+        return `<div class="card p-5">
           <div class="flex items-start justify-between gap-4">
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap mb-1.5">
                 <span class="badge ${isVideo ? 'badge-info' : 'badge-success'}">${isVideo ? '▶ Video' : '📄 Note'}</span>
                 ${cls ? `<span class="badge badge-neutral">${cls.name}</span>` : ''}
                 ${sub ? `<span class="text-xs text-slate-500">${sub.name}</span>` : ''}
-                ${teacher ? `<span class="text-xs text-slate-400">${icon('teacher','w-3 h-3 inline')} ${teacher.name}</span>` : ''}
+                ${teacher ? `<span class="text-xs text-slate-500">${icon('teacher','w-3 h-3 inline')} ${teacher.name}</span>` : ''}
               </div>
               <div class="font-semibold text-slate-800">${m.title}</div>
               ${m.description ? `<div class="text-sm text-slate-500 mt-1 line-clamp-2">${m.description}</div>` : ''}
             </div>
             <div class="flex-shrink-0 flex flex-col items-end gap-2">
-              <div class="text-xs text-slate-400">${fdate(m.createdAt, { short: true })}</div>
+              <div class="text-xs text-slate-500">${fdate(m.createdAt, { short: true })}</div>
               ${isVideo && m.url ? `<a href="${m.url}" target="_blank" class="btn btn-ghost !py-1 !px-2.5 text-xs text-brand-600">${icon('arrow_left','w-3 h-3 rotate-180')} Open</a>` : ''}
               ${!isVideo && m.file ? `<a href="${m.file.data}" download="${m.file.name}" class="btn btn-ghost !py-1 !px-2.5 text-xs text-emerald-600">${icon('download','w-3 h-3')} Download</a>` : ''}
             </div>
@@ -1268,7 +1276,7 @@ function adm_commentLessonPlan(planId) {
     title: 'Note to Teacher',
     body: `
       <p class="text-sm text-slate-500 mb-3">Leave a note for the teacher on this lesson plan. They will see it highlighted when they next open their Lessons view.</p>
-      <label class="input-label">Note</label>
+      <label class="input-label" for="lpNoteText">Note</label>
       <textarea id="lpNoteText" class="input" rows="4" placeholder="e.g. Please ensure this aligns with the term scheme of work…">${plan.principalNote || ''}</textarea>`,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -1380,7 +1388,7 @@ function renderCurriculumOverview(classes, subjects, allSchemes, currentTerm) {
       ${termSchemes.length === 0
         ? emptyState({ title: 'No schemes yet', body: 'Create your first scheme of work or import a NERDC template to get started.', icon: 'book', action: `<button class="btn btn-primary" onclick="newSchemeModal()">${icon('plus','w-4 h-4')} New Scheme</button>` })
         : `<table class="tbl">
-            <thead><tr><th>Class</th><th>Subject</th><th>Source</th><th>Weeks</th><th>Coverage</th><th>Status</th><th></th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Class</th><th scope="col">Subject</th><th scope="col">Source</th><th scope="col">Weeks</th><th scope="col">Coverage</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
             <tbody>
               ${termSchemes.map(sch => {
                 const cls = DB.find('classes', sch.classId);
@@ -1426,7 +1434,7 @@ function adm_generateAllTemplates(classId) {
   const isPrimary = cls.level === 'Primary' || cls.level === 'Nursery';
   const source    = isPrimary ? 'UBEC' : 'NERDC';
 
-  confirm(
+  confirmDialog(
     'Generate ' + source + ' template schemes for all ' + toCreate.length + ' subject' + (toCreate.length !== 1 ? 's' : '') + ' in ' + cls.name
     + (existing.length ? ' (' + existing.length + ' already exist and will be skipped)' : '') + '?',
     () => {
@@ -1473,18 +1481,18 @@ function adm_bulkUploadClassModal(classId) {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <div class="font-semibold mb-1">CSV format — one row per week per subject:</div>
-          <div class="font-mono text-xs bg-white rounded p-2 border border-blue-100 text-slate-700">
+          <div class="font-mono text-xs bg-white rounded p-2 text-slate-700">
             Subject,Week,Topic,Objectives,Activities,Resources<br>
             Mathematics,1,Number Bases,Understand base 10 and 2,Group work,Textbook<br>
             Mathematics,2,Fractions,Convert between types,Practice drill,Textbook<br>
             English Language,1,Reading Comprehension,Skim and scan,Group reading,Textbook
           </div>
-          <a href="#" class="inline-flex items-center gap-1 mt-2 text-blue-700 underline font-semibold text-xs" onclick="adm_downloadClassSchemeTemplate('${classId}'); return false;">${icon('download','w-3 h-3')} Download blank template for ${cls.name}</a>
+          <a href="#" class="inline-flex items-center gap-1 mt-2 text-brand-700 underline font-semibold text-xs" onclick="adm_downloadClassSchemeTemplate('${classId}'); return false;">${icon('download','w-3 h-3')} Download blank template for ${cls.name}</a>
         </div>
         <div>
-          <label class="input-label">Term</label>
+          <label class="input-label" for="buc_term">Term</label>
           <select id="buc_term" class="input">
             ${terms.length
               ? terms.map(t => '<option value="' + t.name + '"' + (t.name === displayTerm ? ' selected' : '') + '>' + t.name + '</option>').join('')
@@ -1492,9 +1500,9 @@ function adm_bulkUploadClassModal(classId) {
           </select>
         </div>
         <div class="border-2 border-dashed border-slate-300 hover:border-brand-400 rounded-xl p-6 text-center cursor-pointer transition" onclick="document.getElementById('buc_file').click()">
-          ${icon('upload','w-7 h-7 mx-auto text-slate-400 mb-1')}
+          ${icon('upload','w-7 h-7 mx-auto text-slate-500 mb-1')}
           <p class="text-sm font-semibold text-slate-700">Click to select your CSV file</p>
-          <p class="text-xs text-slate-400 mt-0.5">Subject · Week · Topic · Objectives · Activities · Resources</p>
+          <p class="text-xs text-slate-500 mt-0.5">Subject · Week · Topic · Objectives · Activities · Resources</p>
           <input type="file" id="buc_file" accept=".csv" class="hidden" onchange="adm_previewClassBulkCSV(this, '${classId}')">
         </div>
         <div id="buc_preview"></div>
@@ -1533,7 +1541,7 @@ function adm_previewClassBulkCSV(input, classId) {
     const isHeader = rows[0] && isNaN(parseInt(rows[0][1]));
     const data  = (isHeader ? rows.slice(1) : rows).filter(r => r.length >= 3 && r[0]);
     if (!data.length) {
-      document.getElementById('buc_preview').innerHTML = '<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-800">No valid rows found. Check the file has Subject and Week columns.</div>';
+      document.getElementById('buc_preview').innerHTML = '<div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-800">No valid rows found. Check the file has Subject and Week columns.</div>';
       return;
     }
     const subjectGroups = {};
@@ -1545,9 +1553,9 @@ function adm_previewClassBulkCSV(input, classId) {
     }).map(([name]) => name);
     window._bucCSVData = data;
     document.getElementById('buc_preview').innerHTML =
-      '<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900 space-y-2">'
+      '<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900 space-y-2">'
       + '<div class="font-semibold">' + icon('check','w-4 h-4 inline') + ' ' + data.length + ' rows · ' + subjectList.length + ' subject' + (subjectList.length !== 1 ? 's' : '') + ' detected:</div>'
-      + '<div class="flex flex-wrap gap-1">' + subjectList.map(([name, cnt]) => '<span class="bg-white border border-emerald-300 rounded-full px-2 py-0.5 text-xs">' + name + ' (' + cnt + ' wks)</span>').join('') + '</div>'
+      + '<div class="flex flex-wrap gap-1">' + subjectList.map(([name, cnt]) => '<span class="bg-white rounded-full px-2 py-0.5 text-xs">' + name + ' (' + cnt + ' wks)</span>').join('') + '</div>'
       + (unknownSubs.length ? '<div class="text-amber-700 text-xs mt-1">⚠ Not found in subject list (will be created as new): ' + unknownSubs.join(', ') + '</div>' : '')
       + '</div>';
     document.getElementById('buc_import_btn').classList.remove('hidden');
@@ -1710,7 +1718,7 @@ function openSchemeEditor(schemeId) {
                     <div class="col-span-2"><strong class="text-slate-500">Resources:</strong> ${w.resources || '—'}</div>
                   </div>
                 </div>
-                <button class="btn btn-ghost !p-1.5" onclick="editSchemeWeek('${schemeId}', ${idx})" title="Edit">${icon('edit','w-3.5 h-3.5')}</button>
+                <button class="btn btn-ghost !p-1.5" onclick="editSchemeWeek('${schemeId}', ${idx})" aria-label="Edit" title="Edit">${icon('edit','w-3.5 h-3.5')}</button>
               </div>
             </div>
           `).join('')}
@@ -1745,14 +1753,14 @@ function editSchemeWeek(schemeId, weekIdx) {
     title: `Edit Week ${w.week}`,
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Topic</label><input id="wk_topic" class="input" value="${w.topic}" /></div>
-        <div><label class="input-label">Sub-topics (comma-separated)</label><input id="wk_sub" class="input" value="${(w.subtopics || []).join(', ')}" /></div>
-        <div><label class="input-label">Learning Objective</label><textarea id="wk_obj" rows="2" class="input" placeholder="e.g. Students will be able to identify and name the parts of the human digestive system">${w.objectives || ''}</textarea></div>
+        <div><label class="input-label" for="wk_topic">Topic</label><input id="wk_topic" class="input" value="${w.topic}" /></div>
+        <div><label class="input-label" for="wk_sub">Sub-topics (comma-separated)</label><input id="wk_sub" class="input" value="${(w.subtopics || []).join(', ')}" /></div>
+        <div><label class="input-label" for="wk_obj">Learning Objective</label><textarea id="wk_obj" rows="2" class="input" placeholder="e.g. Students will be able to identify and name the parts of the human digestive system">${w.objectives || ''}</textarea></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Duration</label><input id="wk_dur" class="input" value="${w.duration || '3 periods'}" /></div>
-          <div><label class="input-label">Methods</label><input id="wk_meth" class="input" value="${w.methods || ''}" placeholder="e.g. Group discussion, demonstration, worksheet" /></div>
+          <div><label class="input-label" for="wk_dur">Duration</label><input id="wk_dur" class="input" value="${w.duration || '3 periods'}" /></div>
+          <div><label class="input-label" for="wk_meth">Methods</label><input id="wk_meth" class="input" value="${w.methods || ''}" placeholder="e.g. Group discussion, demonstration, worksheet" /></div>
         </div>
-        <div><label class="input-label">Resources</label><input id="wk_res" class="input" value="${w.resources || ''}" placeholder="e.g. Textbook p.42, diagram chart, whiteboard" /></div>
+        <div><label class="input-label" for="wk_res">Resources</label><input id="wk_res" class="input" value="${w.resources || ''}" placeholder="e.g. Textbook p.42, diagram chart, whiteboard" /></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); openSchemeEditor('${schemeId}')">Cancel</button>
@@ -1794,7 +1802,7 @@ function deleteScheme(schemeId) {
   const sch = DB.find('schemesOfWork', schemeId);
   const sub = DB.find('subjects', sch.subjectId);
   const cls = DB.find('classes', sch.classId);
-  confirm(`Delete the scheme of work for ${sub ? sub.name : ''} in ${cls ? cls.name : ''}? Coverage history will be lost.`, () => {
+  confirmDialog(`Delete the scheme of work for ${sub ? sub.name : ''} in ${cls ? cls.name : ''}? Coverage history will be lost.`, () => {
     DB.remove('schemesOfWork', schemeId);
     document.getElementById('modalBackdrop')?.click();
     APP.render();
@@ -1814,14 +1822,14 @@ function newSchemeModal(prefilledClassId) {
     body: `
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Class</label>
+          <div><label class="input-label" for="nsch_class">Class</label>
             <select id="nsch_class" class="input">${classes.map(c => `<option value="${c.id}" ${prefilledClassId === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select>
           </div>
-          <div><label class="input-label">Subject</label>
+          <div><label class="input-label" for="nsch_subject">Subject</label>
             <select id="nsch_subject" class="input">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
           </div>
         </div>
-        <div><label class="input-label">Term</label>
+        <div><label class="input-label" for="nsch_term">Term</label>
           <select id="nsch_term" class="input">
             ${terms.length
               ? terms.map(t => `<option value="${t.name}" ${t.current ? 'selected' : ''}>${t.name}</option>`).join('')
@@ -1829,7 +1837,7 @@ function newSchemeModal(prefilledClassId) {
           </select>
         </div>
         <div>
-          <label class="input-label">How do you want to create this scheme?</label>
+          <label class="input-label" for="nsch_method">How do you want to create this scheme?</label>
           <select id="nsch_method" class="input" onchange="nschMethodChange(this.value)">
             <option value="template">Use NERDC/UBEC template — auto-fills 12 weeks for you (recommended)</option>
             <option value="blank">Start blank — I'll type in the topics week by week</option>
@@ -1838,8 +1846,8 @@ function newSchemeModal(prefilledClassId) {
         </div>
 
         <!-- Template info (shown by default) -->
-        <div id="nsch_template_info" class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900 space-y-1">
-          <div class="font-semibold">${icon('check','w-4 h-4 inline mr-1 text-blue-600')} What happens when you click Create:</div>
+        <div id="nsch_template_info" class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900 space-y-1">
+          <div class="font-semibold">${icon('check','w-4 h-4 inline mr-1 text-brand-600')} What happens when you click Create:</div>
           <ul class="list-disc pl-5 text-xs space-y-0.5">
             <li>12 weeks of topics are generated automatically based on the subject</li>
             <li>UBEC structure is used for Nursery/Primary; NERDC for JSS/SS</li>
@@ -1850,14 +1858,14 @@ function newSchemeModal(prefilledClassId) {
 
         <!-- Blank weeks row (hidden) -->
         <div id="nsch_blank_row" class="hidden">
-          <label class="input-label">Number of weeks</label>
+          <label class="input-label" for="nsch_weeks">Number of weeks</label>
           <input id="nsch_weeks" type="number" class="input" value="12" min="4" max="16" />
-          <p class="text-xs text-slate-400 mt-1">Empty week slots will be created. Open the scheme to fill in each week's topic.</p>
+          <p class="text-xs text-slate-500 mt-1">Empty week slots will be created. Open the scheme to fill in each week's topic.</p>
         </div>
 
         <!-- CSV upload row (hidden) -->
         <div id="nsch_csv_row" class="hidden space-y-2">
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 space-y-1">
+          <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900 space-y-1">
             <div class="font-semibold">How to prepare your CSV:</div>
             <ol class="list-decimal pl-4 space-y-0.5">
               <li>Download the template below, or open Excel/Google Sheets</li>
@@ -1867,16 +1875,16 @@ function newSchemeModal(prefilledClassId) {
             <a href="#" class="inline-flex items-center gap-1 mt-1 text-amber-800 underline font-semibold" onclick="downloadSchemeCSVTemplate(); return false;">${icon('download','w-3 h-3')} Download blank CSV template</a>
           </div>
           <div class="border-2 border-dashed border-slate-300 hover:border-brand-400 rounded-xl p-6 text-center cursor-pointer transition" onclick="document.getElementById('nsch_csv_file').click()">
-            ${icon('upload','w-7 h-7 mx-auto text-slate-400 mb-1')}
+            ${icon('upload','w-7 h-7 mx-auto text-slate-500 mb-1')}
             <p class="text-sm font-semibold text-slate-700">Click to select your CSV file</p>
-            <p class="text-xs text-slate-400 mt-0.5">Week · Topic · Objectives · Activities · Resources</p>
+            <p class="text-xs text-slate-500 mt-0.5">Week · Topic · Objectives · Activities · Resources</p>
             <input type="file" id="nsch_csv_file" accept=".csv,.xlsx" class="hidden" onchange="nschPreviewCSV(this)">
           </div>
           <div id="nsch_csv_preview"></div>
         </div>
 
         <div id="nsch_alignment_row" class="hidden">
-          <label class="input-label">Curriculum alignment <span class="text-slate-400 font-normal text-xs">— for labelling only</span></label>
+          <label class="input-label" for="nsch_source">Curriculum alignment <span class="text-slate-500 font-normal text-xs">— for labelling only</span></label>
           <select id="nsch_source" class="input"><option>Custom</option><option>NERDC</option><option>UBEC</option><option>WAEC</option><option>NECO</option></select>
         </div>
       </div>
@@ -1906,8 +1914,8 @@ function nschPreviewCSV(input) {
     window._newSchemeCsvData = valid;
     const preview = document.getElementById('nsch_csv_preview');
     if (preview) preview.innerHTML = valid.length
-      ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2 text-xs text-emerald-900">${icon('check','w-3.5 h-3.5 inline')} <strong>${file.name}</strong> — ${valid.length} week${valid.length !== 1 ? 's' : ''} ready to import</div>`
-      : `<div class="bg-rose-50 border border-rose-200 rounded-xl p-2 text-xs text-rose-800">${icon('alert','w-3.5 h-3.5 inline')} No valid rows found. Check the file has Week and Topic columns.</div>`;
+      ? `<div class="bg-emerald-50 rounded-xl p-2 text-xs text-emerald-900">${icon('check','w-3.5 h-3.5 inline')} <strong>${file.name}</strong> — ${valid.length} week${valid.length !== 1 ? 's' : ''} ready to import</div>`
+      : `<div class="bg-rose-50 rounded-xl p-2 text-xs text-rose-800">${icon('alert','w-3.5 h-3.5 inline')} No valid rows found. Check the file has Week and Topic columns.</div>`;
   };
   reader.readAsText(file);
 }
@@ -1929,7 +1937,7 @@ function createNewScheme() {
     document.getElementById('modalBackdrop')?.click();
     const _eSub = DB.find('subjects', subjectId);
     const _eCls = DB.find('classes', classId);
-    confirm(
+    confirmDialog(
       'A scheme already exists for ' + (_eSub ? _eSub.name : 'this subject') + ' in ' + (_eCls ? _eCls.name : 'this class') + ' (' + term + '). Open it to view or edit?',
       () => openSchemeEditor(existing.id),
       { yesLabel: 'Open Scheme' }
@@ -2007,17 +2015,17 @@ function importExcelCurriculumModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Upload one Excel file per class. Each sheet should represent one subject, with columns: <strong>Week, Topic, Objectives, Activities, Resources</strong>.
         </div>
         <div>
-          <label class="input-label">Select Class</label>
+          <label class="input-label" for="exc_class">Select Class</label>
           <select id="exc_class" class="input">
             ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
           </select>
         </div>
         <div>
-          <label class="input-label">Term</label>
+          <label class="input-label" for="exc_term">Term</label>
           <select id="exc_term" class="input">
             <option>First Term</option><option>Second Term</option><option>Third Term</option>
           </select>
@@ -2025,21 +2033,21 @@ function importExcelCurriculumModal() {
         <div>
           <label class="input-label">Upload Excel File (.xlsx or .csv)</label>
           <div class="border-2 border-dashed border-slate-300 hover:border-brand-400 rounded-xl p-8 text-center cursor-pointer transition" onclick="document.getElementById('exc_file').click()">
-            ${icon('upload','w-8 h-8 mx-auto text-slate-400 mb-2')}
+            ${icon('upload','w-8 h-8 mx-auto text-slate-500 mb-2')}
             <p class="text-sm font-semibold text-slate-700">Click to upload or drag & drop</p>
-            <p class="text-xs text-slate-400 mt-1">Supports .xlsx, .xls, .csv — one file per class</p>
+            <p class="text-xs text-slate-500 mt-1">Supports .xlsx, .xls, .csv — one file per class</p>
             <input type="file" id="exc_file" accept=".xlsx,.xls,.csv" class="hidden" onchange="previewExcelCurriculum(this)" />
           </div>
         </div>
         <div id="exc_preview" class="hidden">
-          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+          <div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
             ${icon('check','w-4 h-4 inline mr-1')} <span id="exc_preview_text">File loaded</span>. Review below and click <strong>Import</strong> to populate schemes.
           </div>
         </div>
         <div class="bg-slate-50 rounded-xl p-3">
           <p class="text-xs font-semibold text-slate-700 mb-2">Expected Excel format (one sheet per subject):</p>
           <table class="tbl text-xs">
-            <thead><tr><th>Week</th><th>Topic</th><th>Objectives</th><th>Activities</th><th>Resources</th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Week</th><th scope="col">Topic</th><th scope="col">Objectives</th><th scope="col">Activities</th><th scope="col">Resources</th></tr></thead>
             <tbody>
               <tr><td>1</td><td>Introduction to Algebra</td><td>Pupils will identify variables</td><td>Group work, flashcards</td><td>Textbook p.12</td></tr>
               <tr><td>2</td><td>Simple Equations</td><td>Pupils will solve x + 3 = 7</td><td>Whiteboard drill</td><td>Worksheet A</td></tr>
@@ -2110,17 +2118,17 @@ function importFullSchoolCurriculumModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Upload one CSV file covering <strong>all classes and subjects</strong> for the school. Each row = one week of a subject.
-          <div class="mt-2 font-mono text-xs bg-white rounded p-2 border border-blue-100 text-slate-700">
+          <div class="mt-2 font-mono text-xs bg-white rounded p-2 text-slate-700">
             Class,Subject,Week,Topic,Objectives,Activities,Resources<br>
             JSS 1,Mathematics,1,Number Bases,Understand base 10 and 2,Group work,Textbook<br>
             JSS 1,Mathematics,2,Algebraic Expressions,…,…,…
           </div>
         </div>
         <div class="grid sm:grid-cols-2 gap-3">
-          <div><label class="input-label">Term</label><input id="fsc_term" class="input" value="${term}" readonly /></div>
-          <div><label class="input-label">CSV File</label><input type="file" id="fsc_file" class="input" accept=".csv" onchange="previewFullSchoolCSV()" /></div>
+          <div><label class="input-label" for="fsc_term">Term</label><input id="fsc_term" class="input" value="${term}" readonly /></div>
+          <div><label class="input-label" for="fsc_file">CSV File</label><input type="file" id="fsc_file" class="input" accept=".csv" onchange="previewFullSchoolCSV()" /></div>
         </div>
         <div id="fsc_preview" class="hidden">
           <div class="text-xs font-semibold text-slate-600 mb-2">Preview (first 10 rows)</div>
@@ -2148,7 +2156,7 @@ function previewFullSchoolCSV() {
     const combos = new Set(data.map(r => `${r[0]}|${r[1]}`));
     document.getElementById('fsc_preview_table').innerHTML = `
       <table class="tbl text-xs">
-        <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+        <th scope="col"ead><tr>${headers.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead>
         <tbody>${preview.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
       </table>`;
     document.getElementById('fsc_summary').innerHTML = `<span class="text-brand-700 font-semibold">${data.length} rows</span> · <span class="text-brand-700 font-semibold">${combos.size} class-subject schemes</span> will be created.`;
@@ -2200,18 +2208,18 @@ function importNERDCTemplateModal() {
     title: 'Import NERDC / UBEC Template',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           CASPAA ships with pre-built scheme templates aligned to the <strong>NERDC</strong> (junior secondary) and <strong>UBEC</strong> (primary) national curricula. Pick a class and subject to import the standard 12-week plan.
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Class</label>
+          <div><label class="input-label" for="nrd_class">Class</label>
             <select id="nrd_class" class="input">${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select>
           </div>
-          <div><label class="input-label">Subject</label>
+          <div><label class="input-label" for="nrd_subject">Subject</label>
             <select id="nrd_subject" class="input">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
           </div>
         </div>
-        <div><label class="input-label">Term</label>
+        <div><label class="input-label" for="nrd_term">Term</label>
           <select id="nrd_term" class="input">${terms.map(t => `<option ${t.current ? 'selected' : ''}>${t.name} 2025/26</option>`).join('')}</select>
         </div>
         <div class="bg-slate-50 rounded-xl p-3 text-xs text-slate-600">
@@ -2268,15 +2276,15 @@ function exportSchemePDF(schemeId) {
   const sub = DB.find('subjects', sch.subjectId);
   const html = `
     <div style="max-width:800px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#00b386">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:20px">SCHEME OF WORK</h2>
         <p style="margin:4px 0">${sub.name} · ${cls.name} · ${sch.term}</p>
         <p style="margin:4px 0;color:#666;font-size:13px">${sch.source} aligned</p>
       </div>
       <table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-size:12px">
-        <thead style="background:#f3f4f6">
-          <tr><th align="left">Week</th><th align="left">Topic</th><th align="left">Subtopics</th><th align="left">Objectives</th><th>Duration</th><th>Done</th></tr>
+        <th scope="col"ead style="background:#f3f4f6">
+          <tr><th scope="col" align="left">Week</th><th scope="col" align="left">Topic</th><th scope="col" align="left">Subtopics</th><th scope="col" align="left">Objectives</th><th scope="col">Duration</th><th scope="col">Done</th></tr>
         </thead>
         <tbody>
           ${sch.weeks.map(w => `<tr>
@@ -2296,10 +2304,13 @@ function exportSchemePDF(schemeId) {
 }
 
 function view_adm_finance_hub() {
+  if (!schoolVerified()) return financeLockedPanel();
+  // Fee Ledger merged into Invoices — send any old ?financeTab=ledger link to it.
+  if (APP.params.financeTab === 'ledger') APP.params.financeTab = 'invoices';
   return buildHub('Finance', 'Fees, invoices, expenses, payroll, reports', [
     { key: 'overview',  label: 'Overview',      view: 'view_fin_cost_center' },
     { key: 'fees',      label: 'Fee Structure', view: 'view_fin_fees' },
-    { key: 'ledger',    label: 'Fee Ledger',    view: 'view_fin_ledger' },
+    { key: 'invoices',  label: 'Invoices',      view: 'view_fin_invoices', badge: () => DB.query('invoices', i => i.schoolId === currentSchoolId() && i.balance > 0).length || null },
     { key: 'payments',  label: 'Payments',      view: 'view_fin_payments' },
     { key: 'expenses',  label: 'Expenses',      view: 'view_fin_expenses' },
     { key: 'payroll',   label: 'Payroll',       view: 'view_fin_payroll' },
@@ -2347,7 +2358,7 @@ function view_adm_comms_oversight() {
     ${pageHeader({ title: 'Conversation Oversight', subtitle: `${allConvos.length} conversation${allConvos.length !== 1 ? 's' : ''} on this platform — read-only view` })}
     <div class="card overflow-x-auto">
       <table class="tbl">
-        <thead><tr><th>Participants</th><th class="hidden sm:table-cell">Last Message</th><th class="text-center">Messages</th><th class="hidden sm:table-cell">Last Active</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Participants</th><th scope="col" class="hidden sm:table-cell">Last Message</th><th scope="col" class="text-center">Messages</th><th scope="col" class="hidden sm:table-cell">Last Active</th><th scope="col"></th></tr></thead>
         <tbody>
           ${allConvos.map(c => {
             const [pA, pB] = c.participants.map(resolvePerson);
@@ -2355,15 +2366,15 @@ function view_adm_comms_oversight() {
             return `<tr class="group">
               <td>
                 <div class="flex items-center gap-3 flex-wrap">
-                  <div class="flex items-center gap-1.5">${avatar(pA.name,'sm')}<div><div class="text-sm font-medium">${pA.name}</div><div class="text-xs text-slate-400">${pA.role}</div></div></div>
+                  <div class="flex items-center gap-1.5">${avatar(pA.name,'sm')}<div><div class="text-sm font-medium">${pA.name}</div><div class="text-xs text-slate-500">${pA.role}</div></div></div>
                   <span class="text-slate-300 text-xs">↔</span>
-                  <div class="flex items-center gap-1.5">${avatar(pB.name,'sm')}<div><div class="text-sm font-medium">${pB.name}</div><div class="text-xs text-slate-400">${pB.role}</div></div></div>
+                  <div class="flex items-center gap-1.5">${avatar(pB.name,'sm')}<div><div class="text-sm font-medium">${pB.name}</div><div class="text-xs text-slate-500">${pB.role}</div></div></div>
                 </div>
               </td>
               <td class="hidden sm:table-cell text-sm text-slate-500 max-w-xs"><span class="truncate block">${last ? last.text.slice(0, 80) + (last.text.length > 80 ? '…' : '') : '—'}</span></td>
               <td class="text-center text-sm font-mono text-slate-600">${c.messages.length}</td>
-              <td class="hidden sm:table-cell text-sm text-slate-400">${last ? fdate(last.timestamp, { relative: true }) : '—'}</td>
-              <td class="pr-2 text-right"><button class="btn btn-ghost !py-1 !px-2.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity" onclick="admViewConvo('${c.id}')">View Thread</button></td>
+              <td class="hidden sm:table-cell text-sm text-slate-500">${last ? fdate(last.timestamp, { relative: true }) : '—'}</td>
+              <td class="pr-2 text-right"><button class="btn btn-ghost !py-1 !px-2.5 text-xs opacity-0 group-hover:opacity-100 focus:opacity-100 group-focus-within:opacity-100 transition-opacity" onclick="admViewConvo('${c.id}')">View Thread</button></td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -2383,13 +2394,13 @@ function admViewConvo(convoId) {
     title: `${pA.name} ↔ ${pB.name}`, size: 'lg',
     body: `
       <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-xl mb-4 flex-wrap">
-        <div class="flex items-center gap-2">${avatar(pA.name,'sm')}<div><div class="text-sm font-semibold">${pA.name}</div><div class="text-xs text-slate-400">${pA.role}</div></div></div>
-        <span class="text-slate-400">↔</span>
-        <div class="flex items-center gap-2">${avatar(pB.name,'sm')}<div><div class="text-sm font-semibold">${pB.name}</div><div class="text-xs text-slate-400">${pB.role}</div></div></div>
-        <span class="ml-auto text-xs text-slate-400">${c.messages.length} message${c.messages.length !== 1 ? 's' : ''}</span>
+        <div class="flex items-center gap-2">${avatar(pA.name,'sm')}<div><div class="text-sm font-semibold">${pA.name}</div><div class="text-xs text-slate-500">${pA.role}</div></div></div>
+        <span class="text-slate-500">↔</span>
+        <div class="flex items-center gap-2">${avatar(pB.name,'sm')}<div><div class="text-sm font-semibold">${pB.name}</div><div class="text-xs text-slate-500">${pB.role}</div></div></div>
+        <span class="ml-auto text-xs text-slate-500">${c.messages.length} message${c.messages.length !== 1 ? 's' : ''}</span>
       </div>
       <div class="space-y-3 max-h-[55vh] overflow-y-auto scroll-area pr-1">
-        ${c.messages.length === 0 ? `<p class="text-center text-slate-400 py-8 text-sm">No messages in this conversation</p>` :
+        ${c.messages.length === 0 ? `<p class="text-center text-slate-500 py-8 text-sm">No messages in this conversation</p>` :
           c.messages.map(m => {
             const sender = resolvePerson(m.from);
             return `<div class="flex gap-3">
@@ -2397,7 +2408,7 @@ function admViewConvo(convoId) {
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
                   <span class="text-xs font-semibold text-slate-700">${sender.name}</span>
-                  <span class="text-xs text-slate-400">${sender.role}</span>
+                  <span class="text-xs text-slate-500">${sender.role}</span>
                   <span class="text-xs text-slate-300">${fdate(m.timestamp, { relative: true })}</span>
                 </div>
                 <div class="bg-slate-100 rounded-xl px-3 py-2 text-sm text-slate-800 break-words">${m.text}</div>
@@ -2428,7 +2439,7 @@ function view_adm_consent() {
             : COMPUTE.studentsByClass(f.classId).length;
           const cls = f.classId === 'all' ? 'All classes' : (DB.find('classes', f.classId) ? DB.find('classes', f.classId).name : '');
           const typeBadge = { excursion: 'badge-info', media: 'badge-warn', pta: 'badge-neutral', policy: 'badge-success' }[f.type] || 'badge-neutral';
-          return `<div class="card p-4">
+          return `<div class="card p-5">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2 mb-1 flex-wrap">
@@ -2437,7 +2448,7 @@ function view_adm_consent() {
                 </div>
                 <h3 class="font-bold text-slate-900">${f.title}</h3>
                 <p class="text-sm text-slate-500 mt-1 line-clamp-2">${f.description}</p>
-                <div class="text-xs text-slate-400 mt-2">Due ${fdate(f.dueDate, { short: true })}</div>
+                <div class="text-xs text-slate-500 mt-2">Due ${fdate(f.dueDate, { short: true })}</div>
               </div>
               <button class="btn btn-secondary text-sm flex-shrink-0" onclick="viewConsentResponses('${f.id}')">${icon('reports','w-4 h-4')} Responses</button>
             </div>
@@ -2459,9 +2470,9 @@ function createConsentModal() {
     title: 'New Consent Form',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Title</label><input id="cf_title" class="input" placeholder="e.g. JSS1 Excursion to Lekki Conservation Centre" /></div>
+        <div><label class="input-label" for="cf_title">Title</label><input id="cf_title" class="input" placeholder="e.g. JSS1 Excursion to Lekki Conservation Centre" /></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Type</label>
+          <div><label class="input-label" for="cf_type">Type</label>
             <select id="cf_type" class="input">
               <option value="excursion">Excursion / Field trip</option>
               <option value="media">Media / Photo permission</option>
@@ -2469,16 +2480,16 @@ function createConsentModal() {
               <option value="policy">Policy acceptance</option>
             </select>
           </div>
-          <div><label class="input-label">Audience</label>
+          <div><label class="input-label" for="cf_class">Audience</label>
             <select id="cf_class" class="input">
               <option value="all">All classes</option>
               ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
             </select>
           </div>
         </div>
-        <div><label class="input-label">Details / Terms</label><textarea id="cf_desc" rows="4" class="input" placeholder="Explain what parents are approving…"></textarea></div>
-        <div><label class="input-label">Response deadline</label><input id="cf_due" type="date" class="input" value="${daysAhead(7)}" /></div>
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">${icon('info','w-4 h-4 inline mr-1')} Parents will be notified instantly and can approve with a one-tap e-signature. Every response is timestamped for your records.</div>
+        <div><label class="input-label" for="cf_desc">Details / Terms</label><textarea id="cf_desc" rows="4" class="input" placeholder="Explain what parents are approving…"></textarea></div>
+        <div><label class="input-label" for="cf_due">Response deadline</label><input id="cf_due" type="date" class="input" value="${daysAhead(7)}" /></div>
+        <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-900">${icon('info','w-4 h-4 inline mr-1')} Parents will be notified instantly and can approve with a one-tap e-signature. Every response is timestamped for your records.</div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -2541,23 +2552,510 @@ function viewConsentResponses(formId) {
 }
 
 /* ---------- Dashboard ---------- */
+/* ============================================================
+   SCHOOL ONBOARDING / GETTING-STARTED WIZARD
+   Industry-standard setup checklist a school completes after
+   being onboarded on the platform: branding → classes →
+   INVITE STAFF → fees → students. Reachable at view key
+   'adm_onboarding'; surfaced via a dashboard banner until done.
+   ============================================================ */
+
+// The setup steps + live "done" state derived from real DB data.
+function schoolOnboardingSteps() {
+  const sid = currentSchoolId();
+  const school = DB.find('schools', sid) || {};
+  const branding = school.branding || {};
+  return [
+    {
+      key: 'profile', icon: 'building',
+      title: 'School profile & branding',
+      desc: 'Add your school name, logo initials, colours and motto so CASPAA looks like your school.',
+      done: !!branding.logoText,
+      cta: 'Set up branding', action: 'onbBrandingModal()'
+    },
+    {
+      key: 'academic', icon: 'classes',
+      title: 'Set up classes & terms',
+      desc: 'Create your class arms and confirm the current academic term.',
+      done: DB.query('classes', c => c.schoolId === sid).length > 0,
+      cta: 'Go to Academic', action: "APP.go('adm_academic')"
+    },
+    {
+      key: 'staff', icon: 'teacher', primary: true,
+      title: 'Invite your staff',
+      desc: 'Send email invitations to teachers and administrators. Each sets their own password on first login.',
+      done: DB.query('teachers', t => t.schoolId === sid).length > 0,
+      cta: 'Invite staff', action: 'onbScrollToInvite()'
+    },
+    {
+      key: 'fees', icon: 'fees',
+      title: 'Create your fee structure',
+      desc: 'Define tuition and other charges per class so invoices can be generated.',
+      done: DB.query('feeStructures', f => f.schoolId === sid).length > 0,
+      cta: 'Set up fees', action: "APP.go('adm_finance_hub')"
+    },
+    {
+      key: 'students', icon: 'students',
+      title: 'Add students & families',
+      desc: "Enrol students to start tracking attendance, results and fees. Enrolling a child automatically creates the parent's login and sends their welcome message — students sign in with their admission number.",
+      done: DB.query('students', s => s.schoolId === sid).length > 0,
+      cta: 'Add students', action: "APP.go('adm_people')"
+    }
+  ];
+}
+
+// Progress ring (SVG). theme 'dark' for coloured hero, 'light' for cards.
+function onbRing(pct, size = 72, theme = 'light') {
+  const r = (size / 2) - 6;
+  const c = 2 * Math.PI * r;
+  const off = c * (1 - pct / 100);
+  const track = theme === 'dark' ? 'rgba(255,255,255,0.25)' : '#e2e8f0';
+  const fill  = theme === 'dark' ? '#ffffff' : '#00b386';
+  const txt   = theme === 'dark' ? '#ffffff' : '#0f172a';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="flex-shrink-0">
+    <g transform="rotate(-90 ${size / 2} ${size / 2})">
+      <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${track}" stroke-width="6"/>
+      <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${fill}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>
+    </g>
+    <text x="${size / 2}" y="${size / 2}" text-anchor="middle" dominant-baseline="central" style="font-size:${(size * 0.26).toFixed(0)}px;font-weight:800;fill:${txt}">${pct}%</text>
+  </svg>`;
+}
+
+// One editable invite row. Uses classes (not ids) so rows can repeat.
+function onbInviteRowHtml() {
+  const roles = DB.query('schoolRoles', r => r.schoolId === currentSchoolId() && r.name !== 'Proprietor' && r.name !== 'Parent');
+  const types = ['Academic', 'Finance', 'Administration', 'Operations', 'ICT', 'Transport'];
+  return `<div class="onb-invite-row grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+    <input class="onb-name input sm:col-span-3" placeholder="Full name" />
+    <input class="onb-email input sm:col-span-4" type="email" placeholder="email@school.ng" />
+    <select class="onb-type input sm:col-span-2">${types.map(t => `<option>${t}</option>`).join('')}</select>
+    <select class="onb-role input sm:col-span-2">${roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('')}</select>
+    <button type="button" class="btn btn-ghost sm:col-span-1 !p-2 text-slate-500 hover:text-rose-600" aria-label="Remove row" title="Remove row" onclick="onbRemoveRow(this)">${icon('x', 'w-4 h-4')}</button>
+  </div>`;
+}
+
+function onbAddInviteRow() {
+  document.getElementById('onbInviteRows').insertAdjacentHTML('beforeend', onbInviteRowHtml());
+}
+
+function onbRemoveRow(btn) {
+  const rows = document.querySelectorAll('#onbInviteRows .onb-invite-row');
+  const row = btn.closest('.onb-invite-row');
+  if (rows.length > 1) { row.remove(); }
+  else { row.querySelectorAll('input').forEach(i => i.value = ''); }
+}
+
+function onbScrollToInvite() {
+  const el = document.getElementById('onbInvitePanel');
+  if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); el.querySelector('.onb-name')?.focus(); }
+}
+
+// Paste "Name, email" lines → prefilled rows for review.
+function onbParseBulk() {
+  const ta = document.getElementById('onbBulkText');
+  const lines = (ta.value || '').split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) { toast('Paste at least one line first', 'danger'); return; }
+  const container = document.getElementById('onbInviteRows');
+  let added = 0;
+  lines.forEach(line => {
+    const parts = line.split(/[,\t;]+/).map(p => p.trim()).filter(Boolean);
+    const name = parts[0] || '';
+    const email = parts.find(p => p.includes('@')) || parts[1] || '';
+    if (!name) return;
+    container.insertAdjacentHTML('beforeend', onbInviteRowHtml());
+    const row = container.lastElementChild;
+    row.querySelector('.onb-name').value = name;
+    row.querySelector('.onb-email').value = email;
+    added++;
+  });
+  ta.value = '';
+  if (added) toast(`${added} row${added > 1 ? 's' : ''} added — review and send`, 'success');
+}
+
+function onbSendInvites() {
+  const sid = currentSchoolId();
+  const roles = DB.query('schoolRoles', r => r.schoolId === sid);
+  const rows = Array.from(document.querySelectorAll('#onbInviteRows .onb-invite-row'));
+  const filled = rows.filter(r => r.querySelector('.onb-name').value.trim() || r.querySelector('.onb-email').value.trim());
+  if (!filled.length) { toast('Add at least one teammate to invite', 'danger'); return; }
+
+  const invites = [];
+  for (const row of filled) {
+    const name = row.querySelector('.onb-name').value.trim();
+    const email = row.querySelector('.onb-email').value.trim();
+    if (!name || !email) { toast('Each invite needs both a name and an email', 'danger'); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast(`"${email}" is not a valid email`, 'danger'); return; }
+    invites.push({ name, email, staffType: row.querySelector('.onb-type').value, roleId: row.querySelector('.onb-role').value });
+  }
+
+  invites.forEach(inv => {
+    const roleObj = roles.find(r => r.id === inv.roleId);
+    const roleName = roleObj ? roleObj.name : (inv.staffType === 'Academic' ? 'Teacher' : inv.staffType);
+    const tempPassword = 'Caspaa' + Math.floor(Math.random() * 9000 + 1000);
+    DB.insert('teachers', {
+      id: uid('tch'), schoolId: sid,
+      name: inv.name, email: inv.email, phone: '',
+      staffType: inv.staffType, role: roleName, roleId: inv.roleId || null,
+      subjects: [], subjectsManual: [], classes: [],
+      salary: 0, hireDate: today(), dob: '',
+      bank: null, documents: {},
+      permissions: ['attendance', 'results', 'assignments', 'messaging', 'lesson_plans'],
+      invitation: { username: inv.email, tempPassword, sentAt: now(), accepted: false, channels: ['email'] }
+    });
+    DB.insert('auditLog', { id: uid('aud'), schoolId: sid, actor: AUTH.current.id, action: 'staff_invited', target: inv.name, timestamp: now() });
+  });
+  toast(`${invites.length} invitation${invites.length > 1 ? 's' : ''} sent`, 'success');
+  APP.render();
+}
+
+function onbResend(staffId) {
+  const t = DB.find('teachers', staffId);
+  if (!t) return;
+  DB.update('teachers', staffId, { invitation: { ...(t.invitation || {}), sentAt: now(), accepted: false } });
+  toast(`Invitation resent to ${t.name.split(' ')[0]}`, 'success');
+}
+
+function onbBrandingModal() {
+  const sid = currentSchoolId();
+  const school = DB.find('schools', sid) || {};
+  const b = school.branding || {};
+  modal({
+    title: 'School Profile & Branding',
+    size: 'lg',
+    body: `
+      <div class="space-y-3">
+        <div><label class="input-label" for="ob_name">School Name *</label><input id="ob_name" class="input" value="${school.name || DB.settings().schoolName || ''}" placeholder="e.g. Bright Lights Academy" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label" for="ob_logo">Logo Initials</label><input id="ob_logo" class="input uppercase" maxlength="4" value="${b.logoText || ''}" placeholder="e.g. BLA" /></div>
+          <div><label class="input-label" for="ob_color">Primary Colour</label><input id="ob_color" type="color" class="input h-11 p-1" value="${b.primaryColor || '#00b386'}" /></div>
+        </div>
+        <div><label class="input-label" for="ob_motto">Motto</label><input id="ob_motto" class="input" value="${b.motto || ''}" placeholder="e.g. Light the way to knowledge" /></div>
+        <div><label class="input-label" for="ob_addr">Address</label><input id="ob_addr" class="input" value="${school.address || ''}" placeholder="School address" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label" for="ob_phone">Phone</label><input id="ob_phone" class="input" value="${school.phone || ''}" /></div>
+          <div><label class="input-label" for="ob_email">Contact Email</label><input id="ob_email" type="email" class="input" value="${school.email || ''}" /></div>
+        </div>
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="onbSaveBranding()">${icon('check', 'w-4 h-4')} Save</button>`
+  });
+}
+
+function onbSaveBranding() {
+  const sid = currentSchoolId();
+  const school = DB.find('schools', sid);
+  const name = document.getElementById('ob_name').value.trim();
+  if (!name) { toast('School name is required', 'danger'); return; }
+  const patch = {
+    name,
+    address: document.getElementById('ob_addr').value.trim(),
+    phone: document.getElementById('ob_phone').value.trim(),
+    email: document.getElementById('ob_email').value.trim(),
+    branding: {
+      ...(school && school.branding ? school.branding : {}),
+      logoText: document.getElementById('ob_logo').value.trim().toUpperCase(),
+      primaryColor: document.getElementById('ob_color').value,
+      motto: document.getElementById('ob_motto').value.trim()
+    }
+  };
+  if (school) DB.update('schools', sid, patch);
+  DB.settings({ schoolName: name });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: sid, actor: AUTH.current.id, action: 'branding_updated', target: name, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  toast('School profile saved', 'success');
+  APP.render();
+}
+
+// Dashboard banner / slim resume bar. Returns '' when complete.
+function onboardingBanner() {
+  if (!['schooladmin', 'principal'].includes(AUTH.current.role)) return '';
+  const steps = schoolOnboardingSteps();
+  const done = steps.filter(s => s.done).length;
+  const pct = Math.round(done / steps.length * 100);
+  if (pct === 100) return '';
+  if (DB.settings().onboardingDismissed) {
+    return `<div class="flex items-center justify-between gap-2 text-sm bg-white border border-slate-200 rounded-xl px-4 py-2">
+      <span class="text-slate-500">School setup ${pct}% complete</span>
+      <button class="text-brand-700 font-semibold" onclick="onbReopen()">Resume setup →</button>
+    </div>`;
+  }
+  const next = steps.find(s => !s.done);
+  return `<div class="rounded-2xl bg-gradient-to-br from-brand-50 to-white p-4 lg:p-5">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+      <div class="flex items-center gap-3 flex-1 min-w-0">
+        ${onbRing(pct, 56)}
+        <div class="min-w-0">
+          <div class="font-bold text-slate-900">Finish setting up your school</div>
+          <div class="text-sm text-slate-500">${done} of ${steps.length} steps done${next ? ` · Next: <span class="font-semibold text-slate-700">${next.title}</span>` : ''}</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-primary" onclick="APP.go('adm_onboarding')">Continue setup ${icon('arrow_left', 'w-4 h-4 rotate-180')}</button>
+        <button class="btn btn-ghost !px-2 text-slate-500" aria-label="Hide setup guide" title="Hide setup guide" onclick="onbDismiss()">${icon('x', 'w-4 h-4')}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function onbDismiss() { DB.settings({ onboardingDismissed: true }); APP.render(); }
+function onbReopen() { DB.settings({ onboardingDismissed: false }); APP.go('adm_onboarding'); }
+
+// The full-page wizard.
+function view_adm_onboarding() {
+  const sid = currentSchoolId();
+  const school = DB.find('schools', sid) || {};
+  const schoolName = school.name || DB.settings().schoolName || 'your school';
+  const steps = schoolOnboardingSteps();
+  const done = steps.filter(s => s.done).length;
+  const pct = Math.round(done / steps.length * 100);
+  const complete = done === steps.length;
+  const invited = DB.query('teachers', t => t.schoolId === sid && t.invitation);
+
+  return `
+  <div class="max-w-4xl mx-auto space-y-5">
+
+    <div class="bg-gradient-to-br from-brand-700 to-brand-900 rounded-2xl p-6 lg:p-8 text-white">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-5">
+        ${onbRing(pct, 84, 'dark')}
+        <div class="flex-1 min-w-0">
+          <p class="text-brand-200 text-sm">Getting started</p>
+          <h1 class="text-2xl lg:text-3xl font-extrabold mt-0.5">${complete ? `${schoolName} is ready 🎉` : `Set up ${schoolName}`}</h1>
+          <p class="text-brand-100 text-sm mt-1">${complete ? 'Every step is complete. You can revisit any of these settings anytime.' : `${done} of ${steps.length} steps complete — finish these to go live.`}</p>
+        </div>
+        <button class="btn btn-secondary bg-white/10 border-white/30 text-white hover:bg-white/20 flex-shrink-0" onclick="APP.go('adm_dashboard')">${complete ? 'Go to dashboard' : 'Skip for now'}</button>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      ${steps.map((s, i) => `
+        <div class="card p-5 flex items-start gap-4 ${s.primary && !s.done ? 'ring-2 ring-brand-300' : ''}">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${s.done ? 'bg-emerald-100 text-emerald-600' : 'bg-brand-50 text-brand-700'}">
+            ${s.done ? icon('check', 'w-5 h-5') : icon(s.icon, 'w-5 h-5')}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-500">STEP ${i + 1}</span>
+              ${s.done ? '<span class="badge badge-success">Done</span>' : (s.primary ? '<span class="badge badge-info">Recommended next</span>' : '')}
+            </div>
+            <div class="font-bold text-slate-900 mt-0.5">${s.title}</div>
+            <div class="text-sm text-slate-500">${s.desc}</div>
+          </div>
+          <button class="btn ${s.done ? 'btn-secondary' : 'btn-primary'} flex-shrink-0 self-center" onclick="${s.action}">${s.done ? 'Review' : s.cta}</button>
+        </div>
+      `).join('')}
+    </div>
+
+    <div id="onbInvitePanel" class="card p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center flex-shrink-0">${icon('teacher', 'w-5 h-5')}</div>
+        <div>
+          <h3 class="font-bold text-slate-900">Invite your team</h3>
+          <p class="text-xs text-slate-500">Each teammate gets an email invite and sets their own password on first login.</p>
+        </div>
+      </div>
+
+      <div class="hidden sm:grid sm:grid-cols-12 gap-2 mt-4 px-1 text-xs font-semibold uppercase text-slate-500">
+        <div class="sm:col-span-3">Full name</div>
+        <div class="sm:col-span-4">Email</div>
+        <div class="sm:col-span-2">Staff type</div>
+        <div class="sm:col-span-2">Role</div>
+        <div class="sm:col-span-1"></div>
+      </div>
+      <div id="onbInviteRows" class="space-y-2 mt-2">
+        ${onbInviteRowHtml()}
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 mt-3">
+        <button class="btn btn-secondary !py-1.5" onclick="onbAddInviteRow()">${icon('plus', 'w-4 h-4')} Add another</button>
+        <button class="btn btn-primary !py-1.5 ml-auto" onclick="onbSendInvites()">${icon('send', 'w-4 h-4')} Send invitations</button>
+      </div>
+
+      <details class="mt-3 bg-slate-50 rounded-xl">
+        <summary class="cursor-pointer p-3 text-sm font-semibold text-slate-700">Bulk invite — paste a list</summary>
+        <div class="p-3 pt-0 space-y-2">
+          <p class="text-xs text-slate-500">One per line: <code>Full name, email</code></p>
+          <textarea id="onbBulkText" rows="4" class="input font-mono text-xs" placeholder="Funke Adeyemi, funke@school.ng&#10;John Okoro, john@school.ng"></textarea>
+          <button class="btn btn-secondary !py-1.5" onclick="onbParseBulk()">${icon('plus', 'w-4 h-4')} Add these rows</button>
+        </div>
+      </details>
+
+      ${invited.length ? `
+        <div class="mt-5 border-t border-slate-100 pt-4">
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-2">${invited.length} on your team</div>
+          <div class="space-y-2">
+            ${invited.map(t => `
+              <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl">
+                ${avatar(t.name, 'sm')}
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm text-slate-900 truncate">${t.name}</div>
+                  <div class="text-xs text-slate-500 truncate">${t.email || 'No email'} · ${t.role || t.staffType || 'Staff'}</div>
+                </div>
+                ${t.invitation && t.invitation.accepted
+                  ? '<span class="badge badge-success">Joined</span>'
+                  : `<span class="badge badge-warn">Invite sent</span><button class="btn btn-ghost !p-1.5 text-brand-700" aria-label="Resend invitation" title="Resend invitation" onclick="onbResend('${t.id}')">${icon('send', 'w-4 h-4')}</button>`}
+              </div>`).join('')}
+          </div>
+        </div>` : ''}
+    </div>
+
+  </div>`;
+}
+
+/* ============================================================
+   SCHOOL VERIFICATION GATE (self-signup schools)
+   Established/seeded schools have no `verification` field and are
+   always treated as verified. Self-signup schools start 'unverified';
+   money features stay locked until the CASPAA team approves KYC.
+   ============================================================ */
+function schoolVerification() {
+  const s = DB.find('schools', currentSchoolId());
+  return s && s.verification ? s.verification : null;
+}
+function schoolVerified() {
+  const v = schoolVerification();
+  return !v || v.status === 'verified';
+}
+
+function verificationBanner() {
+  if (!['schooladmin', 'principal'].includes(AUTH.current.role)) return '';
+  const v = schoolVerification();
+  if (!v || v.status === 'verified') return '';
+
+  if (v.status === 'pending') {
+    return `<div class="rounded-2xl bg-brand-50 p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0">${icon('search', 'w-5 h-5')}</div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-brand-900">Verification under review</div>
+        <div class="text-sm text-brand-700">We're reviewing your documents. Payments and fee financing unlock once approved — usually within 1 business day.</div>
+      </div>
+    </div>`;
+  }
+
+  const rejected = v.status === 'rejected';
+  const tone = rejected ? 'rose' : 'amber';
+  return `<div class="rounded-2xl border border-${tone}-200 bg-${tone}-50 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-${tone}-100 text-${tone}-700 flex items-center justify-center flex-shrink-0">${icon('bell', 'w-5 h-5')}</div>
+    <div class="flex-1 min-w-0">
+      <div class="font-bold text-${tone}-900">${rejected ? 'Verification needs attention' : 'Verify your school to go live'}</div>
+      <div class="text-sm text-${tone}-800">${rejected
+        ? (v.reason ? 'Reason: ' + v.reason : 'Your submission was declined. Please review and resubmit.')
+        : 'You are on a trial. Submit your CAC, ID and bank details to unlock parent payments and fee financing.'}</div>
+    </div>
+    <button class="btn btn-primary flex-shrink-0" onclick="startVerificationModal()">${rejected ? 'Resubmit' : 'Start verification'}</button>
+  </div>`;
+}
+
+function startVerificationModal() {
+  const s = DB.find('schools', currentSchoolId()) || {};
+  const k = s.kyc || {};
+  const b = s.bank || {};
+  modal({
+    title: 'Verify your school',
+    size: 'lg',
+    body: `
+      <div class="space-y-3">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">Verification unlocks parent payments, remittances and fee financing. Your details are reviewed by the CASPAA team.</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label" for="vf_reg">CAC Registration No. *</label><input id="vf_reg" class="input" value="${k.regNumber && k.regNumber !== 'Pending' ? k.regNumber : ''}" placeholder="e.g. RC-228491" /></div>
+          <div><label class="input-label" for="vf_nin">Proprietor NIN *</label><input id="vf_nin" class="input" value="${k.ownerNIN || ''}" placeholder="11-digit NIN" /></div>
+        </div>
+        <div><label class="input-label" for="vf_accred">Accreditation Body</label><input id="vf_accred" class="input" value="${k.accreditation && k.accreditation !== 'Pending' ? k.accreditation : ''}" placeholder="e.g. Lagos State Ministry of Education" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label" for="vf_bank">Settlement Bank *</label><input id="vf_bank" class="input" value="${b.name || ''}" placeholder="e.g. GTBank" /></div>
+          <div><label class="input-label" for="vf_acct">Account Number *</label><input id="vf_acct" class="input" value="${b.account || ''}" placeholder="10-digit NUBAN" /></div>
+        </div>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="vf_cac" ${k.cacUploaded ? 'checked' : ''} /> CAC certificate uploaded (simulated)</label>
+      </div>`,
+    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-primary" onclick="saveVerification()">${icon('check', 'w-4 h-4')} Submit for review</button>`
+  });
+}
+
+function saveVerification() {
+  const sid = currentSchoolId();
+  const reg = document.getElementById('vf_reg').value.trim();
+  const nin = document.getElementById('vf_nin').value.trim();
+  const bank = document.getElementById('vf_bank').value.trim();
+  const acct = document.getElementById('vf_acct').value.trim();
+  if (!reg || !nin || !bank || !acct) { toast('CAC number, NIN, bank and account are required', 'danger'); return; }
+  const s = DB.find('schools', sid) || {};
+  DB.update('schools', sid, {
+    kyc: { ...(s.kyc || {}), regNumber: reg, ownerNIN: nin, accreditation: document.getElementById('vf_accred').value.trim() || 'Pending', cacUploaded: document.getElementById('vf_cac').checked },
+    bank: { name: bank, account: acct },
+    verification: { status: 'pending', submittedAt: now() }
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: sid, actor: AUTH.current.id, action: 'verification_submitted', target: s.name || sid, timestamp: now() });
+  document.getElementById('modalBackdrop')?.click();
+  toast("Submitted for review — we'll notify you once approved", 'success');
+  APP.render();
+}
+
+// Lock screen shown in place of the Finance hub until the school is verified.
+function financeLockedPanel() {
+  const v = schoolVerification();
+  const pending = v && v.status === 'pending';
+  return `${pageHeader({ title: 'Finance', subtitle: 'Fees, invoices, expenses, payroll, reports' })}
+    <div class="card p-8 text-center max-w-xl mx-auto">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-${pending ? 'blue' : 'amber'}-100 text-${pending ? 'blue' : 'amber'}-700 flex items-center justify-center mb-4">${icon(pending ? 'search' : 'fees', 'w-8 h-8')}</div>
+      <h3 class="text-lg font-bold text-slate-900">${pending ? 'Verification under review' : 'Payments locked until you verify'}</h3>
+      <p class="text-sm text-slate-500 mt-2 max-w-md mx-auto">${pending
+        ? 'Your documents are being reviewed. Finance, payments and fee financing unlock once your school is approved.'
+        : 'To collect parent payments, remit funds and access fee financing, verify your school with CASPAA. It only takes a minute.'}</p>
+      ${pending ? '' : `<button class="btn btn-primary mt-4" onclick="startVerificationModal()">${icon('check', 'w-4 h-4')} Start verification</button>`}
+    </div>`;
+}
+
+// Semicircular gauge with a needle. Pure inline SVG — Chart.js has no gauge type.
+function feeGauge(value, target) {
+  const cx = 100, cy = 92, r = 74;
+  const pct = Math.max(0, Math.min(100, value));
+  const arcLen = Math.PI * r;
+  const band = pct >= 80 ? '#00b386' : pct >= 60 ? '#d97706' : '#e11d48';
+  // 0% sits at 180deg, 100% at 360deg
+  const ptAt = (v, radius) => {
+    const rad = (180 + v * 1.8) * Math.PI / 180;
+    return [cx + radius * Math.cos(rad), cy + radius * Math.sin(rad)];
+  };
+  const [nx, ny] = ptAt(pct, r - 16);
+  const [t1x, t1y] = ptAt(target, r - 11);
+  const [t2x, t2y] = ptAt(target, r + 5);
+  return `
+    <svg viewBox="0 0 200 108" class="w-full max-w-[220px]" role="img" aria-label="Fee collection rate ${pct}% against a ${target}% target">
+      <path d="M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}" fill="none" stroke="#e2e8f0" stroke-width="13" stroke-linecap="round" />
+      <path d="M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}" fill="none" stroke="${band}" stroke-width="13" stroke-linecap="round"
+            stroke-dasharray="${(pct / 100) * arcLen} ${arcLen}" />
+      <line x1="${t1x}" y1="${t1y}" x2="${t2x}" y2="${t2y}" stroke="#334155" stroke-width="2.5" stroke-linecap="round" />
+      <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round" />
+      <circle cx="${cx}" cy="${cy}" r="6" fill="#0f172a" />
+    </svg>`;
+}
+
 function view_adm_dashboard() {
   const schoolId = currentSchoolId();
-  const students = DB.query('students', s => s.schoolId === schoolId);
-  const teachers = DB.query('teachers', t => t.schoolId === schoolId);
+  // Alumni/withdrawn students were counted here, inflating the attendance denominator
+  // and "Total enrolled". A school with 300 active and 700 alumni read "30% Present"
+  // with every student marked in. Enrolment metrics are about currently-enrolled people;
+  // fee metrics deliberately still span leavers (they can still owe money).
+  const students = DB.query('students', s => s.schoolId === schoolId && s.status === 'active');
+  const teachers = DB.query('teachers', t => t.schoolId === schoolId && t.status !== 'terminated');
   const invoices = DB.query('invoices', i => i.schoolId === schoolId);
-  const outstanding = invoices.reduce((s, i) => s + i.balance, 0);
-  const collected = invoices.reduce((s, i) => s + i.paid, 0);
-  const collectionRate = invoices.length ? Math.round((collected / (collected + outstanding)) * 100) : 0;
+  const { billed, collected, outstanding, rate: collectionRate } = COMPUTE.feeTotals(schoolId);
+  const collectionTarget = DB.settings().feeCollectionTarget || 85;
+  const owingCount = invoices.filter(i => i.balance > 0).length;
   // Date selector — proprietor can review a previous day's analytics
   const dashDate = APP.params.dashDate || today();
   const isToday = dashDate === today();
-  const attToday = DB.query('attendance', a => a.schoolId === schoolId && a.date === dashDate);
+  // Numerator and denominator must describe the SAME population. Filtering students to
+  // 'active' while counting attendance rows for everyone printed "180% Present".
+  const activeStudentIds = new Set(students.map(s => s.id));
+  const attToday = DB.query('attendance', a => a.schoolId === schoolId && a.date === dashDate && activeStudentIds.has(a.studentId));
   const presentToday = attToday.filter(a => a.status !== 'absent').length;
-  const attRate = students.length ? Math.round((presentToday / students.length) * 100) : 0;
+  const attRate = students.length ? Math.min(100, Math.round((presentToday / students.length) * 100)) : 0;
   // Gender split — helps the school plan supplies at a glance
   const maleCount = students.filter(s => /^m/i.test(s.gender || '')).length;
   const femaleCount = students.filter(s => /^f/i.test(s.gender || '')).length;
+  const malePct = students.length ? Math.round(maleCount / students.length * 100) : 50;
+  const femalePct = students.length ? 100 - malePct : 50;
   // New insights
   const recentPayments = DB.query('transactions', t => t.schoolId === schoolId && t.status === 'successful').sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 5);
   const pendingLoans = DB.query('loans', l => l.schoolId === schoolId && l.status === 'pending').length;
@@ -2568,37 +3066,58 @@ function view_adm_dashboard() {
   const allResults = DB.query('results', r => r.schoolId === schoolId);
   const avgScore = allResults.length ? Math.round(allResults.reduce((s, r) => s + r.total, 0) / allResults.length) : 0;
 
-  // Schedule chart render after DOM
-  window.afterRender = () => {
-    const gctx = document.getElementById('genderChart');
-    if (gctx) {
-      new Chart(gctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['Boys', 'Girls'],
-          datasets: [{
-            data: [maleCount, femaleCount],
-            backgroundColor: ['#2563eb', '#db2777'],
-            borderColor: ['#ffffff', '#ffffff'],
-            borderWidth: 3,
-            hoverOffset: 6
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          animation: { duration: 0 },
-          cutout: '65%',
-          plugins: {
-            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 16, font: { size: 12 } } },
-            tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed/(maleCount+femaleCount||1)*100)}%)` } }
-          }
-        }
-      });
-    }
+  // Outstanding vs. a month ago. Invoices are billed once per term, so within a term
+  // last month's balance is simply today's balance plus everything collected since.
+  const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+  const paidLast30 = DB.query('transactions', t => t.schoolId === schoolId && t.status === 'successful' && t.timestamp >= monthAgo)
+    .reduce((s, t) => s + t.amount, 0);
+  const outstandingLastMonth = outstanding + paidLast30;
+  const outstandingMoM = outstandingLastMonth ? ((outstanding - outstandingLastMonth) / outstandingLastMonth) * 100 : 0;
+
+  // Previous day with records — the comparison baseline for both attendance cards.
+  const prevDayWithData = (collection) => {
+    const dates = [...new Set(DB.query(collection, a => a.schoolId === schoolId && a.date < dashDate).map(a => a.date))].sort();
+    return dates[dates.length - 1] || null;
+  };
+  const prevAttDate = prevDayWithData('attendance');
+  const prevAtt = prevAttDate ? DB.query('attendance', a => a.schoolId === schoolId && a.date === prevAttDate && activeStudentIds.has(a.studentId)) : [];
+  const prevAttRate = students.length && prevAtt.length ? Math.min(100, Math.round((prevAtt.filter(a => a.status !== 'absent').length / students.length) * 100)) : null;
+
+  // Staff attendance only records those who clocked in, so a record = present (or late).
+  // Scoped to current staff for the same reason as students — a terminated teacher's
+  // old clock-in must not count against today's roll.
+  const currentStaffIds = new Set(teachers.map(t => t.id));
+  const staffToday = DB.query('staffAttendance', a => a.schoolId === schoolId && a.date === dashDate && currentStaffIds.has(a.staffId));
+  const staffRate = teachers.length && staffToday.length ? Math.min(100, Math.round((staffToday.length / teachers.length) * 100)) : null;
+  const staffLate = staffToday.filter(a => a.status === 'late').length;
+  const prevStaffDate = prevDayWithData('staffAttendance');
+  const prevStaff = prevStaffDate ? DB.query('staffAttendance', a => a.schoolId === schoolId && a.date === prevStaffDate && currentStaffIds.has(a.staffId)) : [];
+  const prevStaffRate = teachers.length && prevStaff.length ? Math.min(100, Math.round((prevStaff.length / teachers.length) * 100)) : null;
+
+  // Pending items needing the proprietor's decision
+  const pendingApps = DB.query('admissionApplications', a => a.schoolId === schoolId && a.status === 'pending').length;
+  const pendingLeave = DB.query('leaveRequests', l => l.schoolId === schoolId && l.status === 'pending').length;
+
+  // Upcoming events, next 90 days
+  const upcoming = (typeof cal_eventsForRole === 'function' ? cal_eventsForRole('schooladmin') : [])
+    .filter(e => e.endDate >= today() && new Date(e.startDate) <= new Date(Date.now() + 90 * 86400000))
+    .slice(0, 4);
+
+  // Renders a "vs. baseline" delta line under a headline number.
+  const deltaLine = (diff, unit, label, goodWhenUp = true) => {
+    if (diff === null) return `<p class="text-xs text-slate-500 mt-1.5">${label}</p>`;
+    const flat = Math.abs(diff) < 0.05;
+    const good = flat || (diff > 0 === goodWhenUp);
+    const arrow = flat ? '' : diff > 0 ? ' ▲' : ' ▼';
+    const shown = flat ? '(No Change)' : `${diff > 0 ? '+' : ''}${diff.toFixed(1)}${unit}${arrow}`;
+    return `<p class="text-xs font-semibold mt-1.5 ${good ? 'text-emerald-600' : 'text-rose-600'}">${label} ${shown}</p>`;
   };
 
   return `
     <div class="space-y-5">
+      ${verificationBanner()}
+      ${onboardingBanner()}
+      ${typeof enquiriesBanner === 'function' ? enquiriesBanner() : ''}
       <div class="bg-gradient-to-br from-brand-700 to-brand-800 rounded-2xl p-5 lg:p-6 text-white">
         <div class="flex items-center justify-between">
           <div>
@@ -2616,148 +3135,110 @@ function view_adm_dashboard() {
         </div>
       </div>
 
-      <!-- Top row: 4 most operational metrics -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        ${(() => {
-          const owingCount = invoices.filter(i => i.balance > 0).length;
-          return statCard({
-            label: 'Outstanding Fees',
-            value: money(outstanding),
-            icon: 'fees', color: 'rose',
-            trend: owingCount ? { direction: 'down', label: `${owingCount} student${owingCount === 1 ? '' : 's'} owing` } : { direction: 'up', label: 'All settled' },
-            tooltip: 'Total amount across all unpaid + part-paid invoices. We count a student as "owing" when their invoice has a balance.'
-          });
-        })()}
-        ${(() => {
-          const paidCount = invoices.filter(i => i.status === 'paid').length;
-          const partialCount = invoices.filter(i => i.status === 'partial').length;
-          return statCard({
-            label: 'Payment Received',
-            value: money(collected),
-            icon: 'trending_up', color: 'brand',
-            trend: { direction: 'up', label: `${paidCount} paid in full · ${partialCount} part-paid` },
-            tooltip: 'Sum of all amounts received this term. The count shows how many students have settled in full, versus partial payments.'
-          });
-        })()}
-        ${statCard({
-          label: 'Loan Requests',
-          value: pendingLoans,
-          icon: 'loan',
-          color: pendingLoans ? 'gold' : 'brand',
-          trend: pendingLoans ? { direction: 'up', label: 'awaiting review' } : null,
-          tooltip: 'Parents applying for school-fee financing. CASPAA underwrites these.'
-        })}
-        ${statCard({
-          label: 'Fee Collection Rate',
-          value: collectionRate + '%',
-          icon: 'check', color: collectionRate >= 80 ? 'brand' : collectionRate >= 60 ? 'gold' : 'rose',
-          trend: { direction: collectionRate >= 80 ? 'up' : 'down', label: `${money(collected)} of ${money(collected + outstanding)} billed` },
-          tooltip: 'Percentage of total billed fees that have been paid this term. (Paid ÷ Total Billed × 100). Higher = better cash position.'
-        })}
-      </div>
-
-      <!-- Second row: school health + subscription -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        ${statCard({
-          label: 'Students',
-          value: students.length,
-          icon: 'students', color: 'brand',
-          tooltip: 'Active student enrolment. Withdrawn, transferred, suspended and alumni are excluded.'
-        })}
-        ${statCard({
-          label: 'Staff',
-          value: teachers.length,
-          icon: 'teacher', color: 'blue',
-          tooltip: 'All staff on payroll (academic + non-academic). View breakdown in Staff & HR.'
-        })}
-        ${(() => {
-          const attMarkedToday = attToday.length > 0;
-          return statCard({
-            label: isToday ? 'Attendance Today' : `Attendance · ${fdate(dashDate, { short: true })}`,
-            value: attMarkedToday ? attRate + '%' : '— not marked',
-            icon: 'attendance', color: attMarkedToday ? 'gold' : 'rose',
-            trend: attMarkedToday ? { direction: attRate >= 85 ? 'up' : 'down', label: `${presentToday} of ${students.length} present` } : { direction: 'down', label: isToday ? 'Teachers haven\'t marked yet' : 'No attendance recorded' },
-            tooltip: 'Percentage of students marked present on the selected date. Use the date picker at the top to review a previous day. Form teachers mark daily attendance from their dashboard or HR can mark from the gate sign-in book.'
-          });
-        })()}
-        ${(() => {
-          if (!school.subscriptionPlan) return statCard({ label: 'Subscription', value: '—', icon: 'settings', color: 'purple' });
-          const urgent = renewalDays !== null && renewalDays <= 7;
-          return statCard({
-            label: 'Subscription',
-            value: school.subscriptionPlan,
-            icon: 'settings',
-            color: urgent ? 'rose' : 'purple',
-            trend: renewalDays !== null ? { direction: urgent ? 'down' : 'up', label: renewalDays <= 0 ? 'EXPIRED' : `Renews in ${renewalDays}d` } : null,
-            tooltip: 'Your current CASPAA plan. Renewal auto-fires if Auto-renew is on (Settings).'
-          });
-        })()}
-      </div>
-
-      <!-- Gender split — supplies planning, moved up for quick visibility -->
-      <div class="grid lg:grid-cols-3 gap-4">
-        <div class="card p-5 flex flex-col justify-center">
-          <h3 class="font-bold text-slate-900 mb-1">Enrolment by Gender</h3>
-          <p class="text-xs text-slate-500 mb-3">Helps plan uniforms, facilities and supplies.</p>
-          <div class="grid grid-cols-2 gap-3 mb-3">
-            <div class="rounded-xl bg-blue-50 p-4 text-center">
-              <div class="text-3xl font-extrabold text-blue-900">${maleCount}</div>
-              <div class="text-xs uppercase tracking-wide text-blue-700 font-semibold mt-1">Boys</div>
-              <div class="text-xs text-blue-600">${students.length ? Math.round(maleCount / students.length * 100) : 0}%</div>
-            </div>
-            <div class="rounded-xl bg-pink-50 p-4 text-center">
-              <div class="text-3xl font-extrabold text-pink-900">${femaleCount}</div>
-              <div class="text-xs uppercase tracking-wide text-pink-700 font-semibold mt-1">Girls</div>
-              <div class="text-xs text-pink-600">${students.length ? Math.round(femaleCount / students.length * 100) : 0}%</div>
-            </div>
-          </div>
-          <div class="h-3 rounded-full overflow-hidden bg-pink-200">
-            <div class="h-full rounded-full bg-blue-500 transition-all" style="width: ${students.length ? Math.round(maleCount / students.length * 100) : 50}%"></div>
-          </div>
-          <div class="flex justify-between text-xs text-slate-500 mt-1"><span>Boys</span><span>Girls</span></div>
-        </div>
-        <div class="card p-5 lg:col-span-2 flex flex-col justify-center items-center">
-          <div style="height: 200px; width: 200px;"><canvas id="genderChart"></canvas></div>
-        </div>
-      </div>
-
-      <!-- Finance snapshot + Notifications -->
-      <div class="grid lg:grid-cols-3 gap-4">
-        <div class="card p-5 lg:col-span-2">
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h3 class="font-bold text-slate-900">Financial Snapshot</h3>
-              <p class="text-xs text-slate-400 mt-0.5">Current term · full analytics in Finance</p>
-            </div>
-            <button class="btn btn-primary text-sm" onclick="APP.go('adm_finance_hub', { financeTab: 'overview' })">${icon('fees','w-3.5 h-3.5')} Finance Hub</button>
-          </div>
-          <div class="grid grid-cols-2 gap-3 mb-4">
-            <div class="bg-emerald-50 rounded-xl p-4 text-center">
-              <div class="text-lg font-extrabold text-emerald-700">${money(collected)}</div>
-              <div class="text-xs text-emerald-600 mt-0.5">Collected</div>
-            </div>
-            <div class="bg-rose-50 rounded-xl p-4 text-center">
-              <div class="text-lg font-extrabold text-rose-700">${money(outstanding)}</div>
-              <div class="text-xs text-rose-600 mt-0.5">Outstanding</div>
-            </div>
-          </div>
-          <div class="h-2 rounded-full overflow-hidden bg-rose-100 mb-1">
-            <div class="h-full rounded-full bg-emerald-500 transition-all" style="width:${collectionRate}%"></div>
-          </div>
-          <div class="flex justify-between text-xs text-slate-500">
-            <span>${collectionRate}% collected</span>
-            <button class="text-brand-700 font-semibold underline" onclick="APP.go('adm_finance_hub',{financeTab:'invoices'})">View invoices →</button>
+      <!-- Primary KPIs -->
+      <div class="grid lg:grid-cols-2 gap-4">
+        <div class="card p-5 flex flex-col">
+          <div class="flex items-center gap-1 stat-label">Outstanding Fees</div>
+          <div class="text-4xl lg:text-5xl font-extrabold text-slate-900 mt-1 tracking-tight">${money(outstanding)}</div>
+          ${deltaLine(outstandingMoM, '%', 'vs. Last Month:', false)}
+          <div class="flex items-center justify-between gap-2 mt-auto pt-4">
+            <p class="text-xs text-slate-500">${owingCount ? `${owingCount} student${owingCount === 1 ? '' : 's'} owing` : 'All fees settled'}</p>
+            ${owingCount ? `<button class="btn btn-secondary text-sm" onclick="APP.go('adm_finance_hub', { financeTab: 'invoices', invStatus: 'owing' })">${icon('bell', 'w-3.5 h-3.5')} Send Reminders</button>` : ''}
           </div>
         </div>
-
-        <!-- Notifications + quick actions -->
         <div class="card p-5">
+          <div class="flex items-center gap-1 stat-label">Fee Collection Rate</div>
+          <div class="flex items-center gap-4 mt-2">
+            <div class="flex-1 min-w-0 flex flex-col items-center">
+              ${feeGauge(collectionRate, collectionTarget)}
+              <p class="text-xs text-slate-500 -mt-1">Current Rate</p>
+            </div>
+            <div class="border-l border-slate-100 pl-4">
+              <div class="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">${collectionRate}%</div>
+              <p class="text-xs text-slate-500 mt-1.5">Target: ${collectionTarget}%</p>
+              <p class="text-xs text-slate-500 mt-0.5">${money(collected)} of ${money(collected + outstanding)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Operational status -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="card p-5">
+          <div class="stat-label">${isToday ? 'Student Attendance' : `Student Attendance · ${fdate(dashDate, { short: true })}`}</div>
+          ${attToday.length === 0
+            ? `<div class="text-3xl font-extrabold text-slate-500 mt-1">— not marked</div>
+               <p class="text-xs text-rose-600 font-semibold mt-1.5">${isToday ? 'Teachers haven\'t marked yet' : 'No attendance recorded'}</p>`
+            : `<div class="text-3xl lg:text-4xl font-extrabold ${attRate >= 85 ? 'text-emerald-600' : 'text-rose-600'} mt-1 tracking-tight">${attRate}% Present</div>
+               ${deltaLine(prevAttRate === null ? null : attRate - prevAttRate, ' pts', 'vs. Yesterday:')}`}
+        </div>
+        <div class="card p-5">
+          <div class="stat-label">Staff Attendance</div>
+          ${staffRate === null
+            ? `<div class="text-3xl font-extrabold text-slate-500 mt-1">— not marked</div>
+               <p class="text-xs text-slate-500 mt-1.5">No clock-ins recorded.</p>`
+            : `<div class="text-3xl lg:text-4xl font-extrabold ${staffRate >= 90 ? 'text-emerald-600' : 'text-rose-600'} mt-1 tracking-tight">${staffRate}% Present</div>
+               ${deltaLine(prevStaffRate === null ? null : staffRate - prevStaffRate, ' pts', 'vs. Yesterday:')}
+               <p class="text-xs text-slate-500 mt-0.5">${staffToday.length} of ${teachers.length} clocked in${staffLate ? ` · ${staffLate} late` : ''}</p>`}
+        </div>
+        <div class="card p-5">
+          <div class="stat-label">Plan Status</div>
+          <div class="text-3xl lg:text-4xl font-extrabold text-slate-900 mt-1 tracking-tight">${school.subscriptionPlan || '—'}</div>
+          <div class="flex items-end justify-between gap-2 mt-1.5">
+            <p class="text-xs font-semibold ${renewalDays !== null && renewalDays <= 7 ? 'text-rose-600' : 'text-slate-500'}">
+              ${renewalDays === null ? 'No renewal date set.' : renewalDays <= 0 ? 'EXPIRED' : `Renews in ${renewalDays} days.`}
+            </p>
+            <button class="btn btn-secondary !py-1 !px-2.5 text-xs whitespace-nowrap" onclick="APP.go('adm_settings')">Upgrade Plan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enrollment split + items awaiting a decision -->
+      <div class="grid lg:grid-cols-3 gap-4">
+        <div class="card p-5 lg:col-span-2 flex flex-col">
+          <h3 class="font-bold text-slate-900 mb-1">Enrollment Overview</h3>
+          <p class="text-xs text-slate-500 mb-4">Helps plan uniforms, facilities and supplies.</p>
+          ${students.length === 0
+            ? `<p class="text-sm text-slate-500">No students enrolled yet.</p>`
+            : `<div class="flex h-14 rounded-xl overflow-hidden">
+                 <div class="bg-brand-600 flex items-center justify-center text-white font-extrabold text-xl" style="width:${malePct}%" title="Boys: ${maleCount}">${malePct >= 12 ? malePct + '%' : ''}</div>
+                 <div class="bg-brand-600 flex items-center justify-center text-white font-extrabold text-xl" style="width:${femalePct}%" title="Girls: ${femaleCount}">${femalePct >= 12 ? femalePct + '%' : ''}</div>
+               </div>
+               <div class="flex justify-between text-xs mt-2">
+                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-brand-600"></span><span class="text-slate-600">Boys · <strong class="text-slate-900">${maleCount}</strong></span></span>
+                 <span class="flex items-center gap-1.5"><span class="text-slate-600">Girls · <strong class="text-slate-900">${femaleCount}</strong></span><span class="w-2.5 h-2.5 rounded-full bg-brand-600"></span></span>
+               </div>
+               <p class="text-xs text-slate-500 mt-3">Total enrolled: ${students.length}</p>`}
+        </div>
+        <div class="card p-5">
+          <h3 class="font-bold text-slate-900 mb-3">New Requests & Applications</h3>
+          ${(() => {
+            const rows = [
+              { n: pendingApps,   label: `Pending Admission${pendingApps === 1 ? '' : 's'}`,   go: "APP.go('adm_people',{peopleTab:'admissions'})" },
+              { n: pendingLoans,  label: `Loan Request${pendingLoans === 1 ? '' : 's'}`,       go: "APP.go('fin_lending')" },
+              { n: pendingLeave,  label: `Leave Request${pendingLeave === 1 ? '' : 's'}`,      go: "APP.go('adm_workforce',{workforceTab:'leave'})" }
+            ];
+            if (rows.every(r => !r.n)) return `<p class="text-sm text-slate-500">Nothing awaiting your decision.</p>`;
+            return `<div class="divide-y divide-slate-100">${rows.map(r => `
+              <button onclick="${r.go}" class="w-full flex items-center gap-3 py-3 text-left hover:bg-slate-50 transition rounded-lg px-1 -mx-1">
+                <span class="text-2xl font-extrabold ${r.n ? 'text-slate-900' : 'text-slate-300'} w-7">${r.n}</span>
+                <span class="flex-1 text-sm font-medium ${r.n ? 'text-slate-700' : 'text-slate-500'}">${r.label}</span>
+                <span class="text-slate-300 font-bold">&rsaquo;</span>
+              </button>`).join('')}</div>`;
+          })()}
+        </div>
+      </div>
+
+      <!-- Notifications + upcoming events -->
+      <div class="grid lg:grid-cols-3 gap-4">
+        <!-- Notifications + quick actions -->
+        <div class="card p-5 lg:col-span-2">
           <h3 class="font-bold text-slate-900 mb-3 text-sm uppercase tracking-wide text-slate-500">School Notifications</h3>
-          <div class="space-y-1.5 mb-4">
+          <div class="grid sm:grid-cols-2 gap-1.5 mb-4">
             ${(() => {
               const items = [];
               if (renewalDays !== null && renewalDays <= 30) items.push({ icon: 'bell', tone: renewalDays <= 7 ? 'rose' : 'amber', text: `Subscription renews in ${renewalDays}d`, go: "APP.go('adm_settings')" });
-              if (pendingLoans > 0) items.push({ icon: 'loan', tone: 'amber', text: `${pendingLoans} loan request${pendingLoans !== 1 ? 's' : ''} awaiting decision`, go: "APP.go('adm_finance_hub',{financeTab:'invoices'})" });
+              if (pendingLoans > 0) items.push({ icon: 'loan', tone: 'amber', text: `${pendingLoans} loan request${pendingLoans !== 1 ? 's' : ''} awaiting decision`, go: "APP.go('fin_lending')" });
               const lowStock = DB.query('inventory', i => i.schoolId === schoolId && i.quantity < i.minStock).length;
               if (lowStock) items.push({ icon: 'package', tone: 'amber', text: `${lowStock} inventory item${lowStock !== 1 ? 's' : ''} low stock`, go: "APP.go('adm_operations',{opsTab:'inventory'})" });
               // Result submission delay alert
@@ -2797,8 +3278,32 @@ function view_adm_dashboard() {
           </div>
           <button class="btn btn-gold w-full mt-2 text-xs" onclick="termClosingWizard()">${icon('calendar','w-3.5 h-3.5')} Close Term Wizard</button>
         </div>
-      </div>
 
+        <!-- Upcoming events -->
+        <div class="card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-slate-900">Upcoming Events</h3>
+          <button class="text-sm text-brand-700 font-semibold" onclick="APP.go('cal_main')">View all →</button>
+        </div>
+        ${upcoming.length === 0 ? `<p class="text-sm text-slate-500">Nothing scheduled in the next 90 days.</p>` : `
+          <div class="space-y-2">
+            ${upcoming.map(e => {
+              const type = (typeof CAL_TYPES !== 'undefined' && CAL_TYPES[e.type]) || { dot: 'bg-slate-400' };
+              return `<div class="flex items-center gap-3">
+                <div class="w-11 flex-shrink-0 rounded-lg bg-slate-50 py-1 text-center">
+                  <div class="text-[10px] uppercase font-bold text-slate-500 leading-tight">${new Date(e.startDate).toLocaleDateString('en-GB', { month: 'short' })}</div>
+                  <div class="text-base font-extrabold text-slate-900 leading-tight">${new Date(e.startDate).getDate()}</div>
+                </div>
+                <div class="min-w-0 flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full flex-shrink-0 ${type.dot}"></span>
+                  <span class="text-sm font-medium text-slate-700 truncate">${e.title}</span>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        `}
+        </div>
+      </div>
 
       <!-- Recent payments (compact, below the fold) -->
       <div class="card p-5">
@@ -2853,7 +3358,7 @@ function revenueAnalyticsParamsModal() {
           <input id="ra_margin_r" type="range" min="0" max="60" value="${cfg.targetMargin || 20}"
             class="w-full accent-emerald-600 cursor-pointer"
             oninput="document.getElementById('ra_margin').value=this.value" />
-          <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+          <div class="flex justify-between text-[10px] text-slate-500 mt-1">
             <span>0%</span><span class="text-emerald-600 font-medium">Typical: 15–25%</span><span>60%</span>
           </div>
         </div>
@@ -2873,18 +3378,18 @@ function revenueAnalyticsParamsModal() {
             </div>
           </div>
           <input id="ra_teacher_r" type="range" min="0" max="80" value="${cfg.targetTeacherRatio || 40}"
-            class="w-full accent-blue-600 cursor-pointer"
+            class="w-full accent-brand-600 cursor-pointer"
             oninput="document.getElementById('ra_teacher').value=this.value" />
-          <div class="flex justify-between text-[10px] text-slate-400 mt-1">
-            <span>0%</span><span class="text-blue-600 font-medium">Typical: 35–50%</span><span>80%</span>
+          <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+            <span>0%</span><span class="text-brand-600 font-medium">Typical: 35–50%</span><span>80%</span>
           </div>
         </div>
 
         <div class="rounded-xl border border-slate-200 p-4">
-          <p class="font-semibold text-slate-800 text-sm mb-1">Annual Revenue Target <span class="text-slate-400 font-normal">(optional)</span></p>
+          <p class="font-semibold text-slate-800 text-sm mb-1">Annual Revenue Target <span class="text-slate-500 font-normal">(optional)</span></p>
           <p class="text-xs text-slate-500 mb-2">Shown as a reference line on revenue charts</p>
           <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">₦</span>
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">₦</span>
             <input id="ra_target" type="number" class="input pl-7" value="${cfg.annualTarget || ''}" placeholder="e.g. 60000000" />
           </div>
         </div>
@@ -2906,7 +3411,7 @@ function revenueAnalyticsParamsModal() {
           <input id="ra_alert_r" type="range" min="0" max="100" value="${cfg.alertCollectionBelow || 70}"
             class="w-full accent-amber-500 cursor-pointer"
             oninput="document.getElementById('ra_alert_col').value=this.value" />
-          <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+          <div class="flex justify-between text-[10px] text-slate-500 mt-1">
             <span>0%</span><span class="text-amber-600 font-medium">Recommended: 70–80%</span><span>100%</span>
           </div>
         </div>
@@ -2998,38 +3503,42 @@ function view_adm_students() {
       if (!total) return '';
       const boysPct = Math.round(boys / total * 100);
       const girlsPct = 100 - boysPct;
-      return `<div class="card p-4 mb-3">
+      return `<div class="card p-5 mb-3">
         <div class="flex items-center justify-between mb-2">
           <h3 class="font-semibold text-slate-900 text-sm">Gender Split</h3>
           <div class="flex items-center gap-4 text-sm">
-            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span><strong class="text-blue-900">${boys}</strong> <span class="text-slate-500">boys (${boysPct}%)</span></span>
-            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-pink-500 inline-block"></span><strong class="text-pink-900">${girls}</strong> <span class="text-slate-500">girls (${girlsPct}%)</span></span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-brand-500 inline-block"></span><strong class="text-brand-900">${boys}</strong> <span class="text-slate-500">boys (${boysPct}%)</span></span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-brand-500 inline-block"></span><strong class="text-brand-900">${girls}</strong> <span class="text-slate-500">girls (${girlsPct}%)</span></span>
           </div>
         </div>
-        <div class="h-3 rounded-full overflow-hidden bg-pink-200 flex">
-          <div class="h-full bg-blue-500 transition-all" style="width:${boysPct}%"></div>
+        <div class="h-3 rounded-full overflow-hidden bg-brand-200 flex">
+          <div class="h-full bg-brand-500 transition-all" style="width:${boysPct}%"></div>
         </div>
       </div>`;
     })()}
 
-    <!-- Search bar + quick filter pills -->
-    <div class="flex flex-col sm:flex-row gap-3 mb-3">
-      <div class="flex-1 relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${icon('search','w-4 h-4')}</span>
-        <input type="text" class="input pl-9" placeholder="Search by name or admission no…" value="${search}" oninput="APP.params.search = this.value; APP.render()" />
+    <!-- Search bar + quick filter pills.
+         Search is the primary control here, so it takes the room. The .input class sets
+         width:100%, which made the selects claim equal width and squeeze the search box
+         down to its min-content (~50px); !w-auto lets them size to their label instead. -->
+    <div class="flex flex-col sm:flex-row gap-2 mb-3">
+      <div class="flex-1 min-w-[220px] relative">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">${icon('search','w-4 h-4')}</span>
+        <label for="stu_search" class="sr-only">Search students by name or admission number</label>
+        <input id="stu_search" type="search" class="input pl-9" placeholder="Search by name or admission no…" value="${search}" oninput="APP.params.search = this.value; APP.render()" />
       </div>
-      <select class="input text-sm" onchange="APP.params.gender = this.value; APP.render()">
+      <select class="input text-sm !w-auto" onchange="APP.params.gender = this.value; APP.render()">
         <option value="all" ${genderF==='all'?'selected':''}>All genders</option>
         <option value="M" ${genderF==='M'?'selected':''}>Boys only</option>
         <option value="F" ${genderF==='F'?'selected':''}>Girls only</option>
       </select>
-      <select class="input text-sm" onchange="APP.params.payment = this.value; APP.render()">
+      <select class="input text-sm !w-auto" onchange="APP.params.payment = this.value; APP.render()">
         <option value="all" ${payF==='all'?'selected':''}>All payments</option>
         <option value="paid" ${payF==='paid'?'selected':''}>Paid</option>
         <option value="partial" ${payF==='partial'?'selected':''}>Partial</option>
         <option value="outstanding" ${payF==='outstanding'?'selected':''}>Outstanding</option>
       </select>
-      <select class="input text-sm" onchange="APP.params.attendance = this.value; APP.render()">
+      <select class="input text-sm !w-auto" onchange="APP.params.attendance = this.value; APP.render()">
         <option value="all" ${attF==='all'?'selected':''}>All attendance</option>
         <option value="good" ${attF==='good'?'selected':''}>Good (≥85%)</option>
         <option value="concern" ${attF==='concern'?'selected':''}>Concern (&lt;85%)</option>
@@ -3037,10 +3546,10 @@ function view_adm_students() {
     </div>
     ${genderF!=='all'||payF!=='all'||attF!=='all'||statusF!=='all'||scholarF!=='all' || filter!=='all' ? `<div class="flex items-center gap-2 flex-wrap mb-3 text-xs">
       <span class="text-slate-500">Active filters:</span>
-      ${filter!=='all' ? `<button class="badge badge-info hover:bg-blue-200 cursor-pointer" onclick="APP.params.classFilter='all'; APP.render()">${classes.find(c=>c.id===filter)?.name} ✕</button>` : ''}
-      ${genderF!=='all' ? `<button class="badge badge-info hover:bg-blue-200 cursor-pointer" onclick="APP.params.gender='all'; APP.render()">${genderF==='M'?'Boys':'Girls'} ✕</button>` : ''}
-      ${payF!=='all' ? `<button class="badge badge-info hover:bg-blue-200 cursor-pointer" onclick="APP.params.payment='all'; APP.render()">${payF} ✕</button>` : ''}
-      ${attF!=='all' ? `<button class="badge badge-info hover:bg-blue-200 cursor-pointer" onclick="APP.params.attendance='all'; APP.render()">Attendance: ${attF} ✕</button>` : ''}
+      ${filter!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.classFilter='all'; APP.render()">${classes.find(c=>c.id===filter)?.name} ✕</button>` : ''}
+      ${genderF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.gender='all'; APP.render()">${genderF==='M'?'Boys':'Girls'} ✕</button>` : ''}
+      ${payF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.payment='all'; APP.render()">${payF} ✕</button>` : ''}
+      ${attF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.attendance='all'; APP.render()">Attendance: ${attF} ✕</button>` : ''}
       <button class="text-rose-600 font-semibold underline ml-1" onclick="APP.params.classFilter=APP.params.gender=APP.params.payment=APP.params.attendance=APP.params.studentStatus=APP.params.scholarship=APP.params.search='all'; APP.render()">Clear all</button>
     </div>` : ''}
 
@@ -3048,15 +3557,15 @@ function view_adm_students() {
       ${filtered.length === 0 ? emptyState({ title: 'No students found', body: 'Try adjusting your filters or add a new student.', icon: 'students' }) : `
         <div class="overflow-x-auto">
           <table class="tbl">
-            <thead><tr>
-              <th>Student</th><th>Admission No.</th>
-              <th>
+            <th scope="col"ead><tr>
+              <th scope="col">Student</th><th scope="col">Admission No.</th>
+              <th scope="col">
                 <select class="text-xs font-semibold text-slate-700 bg-transparent border-0 cursor-pointer hover:text-brand-700" onchange="APP.params.classFilter = this.value; APP.render()">
                   <option value="all" ${filter==='all'?'selected':''}>All Classes</option>
                   ${classes.map(c => `<option value="${c.id}" ${filter===c.id?'selected':''}>${c.name}</option>`).join('')}
                 </select>
               </th>
-              <th>Parent</th><th>Fees</th><th></th>
+              <th scope="col">Parent</th><th scope="col">Fees</th><th scope="col"></th>
             </tr></thead>
             <tbody>
               ${filtered.map(s => {
@@ -3084,11 +3593,13 @@ function view_adm_students() {
                       </div>
                     </td>
                     <td class="text-right whitespace-nowrap" onclick="event.stopPropagation()">
-                      <button class="btn btn-ghost !p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg" title="Promote to next class" onclick="event.stopPropagation(); promoteStudentModal('${s.id}')">${icon('trending_up','w-4 h-4')}</button>
-                      <button class="btn btn-ghost !p-1.5 text-blue-700 hover:bg-blue-50 rounded-lg" title="Transfer to another school" onclick="event.stopPropagation(); transferStudentModal('${s.id}')">${icon('arrow_left','w-4 h-4')}</button>
-                      <button class="btn btn-ghost !p-1.5 text-amber-700 hover:bg-amber-50 rounded-lg" title="Suspend student" onclick="event.stopPropagation(); suspendStudentModal('${s.id}')">${icon('bell','w-4 h-4')}</button>
-                      <button class="btn btn-ghost !p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" title="Withdraw student" onclick="event.stopPropagation(); withdrawStudentModal('${s.id}')">${icon('logout','w-4 h-4')}</button>
-                      <button class="btn btn-ghost !p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg" title="Edit student details" onclick="event.stopPropagation(); editStudent('${s.id}')">${icon('edit','w-4 h-4')}</button>
+                      <!-- Was five bare icon buttons: Promote / Transfer / Suspend / Withdraw / Edit,
+                           told apart only by glyph and colour, with the irreversible Withdraw sitting
+                           right next to the everyday Edit. Keep Edit inline (frequent, safe) and put
+                           the lifecycle changes behind a menu — studentLifecycleModal already offers
+                           exactly those four, labelled and described. Matches the invoices table. -->
+                      <button class="btn btn-ghost !p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg" aria-label="Edit ${s.name}" title="Edit student details" onclick="event.stopPropagation(); editStudent('${s.id}')">${icon('edit','w-4 h-4')}</button>
+                      <button class="btn btn-ghost !p-1.5 text-slate-500 hover:text-slate-700 rounded-lg" aria-label="More actions for ${s.name}" title="Promote, transfer, suspend or withdraw" onclick="event.stopPropagation(); studentLifecycleModal('${s.id}')">${icon('more','w-4 h-4')}</button>
                     </td>
                   </tr>
                 `;
@@ -3179,10 +3690,10 @@ function viewStudent(id, activeTab) {
         </div>
       </div>
       <div class="text-right flex-shrink-0">
-        <div class="text-xs text-slate-400 mb-1">Att.</div>
+        <div class="text-xs text-slate-500 mb-1">Att.</div>
         <div class="text-2xl font-extrabold ${attRate >= 85 ? 'text-brand-700' : 'text-rose-600'}">${attRate}%</div>
-        <div class="text-xs text-slate-400 mt-2">Avg</div>
-        <div class="text-2xl font-extrabold text-blue-700">${avg}%</div>
+        <div class="text-xs text-slate-500 mt-2">Avg</div>
+        <div class="text-2xl font-extrabold text-brand-700">${avg}%</div>
       </div>
     </div>`;
 
@@ -3198,7 +3709,7 @@ function viewStudent(id, activeTab) {
         ? '<div class="font-bold text-slate-900 text-sm">Extracurricular Activities</div><div class="text-xs text-slate-500">Past participation</div>'
         : '<div class="font-bold text-slate-900 text-sm">Extracurricular Activities</div><div class="text-xs text-slate-500">Toggle — fees update invoice instantly</div>';
       const invoiceDiv = !isAlumni && actTotal
-        ? '<div class="text-right"><div class="text-xs text-slate-400">On invoice</div><div class="font-extrabold text-brand-700">' + money(actTotal) + '/term</div></div>'
+        ? '<div class="text-right"><div class="text-xs text-slate-500">On invoice</div><div class="font-extrabold text-brand-700">' + money(actTotal) + '/term</div></div>'
         : '';
       const list = isAlumni
         ? (allActs.filter(a => enrolledIds.includes(a.id)).map(a =>
@@ -3206,7 +3717,7 @@ function viewStudent(id, activeTab) {
             + '<span class="text-xl flex-shrink-0">' + a.icon + '</span>'
             + '<div class="flex-1 min-w-0"><div class="font-semibold text-sm">' + a.name + '</div></div>'
             + '<span class="badge badge-success text-xs">Participated</span></div>'
-          ).join('') || '<div class="text-sm text-slate-400 py-2">No activities on record.</div>')
+          ).join('') || '<div class="text-sm text-slate-500 py-2">No activities on record.</div>')
         : allActs.map(a => {
             const isEnrolled = enrolledIds.includes(a.id);
             return '<div class="flex items-center gap-3 p-2.5 rounded-xl border-2 ' + (isEnrolled ? 'border-brand-300 bg-brand-50' : 'border-slate-100 hover:border-slate-300') + '">'
@@ -3228,22 +3739,22 @@ function viewStudent(id, activeTab) {
         <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Admission Date</div><div>${fdate(s.admissionDate, { long: true })}</div></div>
         <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Admission Type</div><div>${s.admissionType === 'transfer' ? 'Transfer-in' : 'New Admission'}</div></div>
         ${s.admissionType === 'transfer' && s.transferFromSchool ? `
-        <div class="col-span-2 bg-blue-50 border border-blue-200 rounded-xl p-3">
-          <div class="text-xs text-blue-700 font-semibold uppercase mb-1">Transfer Origin</div>
+        <div class="col-span-2 bg-brand-50 rounded-xl p-3">
+          <div class="text-xs text-brand-700 font-semibold uppercase mb-1">Transfer Origin</div>
           <div class="font-semibold text-slate-900">${s.transferFromSchool}</div>
           ${s.transferFromClass ? `<div class="text-xs text-slate-500">Last class: ${s.transferFromClass}</div>` : ''}
           ${s.transferInDate ? `<div class="text-xs text-slate-500">Transfer date: ${fdate(s.transferInDate, { long: true })}</div>` : ''}
           ${s.transferInReason ? `<div class="text-xs text-slate-500 mt-0.5">Reason: ${s.transferInReason}</div>` : ''}
         </div>` : ''}
         ${s.status === 'transferred' ? `
-        <div class="col-span-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
+        <div class="col-span-2 bg-amber-50 rounded-xl p-3">
           <div class="text-xs text-amber-700 font-semibold uppercase mb-1">Transferred Out</div>
           <div class="font-semibold text-slate-900">${s.transferDest || '—'}</div>
           ${s.transferReason ? `<div class="text-xs text-slate-500">${s.transferReason}</div>` : ''}
           ${s.transferredAt ? `<div class="text-xs text-slate-500">Date: ${fdate(s.transferredAt, { long: true })}</div>` : ''}
         </div>` : ''}
         ${s.status === 'withdrawn' ? `
-        <div class="col-span-2 bg-rose-50 border border-rose-200 rounded-xl p-3">
+        <div class="col-span-2 bg-rose-50 rounded-xl p-3">
           <div class="text-xs text-rose-700 font-semibold uppercase mb-1">Withdrawn</div>
           <div class="font-semibold text-slate-900">${s.withdrawReason || '—'}</div>
           ${s.withdrawnAt ? `<div class="text-xs text-slate-500">Date: ${fdate(s.withdrawnAt, { long: true })}</div>` : ''}
@@ -3256,7 +3767,7 @@ function viewStudent(id, activeTab) {
           ${presentDocs.map(d => `<a href="${docs[d.key].data}" download="${docs[d.key].name || d.key}" class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg hover:bg-slate-100 text-sm">
             ${icon('paperclip','w-4 h-4 text-brand-600')}
             <div class="flex-1 min-w-0"><div class="font-semibold truncate">${d.label}</div><div class="text-xs text-slate-500 truncate">${docs[d.key].name || 'view'}</div></div>
-            ${icon('download','w-3.5 h-3.5 text-slate-400')}
+            ${icon('download','w-3.5 h-3.5 text-slate-500')}
           </a>`).join('')}
         </div>
       </div>` : ''}
@@ -3267,7 +3778,7 @@ function viewStudent(id, activeTab) {
 
   // ─── TAB: Transcript ─────────────────────────────────────────────────────────
   const transcriptTab = () => {
-    if (!results.length) return `<div class="text-center text-slate-400 py-8">No results recorded yet.</div>`;
+    if (!results.length) return `<div class="text-center text-slate-500 py-8">No results recorded yet.</div>`;
     const terms = [...new Set(results.map(r => r.term))].sort((a,b) => b.localeCompare(a));
     const _es = DB.settings().examStructure || {};
     return terms.map(term => {
@@ -3284,7 +3795,7 @@ function viewStudent(id, activeTab) {
         </div>
         <div class="card overflow-hidden">
           <table class="tbl text-sm">
-            <thead><tr><th>Subject</th><th class="text-center">${ca1L}</th><th class="text-center">${ca2L}</th><th class="text-center">${exL}</th><th class="text-center">Total</th><th class="text-center">Grade</th><th class="text-center">Status</th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Subject</th><th scope="col" class="text-center">${ca1L}</th><th scope="col" class="text-center">${ca2L}</th><th scope="col" class="text-center">${exL}</th><th scope="col" class="text-center">Total</th><th scope="col" class="text-center">Grade</th><th scope="col" class="text-center">Status</th></tr></thead>
             <tbody>
               ${termResults.map(r => {
                 const sub = subjects.find(x => x.id === r.subjectId);
@@ -3312,7 +3823,7 @@ function viewStudent(id, activeTab) {
     const present = recs.filter(r => r.status === 'present').length;
     const late    = recs.filter(r => r.status === 'late').length;
     const absent  = recs.filter(r => r.status === 'absent').length;
-    if (!recs.length) return `<div class="text-center text-slate-400 py-8">No attendance records yet.</div>`;
+    if (!recs.length) return `<div class="text-center text-slate-500 py-8">No attendance records yet.</div>`;
     return `
       <div class="grid grid-cols-3 gap-3 mb-4">
         <div class="bg-brand-50 rounded-xl p-3 text-center"><div class="text-xs text-brand-700 font-semibold uppercase">Present</div><div class="text-2xl font-bold text-brand-900">${present}</div></div>
@@ -3321,7 +3832,7 @@ function viewStudent(id, activeTab) {
       </div>
       <div class="card overflow-hidden">
         <table class="tbl text-sm">
-          <thead><tr><th>Date</th><th class="text-center">Status</th><th>Recorded By</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Date</th><th scope="col" class="text-center">Status</th><th scope="col">Recorded By</th></tr></thead>
           <tbody>
             ${recs.slice(0, 60).map(r => {
               const tch = DB.find('teachers', r.recordedBy);
@@ -3333,7 +3844,7 @@ function viewStudent(id, activeTab) {
             }).join('')}
           </tbody>
         </table>
-        ${recs.length > 60 ? `<div class="text-center text-xs text-slate-400 py-2">Showing last 60 of ${recs.length} records</div>` : ''}
+        ${recs.length > 60 ? `<div class="text-center text-xs text-slate-500 py-2">Showing last 60 of ${recs.length} records</div>` : ''}
       </div>`;
   };
 
@@ -3344,7 +3855,7 @@ function viewStudent(id, activeTab) {
     const totalOwed = allInv.reduce((sum,i) => sum + i.total, 0);
     const totalPaid = allInv.reduce((sum,i) => sum + i.paid, 0);
     const totalBal  = totalOwed - totalPaid;
-    if (!allInv.length) return `<div class="text-center text-slate-400 py-8">No invoices found.</div>`;
+    if (!allInv.length) return `<div class="text-center text-slate-500 py-8">No invoices found.</div>`;
     return `
       <div class="grid grid-cols-3 gap-3 mb-4">
         <div class="bg-slate-50 rounded-xl p-3 text-center"><div class="text-xs text-slate-500 font-semibold uppercase">Total Billed</div><div class="text-lg font-bold text-slate-900">${money(totalOwed)}</div></div>
@@ -3355,7 +3866,7 @@ function viewStudent(id, activeTab) {
         ${allInv.map(i => `<div class="card p-3">
           <div class="flex items-center justify-between mb-2">
             <div class="font-semibold text-slate-900">${i.term}</div>
-            <div class="flex items-center gap-2">${statusBadge(i.status)}<span class="text-xs text-slate-400">${fdate(i.createdAt, { short: true })}</span></div>
+            <div class="flex items-center gap-2">${statusBadge(i.status)}<span class="text-xs text-slate-500">${fdate(i.createdAt, { short: true })}</span></div>
           </div>
           <div class="space-y-1">
             ${(i.lineItems || []).map(l => `<div class="flex justify-between text-xs text-slate-600"><span>${l.name}</span><span class="font-mono">${money(l.amount)}</span></div>`).join('')}
@@ -3368,7 +3879,7 @@ function viewStudent(id, activeTab) {
       ${allTxns.length ? `<div class="card overflow-hidden">
         <div class="px-4 py-2 border-b border-slate-100 font-semibold text-sm">Payment History</div>
         <table class="tbl text-xs">
-          <thead><tr><th>Date</th><th>Method</th><th class="text-right">Amount</th><th>Reference</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Date</th><th scope="col">Method</th><th scope="col" class="text-right">Amount</th><th scope="col">Reference</th></tr></thead>
           <tbody>
             ${allTxns.map(t => `<tr>
               <td>${fdate(t.timestamp, { short: true })}</td>
@@ -3409,10 +3920,10 @@ function viewStudent(id, activeTab) {
       </div>` : ''}
 
       <div class="font-bold text-slate-900 text-sm mb-2">Conduct Record</div>
-      ${discRecs.length === 0 ? `<div class="text-slate-400 text-sm py-4 text-center">No conduct records yet.</div>` : `
+      ${discRecs.length === 0 ? `<div class="text-slate-500 text-sm py-4 text-center">No conduct records yet.</div>` : `
         <div class="card overflow-hidden">
           <table class="tbl text-sm">
-            <thead><tr><th>Date</th><th>Type</th><th>Note</th><th class="text-center">Points</th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col">Note</th><th scope="col" class="text-center">Points</th></tr></thead>
             <tbody>
               ${discRecs.map(d => `<tr>
                 <td class="text-xs text-slate-500">${fdate(d.date, { short: true })}</td>
@@ -3433,8 +3944,8 @@ function viewStudent(id, activeTab) {
         <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Blood Group</div><div class="font-bold">${s.bloodGroup || '—'}</div></div>
         <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Allergies</div><div class="${s.allergies && s.allergies !== 'None' ? 'text-rose-700 font-semibold' : ''}">${s.allergies || 'None stated'}</div></div>
       </div>
-      <div class="font-bold text-slate-900 text-sm mb-2">Sickbay Visits <span class="text-slate-400 font-normal">(${visits.length})</span></div>
-      ${visits.length === 0 ? `<div class="text-slate-400 text-sm py-4 text-center">No sickbay visits recorded.</div>` : `
+      <div class="font-bold text-slate-900 text-sm mb-2">Sickbay Visits <span class="text-slate-500 font-normal">(${visits.length})</span></div>
+      ${visits.length === 0 ? `<div class="text-slate-500 text-sm py-4 text-center">No sickbay visits recorded.</div>` : `
         <div class="space-y-2">
           ${visits.map(v => `<div class="card p-3 text-sm">
             <div class="flex items-start justify-between gap-2">
@@ -3459,17 +3970,17 @@ function viewStudent(id, activeTab) {
       issued_refund: 'Refund issued'
     };
     const ACTION_COLOR = {
-      student_login: 'bg-blue-100 text-blue-700', added_student: 'bg-emerald-100 text-emerald-700',
-      updated_student: 'bg-sky-100 text-sky-700', promoted_student: 'bg-violet-100 text-violet-700',
-      bulk_promoted: 'bg-violet-100 text-violet-700', bulk_graduated: 'bg-amber-100 text-amber-700',
-      graduated_student: 'bg-amber-100 text-amber-700', transferred_student: 'bg-orange-100 text-orange-700',
+      student_login: 'bg-brand-100 text-brand-700', added_student: 'bg-emerald-100 text-emerald-700',
+      updated_student: 'bg-brand-100 text-brand-700', promoted_student: 'bg-brand-100 text-brand-700',
+      bulk_promoted: 'bg-brand-100 text-brand-700', bulk_graduated: 'bg-amber-100 text-amber-700',
+      graduated_student: 'bg-amber-100 text-amber-700', transferred_student: 'bg-amber-100 text-amber-700',
       withdrew_student: 'bg-red-100 text-red-700', suspended_student: 'bg-red-100 text-red-700',
-      changed_status: 'bg-slate-100 text-slate-600', deferred_promotion: 'bg-orange-100 text-orange-700',
-      issued_refund: 'bg-pink-100 text-pink-700'
+      changed_status: 'bg-slate-100 text-slate-600', deferred_promotion: 'bg-amber-100 text-amber-700',
+      issued_refund: 'bg-brand-100 text-brand-700'
     };
     const logs = DB.query('auditLog', l => l.schoolId === s.schoolId && (l.actor === s.id || (l.target && l.target.includes(s.name))))
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-    if (!logs.length) return `<div class="py-8 text-center text-slate-400 text-sm">No history recorded for this student yet.</div>`;
+    if (!logs.length) return `<div class="py-8 text-center text-slate-500 text-sm">No history recorded for this student yet.</div>`;
     const actorMap = {};
     DB.get('teachers').forEach(t => { actorMap[t.id] = t.name; });
     return `
@@ -3486,7 +3997,7 @@ function viewStudent(id, activeTab) {
                 <span class="text-xs text-slate-500">${fdate(l.timestamp, { time: true })}</span>
               </div>
               ${l.target && l.target !== s.name ? `<div class="text-sm text-slate-700 mt-0.5">${l.target}</div>` : ''}
-              <div class="text-xs text-slate-400 mt-0.5">by ${actor}</div>
+              <div class="text-xs text-slate-500 mt-0.5">by ${actor}</div>
             </div>
           </div>`;
         }).join('')}
@@ -3535,12 +4046,12 @@ function printStudentID(studentId) {
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
     body { background: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
     .card { width: 86mm; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
-    .header { background: linear-gradient(135deg, #1e3a5f, #2563eb); color: white; padding: 16px; text-align: center; }
+    .header { background: linear-gradient(135deg, #1e3a5f, #081d33); color: white; padding: 16px; text-align: center; }
     .school-name { font-size: 13px; font-weight: bold; letter-spacing: 0.5px; }
     .school-sub { font-size: 9px; opacity: 0.8; margin-top: 2px; text-transform: uppercase; }
     .id-label { font-size: 10px; font-weight: bold; background: rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 8px; margin-top: 8px; display: inline-block; letter-spacing: 1px; }
     .body { padding: 16px; }
-    .avatar { width: 64px; height: 64px; border-radius: 50%; background: #dbeafe; color: #1d4ed8; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 12px; border: 3px solid #2563eb; }
+    .avatar { width: 64px; height: 64px; border-radius: 50%; background: #dbeafe; color: #1d4ed8; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 12px; border: 3px solid #081d33; }
     .name { font-size: 16px; font-weight: bold; color: #0f172a; text-align: center; }
     .class { font-size: 11px; color: #64748b; text-align: center; margin-top: 2px; }
     .adm { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px; font-family: monospace; }
@@ -3668,16 +4179,16 @@ function view_adm_activities() {
       ? emptyState({ title: 'No activities yet', body: 'Add clubs, sports and enrichment programmes to start tracking enrollment and revenue.', icon: 'check', action: `<button class="btn btn-primary" onclick="newActivityModal()">${icon('plus','w-4 h-4')} Add Activity</button>` })
       : `<div class="card overflow-hidden">
           <table class="tbl">
-            <thead>
+            <th scope="col"ead>
               <tr>
-                <th>Activity</th>
-                <th class="text-center">Enrolled</th>
-                <th class="text-right">Fee / Student</th>
-                <th class="text-right">Instructor Cost / Student</th>
-                <th class="text-right">Total Revenue</th>
-                <th class="text-right">Total Cost</th>
-                <th class="text-right">Net</th>
-                <th></th>
+                <th scope="col">Activity</th>
+                <th scope="col" class="text-center">Enrolled</th>
+                <th scope="col" class="text-right">Fee / Student</th>
+                <th scope="col" class="text-right">Instructor Cost / Student</th>
+                <th scope="col" class="text-right">Total Revenue</th>
+                <th scope="col" class="text-right">Total Cost</th>
+                <th scope="col" class="text-right">Net</th>
+                <th scope="col"></th>
               </tr>
             </thead>
             <tbody>
@@ -3687,7 +4198,7 @@ function view_adm_activities() {
                     <span class="text-xl">${a.icon || '📋'}</span>
                     <div>
                       <div class="font-semibold text-slate-900">${a.name}</div>
-                      ${a.description ? `<div class="text-xs text-slate-400 truncate max-w-xs">${a.description}</div>` : ''}
+                      ${a.description ? `<div class="text-xs text-slate-500 truncate max-w-xs">${a.description}</div>` : ''}
                     </div>
                   </div>
                 </td>
@@ -3724,15 +4235,15 @@ function newActivityModal() {
     title: 'New Activity',
     body: `<div class="space-y-3">
       <div class="grid grid-cols-4 gap-3">
-        <div><label class="input-label">Icon</label><input id="act_icon" class="input text-center text-xl" value="🏫" maxlength="2" /></div>
-        <div class="col-span-3"><label class="input-label">Activity Name *</label><input id="act_name" class="input" placeholder="e.g. Swimming, Debate Club, Ballet" /></div>
+        <div><label class="input-label" for="act_icon">Icon</label><input id="act_icon" class="input text-center text-xl" value="🏫" maxlength="2" /></div>
+        <div class="col-span-3"><label class="input-label" for="act_name">Activity Name *</label><input id="act_name" class="input" placeholder="e.g. Swimming, Debate Club, Ballet" /></div>
       </div>
-      <div><label class="input-label">Description</label><input id="act_desc" class="input" placeholder="Brief description of the activity" /></div>
+      <div><label class="input-label" for="act_desc">Description</label><input id="act_desc" class="input" placeholder="Brief description of the activity" /></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Student Fee (₦)</label><input id="act_price" type="number" class="input" placeholder="0" min="0" /></div>
-        <div><label class="input-label">Instructor Cost per Student (₦)</label><input id="act_cost" type="number" class="input" placeholder="0" min="0" /></div>
+        <div><label class="input-label" for="act_price">Student Fee (₦)</label><input id="act_price" type="number" class="input" placeholder="0" min="0" /></div>
+        <div><label class="input-label" for="act_cost">Instructor Cost per Student (₦)</label><input id="act_cost" type="number" class="input" placeholder="0" min="0" /></div>
       </div>
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
+      <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-800">
         ${icon('info','w-3.5 h-3.5 inline mr-1')} Net income per student = Fee − Instructor Cost. This drives the revenue report above.
       </div>
     </div>`,
@@ -3764,13 +4275,13 @@ function editActivityModal(id) {
     title: 'Edit Activity',
     body: `<div class="space-y-3">
       <div class="grid grid-cols-4 gap-3">
-        <div><label class="input-label">Icon</label><input id="eact_icon" class="input text-center text-xl" value="${a.icon || '📋'}" maxlength="2" /></div>
-        <div class="col-span-3"><label class="input-label">Activity Name *</label><input id="eact_name" class="input" value="${a.name}" /></div>
+        <div><label class="input-label" for="eact_icon">Icon</label><input id="eact_icon" class="input text-center text-xl" value="${a.icon || '📋'}" maxlength="2" /></div>
+        <div class="col-span-3"><label class="input-label" for="eact_name">Activity Name *</label><input id="eact_name" class="input" value="${a.name}" /></div>
       </div>
-      <div><label class="input-label">Description</label><input id="eact_desc" class="input" value="${a.description || ''}" /></div>
+      <div><label class="input-label" for="eact_desc">Description</label><input id="eact_desc" class="input" value="${a.description || ''}" /></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Student Fee (₦)</label><input id="eact_price" type="number" class="input" value="${a.price || 0}" min="0" /></div>
-        <div><label class="input-label">Instructor Cost per Student (₦)</label><input id="eact_cost" type="number" class="input" value="${a.instructorCost || 0}" min="0" /></div>
+        <div><label class="input-label" for="eact_price">Student Fee (₦)</label><input id="eact_price" type="number" class="input" value="${a.price || 0}" min="0" /></div>
+        <div><label class="input-label" for="eact_cost">Instructor Cost per Student (₦)</label><input id="eact_cost" type="number" class="input" value="${a.instructorCost || 0}" min="0" /></div>
       </div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -3797,7 +4308,7 @@ function deleteActivity(id) {
   const a = DB.find('activities', id);
   if (!a) return;
   const enrolled = DB.query('studentActivities', sa => sa.activityId === id).length;
-  confirm(`Delete "${a.name}"?${enrolled ? ` ${enrolled} student(s) are currently enrolled.` : ''}`, () => {
+  confirmDialog(`Delete "${a.name}"?${enrolled ? ` ${enrolled} student(s) are currently enrolled.` : ''}`, () => {
     DB.remove('activities', id);
     APP.render();
     toast('Activity deleted', 'info');
@@ -3846,55 +4357,55 @@ function addStudentModal(editingId) {
 
       <div class="grid sm:grid-cols-2 gap-3">
         <div>
-          <label class="input-label">Full Name *</label>
+          <label class="input-label" for="sf_name">Full Name *</label>
           <input id="sf_name" class="input" placeholder="e.g. Chiamaka Okafor" value="${existing ? existing.name.replace(/"/g, '&quot;') : ''}" />
         </div>
         <div>
-          <label class="input-label">Admission Number *</label>
+          <label class="input-label" for="sf_admno">Admission Number *</label>
           <input id="sf_admno" class="input" placeholder="auto-generated" value="${existing ? existing.admissionNo : autoAdmNo}" ${isEdit ? 'readonly' : ''} />
         </div>
         <div>
-          <label class="input-label">Date of Birth *</label>
+          <label class="input-label" for="sf_dob">Date of Birth *</label>
           <input id="sf_dob" type="date" class="input" value="${existing ? existing.dob : ''}" />
         </div>
         <div>
-          <label class="input-label">Gender *</label>
+          <label class="input-label" for="sf_gender">Gender *</label>
           <select id="sf_gender" class="input"><option value="M" ${existing && existing.gender === 'M' ? 'selected':''}>Male</option><option value="F" ${existing && existing.gender === 'F' ? 'selected':''}>Female</option></select>
         </div>
         <div>
-          <label class="input-label">Class *</label>
+          <label class="input-label" for="sf_class">Class *</label>
           <select id="sf_class" class="input">${classes.map(c => `<option value="${c.id}" ${existing && existing.classId === c.id ? 'selected':''}>${c.name}</option>`).join('')}</select>
         </div>
         <div>
-          <label class="input-label">Arm</label>
+          <label class="input-label" for="sf_arm">Arm</label>
           <select id="sf_arm" class="input">
             <option value="">— None —</option>
             ${DB.query('arms', a => a.schoolId === currentSchoolId()).map(a => `<option value="${a.id}" ${existing && existing.armId === a.id ? 'selected':''}>${a.name}</option>`).join('')}
           </select>
         </div>
         <div>
-          <label class="input-label">Session</label>
+          <label class="input-label" for="sf_session">Session</label>
           <select id="sf_session" class="input">
             ${DB.query('academicSessions', s => s.schoolId === currentSchoolId()).map(s => `<option value="${s.id}" ${(existing && existing.sessionId === s.id) || (!existing && s.current) ? 'selected':''}>${s.name}${s.current ? ' (current)' : ''}</option>`).join('')}
           </select>
         </div>
         <div>
-          <label class="input-label">Blood Group</label>
+          <label class="input-label" for="sf_blood">Blood Group</label>
           <select id="sf_blood" class="input">${bloodGroups.map(b => `<option ${existing && existing.bloodGroup === b ? 'selected':''}>${b}</option>`).join('')}</select>
         </div>
         <div>
-          <label class="input-label">House</label>
+          <label class="input-label" for="sf_house">House</label>
           <select id="sf_house" class="input">
             <option value="">— Auto-assign —</option>
             ${DB.query('houses', h => h.schoolId === currentSchoolId()).map(h => `<option value="${h.id}" ${existing && existing.houseId === h.id ? 'selected':''}>${h.name}</option>`).join('')}
           </select>
         </div>
         <div>
-          <label class="input-label">Allergies / Medical Notes</label>
+          <label class="input-label" for="sf_allergies">Allergies / Medical Notes</label>
           <input id="sf_allergies" class="input" placeholder="e.g. Peanut allergy, asthma — or 'None'" value="${existing ? (existing.allergies || '') : ''}" />
         </div>
         <div>
-          <label class="input-label">Fee Category</label>
+          <label class="input-label" for="sf_feeCat">Fee Category</label>
           <select id="sf_feeCat" class="input">
             <option value="standard" ${(!existing || existing.feeCategory === 'standard') ? 'selected':''}>Standard</option>
             <option value="sibling_discount" ${existing && existing.feeCategory === 'sibling_discount' ? 'selected':''}>Sibling Discount</option>
@@ -3904,7 +4415,7 @@ function addStudentModal(editingId) {
           </select>
         </div>
         <div class="sm:col-span-2">
-          <label class="input-label">Parent / Guardian *</label>
+          <label class="input-label" for="sf_parent">Parent / Guardian *</label>
           <select id="sf_parent" class="input">
             <option value="">— Select existing parent —</option>
             ${parents.map(p => `<option value="${p.id}" ${existing && existing.parentId === p.id ? 'selected':''}>${p.name} (${p.phone})</option>`).join('')}
@@ -3912,23 +4423,23 @@ function addStudentModal(editingId) {
           </select>
         </div>
         ${!isEdit ? `<div class="sm:col-span-2">
-          <label class="input-label">Admission Type</label>
+          <label class="input-label" for="sf_admType">Admission Type</label>
           <select id="sf_admType" class="input" onchange="toggleTransferFields(this.value)">
             <option value="new">New Admission</option>
             <option value="transfer">Transfer from another school</option>
           </select>
         </div>
-        <div id="sf_transferFields" class="sm:col-span-2 hidden space-y-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-          <div><label class="input-label">Previous School Name *</label><input id="sf_transferFrom" class="input" placeholder="e.g. Holy Trinity Primary School, Ikeja" /></div>
+        <div id="sf_transferFields" class="sm:col-span-2 hidden space-y-2 p-3 bg-brand-50 rounded-xl">
+          <div><label class="input-label" for="sf_transferFrom">Previous School Name *</label><input id="sf_transferFrom" class="input" placeholder="e.g. Holy Trinity Primary School, Ikeja" /></div>
           <div class="grid grid-cols-2 gap-2">
-            <div><label class="input-label">Last Class at Previous School</label><input id="sf_transferFromClass" class="input" placeholder="e.g. Primary 3" /></div>
-            <div><label class="input-label">Transfer Date</label><input id="sf_transferInDate" type="date" class="input" value="${today()}" /></div>
+            <div><label class="input-label" for="sf_transferFromClass">Last Class at Previous School</label><input id="sf_transferFromClass" class="input" placeholder="e.g. Primary 3" /></div>
+            <div><label class="input-label" for="sf_transferInDate">Transfer Date</label><input id="sf_transferInDate" type="date" class="input" value="${today()}" /></div>
           </div>
-          <div><label class="input-label">Reason for Transfer</label><input id="sf_transferInReason" class="input" placeholder="e.g. Family relocated to this area" /></div>
-          <div class="text-xs text-blue-700">${icon('info','w-3.5 h-3.5 inline mr-1')} A transfer record is created automatically. Upload the student's previous school result/leaving certificate in Documents below.</div>
+          <div><label class="input-label" for="sf_transferInReason">Reason for Transfer</label><input id="sf_transferInReason" class="input" placeholder="e.g. Family relocated to this area" /></div>
+          <div class="text-xs text-brand-700">${icon('info','w-3.5 h-3.5 inline mr-1')} A transfer record is created automatically. Upload the student's previous school result/leaving certificate in Documents below.</div>
         </div>` : ''}
         ${isEdit ? `<div class="sm:col-span-2">
-          <label class="input-label">Status</label>
+          <label class="input-label" for="sf_status">Status</label>
           <select id="sf_status" class="input">
             <option value="active" ${existing.status === 'active' ? 'selected':''}>Active</option>
             <option value="transferred" ${existing.status === 'transferred' ? 'selected':''}>Transferred</option>
@@ -3968,7 +4479,7 @@ function addStudentModal(editingId) {
                   <div class="font-semibold text-sm text-slate-900">${a.name}</div>
                   <div class="text-xs text-slate-500">${a.description || ''}</div>
                 </div>
-                <div class="text-sm font-semibold text-brand-700 font-mono flex-shrink-0">${money(a.price)}<span class="text-xs font-normal text-slate-400">/term</span></div>
+                <div class="text-sm font-semibold text-brand-700 font-mono flex-shrink-0">${money(a.price)}<span class="text-xs font-normal text-slate-500">/term</span></div>
               </label>`;
             }).join('')}
           </div>
@@ -3982,7 +4493,7 @@ function addStudentModal(editingId) {
             <div class="bg-white border border-slate-200 rounded-lg p-2.5">
               <div class="flex items-center justify-between mb-1">
                 <span class="text-xs font-semibold text-slate-700">${d.label}</span>
-                ${_studentDocsBuffer[d.key] ? `<span class="badge badge-success">${icon('check','w-3 h-3')} Uploaded</span>` : '<span class="text-xs text-slate-400">No file</span>'}
+                ${_studentDocsBuffer[d.key] ? `<span class="badge badge-success">${icon('check','w-3 h-3')} Uploaded</span>` : '<span class="text-xs text-slate-500">No file</span>'}
               </div>
               <input type="file" id="doc_${d.key}" accept="image/*,application/pdf" class="hidden" onchange="onStudentDocPick(event,'${d.key}')" />
               <div class="flex gap-1.5">
@@ -4235,7 +4746,7 @@ function showParentCredentialsModal(parent, student, invoice) {
           ${invoice ? `<div class="text-right"><div class="text-xs text-slate-500">Outstanding</div><div class="font-mono font-bold text-rose-700">${money(balance)}</div></div>` : ''}
         </div>
 
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+        <div class="bg-amber-50 rounded-xl p-3">
           <div class="text-xs uppercase font-semibold text-amber-800 mb-2">Parent Login Credentials</div>
           <div class="space-y-1 text-sm">
             <div class="flex justify-between"><span class="text-slate-600">Username (phone)</span><code class="font-mono bg-white px-2 py-0.5 rounded">${parent.credentials.username}</code></div>
@@ -4260,7 +4771,7 @@ function showParentCredentialsModal(parent, student, invoice) {
           </div>
         </div>
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-900">
           <strong>Demo helper:</strong> Click below to instantly switch to ${parent.name.split(' ').slice(-1)}'s account and see the first-login experience.
         </div>
       </div>
@@ -4309,7 +4820,7 @@ function studentLifecycleModal(studentId) {
             </div>
           </div>
 
-          <button class="w-full p-3 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 rounded-xl text-left transition" onclick="promoteStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-left transition" onclick="promoteStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-emerald-200 text-emerald-700 flex items-center justify-center">${icon('trending_up','w-5 h-5')}</div>
               <div class="flex-1">
@@ -4319,21 +4830,21 @@ function studentLifecycleModal(studentId) {
             </div>
           </button>
 
-          <button class="w-full p-3 bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-xl text-left transition" onclick="transferStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-brand-50 hover:bg-brand-100 rounded-xl text-left transition" onclick="transferStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-blue-200 text-blue-700 flex items-center justify-center">${icon('arrow_left','w-5 h-5')}</div>
+              <div class="w-10 h-10 rounded-xl bg-brand-200 text-brand-700 flex items-center justify-center">${icon('arrow_left','w-5 h-5')}</div>
               <div class="flex-1">
-                <div class="font-bold text-blue-900">Transfer to another school</div>
-                <div class="text-xs text-blue-700">Issue a transfer certificate and archive locally</div>
+                <div class="font-bold text-brand-900">Transfer to another school</div>
+                <div class="text-xs text-brand-700">Issue a transfer certificate and archive locally</div>
               </div>
             </div>
           </button>
 
           ${s.status === 'suspended' ? `
-          <div class="bg-amber-50 border-2 border-amber-200 rounded-xl p-3 text-sm text-amber-900 mb-1">
+          <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900 mb-1">
             ${icon('bell','w-4 h-4 inline mr-1')} Currently suspended${s.suspensionReason ? ` — <strong>${s.suspensionReason}</strong>` : ''}${s.suspensionResumeDate ? `. Expected return: ${fdate(s.suspensionResumeDate, { long: true })}` : ''}.
           </div>
-          <button class="w-full p-3 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 rounded-xl text-left transition" onclick="reinstateStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-left transition" onclick="reinstateStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-emerald-200 text-emerald-700 flex items-center justify-center">${icon('check','w-5 h-5')}</div>
               <div class="flex-1">
@@ -4342,7 +4853,7 @@ function studentLifecycleModal(studentId) {
               </div>
             </div>
           </button>` : `
-          <button class="w-full p-3 bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-xl text-left transition" onclick="suspendStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-amber-50 hover:bg-amber-100 rounded-xl text-left transition" onclick="suspendStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-amber-200 text-amber-700 flex items-center justify-center">${icon('bell','w-5 h-5')}</div>
               <div class="flex-1">
@@ -4352,7 +4863,7 @@ function studentLifecycleModal(studentId) {
             </div>
           </button>`}
 
-          <button class="w-full p-3 bg-rose-50 hover:bg-rose-100 border-2 border-rose-200 rounded-xl text-left transition" onclick="withdrawStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-rose-50 hover:bg-rose-100 rounded-xl text-left transition" onclick="withdrawStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-rose-200 text-rose-700 flex items-center justify-center">${icon('logout','w-5 h-5')}</div>
               <div class="flex-1">
@@ -4362,12 +4873,12 @@ function studentLifecycleModal(studentId) {
             </div>
           </button>
 
-          <button class="w-full p-3 bg-purple-50 hover:bg-purple-100 border-2 border-purple-200 rounded-xl text-left transition" onclick="graduateStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-brand-50 hover:bg-brand-100 rounded-xl text-left transition" onclick="graduateStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-purple-200 text-purple-700 flex items-center justify-center">${icon('check','w-5 h-5')}</div>
+              <div class="w-10 h-10 rounded-xl bg-brand-200 text-brand-700 flex items-center justify-center">${icon('check','w-5 h-5')}</div>
               <div class="flex-1">
-                <div class="font-bold text-purple-900">Graduate to Alumni</div>
-                <div class="text-xs text-purple-700">Mark as graduated, keep records accessible</div>
+                <div class="font-bold text-brand-900">Graduate to Alumni</div>
+                <div class="text-xs text-brand-700">Mark as graduated, keep records accessible</div>
               </div>
             </div>
           </button>
@@ -4385,21 +4896,21 @@ function bulkPromoteModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <strong>End-of-term promotion.</strong> Move every active student in a class to the next class in one click. The final class graduates students to alumni.
         </div>
         <div>
-          <label class="input-label">From Class</label>
+          <label class="input-label" for="bp_from">From Class</label>
           <select id="bp_from" class="input">${classes.map(c => `<option value="${c.id}">${c.name} (${COMPUTE.studentsByClass(c.id).length} students)</option>`).join('')}</select>
         </div>
         <div>
-          <label class="input-label">Move To</label>
+          <label class="input-label" for="bp_to">Move To</label>
           <select id="bp_to" class="input">
             <option value="__graduate__">🎓 Graduate to Alumni</option>
             ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
           </select>
         </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           Students with status other than "active" will be skipped. Students who transferred <em>into</em> this school and are now enrolled (status = active) will be included — this is correct behaviour. You can review who is included on the next step.
         </div>
       </div>
@@ -4485,7 +4996,7 @@ function promoteStudentModal(studentId) {
           Currently in <strong>${currentCls ? currentCls.name : '—'}</strong>. Promotion takes effect at the start of the new session.
         </div>
         <div>
-          <label class="input-label">Promote to</label>
+          <label class="input-label" for="promote_class">Promote to</label>
           <select id="promote_class" class="input">
             ${nextCls ? `<option value="${nextCls.id}">${nextCls.name} (recommended — next class)</option>` : ''}
             ${classes.filter(c => c.id !== s.classId && (!nextCls || c.id !== nextCls.id)).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
@@ -4494,10 +5005,10 @@ function promoteStudentModal(studentId) {
           </select>
         </div>
         <div>
-          <label class="input-label">Reason / Note (optional)</label>
+          <label class="input-label" for="promote_reason">Reason / Note (optional)</label>
           <input id="promote_reason" class="input" placeholder="e.g. End of 2024/25 session · satisfactory performance" />
         </div>
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Academic history is preserved. Fee structure for the new class applies from the next invoice cycle. Parent will be notified.
         </div>
       </div>
@@ -4544,9 +5055,9 @@ function transferStudentModal(studentId) {
     title: 'Transfer ' + s.name,
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Destination School</label><input id="tr_school" class="input" placeholder="e.g. Greenfield International School" /></div>
-        <div><label class="input-label">Reason</label><textarea id="tr_reason" rows="3" class="input" placeholder="e.g. Family relocation to Abuja"></textarea></div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div><label class="input-label" for="tr_school">Destination School</label><input id="tr_school" class="input" placeholder="e.g. Greenfield International School" /></div>
+        <div><label class="input-label" for="tr_reason">Reason</label><textarea id="tr_reason" rows="3" class="input" placeholder="e.g. Family relocation to Abuja"></textarea></div>
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           A transfer certificate will be issued. The student's record will be marked Transferred and archived locally.
         </div>
       </div>
@@ -4574,9 +5085,9 @@ function printTransferCertificate(studentId, destSchool, reason) {
   const s = DB.find('students', studentId);
   const cls = DB.find('classes', s.classId);
   const html = `
-    <div style="max-width:780px;margin:0 auto;font-family:system-ui;padding:32px;border:3px solid #047857">
-      <div style="text-align:center;border-bottom:2px solid #047857;padding-bottom:16px;margin-bottom:24px">
-        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
+    <div style="max-width:780px;margin:0 auto;font-family:system-ui;padding:32px;border:3px solid #00b386">
+      <div style="text-align:center;border-bottom:2px solid #00b386;padding-bottom:16px;margin-bottom:24px">
+        <h1 style="margin:0;color:#00b386">BRIGHT LIGHTS ACADEMY</h1>
         <p style="margin:4px 0;color:#666;font-size:13px">15 Liberty Estate, Lekki, Lagos · admin@brightlights.ng</p>
         <h2 style="margin:18px 0 4px;font-size:22px">TRANSFER CERTIFICATE</h2>
         <p style="color:#666">Certificate No: TC-${Date.now().toString(36).toUpperCase()}</p>
@@ -4600,10 +5111,10 @@ function withdrawStudentModal(studentId) {
     title: 'Withdraw ' + s.name,
     body: `
       <div class="space-y-3">
-        <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-900">
+        <div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-900">
           <strong>Warning:</strong> Withdrawal archives the student record. Fees, results, and attendance history are preserved but the student becomes inactive. This action is logged in the audit trail.
         </div>
-        <div><label class="input-label">Reason</label>
+        <div><label class="input-label" for="wd_reason">Reason</label>
           <select id="wd_reason" class="input">
             <option>Voluntary withdrawal by parent</option>
             <option>Non-payment of fees</option>
@@ -4612,7 +5123,7 @@ function withdrawStudentModal(studentId) {
             <option>Other</option>
           </select>
         </div>
-        <div><label class="input-label">Notes (optional)</label><textarea id="wd_notes" rows="2" class="input" placeholder="e.g. Will rejoin next term"></textarea></div>
+        <div><label class="input-label" for="wd_notes">Notes (optional)</label><textarea id="wd_notes" rows="2" class="input" placeholder="e.g. Will rejoin next term"></textarea></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -4653,7 +5164,7 @@ function offerRefundModal(studentId, suggested, totalPaid, usedPct) {
     title: 'Refund Eligible',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${s.name} has been withdrawn but their parent paid <strong>${money(totalPaid)}</strong> this term. Approximately <strong>${usedPct}%</strong> of the term has elapsed, so a pro-rata refund may be due.
         </div>
         <div class="bg-slate-50 rounded-xl p-3 space-y-2">
@@ -4662,12 +5173,12 @@ function offerRefundModal(studentId, suggested, totalPaid, usedPct) {
           <div class="flex justify-between text-base font-bold pt-2 border-t border-slate-200"><span>Suggested refund</span><span class="font-mono text-emerald-700">${money(suggested)}</span></div>
         </div>
         <div>
-          <label class="input-label">Refund amount</label>
+          <label class="input-label" for="rf_amount">Refund amount</label>
           <input id="rf_amount" type="number" class="input" value="${suggested}" />
-          <p class="text-xs text-slate-400 mt-1">Adjust as needed. Refund of ₦0 = no refund issued.</p>
+          <p class="text-xs text-slate-500 mt-1">Adjust as needed. Refund of ₦0 = no refund issued.</p>
         </div>
         <div>
-          <label class="input-label">Refund method</label>
+          <label class="input-label" for="rf_method">Refund method</label>
           <select id="rf_method" class="input">
             <option value="bank_transfer">Bank Transfer (manual)</option>
             <option value="paystack_refund">Paystack Reversal</option>
@@ -4721,14 +5232,14 @@ function graduateStudentModal(studentId) {
     title: 'Graduate ' + s.name + ' to Alumni',
     body: `
       <div class="space-y-3">
-        <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 text-sm text-purple-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${s.name} will be marked as Alumni. Their complete academic record is preserved and accessible from the Alumni page.
         </div>
-        <div><label class="input-label">Graduation Year</label><input id="gr_year" type="number" class="input" value="${new Date().getFullYear()}" /></div>
-        <div><label class="input-label">Final Class</label><input id="gr_class" class="input" value="${(DB.find('classes', s.classId) || {}).name || ''}" /></div>
-        <div><label class="input-label">Awards / Honours (optional)</label><textarea id="gr_awards" rows="2" class="input" placeholder="e.g. Valedictorian, Best in Mathematics"></textarea></div>
+        <div><label class="input-label" for="gr_year">Graduation Year</label><input id="gr_year" type="number" class="input" value="${new Date().getFullYear()}" /></div>
+        <div><label class="input-label" for="gr_class">Final Class</label><input id="gr_class" class="input" value="${(DB.find('classes', s.classId) || {}).name || ''}" /></div>
+        <div><label class="input-label" for="gr_awards">Awards / Honours (optional)</label><textarea id="gr_awards" rows="2" class="input" placeholder="e.g. Valedictorian, Best in Mathematics"></textarea></div>
         <div>
-          <label class="input-label">Examination Type</label>
+          <label class="input-label" for="gr_exam">Examination Type</label>
           <select id="gr_exam" class="input">
             <option value="">— Select if applicable —</option>
             <option value="WAEC">WAEC (West Africa Senior School Certificate)</option>
@@ -4740,11 +5251,11 @@ function graduateStudentModal(studentId) {
           </select>
         </div>
         <div>
-          <label class="input-label">Examination Index Number</label>
+          <label class="input-label" for="gr_index">Examination Index Number</label>
           <input id="gr_index" class="input" placeholder="e.g. 4240101001">
         </div>
         <div>
-          <label class="input-label">Leaving Certificate Issued?</label>
+          <label class="input-label" for="gr_cert">Leaving Certificate Issued?</label>
           <select id="gr_cert" class="input">
             <option value="yes">Yes — certificate issued</option>
             <option value="no">No — pending</option>
@@ -4779,27 +5290,27 @@ function suspendStudentModal(studentId) {
     title: 'Suspend ' + s.name,
     body: `
       <div class="space-y-3">
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           Suspension temporarily removes the student from school. Their records and history are fully preserved. The parent is notified immediately. You can reinstate at any time.
         </div>
         <div>
-          <label class="input-label">Reason for Suspension</label>
+          <label class="input-label" for="susp_reason">Reason for Suspension</label>
           <select id="susp_reason" class="input">
             ${(DB.settings().disciplineReasons || ['Fighting / Physical Violence','Gross Insubordination','Bullying or Harassment','Damage to School Property','Academic Dishonesty / Exam Malpractice','Possession of Prohibited Item','Non-payment of fees','Persistent Unexplained Absences','Pending Disciplinary Investigation','Other']).map(r => `<option>${r}</option>`).join('')}
           </select>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Duration (school days)</label>
+            <label class="input-label" for="susp_days">Duration (school days)</label>
             <input id="susp_days" type="number" class="input" min="1" max="90" value="3" />
           </div>
           <div>
-            <label class="input-label">Expected Return Date</label>
+            <label class="input-label" for="susp_resume">Expected Return Date</label>
             <input id="susp_resume" type="date" class="input" value="${daysAhead(3).split('T')[0]}" />
           </div>
         </div>
         <div>
-          <label class="input-label">Details / Notes (optional)</label>
+          <label class="input-label" for="susp_notes">Details / Notes (optional)</label>
           <textarea id="susp_notes" rows="2" class="input" placeholder="e.g. Incident occurred during lunch break on 14th June. Both parents informed verbally."></textarea>
         </div>
         <label class="flex items-center gap-2 cursor-pointer">
@@ -4856,11 +5367,11 @@ function reinstateStudentModal(studentId) {
     title: 'Reinstate ' + s.name,
     body: `
       <div class="space-y-3">
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        <div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           ${s.name} is currently suspended${s.suspensionReason ? ` for <strong>${s.suspensionReason}</strong>` : ''}. Reinstating restores their active status and allows them to resume school activities.
         </div>
         <div>
-          <label class="input-label">Reinstatement Note (optional)</label>
+          <label class="input-label" for="ri_notes">Reinstatement Note (optional)</label>
           <textarea id="ri_notes" rows="2" class="input" placeholder="e.g. Student and parents appeared before the disciplinary committee. Matter resolved."></textarea>
         </div>
         <label class="flex items-center gap-2 cursor-pointer">
@@ -4944,9 +5455,9 @@ function view_adm_alumni() {
       icon: 'students'
     }) : `
       <div class="flex gap-3 mb-4 flex-wrap">
-        <div class="bg-purple-50 border border-purple-200 rounded-xl px-4 py-2 text-sm text-purple-900 font-semibold">${icon('students','w-4 h-4 inline-block mr-1')} ${totalAlumni} Total Alumni</div>
-        <div class="bg-green-50 border border-green-200 rounded-xl px-4 py-2 text-sm text-green-900 font-semibold">${icon('check','w-4 h-4 inline-block mr-1')} ${thisYearGrads} Graduated ${thisYear}</div>
-        <div class="bg-sky-50 border border-sky-200 rounded-xl px-4 py-2 text-sm text-sky-900 font-semibold">${icon('edit','w-4 h-4 inline-block mr-1')} ${withPostInfo} With Post-Grad Info</div>
+        <div class="bg-brand-50 rounded-xl px-4 py-2 text-sm text-brand-900 font-semibold">${icon('students','w-4 h-4 inline-block mr-1')} ${totalAlumni} Total Alumni</div>
+        <div class="bg-emerald-50 rounded-xl px-4 py-2 text-sm text-emerald-900 font-semibold">${icon('check','w-4 h-4 inline-block mr-1')} ${thisYearGrads} Graduated ${thisYear}</div>
+        <div class="bg-brand-50 rounded-xl px-4 py-2 text-sm text-brand-900 font-semibold">${icon('edit','w-4 h-4 inline-block mr-1')} ${withPostInfo} With Post-Grad Info</div>
       </div>
       <input id="alumni_search" class="input mb-3" placeholder="Search by name or admission number..."
         oninput="APP.params.alumniSearch = this.value; APP.render()"
@@ -4962,13 +5473,13 @@ function view_adm_alumni() {
           const hasPostInfo = a.currentInstitution || a.alumniEmail || a.alumniPhone;
           const postInfoHtml = hasPostInfo
             ? '<div class="mt-2 space-y-1 text-xs text-slate-700">'
-              + (a.currentInstitution ? `<div>${icon('students','w-3 h-3 inline-block mr-1 text-purple-500')} ${a.currentInstitution}${a.currentCourse ? ' — ' + a.currentCourse : ''}</div>` : '')
-              + (a.alumniEmail ? `<div>${icon('edit','w-3 h-3 inline-block mr-1 text-sky-500')} ${a.alumniEmail}</div>` : '')
-              + (a.alumniPhone ? `<div>${icon('phone','w-3 h-3 inline-block mr-1 text-green-500')} ${a.alumniPhone}</div>` : '')
+              + (a.currentInstitution ? `<div>${icon('students','w-3 h-3 inline-block mr-1 text-brand-500')} ${a.currentInstitution}${a.currentCourse ? ' — ' + a.currentCourse : ''}</div>` : '')
+              + (a.alumniEmail ? `<div>${icon('edit','w-3 h-3 inline-block mr-1 text-brand-500')} ${a.alumniEmail}</div>` : '')
+              + (a.alumniPhone ? `<div>${icon('phone','w-3 h-3 inline-block mr-1 text-emerald-500')} ${a.alumniPhone}</div>` : '')
               + '</div>'
-            : '<div class="mt-2 text-xs text-slate-400 italic">No post-graduation info</div>';
+            : '<div class="mt-2 text-xs text-slate-500 italic">No post-graduation info</div>';
           const examRecs = DB.query('examResults', r => r.studentId === a.id);
-          return '<div class="card p-4">'
+          return '<div class="card p-5">'
             + '<div class="flex items-center gap-3 mb-3">'
             + avatar(a, 'lg')
             + '<div class="flex-1 min-w-0"><div class="font-bold truncate">' + a.name + '</div>'
@@ -4978,7 +5489,7 @@ function view_adm_alumni() {
             + '<div><span class="text-slate-500">Final class:</span> <strong>' + resolvedClass + '</strong></div>'
             + '<div><span class="text-slate-500">Admission:</span> <code class="text-xs">' + a.admissionNo + '</code></div>'
             + (a.examType ? '<div><span class="text-slate-500">Exam:</span> <strong>' + a.examType + '</strong>' + (a.examIndex ? ' · <code class="text-xs">' + a.examIndex + '</code>' : '') + (examRecs.length ? ` <span class="badge badge-info ml-1">${examRecs.length} result${examRecs.length > 1 ? 's' : ''}</span>` : '') + '</div>' : '')
-            + (a.awards ? '<div class="bg-purple-50 rounded-lg p-2 text-xs text-purple-900 mt-2"><strong>Awards:</strong> ' + a.awards + '</div>' : '')
+            + (a.awards ? '<div class="bg-brand-50 rounded-lg p-2 text-xs text-brand-900 mt-2"><strong>Awards:</strong> ' + a.awards + '</div>' : '')
             + postInfoHtml
             + '</div>'
             + '<div class="flex flex-wrap gap-2 mt-3">'
@@ -5007,14 +5518,14 @@ function _renderTransfersOut(transfersOut, schoolId) {
         <button class="btn btn-secondary text-sm" onclick="exportLeaversCSV()">${icon('download','w-4 h-4')} Export CSV</button>
       </div>
       <table class="tbl">
-        <thead><tr><th>Student</th><th>Class</th><th>Destination School</th><th>Reason</th><th>Transfer Date</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Destination School</th><th scope="col">Reason</th><th scope="col">Transfer Date</th></tr></thead>
         <tbody>
           ${transfersOut.length === 0
-            ? `<tr><td colspan="5" class="text-center text-slate-400 py-8">No transfer-out students recorded yet</td></tr>`
+            ? `<tr><td colspan="5" class="text-center text-slate-500 py-8">No transfer-out students recorded yet</td></tr>`
             : transfersOut.map(s => {
                 const cls = DB.find('classes', s.classId);
                 return `<tr>
-                  <td><div class="flex items-center gap-2">${avatar(s,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-400">${s.admissionNo||''}</div></div></div></td>
+                  <td><div class="flex items-center gap-2">${avatar(s,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-500">${s.admissionNo||''}</div></div></div></td>
                   <td class="text-sm">${cls?cls.name:'—'}</td>
                   <td class="text-sm">${s.transferDest||'—'}</td>
                   <td class="text-sm text-slate-500">${s.transferReason||'—'}</td>
@@ -5040,7 +5551,7 @@ function viewAlumniRecord(alumniId, activeTab) {
   // ── Transcript ──────────────────────────────────────────────────────────────
   let transcriptHtml;
   if (!results.length) {
-    transcriptHtml = '<div class="text-center text-slate-400 py-8 text-sm">No result records on file.</div>';
+    transcriptHtml = '<div class="text-center text-slate-500 py-8 text-sm">No result records on file.</div>';
   } else {
     const _es = DB.settings().examStructure || {};
     const terms = [...new Set(results.map(r => r.term))].sort((x, y) => x.localeCompare(y));
@@ -5073,7 +5584,7 @@ function viewAlumniRecord(alumniId, activeTab) {
         + '<div class="font-bold text-slate-900">' + term + '</div>'
         + '<div class="text-sm text-slate-500">Avg: <strong class="' + (avg >= 60 ? 'text-brand-700' : 'text-rose-600') + '">' + avg + '%</strong></div>'
         + '</div><div class="card overflow-hidden">'
-        + '<table class="tbl text-sm"><thead><tr><th>Subject</th><th class="text-center">' + ca1L + '</th><th class="text-center">' + ca2L + '</th><th class="text-center">' + exL + '</th><th class="text-center">Total</th><th class="text-center">Grade</th></tr></thead>'
+        + '<table class="tbl text-sm"><th scope="col"ead><tr><th scope="col">Subject</th><th scope="col" class="text-center">' + ca1L + '</th><th scope="col" class="text-center">' + ca2L + '</th><th scope="col" class="text-center">' + exL + '</th><th scope="col" class="text-center">Total</th><th scope="col" class="text-center">Grade</th></tr></thead>'
         + '<tbody>' + rows + '</tbody></table></div></div>';
     }).join('');
   }
@@ -5085,7 +5596,7 @@ function viewAlumniRecord(alumniId, activeTab) {
   const absent  = attRecs.filter(r => r.status === 'absent').length;
   const attPct  = attRecs.length ? Math.round(((present + late) / attRecs.length) * 100) : 0;
   if (!attRecs.length) {
-    attendanceHtml = '<div class="text-center text-slate-400 py-8 text-sm">No attendance records on file.</div>';
+    attendanceHtml = '<div class="text-center text-slate-500 py-8 text-sm">No attendance records on file.</div>';
   } else {
     attendanceHtml = '<div class="grid grid-cols-4 gap-3">'
       + '<div class="text-center p-3 bg-brand-50 rounded-xl"><div class="text-2xl font-bold text-brand-900">' + present + '</div><div class="text-xs text-brand-700 font-semibold uppercase">Present</div></div>'
@@ -5100,7 +5611,7 @@ function viewAlumniRecord(alumniId, activeTab) {
   const allActivities = DB.query('activities', act => act.schoolId === schoolId);
   let activitiesHtml;
   if (!enrollments.length) {
-    activitiesHtml = '<div class="text-center text-slate-400 py-8 text-sm">No extracurricular activities on record.</div>';
+    activitiesHtml = '<div class="text-center text-slate-500 py-8 text-sm">No extracurricular activities on record.</div>';
   } else {
     activitiesHtml = '<div class="space-y-2">' + enrollments.map(sa => {
       const act = allActivities.find(x => x.id === sa.activityId);
@@ -5108,7 +5619,7 @@ function viewAlumniRecord(alumniId, activeTab) {
         ? '<div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50">'
           + '<span class="text-xl">' + act.icon + '</span>'
           + '<div class="flex-1 min-w-0"><div class="font-semibold text-sm">' + act.name + '</div>'
-          + '<div class="text-xs text-slate-400">' + (sa.term || '') + '</div></div>'
+          + '<div class="text-xs text-slate-500">' + (sa.term || '') + '</div></div>'
           + '<span class="badge badge-success">Participated</span></div>'
         : '';
     }).join('') + '</div>';
@@ -5118,20 +5629,20 @@ function viewAlumniRecord(alumniId, activeTab) {
   const examRecs = DB.query('examResults', r => r.studentId === alumniId).sort((x, y) => (y.year||'').localeCompare(x.year||''));
   const EXAM_GRADES = ['A1','B2','B3','C4','C5','C6','D7','E8','F9'];
   const examHtml = examRecs.length === 0
-    ? '<div class="text-center text-slate-400 py-8 text-sm">No external exam results on file.</div>'
+    ? '<div class="text-center text-slate-500 py-8 text-sm">No external exam results on file.</div>'
       + '<button class="btn btn-primary mx-auto block mt-3" onclick="adm_addExamResultsModal(\'' + alumniId + '\')">' + icon('plus','w-4 h-4 inline') + ' Add Exam Results</button>'
     : examRecs.map(rec => {
         const passed = (rec.results || []).filter(r => !['D7','E8','F9'].includes(r.grade)).length;
         return '<div class="mb-4">'
           + '<div class="flex items-center justify-between mb-2">'
           + '<div><div class="font-bold text-slate-900">' + rec.examType + ' ' + rec.year + '</div>'
-          + (rec.candidateNo ? '<div class="text-xs text-slate-400">Candidate No: ' + rec.candidateNo + '</div>' : '')
+          + (rec.candidateNo ? '<div class="text-xs text-slate-500">Candidate No: ' + rec.candidateNo + '</div>' : '')
           + '</div>'
           + '<div class="text-right"><span class="badge badge-success text-xs">' + passed + ' credit' + (passed !== 1 ? 's' : '') + '</span></div>'
           + '</div>'
-          + '<div class="card overflow-hidden"><table class="tbl text-sm"><thead><tr><th>Subject</th><th class="text-center">Grade</th><th class="text-center">Remark</th></tr></thead><tbody>'
+          + '<div class="card overflow-hidden"><table class="tbl text-sm"><th scope="col"ead><tr><th scope="col">Subject</th><th scope="col" class="text-center">Grade</th><th scope="col" class="text-center">Remark</th></tr></thead><tbody>'
           + (rec.results || []).map(r => {
-              const gradeColor = ['A1','B2','B3'].includes(r.grade) ? 'text-emerald-700' : ['C4','C5','C6'].includes(r.grade) ? 'text-blue-700' : 'text-red-700';
+              const gradeColor = ['A1','B2','B3'].includes(r.grade) ? 'text-emerald-700' : ['C4','C5','C6'].includes(r.grade) ? 'text-brand-700' : 'text-red-700';
               const remark = ['A1'].includes(r.grade) ? 'Excellent' : ['B2','B3'].includes(r.grade) ? 'Very Good' : ['C4','C5','C6'].includes(r.grade) ? 'Credit' : ['D7'].includes(r.grade) ? 'Pass' : 'Fail';
               return '<tr><td class="font-medium">' + r.subject + '</td>'
                 + '<td class="text-center font-bold ' + gradeColor + '">' + r.grade + '</td>'
@@ -5163,8 +5674,8 @@ function viewAlumniRecord(alumniId, activeTab) {
         <div class="flex-1 min-w-0">
           <div class="font-bold text-xl text-slate-900">${a.name}</div>
           <div class="text-sm text-slate-500">Class of ${a.graduationYear || '—'} · ${resolvedFinalClass}</div>
-          <div class="text-xs text-slate-400 mt-0.5">Adm No: ${a.admissionNo}${a.examType ? ' · ' + a.examType + (a.examIndex ? ' ' + a.examIndex : '') : ''}</div>
-          ${a.awards ? '<div class="mt-1 inline-block bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded-full font-medium">' + a.awards + '</div>' : ''}
+          <div class="text-xs text-slate-500 mt-0.5">Adm No: ${a.admissionNo}${a.examType ? ' · ' + a.examType + (a.examIndex ? ' ' + a.examIndex : '') : ''}</div>
+          ${a.awards ? '<div class="mt-1 inline-block bg-brand-100 text-brand-800 text-xs px-2 py-0.5 rounded-full font-medium">' + a.awards + '</div>' : ''}
         </div>
         <button class="btn btn-secondary text-xs flex-shrink-0" onclick="adm_printTranscript('${a.id}')">🖨️ Print Transcript</button>
       </div>
@@ -5192,14 +5703,14 @@ function adm_addExamResultsModal(alumniId) {
     title: `Add Exam Results — ${a.name}`,
     body: `
       <div class="grid grid-cols-2 gap-3 mb-3">
-        <div><label class="input-label">Exam Type</label>
+        <div><label class="input-label" for="er_type">Exam Type</label>
           <select id="er_type" class="input"><option>WAEC</option><option>NECO</option><option>NABTEB</option><option>JAMB</option></select>
         </div>
-        <div><label class="input-label">Year</label>
+        <div><label class="input-label" for="er_year">Year</label>
           <input id="er_year" class="input" placeholder="e.g. 2024" value="${a.graduationYear || ''}">
         </div>
       </div>
-      <div><label class="input-label">Candidate Number (optional)</label>
+      <div><label class="input-label" for="er_candidate">Candidate Number (optional)</label>
         <input id="er_candidate" class="input" placeholder="e.g. 4240/123" value="${a.examIndex || ''}">
       </div>
       <div class="mt-3"><label class="input-label">Results (Subject + Grade)</label>
@@ -5269,7 +5780,7 @@ function adm_printTranscript(alumniId) {
     const exL  = _esTypes.length > 2 ? _esTypes[_esTypes.length - 1].label : 'Exam';
     const rows = termResults.map(r => {
       const sub = subjects.find(s => s.id === r.subjectId);
-      const gc  = r.grade === 'A' ? '#059669' : r.grade === 'F' ? '#dc2626' : '#1d4ed8';
+      const gc  = r.grade === 'A' ? '#00b386' : r.grade === 'F' ? '#dc2626' : '#1d4ed8';
       return '<tr>'
         + '<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6">' + (sub ? sub.name : '—') + '</td>'
         + '<td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:center">' + (r.ca1 ?? '—') + '</td>'
@@ -5283,13 +5794,13 @@ function adm_printTranscript(alumniId) {
       + '<div style="background:#f3f4f6;padding:6px 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #4f46e5;margin-bottom:4px">'
       + term + ' &nbsp;—&nbsp; Class Average: ' + avg + '%</div>'
       + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
-      + '<thead><tr style="background:#f9fafb">'
-      + '<th style="text-align:left;padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Subject</th>'
-      + '<th style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">' + ca1L + '</th>'
-      + '<th style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">' + ca2L + '</th>'
-      + '<th style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">' + exL + '</th>'
-      + '<th style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">Total</th>'
-      + '<th style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">Grade</th>'
+      + '<th scope="col"ead><tr style="background:#f9fafb">'
+      + '<th scope="col" style="text-align:left;padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb">Subject</th>'
+      + '<th scope="col" style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">' + ca1L + '</th>'
+      + '<th scope="col" style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">' + ca2L + '</th>'
+      + '<th scope="col" style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">' + exL + '</th>'
+      + '<th scope="col" style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">Total</th>'
+      + '<th scope="col" style="padding:6px 8px;font-size:11px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;text-align:center">Grade</th>'
       + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }).join('');
 
@@ -5369,7 +5880,7 @@ function view_adm_enrollment_analytics() {
         data: {
           labels: classLabels,
           datasets: [{ label: 'Students', data: classData,
-            backgroundColor: '#3b82f6', borderRadius: 6 }]
+            backgroundColor: '#0a2540', borderRadius: 6 }]
         },
         options: { responsive: true, plugins: { legend: { display: false } },
           scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
@@ -5382,7 +5893,7 @@ function view_adm_enrollment_analytics() {
         data: {
           labels: ['Male', 'Female', 'Other'],
           datasets: [{ data: [maleCount, femaleCount, otherCount],
-            backgroundColor: ['#3b82f6', '#f472b6', '#94a3b8'] }]
+            backgroundColor: ['#0a2540', '#f472b6', '#94a3b8'] }]
         },
         options: { responsive: true, cutout: '65%',
           plugins: { legend: { position: 'bottom' } } }
@@ -5425,7 +5936,7 @@ function view_adm_enrollment_analytics() {
         <h3 class="font-bold text-slate-900">Enrollment by Year Detail</h3>
       </div>
       <table class="tbl">
-        <thead><tr><th>Academic Year</th><th class="text-center">New Students</th><th class="text-center">Cumulative</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Academic Year</th><th scope="col" class="text-center">New Students</th><th scope="col" class="text-center">Cumulative</th></tr></thead>
         <tbody>
           ${yearLabels.map((y, i) => {
             const cumulative = yearData.slice(0, i + 1).reduce((s, n) => s + n, 0);
@@ -5482,34 +5993,34 @@ function adm_updateAlumniModal(alumniId) {
     title: 'Update Alumni Information — ' + a.name,
     size: 'md',
     body: `<div class="space-y-3">
-      <div class="bg-sky-50 border border-sky-200 rounded-xl p-3 text-sm text-sky-900">
+      <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
         Keep this record up to date to maintain a strong alumni network.
       </div>
       <div>
-        <label class="input-label">Current Institution / Employer</label>
+        <label class="input-label" for="al_inst">Current Institution / Employer</label>
         <input id="al_inst" class="input" placeholder="e.g. University of Lagos, Faculty of Medicine" value="${a.currentInstitution || ''}">
       </div>
       <div>
-        <label class="input-label">Course / Programme</label>
+        <label class="input-label" for="al_course">Course / Programme</label>
         <input id="al_course" class="input" placeholder="e.g. MBBS Medicine &amp; Surgery" value="${a.currentCourse || ''}">
       </div>
       <div>
-        <label class="input-label">Alumni Email Address</label>
+        <label class="input-label" for="al_email">Alumni Email Address</label>
         <input id="al_email" type="email" class="input" placeholder="e.g. john.doe@gmail.com" value="${a.alumniEmail || ''}">
       </div>
       <div>
-        <label class="input-label">Alumni Phone Number</label>
+        <label class="input-label" for="al_phone">Alumni Phone Number</label>
         <input id="al_phone" type="tel" class="input" placeholder="e.g. 0812 345 6789" value="${a.alumniPhone || ''}">
       </div>
       <div>
-        <label class="input-label">Leaving Certificate Issued?</label>
+        <label class="input-label" for="al_cert">Leaving Certificate Issued?</label>
         <select id="al_cert" class="input">
           <option value="yes" ${a.certIssued ? 'selected' : ''}>Yes — issued</option>
           <option value="no" ${!a.certIssued ? 'selected' : ''}>No — pending</option>
         </select>
       </div>
       <div>
-        <label class="input-label">Notes</label>
+        <label class="input-label" for="al_notes">Notes</label>
         <textarea id="al_notes" class="input" rows="2" placeholder="Any notable achievements, contact notes, etc.">${a.alumniNotes || ''}</textarea>
       </div>
     </div>`,
@@ -5534,7 +6045,7 @@ function adm_saveAlumniInfo(alumniId) {
 function adm_printLeavingCertificate(alumniId) {
   const a = DB.find('students', alumniId);
   if (!a) return;
-  const schoolName = (DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School';
+  const schoolName = (DB.find('schools', currentSchoolId()) || {}).name || 'School';
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html>
 <html><head><title>School Leaving Certificate — ${a.name}</title>
@@ -5579,7 +6090,7 @@ function adm_printLeavingCertificate(alumniId) {
 function adm_readmitAlumni(alumniId) {
   const a = DB.find('students', alumniId);
   if (!a) return;
-  confirm('Re-admit ' + a.name + ' as an active student? Their alumni record will be preserved but status will change to active.', () => {
+  confirmDialog('Re-admit ' + a.name + ' as an active student? Their alumni record will be preserved but status will change to active.', () => {
     DB.update('students', alumniId, { status: 'active', readmittedAt: now(), readmittedBy: AUTH.current.id });
     APP.render();
     toast(a.name + ' re-admitted as active student', 'success');
@@ -5592,13 +6103,13 @@ function bulkUploadModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-800">
           <strong>How it works:</strong> Download the template, fill it with your student data, then upload it back. The system will create student records and parents automatically.
         </div>
 
         <input type="file" id="bulk_file" accept=".csv,text/csv" class="hidden" onchange="handleBulkUpload(event)" />
         <div class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 cursor-pointer" onclick="document.getElementById('bulk_file').click()">
-          ${icon('upload', 'w-12 h-12 mx-auto text-slate-400 mb-2')}
+          ${icon('upload', 'w-12 h-12 mx-auto text-slate-500 mb-2')}
           <p class="font-semibold text-slate-700 mb-1">Click to choose a CSV file</p>
           <p class="text-sm text-slate-500 mb-3">Or drag your file onto this area</p>
           <button type="button" class="btn btn-primary" onclick="event.stopPropagation(); document.getElementById('bulk_file').click()">Choose file</button>
@@ -5739,8 +6250,8 @@ function parseBulkCSV(csvText, fileName) {
   else if (created.length && errors.length) {
     modal({
       title: `Partial import: ${created.length} ok, ${errors.length} skipped`,
-      body: `<div class="space-y-2"><div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm">${created.length} student${created.length!==1?'s':''} successfully imported.</div>
-      <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm"><strong class="block mb-1">Skipped rows:</strong>${errors.map(e=>`<div>• ${e}</div>`).join('')}</div></div>`,
+      body: `<div class="space-y-2"><div class="bg-emerald-50 rounded-xl p-3 text-sm">${created.length} student${created.length!==1?'s':''} successfully imported.</div>
+      <div class="bg-rose-50 rounded-xl p-3 text-sm"><strong class="block mb-1">Skipped rows:</strong>${errors.map(e=>`<div>• ${e}</div>`).join('')}</div></div>`,
       footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">OK</button>`
     });
   } else toast(`No students imported. ${errors[0] || 'Check the file.'}`, 'danger');
@@ -5784,7 +6295,7 @@ function view_adm_staff() {
         </div>
       </td>
       <td>${staffSubjectLabel(t)}</td>
-      <td>${t.classes && t.classes.length ? `<span class="badge badge-neutral">${t.classes.length} class${t.classes.length !== 1 ? 'es' : ''}</span>` : '<span class="text-slate-400 text-sm">—</span>'}</td>
+      <td>${t.classes && t.classes.length ? `<span class="badge badge-neutral">${t.classes.length} class${t.classes.length !== 1 ? 'es' : ''}</span>` : '<span class="text-slate-500 text-sm">—</span>'}</td>
       <td>${fdate(t.hireDate, { short: true })}</td>
       <td><span class="font-mono">${money(t.salary)}</span></td>
       <td class="text-right" onclick="event.stopPropagation()">
@@ -5793,9 +6304,9 @@ function view_adm_staff() {
             t.status === 'suspended'
               ? `<button class="btn btn-secondary text-xs !py-1" onclick="reinstateStaffModal('${t.id}')">${icon('check_circle','w-3.5 h-3.5')} Reinstate</button>`
               : `<button class="btn btn-secondary text-xs !py-1" onclick="suspendStaffModal('${t.id}')">${icon('pause_circle','w-3.5 h-3.5')} Suspend</button>`
-          ) : '<span class="text-xs text-slate-400">Offboarded</span>'}
+          ) : '<span class="text-xs text-slate-500">Offboarded</span>'}
           ${t.status !== 'terminated' ? `<button class="btn btn-secondary text-xs !py-1 text-rose-600 border-rose-200 hover:bg-rose-50" onclick="terminateStaffModal('${t.id}')">${icon('logout','w-3.5 h-3.5')} Offboard</button>` : ''}
-          <button class="btn btn-ghost !p-1.5" onclick="viewStaff('${t.id}')">${icon('arrow_left','w-4 h-4 rotate-180 text-slate-400')}</button>
+          <button class="btn btn-ghost !p-1.5" onclick="viewStaff('${t.id}')">${icon('arrow_left','w-4 h-4 rotate-180 text-slate-500')}</button>
         </div>
       </td>
     </tr>
@@ -5821,22 +6332,22 @@ function view_adm_staff() {
 
     <!-- Headcount summary cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-      <div class="card p-4">
-        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Staff</div>
+      <div class="card p-5">
+        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Total Staff</div>
         <div class="text-3xl font-extrabold text-slate-900">${teachers.length}</div>
         <div class="text-xs text-slate-500 mt-1">All categories</div>
       </div>
-      <div class="card p-4 border-l-4 border-brand-500">
+      <div class="card p-5 border-l-4 border-brand-500">
         <div class="text-xs font-semibold text-brand-600 uppercase tracking-wider mb-1">Academic</div>
         <div class="text-3xl font-extrabold text-brand-700">${academic.length}</div>
         <div class="text-xs text-slate-500 mt-1">Teachers &amp; subject leads</div>
       </div>
-      <div class="card p-4 border-l-4 border-blue-400">
-        <div class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Non-Academic</div>
-        <div class="text-3xl font-extrabold text-blue-700">${nonAcademic.length}</div>
+      <div class="card p-5 border-l-4 border-brand-400">
+        <div class="text-xs font-semibold text-brand-600 uppercase tracking-wider mb-1">Non-Academic</div>
+        <div class="text-3xl font-extrabold text-brand-700">${nonAcademic.length}</div>
         <div class="text-xs text-slate-500 mt-1">${Object.entries(nonAcadGroups).map(([k,v]) => `${v} ${k}`).join(' · ') || 'Admin, Operations, etc.'}</div>
       </div>
-      <div class="card p-4 border-l-4 border-amber-400">
+      <div class="card p-5 border-l-4 border-amber-400">
         <div class="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-1">Monthly Payroll</div>
         <div class="text-2xl font-extrabold text-amber-700">${money(totalSalary)}</div>
         <div class="text-xs text-slate-500 mt-1">Acad: ${money(academicSalary)} · Non-acad: ${money(nonAcademicSalary)}</div>
@@ -5855,19 +6366,19 @@ function view_adm_staff() {
       ${academic.length === 0
         ? '<div class="p-6 text-center text-slate-500 text-sm">No academic staff yet. <button class="text-brand-700 font-semibold" onclick="addStaffModal()">Add your first teacher</button></div>'
         : `<div class="overflow-x-auto"><table class="tbl">
-            <thead><tr><th>Staff</th><th>Subjects</th><th>Classes</th><th>Since</th><th>Salary</th><th></th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Staff</th><th scope="col">Subjects</th><th scope="col">Classes</th><th scope="col">Since</th><th scope="col">Salary</th><th scope="col"></th></tr></thead>
             <tbody>${academic.map(renderRow).join('')}</tbody>
           </table></div>`}
     </div>
 
     <!-- Non-Academic Staff (grouped by type) -->
     <div class="card overflow-hidden">
-      <div class="px-5 py-3 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
+      <div class="px-5 py-3 bg-brand-50 border-b border-brand-100 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-blue-200 text-blue-800 flex items-center justify-center">${icon('user','w-4 h-4')}</div>
-          <h3 class="font-bold text-blue-900">Non-Academic Staff <span class="text-sm font-normal text-blue-700">· ${nonAcademic.length}</span></h3>
+          <div class="w-8 h-8 rounded-lg bg-brand-200 text-brand-800 flex items-center justify-center">${icon('user','w-4 h-4')}</div>
+          <h3 class="font-bold text-brand-900">Non-Academic Staff <span class="text-sm font-normal text-brand-700">· ${nonAcademic.length}</span></h3>
         </div>
-        <span class="text-xs text-blue-700">Bursar · Admin · Operations · ICT · Transport</span>
+        <span class="text-xs text-brand-700">Bursar · Admin · Operations · ICT · Transport</span>
       </div>
       ${nonAcademic.length === 0
         ? '<div class="p-6 text-center text-slate-500 text-sm">No non-academic staff. <button class="text-brand-700 font-semibold" onclick="addStaffModal()">Add</button></div>'
@@ -5917,7 +6428,7 @@ function view_adm_former_staff() {
       + '<td><div class="flex items-center gap-3">' + avatar(t.name, 'sm')
       + '<div><div class="font-semibold text-slate-900">' + t.name + '</div>'
       + '<div class="text-xs text-slate-500">' + (t.email || '') + '</div></div></div></td>'
-      + '<td><div class="text-sm">' + staffSubjectLabel(t) + '</div><div class="text-xs text-slate-400">' + (t.staffType || '') + '</div></td>'
+      + '<td><div class="text-sm">' + staffSubjectLabel(t) + '</div><div class="text-xs text-slate-500">' + (t.staffType || '') + '</div></td>'
       + '<td><span class="badge ' + badge + '">' + label + '</span></td>'
       + '<td class="text-sm">' + (tr && tr.effectiveDate ? fdate(tr.effectiveDate, { short: true }) : (t.terminatedAt ? fdate(t.terminatedAt, { short: true }) : '—')) + '</td>'
       + '<td class="text-sm text-slate-600 max-w-xs"><div class="truncate">' + (tr ? (tr.reason || '—') : (t.terminationReason || '—')) + '</div></td>'
@@ -5949,11 +6460,11 @@ function view_adm_former_staff() {
     </div>
 
     ${displayed.length === 0
-      ? '<div class="text-center text-slate-400 py-12 text-sm">No records in this category.</div>'
+      ? '<div class="text-center text-slate-500 py-12 text-sm">No records in this category.</div>'
       : `<div class="card overflow-hidden">
           <div class="overflow-x-auto">
             <table class="tbl">
-              <thead><tr><th>Name</th><th>Role</th><th>Exit Reason</th><th>Effective Date</th><th>Summary</th><th>Final Payment</th><th></th></tr></thead>
+              <th scope="col"ead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col">Exit Reason</th><th scope="col">Effective Date</th><th scope="col">Summary</th><th scope="col">Final Payment</th><th scope="col"></th></tr></thead>
               <tbody>${rows}</tbody>
             </table>
           </div>
@@ -5968,10 +6479,10 @@ function adm_rehireStaffModal(staffId) {
     title: 'Re-hire — ' + t.name,
     size: 'sm',
     body: `
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900 mb-4">
+      <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900 mb-4">
         This will restore ${t.name} as an active staff member. Their full history and records are preserved.
       </div>
-      <div><label class="input-label">Re-hire Notes</label>
+      <div><label class="input-label" for="rh_notes">Re-hire Notes</label>
         <textarea id="rh_notes" class="input" rows="2" placeholder="e.g. Re-hired as contract teacher for 2nd Term 2025/26"></textarea>
       </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -6034,12 +6545,12 @@ function viewStaff(id, activeTab) {
           ${isSuspended ? `<span class="badge badge-warn">Suspended</span>` : ''}
           ${isTerminated ? `<span class="badge badge-danger">Terminated</span>` : ''}
         </div>
-        <p class="text-xs text-slate-400 mt-1.5">${t.email || ''} ${t.email && t.phone ? '·' : ''} ${t.phone || ''}</p>
+        <p class="text-xs text-slate-500 mt-1.5">${t.email || ''} ${t.email && t.phone ? '·' : ''} ${t.phone || ''}</p>
       </div>
       <div class="text-right flex-shrink-0">
-        <div class="text-xs text-slate-400 mb-0.5">Attendance</div>
+        <div class="text-xs text-slate-500 mb-0.5">Attendance</div>
         <div class="text-2xl font-extrabold ${myAttRate >= 85 ? 'text-brand-700' : 'text-rose-600'}">${myAttRate}%</div>
-        ${t.staffType === 'Academic' ? `<div class="text-xs text-slate-400 mt-1.5">Avg Score</div><div class="text-xl font-extrabold text-blue-700">${avgScore}%</div>` : ''}
+        ${t.staffType === 'Academic' ? `<div class="text-xs text-slate-500 mt-1.5">Avg Score</div><div class="text-xl font-extrabold text-brand-700">${avgScore}%</div>` : ''}
       </div>
     </div>`;
 
@@ -6056,7 +6567,7 @@ function viewStaff(id, activeTab) {
         <div class="bg-brand-50 rounded-xl p-3 text-center"><div class="text-xs text-brand-700 font-semibold">AVG SCORE</div><div class="text-xl font-bold text-brand-900 mt-1">${avgScore}%</div></div>
         <div class="bg-emerald-50 rounded-xl p-3 text-center"><div class="text-xs text-emerald-700 font-semibold">PASS RATE</div><div class="text-xl font-bold text-emerald-900 mt-1">${passRate}%</div></div>
         <div class="bg-amber-50 rounded-xl p-3 text-center"><div class="text-xs text-amber-700 font-semibold">PUNCTUALITY</div><div class="text-xl font-bold text-amber-900 mt-1">${myAttRate}%</div></div>
-        <div class="bg-blue-50 rounded-xl p-3 text-center"><div class="text-xs text-blue-700 font-semibold">ASSIGNMENTS</div><div class="text-xl font-bold text-blue-900 mt-1">${myAssignments.length}</div></div>
+        <div class="bg-brand-50 rounded-xl p-3 text-center"><div class="text-xs text-brand-700 font-semibold">ASSIGNMENTS</div><div class="text-xl font-bold text-brand-900 mt-1">${myAssignments.length}</div></div>
       </div>` : ''}
       <div class="grid grid-cols-2 gap-3 text-sm">
         <div><div class="text-xs uppercase text-slate-500 font-semibold mb-0.5">Date of Birth</div><div>${t.dob ? fdate(t.dob, { long: true }) : '—'}</div></div>
@@ -6070,7 +6581,7 @@ function viewStaff(id, activeTab) {
           ${presentDocs.map(d => `<a href="${docs[d.key].data}" download="${docs[d.key].name || d.key}" class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg hover:bg-slate-100 text-sm">
             ${icon('paperclip','w-4 h-4 text-brand-600')}
             <div class="flex-1 min-w-0"><div class="font-semibold truncate">${d.label}</div><div class="text-xs text-slate-500 truncate">${docs[d.key].name || 'view'}</div></div>
-            ${icon('download','w-3.5 h-3.5 text-slate-400')}
+            ${icon('download','w-3.5 h-3.5 text-slate-500')}
           </a>`).join('')}
         </div>
       </div>` : ''}
@@ -6089,11 +6600,11 @@ function viewStaff(id, activeTab) {
         <div class="bg-amber-50 rounded-xl p-3 text-center"><div class="text-xs text-amber-700 font-semibold uppercase">Late</div><div class="text-2xl font-bold text-amber-900">${late}</div></div>
         <div class="bg-rose-50 rounded-xl p-3 text-center"><div class="text-xs text-rose-700 font-semibold uppercase">Absent</div><div class="text-2xl font-bold text-rose-900">${absent}</div></div>
       </div>
-      <div class="font-bold text-slate-900 text-sm mb-2">Leave Requests <span class="text-slate-400 font-normal">(${leaves.length})</span></div>
-      ${leaves.length === 0 ? `<div class="text-slate-400 text-sm py-3 text-center">No leave requests found.</div>` : `
+      <div class="font-bold text-slate-900 text-sm mb-2">Leave Requests <span class="text-slate-500 font-normal">(${leaves.length})</span></div>
+      ${leaves.length === 0 ? `<div class="text-slate-500 text-sm py-3 text-center">No leave requests found.</div>` : `
         <div class="card overflow-hidden mb-4">
           <table class="tbl text-sm">
-            <thead><tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th class="text-center">Status</th><th>Reason</th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Type</th><th scope="col">From</th><th scope="col">To</th><th scope="col">Days</th><th scope="col" class="text-center">Status</th><th scope="col">Reason</th></tr></thead>
             <tbody>
               ${leaves.map(l => `<tr>
                 <td class="capitalize">${l.leaveType}</td>
@@ -6106,10 +6617,10 @@ function viewStaff(id, activeTab) {
             </tbody>
           </table>
         </div>`}
-      ${attRecs.length ? `<div class="font-bold text-slate-900 text-sm mb-2">Attendance Log <span class="text-slate-400 font-normal">(recent 40)</span></div>
+      ${attRecs.length ? `<div class="font-bold text-slate-900 text-sm mb-2">Attendance Log <span class="text-slate-500 font-normal">(recent 40)</span></div>
         <div class="card overflow-hidden">
           <table class="tbl text-sm">
-            <thead><tr><th>Date</th><th class="text-center">Status</th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Date</th><th scope="col" class="text-center">Status</th></tr></thead>
             <tbody>${attRecs.slice(0,40).map(r => `<tr>
               <td>${fdate(r.date, { long: true })}</td>
               <td class="text-center"><span class="badge ${r.status==='present'?'badge-success':r.status==='late'?'badge-warn':'badge-danger'}">${r.status}</span></td>
@@ -6122,16 +6633,16 @@ function viewStaff(id, activeTab) {
   // ─── Appraisals ───────────────────────────────────────────────────────────────
   const appraisalsTab = () => {
     const apps = DB.query('appraisals', a => a.staffId === id).sort((a,b) => b.date.localeCompare(a.date));
-    if (!apps.length) return `<div class="text-slate-400 text-sm py-8 text-center">No appraisals recorded yet.</div>`;
+    if (!apps.length) return `<div class="text-slate-500 text-sm py-8 text-center">No appraisals recorded yet.</div>`;
     return `<div class="space-y-3">
-      ${apps.map(a => `<div class="card p-4">
+      ${apps.map(a => `<div class="card p-5">
         <div class="flex items-start justify-between gap-2">
           <div>
             <div class="font-bold text-slate-900">${a.cycle || a.term || '—'}</div>
-            <div class="text-xs text-slate-400 mt-0.5">${fdate(a.date, { long: true })}</div>
+            <div class="text-xs text-slate-500 mt-0.5">${fdate(a.date, { long: true })}</div>
           </div>
           <div class="text-right">
-            <div class="text-2xl font-extrabold ${a.score >= 70 ? 'text-brand-700' : a.score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${a.score}<span class="text-sm font-normal text-slate-400">/100</span></div>
+            <div class="text-2xl font-extrabold ${a.score >= 70 ? 'text-brand-700' : a.score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${a.score}<span class="text-sm font-normal text-slate-500">/100</span></div>
             ${a.rating ? `<div class="badge ${a.rating==='Excellent'?'badge-success':a.rating==='Good'?'badge-info':a.rating==='Poor'?'badge-danger':'badge-warn'}">${a.rating}</div>` : ''}
           </div>
         </div>
@@ -6144,10 +6655,10 @@ function viewStaff(id, activeTab) {
   // ─── Payslips ─────────────────────────────────────────────────────────────────
   const payslipsTab = () => {
     const slips = DB.query('payslips', p => p.staffId === id).sort((a,b) => b.periodEnd.localeCompare(a.periodEnd));
-    if (!slips.length) return `<div class="text-slate-400 text-sm py-8 text-center">No payslips found.</div>`;
+    if (!slips.length) return `<div class="text-slate-500 text-sm py-8 text-center">No payslips found.</div>`;
     return `<div class="card overflow-hidden">
       <table class="tbl text-sm">
-        <thead><tr><th>Period</th><th class="text-right">Gross</th><th class="text-right">Deductions</th><th class="text-right">Net</th><th class="text-center">Status</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Period</th><th scope="col" class="text-right">Gross</th><th scope="col" class="text-right">Deductions</th><th scope="col" class="text-right">Net</th><th scope="col" class="text-center">Status</th></tr></thead>
         <tbody>
           ${slips.map(p => `<tr>
             <td>${fdate(p.periodStart, { short: true })} → ${fdate(p.periodEnd, { short: true })}</td>
@@ -6183,7 +6694,7 @@ function viewStaff(id, activeTab) {
       </div>` : ''}
 
       ${suspRecs.length ? `<div class="mb-4">
-        <div class="font-bold text-slate-900 text-sm mb-2">Suspension History <span class="text-slate-400 font-normal">(${suspRecs.length})</span></div>
+        <div class="font-bold text-slate-900 text-sm mb-2">Suspension History <span class="text-slate-500 font-normal">(${suspRecs.length})</span></div>
         <div class="space-y-2">
           ${suspRecs.map(d => `<div class="border border-amber-200 bg-amber-50 rounded-xl p-3 text-sm">
             <div class="flex items-start justify-between gap-2">
@@ -6198,12 +6709,12 @@ function viewStaff(id, activeTab) {
       </div>` : ''}
 
       ${warnings.length ? `<div class="mb-4">
-        <div class="font-bold text-slate-900 text-sm mb-2">Warnings <span class="text-slate-400 font-normal">(${warnings.length})</span></div>
+        <div class="font-bold text-slate-900 text-sm mb-2">Warnings <span class="text-slate-500 font-normal">(${warnings.length})</span></div>
         <div class="space-y-2">
           ${warnings.map(d => `<div class="border border-slate-200 bg-slate-50 rounded-xl p-3 text-sm">
             <div class="font-semibold text-slate-900">${d.reason}</div>
             ${d.notes ? `<div class="text-xs text-slate-500 mt-0.5">${d.notes}</div>` : ''}
-            <div class="text-xs text-slate-400 mt-1">${fdate(d.date, { long: true })}</div>
+            <div class="text-xs text-slate-500 mt-1">${fdate(d.date, { long: true })}</div>
           </div>`).join('')}
         </div>
       </div>` : ''}
@@ -6218,7 +6729,7 @@ function viewStaff(id, activeTab) {
         </div>
       </div>` : ''}
 
-      ${!termRec && !suspRecs.length && !warnings.length && !commendations.length ? `<div class="text-slate-400 text-sm py-8 text-center">No HR actions recorded for this staff member.</div>` : ''}
+      ${!termRec && !suspRecs.length && !warnings.length && !commendations.length ? `<div class="text-slate-500 text-sm py-8 text-center">No HR actions recorded for this staff member.</div>` : ''}
 
       ${!isTerminated ? `<div class="border-t border-slate-100 pt-4 mt-4 flex flex-wrap gap-2">
         ${isSuspended
@@ -6263,12 +6774,12 @@ function suspendStaffModal(id) {
     title: `Suspend — ${t.name}`,
     size: 'md',
     body: `
-      <div class="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+      <div class="flex items-center gap-3 bg-amber-50 rounded-xl p-3 mb-4">
         ${icon('alert_triangle','w-5 h-5 text-amber-600 flex-shrink-0')}
         <div class="text-sm text-amber-800">The staff member will be suspended and access may be restricted until reinstated.</div>
       </div>
       <div class="space-y-3">
-        <div><label class="input-label">Reason for Suspension *</label>
+        <div><label class="input-label" for="stf_susp_reason">Reason for Suspension *</label>
           <select id="stf_susp_reason" class="input">
             <option>Gross Misconduct</option>
             <option>Financial Irregularity</option>
@@ -6278,11 +6789,11 @@ function suspendStaffModal(id) {
             <option>Other</option>
           </select></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Duration (days)</label><input id="stf_susp_days" class="input" type="number" value="5" min="1" max="90" /></div>
-          <div><label class="input-label">With Pay?</label>
+          <div><label class="input-label" for="stf_susp_days">Duration (days)</label><input id="stf_susp_days" class="input" type="number" value="5" min="1" max="90" /></div>
+          <div><label class="input-label" for="stf_susp_pay">With Pay?</label>
             <select id="stf_susp_pay" class="input"><option value="yes">Yes — with pay</option><option value="no">No — without pay</option></select></div>
         </div>
-        <div><label class="input-label">Additional Notes</label><textarea id="stf_susp_notes" class="input" rows="2" placeholder="Details, incident report reference, etc."></textarea></div>
+        <div><label class="input-label" for="stf_susp_notes">Additional Notes</label><textarea id="stf_susp_notes" class="input" rows="2" placeholder="Details, incident report reference, etc."></textarea></div>
       </div>`,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -6317,11 +6828,11 @@ function reinstateStaffModal(id) {
     title: `Reinstate — ${t.name}`,
     size: 'sm',
     body: `
-      <div class="flex items-center gap-3 bg-brand-50 border border-brand-200 rounded-xl p-3 mb-4">
+      <div class="flex items-center gap-3 bg-brand-50 rounded-xl p-3 mb-4">
         ${icon('check_circle','w-5 h-5 text-brand-600 flex-shrink-0')}
         <div class="text-sm text-brand-800">${t.name} will be reinstated and their status set back to active.</div>
       </div>
-      <div><label class="input-label">Reinstatement Notes</label><textarea id="stf_ri_notes" class="input" rows="2" placeholder="Conditions, outcome, etc."></textarea></div>`,
+      <div><label class="input-label" for="stf_ri_notes">Reinstatement Notes</label><textarea id="stf_ri_notes" class="input" rows="2" placeholder="Conditions, outcome, etc."></textarea></div>`,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
       <button class="btn btn-primary" onclick="confirmStaffReinstatement('${id}')">${icon('check_circle','w-4 h-4')} Reinstate</button>`
@@ -6356,7 +6867,7 @@ function terminateStaffModal(id) {
         <div class="text-sm text-slate-700">Records the exit of this staff member — covers resignations, retirements, dismissals, and contract endings. They will be removed from active payroll. All HR history is preserved.</div>
       </div>
       <div class="space-y-3">
-        <div><label class="input-label">Exit Category *</label>
+        <div><label class="input-label" for="stf_term_cat">Exit Category *</label>
           <select id="stf_term_cat" class="input">
             <option value="resignation">Resignation — staff chose to leave</option>
             <option value="contract_end">End of Contract — contract period completed</option>
@@ -6365,12 +6876,12 @@ function terminateStaffModal(id) {
             <option value="dismissal">Dismissal — terminated for cause</option>
             <option value="death">Death in Service</option>
           </select></div>
-        <div><label class="input-label">Reason / Summary *</label><textarea id="stf_term_reason" class="input" rows="2" placeholder="e.g. Resigned to pursue further studies — handover completed with HOD"></textarea></div>
+        <div><label class="input-label" for="stf_term_reason">Reason / Summary *</label><textarea id="stf_term_reason" class="input" rows="2" placeholder="e.g. Resigned to pursue further studies — handover completed with HOD"></textarea></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Effective Date</label><input id="stf_term_date" type="date" class="input" value="${today()}" /></div>
-          <div><label class="input-label">Final / Gratuity Payment (₦)</label><input id="stf_term_pay" type="number" class="input" placeholder="0" value="0" /></div>
+          <div><label class="input-label" for="stf_term_date">Effective Date</label><input id="stf_term_date" type="date" class="input" value="${today()}" /></div>
+          <div><label class="input-label" for="stf_term_pay">Final / Gratuity Payment (₦)</label><input id="stf_term_pay" type="number" class="input" placeholder="0" value="0" /></div>
         </div>
-        <div><label class="input-label">Handover / Exit Notes</label><textarea id="stf_term_notes" class="input" rows="2" placeholder="Handover arrangements, equipment returned, clearance status…"></textarea></div>
+        <div><label class="input-label" for="stf_term_notes">Handover / Exit Notes</label><textarea id="stf_term_notes" class="input" rows="2" placeholder="Handover arrangements, equipment returned, clearance status…"></textarea></div>
       </div>`,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -6406,14 +6917,14 @@ function issueStaffWarningModal(id) {
     size: 'sm',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Warning Type</label>
+        <div><label class="input-label" for="stf_warn_type">Warning Type</label>
           <select id="stf_warn_type" class="input">
             <option value="verbal">Verbal Warning</option>
             <option value="written">Written Warning</option>
             <option value="final">Final Warning</option>
           </select></div>
-        <div><label class="input-label">Reason *</label><input id="stf_warn_reason" class="input" placeholder="Reason for warning" /></div>
-        <div><label class="input-label">Notes</label><textarea id="stf_warn_notes" class="input" rows="2" placeholder="Additional details"></textarea></div>
+        <div><label class="input-label" for="stf_warn_reason">Reason *</label><input id="stf_warn_reason" class="input" placeholder="Reason for warning" /></div>
+        <div><label class="input-label" for="stf_warn_notes">Notes</label><textarea id="stf_warn_notes" class="input" rows="2" placeholder="Additional details"></textarea></div>
       </div>`,
     footer: `
       <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -6478,15 +6989,15 @@ function addStaffModal() {
     body: `
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Full Name *</label><input id="stf_name" class="input" placeholder="e.g. Mrs. Funke Adeyemi" /></div>
-          <div><label class="input-label">Date of Birth</label><input id="stf_dob" type="date" class="input" /></div>
+          <div><label class="input-label" for="stf_name">Full Name *</label><input id="stf_name" class="input" placeholder="e.g. Mrs. Funke Adeyemi" /></div>
+          <div><label class="input-label" for="stf_dob">Date of Birth</label><input id="stf_dob" type="date" class="input" /></div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Phone *</label><input id="stf_phone" class="input" placeholder="0801…" /></div>
-          <div><label class="input-label">Email <span class="text-slate-400">(optional)</span></label><input id="stf_email" class="input" type="email" placeholder="staff@school.ng" /></div>
+          <div><label class="input-label" for="stf_phone">Phone *</label><input id="stf_phone" class="input" placeholder="0801…" /></div>
+          <div><label class="input-label" for="stf_email">Email <span class="text-slate-500">(optional)</span></label><input id="stf_email" class="input" type="email" placeholder="staff@school.ng" /></div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Staff Type *</label>
+          <div><label class="input-label" for="stf_type">Staff Type *</label>
             <select id="stf_type" class="input" onchange="toggleStaffTypeFields()">
               <option value="Academic">Academic (Teacher)</option>
               <option value="Finance">Finance (Bursar, Accountant)</option>
@@ -6496,22 +7007,22 @@ function addStaffModal() {
               <option value="Transport">Transport (Driver)</option>
             </select>
           </div>
-          <div><label class="input-label">Assigned Role</label>
+          <div><label class="input-label" for="stf_roleId">Assigned Role</label>
             <select id="stf_roleId" class="input">
               ${DB.query('schoolRoles', r => r.schoolId === currentSchoolId() && r.name !== 'Proprietor' && r.name !== 'Parent').map(r => `<option value="${r.id}">${r.name}</option>`).join('')}
             </select>
-            <p class="text-xs text-slate-400 mt-1">Manage roles in Settings → Roles &amp; Permissions</p>
+            <p class="text-xs text-slate-500 mt-1">Manage roles in Settings → Roles &amp; Permissions</p>
           </div>
         </div>
-        <div><label class="input-label">Title / Job Description (optional)</label><input id="stf_role" class="input" placeholder="e.g. Senior Maths Teacher, Head of Sciences" /></div>
+        <div><label class="input-label" for="stf_role">Title / Job Description (optional)</label><input id="stf_role" class="input" placeholder="e.g. Senior Maths Teacher, Head of Sciences" /></div>
         <div id="stf_academicFields">
-          <label class="input-label">Subjects Taught</label>
+          <label class="input-label" for="stf_subjects">Subjects Taught</label>
           <div class="space-y-2">
             <select id="stf_subjects" class="input" multiple size="4">
               ${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
             </select>
             <div>
-              <p class="text-xs text-slate-400 mb-1">Or enter subjects manually (comma-separated, for subjects not listed above):</p>
+              <p class="text-xs text-slate-500 mb-1">Or enter subjects manually (comma-separated, for subjects not listed above):</p>
               <input id="stf_subjects_manual" class="input" placeholder="e.g. Introductory Technology, Agricultural Science" />
             </div>
           </div>
@@ -6521,8 +7032,8 @@ function addStaffModal() {
           </select>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Monthly Salary (NGN)</label><input id="stf_salary" class="input" type="number" placeholder="180000" /></div>
-          <div><label class="input-label">Hire Date</label><input id="stf_hire" type="date" class="input" value="${today()}" /></div>
+          <div><label class="input-label" for="stf_salary">Monthly Salary (NGN)</label><input id="stf_salary" class="input" type="number" placeholder="180000" /></div>
+          <div><label class="input-label" for="stf_hire">Hire Date</label><input id="stf_hire" type="date" class="input" value="${today()}" /></div>
         </div>
         <details class="bg-slate-50 rounded-xl">
           <summary class="cursor-pointer p-3 font-semibold text-sm">Payroll / Banking</summary>
@@ -6550,7 +7061,7 @@ function addStaffModal() {
           </div>
         </details>
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <div class="font-semibold mb-1">${icon('check','w-4 h-4 inline')} Login credentials will be auto-generated</div>
           <div class="text-xs">Once saved, an invitation email + WhatsApp message is sent with the username (their email) and a temporary password they'll be asked to change on first login.</div>
         </div>
@@ -6644,7 +7155,7 @@ function saveNewStaff() {
         <div class="flex justify-between"><span class="text-slate-500">Channels</span><span class="text-xs">${channels.join(' · ')}</span></div>
         <div class="flex justify-between"><span class="text-slate-500">Permissions</span><span class="text-xs">${permissions.length} modules</span></div>
       </div>
-      <p class="text-xs text-slate-400 text-center mt-3">${name.split(' ').slice(-1)} will be asked to change the password on first login.</p>
+      <p class="text-xs text-slate-500 text-center mt-3">${name.split(' ').slice(-1)} will be asked to change the password on first login.</p>
     `,
     footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">Done</button>`
   });
@@ -6704,11 +7215,11 @@ function addClassModal() {
     title: 'Add New Class',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Class Name</label><input id="cl_name" class="input" placeholder="e.g. SSS 2" /></div>
-        <div><label class="input-label">Level</label>
+        <div><label class="input-label" for="cl_name">Class Name</label><input id="cl_name" class="input" placeholder="e.g. SSS 2" /></div>
+        <div><label class="input-label" for="cl_level">Level</label>
           <select id="cl_level" class="input"><option>Nursery</option><option>Primary</option><option>Secondary</option></select>
         </div>
-        <div><label class="input-label">Class Teacher</label>
+        <div><label class="input-label" for="cl_teacher">Class Teacher</label>
           <select id="cl_teacher" class="input">
             <option value="">— Unassigned —</option>
             ${teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
@@ -6740,7 +7251,7 @@ function view_adm_timetable() {
   const classId = APP.params.classId || classes[0].id;
   const tt = DB.query('timetable', t => t.classId === classId);
   const subjects = DB.get('subjects');
-  const teachers = DB.query('teachers', t => t.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const teachers = DB.query('teachers', t => t.schoolId === currentSchoolId());
   const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
   const periods = [1,2,3,4,5,6,7,8];
   const ttConfig = DB.settings().timetableConfig || {};
@@ -6761,20 +7272,20 @@ function view_adm_timetable() {
         <button class="btn btn-primary" onclick="quickBuildTimetableModal('${classId}')">${icon('calendar','w-4 h-4')} Build Week</button>
       `
     })}
-    <div class="card p-4 mb-4">
+    <div class="card p-5 mb-4">
       <label class="input-label">Class</label>
       <select class="input max-w-xs" onchange="APP.go('adm_timetable', { classId: this.value, ttView: 'class' })">
         ${classes.map(c => `<option value="${c.id}" ${classId===c.id?'selected':''}>${c.name}</option>`).join('')}
       </select>
     </div>
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3 text-sm text-blue-900">
+    <div class="bg-brand-50 rounded-xl p-3 mb-3 text-sm text-brand-900">
       ${icon('check','w-4 h-4 inline')} <strong>Tip:</strong> Click any dashed (empty) cell to add a period. Click a filled cell to edit or remove it. Use <strong>Build Week</strong> to fill the whole grid in one go, or <strong>Bulk Upload</strong> for many classes from CSV.
     </div>
     <div class="card overflow-hidden">
       <div class="overflow-x-auto">
         <table class="tbl">
-          <thead>
-            <tr><th>Period</th>${days.map(d => `<th>${d}</th>`).join('')}</tr>
+          <th scope="col"ead>
+            <tr><th scope="col">Period</th>${days.map(d => `<th scope="col">${d}</th>`).join('')}</tr>
           </thead>
           <tbody>
             ${periods.map(p => {
@@ -6785,7 +7296,7 @@ function view_adm_timetable() {
               if (p === break1After + 1) {
                 rows.push(`<tr class="bg-amber-50"><td colspan="${days.length + 1}" class="text-center text-xs text-amber-800 font-semibold py-1.5">${icon('sun','w-3.5 h-3.5 inline mr-1')} ${break1Label}</td></tr>`);
               } else if (p === break2After + 1) {
-                rows.push(`<tr class="bg-sky-50"><td colspan="${days.length + 1}" class="text-center text-xs text-sky-800 font-semibold py-1.5">${icon('food','w-3.5 h-3.5 inline mr-1')} ${break2Label}</td></tr>`);
+                rows.push(`<tr class="bg-brand-50"><td colspan="${days.length + 1}" class="text-center text-xs text-brand-800 font-semibold py-1.5">${icon('food','w-3.5 h-3.5 inline mr-1')} ${break2Label}</td></tr>`);
               }
               rows.push(`<tr>
                 <td><strong class="text-slate-900">P${p}</strong><br><span class="text-xs text-slate-500">${timeLabel}</span></td>
@@ -6834,14 +7345,14 @@ function renderSchoolWideTimetable() {
     <div class="card overflow-hidden">
       <div class="overflow-x-auto">
         <table class="tbl">
-          <thead>
+          <th scope="col"ead>
             <tr>
-              <th>Class</th>
-              ${days.map(d => `<th colspan="${Math.max(2, periods.length)}">${d}</th>`).join('')}
+              <th scope="col">Class</th>
+              ${days.map(d => `<th scope="col" colspan="${Math.max(2, periods.length)}">${d}</th>`).join('')}
             </tr>
             <tr style="background:#f8fafc">
-              <th></th>
-              ${days.map(d => periods.slice(0, 2).map(p => `<th class="text-center text-xs">P${p}</th>`).join('')).join('')}
+              <th scope="col"></th>
+              ${days.map(d => periods.slice(0, 2).map(p => `<th scope="col" class="text-center text-xs">P${p}</th>`).join('')).join('')}
             </tr>
           </thead>
           <tbody>
@@ -6884,7 +7395,7 @@ function ttTimeConfigModal() {
         <div class="grid grid-cols-2 gap-3">
           ${periods.map(p => `
             <div>
-              <label class="input-label">Period ${p}</label>
+              <label class="input-label" for="tt_p${p}">Period ${p}</label>
               <input type="text" id="tt_p${p}" class="input font-mono text-sm" value="${periodTimes[p] || ''}" placeholder="HH:MM-HH:MM" />
             </div>
           `).join('')}
@@ -6893,23 +7404,23 @@ function ttTimeConfigModal() {
           <h4 class="font-semibold text-slate-900 text-sm">Break Configuration</h4>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="input-label">Break 1 — after period</label>
+              <label class="input-label" for="tt_b1after">Break 1 — after period</label>
               <select id="tt_b1after" class="input">
                 ${periods.slice(0, 7).map(p => `<option value="${p}" ${b1After===p?'selected':''}>${p}</option>`).join('')}
               </select>
             </div>
             <div>
-              <label class="input-label">Break 1 Label / Time</label>
+              <label class="input-label" for="tt_b1label">Break 1 Label / Time</label>
               <input type="text" id="tt_b1label" class="input text-sm" value="${b1Label}" placeholder="Short Break (10:40–11:00)" />
             </div>
             <div>
-              <label class="input-label">Break 2 — after period</label>
+              <label class="input-label" for="tt_b2after">Break 2 — after period</label>
               <select id="tt_b2after" class="input">
                 ${periods.slice(1, 8).map(p => `<option value="${p}" ${b2After===p?'selected':''}>${p}</option>`).join('')}
               </select>
             </div>
             <div>
-              <label class="input-label">Break 2 Label / Time</label>
+              <label class="input-label" for="tt_b2label">Break 2 Label / Time</label>
               <input type="text" id="tt_b2label" class="input text-sm" value="${b2Label}" placeholder="Lunch (12:20–13:00)" />
             </div>
           </div>
@@ -6945,13 +7456,13 @@ function bulkTimetableUploadModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Upload a CSV with the entire weekly schedule. Rows are periods. Existing periods for the same class/day/period will be replaced.
         </div>
 
         <input type="file" id="bulk_tt_file" accept=".csv" class="hidden" onchange="handleBulkTimetable(event)" />
         <div class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 cursor-pointer" onclick="document.getElementById('bulk_tt_file').click()">
-          ${icon('upload','w-12 h-12 mx-auto text-slate-400 mb-2')}
+          ${icon('upload','w-12 h-12 mx-auto text-slate-500 mb-2')}
           <p class="font-semibold text-slate-700 mb-1">Click to choose timetable CSV</p>
           <button type="button" class="btn btn-primary mt-2" onclick="event.stopPropagation(); document.getElementById('bulk_tt_file').click()">Choose file</button>
         </div>
@@ -7020,8 +7531,8 @@ function handleBulkTimetable(ev) {
       modal({
         title: `Imported ${added + replaced} periods, ${skipped} skipped`,
         body: `<div class="space-y-2">
-          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm">${added} new · ${replaced} replaced · ${skipped} skipped</div>
-          <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm"><strong>Errors:</strong>${errors.slice(0, 10).map(e => `<div>• ${e}</div>`).join('')}</div>
+          <div class="bg-emerald-50 rounded-xl p-3 text-sm">${added} new · ${replaced} replaced · ${skipped} skipped</div>
+          <div class="bg-rose-50 rounded-xl p-3 text-sm"><strong>Errors:</strong>${errors.slice(0, 10).map(e => `<div>• ${e}</div>`).join('')}</div>
         </div>`,
         footer: `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click()">OK</button>`
       });
@@ -7041,18 +7552,18 @@ function addPeriodModal(classId, preDay, prePeriod) {
     body: `
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Day</label>
+          <div><label class="input-label" for="tt_day">Day</label>
             <select id="tt_day" class="input">${['Monday','Tuesday','Wednesday','Thursday','Friday'].map(d => `<option ${preDay === d ? 'selected' : ''}>${d}</option>`).join('')}</select>
           </div>
-          <div><label class="input-label">Period #</label>
+          <div><label class="input-label" for="tt_period">Period #</label>
             <select id="tt_period" class="input">${[1,2,3,4,5,6,7,8].map(i => `<option ${prePeriod === i ? 'selected' : ''}>${i}</option>`).join('')}</select>
           </div>
         </div>
-        <div><label class="input-label">Time</label><input id="tt_time" class="input" value="${defaultTime}" /></div>
-        <div><label class="input-label">Subject</label>
+        <div><label class="input-label" for="tt_time">Time</label><input id="tt_time" class="input" value="${defaultTime}" /></div>
+        <div><label class="input-label" for="tt_subject">Subject</label>
           <select id="tt_subject" class="input">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
         </div>
-        <div><label class="input-label">Teacher</label>
+        <div><label class="input-label" for="tt_teacher">Teacher</label>
           <select id="tt_teacher" class="input">${teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select>
         </div>
       </div>
@@ -7072,11 +7583,11 @@ function editTimetableCell(periodId) {
     body: `
       <div class="space-y-3">
         <div class="bg-slate-50 rounded-xl p-3 text-sm">${e.day} · Period ${e.period}</div>
-        <div><label class="input-label">Time</label><input id="tte_time" class="input" value="${e.time}" /></div>
-        <div><label class="input-label">Subject</label>
+        <div><label class="input-label" for="tte_time">Time</label><input id="tte_time" class="input" value="${e.time}" /></div>
+        <div><label class="input-label" for="tte_subject">Subject</label>
           <select id="tte_subject" class="input">${subjects.map(s => `<option value="${s.id}" ${e.subjectId === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select>
         </div>
-        <div><label class="input-label">Teacher</label>
+        <div><label class="input-label" for="tte_teacher">Teacher</label>
           <select id="tte_teacher" class="input">${teachers.map(t => `<option value="${t.id}" ${e.teacherId === t.id ? 'selected' : ''}>${t.name}</option>`).join('')}</select>
         </div>
       </div>
@@ -7119,14 +7630,14 @@ function quickBuildTimetableModal(classId) {
     size: 'xl',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Fill each cell with a subject and teacher. Empty cells stay empty. <strong>Showing periods 1-4</strong> — add more after saving these.
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-xs">
-            <thead><tr>
-              <th class="p-2"></th>
-              ${days.map(d => `<th class="p-2 text-left text-slate-700">${d}</th>`).join('')}
+            <th scope="col"ead><tr>
+              <th scope="col" class="p-2"></th>
+              ${days.map(d => `<th scope="col" class="p-2 text-left text-slate-700">${d}</th>`).join('')}
             </tr></thead>
             <tbody>
               ${periods.map(p => `<tr>
@@ -7213,7 +7724,7 @@ function view_adm_attendance() {
           <button class="btn btn-secondary" onclick="exportAttendanceCSV('${classId}', '${dateFrom}', '${dateTo}')">${icon('download','w-4 h-4')} Export CSV</button>
         `
       })}
-      <div class="card p-4 mb-4 grid sm:grid-cols-3 gap-3">
+      <div class="card p-5 mb-4 grid sm:grid-cols-3 gap-3">
         <div><label class="input-label">Class</label>
           <select class="input" onchange="APP.params.classId = this.value; APP.render()">
             ${classes.map(c => `<option value="${c.id}" ${classId===c.id?'selected':''}>${c.name}</option>`).join('')}
@@ -7236,13 +7747,13 @@ function view_adm_attendance() {
           </div>
         </div>
         <table class="tbl">
-          <thead><tr><th>Student</th><th>Status</th><th>Marked at</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Status</th><th scope="col">Marked at</th></tr></thead>
           <tbody>
             ${students.map(s => {
               const r = recs.find(x => x.studentId === s.id);
               return `<tr><td>
                 <div class="flex items-center gap-2">${avatar(s.name,'sm')}<span class="font-medium">${s.name}</span></div>
-              </td><td>${r ? statusBadge(r.status) : '<span class="text-slate-400 text-sm">Not marked</span>'}</td>
+              </td><td>${r ? statusBadge(r.status) : '<span class="text-slate-500 text-sm">Not marked</span>'}</td>
               <td class="text-sm text-slate-500">${r ? (r.markedAt || '—') : '—'}</td></tr>`;
             }).join('')}
           </tbody>
@@ -7270,7 +7781,7 @@ function view_adm_attendance() {
       `
     })}
 
-    <div class="card p-4 mb-4 grid sm:grid-cols-3 gap-3">
+    <div class="card p-5 mb-4 grid sm:grid-cols-3 gap-3">
       <div><label class="input-label">Date</label>
         <input type="date" class="input" value="${date}" onchange="APP.params.date=this.value; APP.params.dateFrom=this.value; APP.render()" />
       </div>
@@ -7295,7 +7806,7 @@ function view_adm_attendance() {
         <span class="text-xs text-slate-500">Click a class for detailed view</span>
       </div>
       <table class="tbl">
-        <thead><tr><th>Class</th><th class="text-center">Total</th><th class="text-center text-emerald-700">Present</th><th class="text-center text-amber-600">Late</th><th class="text-center text-rose-600">Absent</th><th class="text-center">Rate</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Class</th><th scope="col" class="text-center">Total</th><th scope="col" class="text-center text-emerald-700">Present</th><th scope="col" class="text-center text-amber-600">Late</th><th scope="col" class="text-center text-rose-600">Absent</th><th scope="col" class="text-center">Rate</th><th scope="col"></th></tr></thead>
         <tbody>
           ${classes.map(cls => {
             const classStudents = COMPUTE.studentsByClass(cls.id);
@@ -7316,7 +7827,7 @@ function view_adm_attendance() {
                   <span class="text-xs font-semibold">${rate}%</span>
                 </div>
               </td>
-              <td>${icon('arrow_left','w-4 h-4 rotate-180 text-slate-400')}</td>
+              <td>${icon('arrow_left','w-4 h-4 rotate-180 text-slate-500')}</td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -7453,20 +7964,20 @@ function _renderSchoolResultsOverview() {
     <div class="card overflow-hidden mb-4">
       <div class="p-4 border-b border-slate-100 flex items-center justify-between">
         <h3 class="font-bold text-slate-900">Class Performance — ${term}</h3>
-        <span class="text-xs text-slate-400">${classRows.length} class${classRows.length!==1?'es':''} with data</span>
+        <span class="text-xs text-slate-500">${classRows.length} class${classRows.length!==1?'es':''} with data</span>
       </div>
       <div class="overflow-x-auto">
         <table class="tbl">
-          <thead><tr><th>Rank</th><th>Class</th><th class="text-center">Students</th><th class="text-center">Average</th><th class="text-center">Pass Rate</th><th>Best Subject</th><th>Needs Attention</th><th></th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Rank</th><th scope="col">Class</th><th scope="col" class="text-center">Students</th><th scope="col" class="text-center">Average</th><th scope="col" class="text-center">Pass Rate</th><th scope="col">Best Subject</th><th scope="col">Needs Attention</th><th scope="col"></th></tr></thead>
           <tbody>
             ${classRows.map((d, i) => `<tr>
-              <td class="text-center font-bold text-slate-400 w-10">${i+1}</td>
+              <td class="text-center font-bold text-slate-500 w-10">${i+1}</td>
               <td class="font-semibold">${d.cls.name}</td>
               <td class="text-center">${d.studs}</td>
               <td class="text-center"><span class="font-bold text-lg ${_avgColor(d.avg)}">${d.avg}%</span></td>
               <td class="text-center">${_pBadge(d.pass)}</td>
-              <td>${d.best ? `<span class="font-medium text-emerald-700">${d.best.name}</span> <span class="text-xs text-slate-400">(${d.best.avg}%)</span>` : '<span class="text-slate-400">—</span>'}</td>
-              <td>${d.weak && d.weak.avg < 50 ? `<span class="font-medium text-rose-600">${d.weak.name}</span> <span class="text-xs text-slate-400">(${d.weak.avg}%)</span>` : '<span class="text-slate-400">—</span>'}</td>
+              <td>${d.best ? `<span class="font-medium text-emerald-700">${d.best.name}</span> <span class="text-xs text-slate-500">(${d.best.avg}%)</span>` : '<span class="text-slate-500">—</span>'}</td>
+              <td>${d.weak && d.weak.avg < 50 ? `<span class="font-medium text-rose-600">${d.weak.name}</span> <span class="text-xs text-slate-500">(${d.weak.avg}%)</span>` : '<span class="text-slate-500">—</span>'}</td>
               <td><button class="btn btn-ghost !py-1 text-xs" onclick="APP.params.resView='broadsheet'; APP.params.classId='${d.cls.id}'; APP.render()">${icon('arrow_left','w-3.5 h-3.5 rotate-180')} View</button></td>
             </tr>`).join('')}
           </tbody>
@@ -7480,15 +7991,15 @@ function _renderSchoolResultsOverview() {
       </div>
       <div class="overflow-x-auto">
         <table class="tbl">
-          <thead><tr><th>Subject</th><th class="text-center">Entries</th><th class="text-center">Average</th><th class="text-center">Pass Rate</th><th>Performance</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Subject</th><th scope="col" class="text-center">Entries</th><th scope="col" class="text-center">Average</th><th scope="col" class="text-center">Pass Rate</th><th scope="col">Performance</th></tr></thead>
           <tbody>
-            ${subjectRows.length === 0 ? `<tr><td colspan="5" class="text-center text-slate-400 py-8">No results yet</td></tr>` :
+            ${subjectRows.length === 0 ? `<tr><td colspan="5" class="text-center text-slate-500 py-8">No results yet</td></tr>` :
               subjectRows.map(d => `<tr>
                 <td class="font-semibold">${d.sub.name}</td>
                 <td class="text-center text-slate-500">${d.count}</td>
                 <td class="text-center"><span class="font-bold ${_avgColor(d.avg)}">${d.avg}%</span></td>
                 <td class="text-center">${_pBadge(d.pass)}</td>
-                <td><div class="flex items-center gap-2"><div class="progress flex-1 max-w-28"><div class="progress-bar ${d.avg>=70?'bg-emerald-500':d.avg>=50?'bg-amber-500':'bg-rose-500'}" style="width:${d.avg}%"></div></div><span class="text-xs text-slate-400">${d.avg}%</span></div></td>
+                <td><div class="flex items-center gap-2"><div class="progress flex-1 max-w-28"><div class="progress-bar ${d.avg>=70?'bg-emerald-500':d.avg>=50?'bg-amber-500':'bg-rose-500'}" style="width:${d.avg}%"></div></div><span class="text-xs text-slate-500">${d.avg}%</span></div></td>
               </tr>`).join('')}
           </tbody>
         </table>
@@ -7540,31 +8051,31 @@ function _renderTeacherPerformance() {
     <div class="card overflow-hidden">
       <div class="p-4 border-b border-slate-100 flex items-center justify-between">
         <h3 class="font-bold text-slate-900">Form Teacher Performance — ${term}</h3>
-        <span class="text-xs text-slate-400">Shows each teacher's form class results</span>
+        <span class="text-xs text-slate-500">Shows each teacher's form class results</span>
       </div>
       <div class="overflow-x-auto">
         <table class="tbl">
-          <thead><tr>
-            <th>Teacher</th>
-            <th>Form Class</th>
-            <th class="text-center">Students</th>
-            <th class="text-center">Average</th>
-            <th class="text-center">Pass Rate</th>
-            <th>Strongest Subject</th>
-            <th>Needs Attention</th>
+          <th scope="col"ead><tr>
+            <th scope="col">Teacher</th>
+            <th scope="col">Form Class</th>
+            <th scope="col" class="text-center">Students</th>
+            <th scope="col" class="text-center">Average</th>
+            <th scope="col" class="text-center">Pass Rate</th>
+            <th scope="col">Strongest Subject</th>
+            <th scope="col">Needs Attention</th>
           </tr></thead>
           <tbody>
             ${rows.map(d => `<tr>
               <td>
                 <div class="font-semibold text-slate-900">${d.teacher.name}</div>
-                <div class="text-xs text-slate-400">${d.teacher.staffType || 'Academic'}</div>
+                <div class="text-xs text-slate-500">${d.teacher.staffType || 'Academic'}</div>
               </td>
               <td>${d.myClasses.map(c => `<span class="badge badge-info mr-1">${c.name}</span>`).join('')}</td>
               <td class="text-center font-medium">${d.studs || '—'}</td>
-              <td class="text-center">${d.avg !== null ? `<span class="font-bold text-lg ${_avgColor(d.avg)}">${d.avg}%</span>` : '<span class="text-slate-400">—</span>'}</td>
-              <td class="text-center">${d.pass !== null ? _pBadge(d.pass) : '<span class="text-slate-400">—</span>'}</td>
-              <td>${d.best ? `<span class="font-medium text-emerald-700">${d.best.name}</span> <span class="text-xs text-slate-400">(${d.best.avg}%)</span>` : '<span class="text-slate-400">—</span>'}</td>
-              <td>${d.weak && d.weak.avg < 50 ? `<span class="font-medium text-rose-600">${d.weak.name}</span> <span class="text-xs text-slate-400">(${d.weak.avg}%)</span>` : '<span class="text-emerald-600 text-xs">No weak areas</span>'}</td>
+              <td class="text-center">${d.avg !== null ? `<span class="font-bold text-lg ${_avgColor(d.avg)}">${d.avg}%</span>` : '<span class="text-slate-500">—</span>'}</td>
+              <td class="text-center">${d.pass !== null ? _pBadge(d.pass) : '<span class="text-slate-500">—</span>'}</td>
+              <td>${d.best ? `<span class="font-medium text-emerald-700">${d.best.name}</span> <span class="text-xs text-slate-500">(${d.best.avg}%)</span>` : '<span class="text-slate-500">—</span>'}</td>
+              <td>${d.weak && d.weak.avg < 50 ? `<span class="font-medium text-rose-600">${d.weak.name}</span> <span class="text-xs text-slate-500">(${d.weak.avg}%)</span>` : '<span class="text-emerald-600 text-xs">No weak areas</span>'}</td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -7583,7 +8094,7 @@ function _renderResultsBroadsheet(classes, classId) {
   allResults.forEach(r => { const t = (r.examType || 'examination').toLowerCase(); if (typeCounts[t] !== undefined) typeCounts[t]++; });
 
   return `
-    <div class="card p-4 mb-4 grid sm:grid-cols-2 gap-3">
+    <div class="card p-5 mb-4 grid sm:grid-cols-2 gap-3">
       <div>
         <label class="input-label">Class</label>
         <select class="input" onchange="APP.params.classId = this.value; APP.render()">
@@ -7603,8 +8114,8 @@ function _renderResultsBroadsheet(classes, classId) {
     <div class="card overflow-hidden">
       <div class="overflow-x-auto">
         <table class="tbl">
-          <thead>
-            <tr><th>Student</th>${subjects.map(s => `<th class="text-center">${s.name.split(' ')[0]}</th>`).join('')}<th class="text-center">Avg</th><th class="text-center">Pos</th><th class="text-center">Type</th><th class="text-center">Result</th></tr>
+          <th scope="col"ead>
+            <tr><th scope="col">Student</th>${subjects.map(s => `<th scope="col" class="text-center">${s.name.split(' ')[0]}</th>`).join('')}<th scope="col" class="text-center">Avg</th><th scope="col" class="text-center">Pos</th><th scope="col" class="text-center">Type</th><th scope="col" class="text-center">Result</th></tr>
           </thead>
           <tbody>
             ${(() => {
@@ -7635,8 +8146,8 @@ function _renderResultsBroadsheet(classes, classId) {
                   return studRes.length ? `<span class="badge ${colors[t.toLowerCase()] || 'badge-neutral'} text-xs">${t}</span>` : '';
                 })()}</td>
                 <td class="text-center">${studRes.length
-                  ? `<button class="btn btn-primary !py-1 !px-2 text-xs" title="Generate this student's result and share with the parent" onclick="generateStudentResult('${s.id}')">${icon('send','w-3.5 h-3.5')} Generate</button>`
-                  : `<span class="text-xs text-slate-400">No scores</span>`}</td>
+                  ? `<button class="btn btn-primary !py-1 !px-2 text-xs" aria-label="Generate this student's result and share with the parent" title="Generate this student's result and share with the parent" onclick="generateStudentResult('${s.id}')">${icon('send','w-3.5 h-3.5')} Generate</button>`
+                  : `<span class="text-xs text-slate-500">No scores</span>`}</td>
               </tr>`;
               }).join('');
             })()}
@@ -7694,12 +8205,12 @@ function reportCommentModal(studentId, onSave) {
             <div class="text-xs text-slate-500">${DB.settings().currentTerm} · Average: <strong>${avg}%</strong></div>
           </div>
         </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
           ${icon('info','w-4 h-4 inline mr-1')} A class teacher or head teacher comment is <strong>required</strong> before this result can be published and shared with the parent.
         </div>
         <div>
           <div class="flex items-center justify-between mb-1">
-            <label class="input-label">Teacher's Comment</label>
+            <label class="input-label" for="rpt_comment">Teacher's Comment</label>
             <button class="text-xs text-brand-700 font-semibold hover:underline flex items-center gap-1" onclick="injectAiComment()">
               ${icon('ai','w-3.5 h-3.5')} AI suggest
             </button>
@@ -7708,11 +8219,11 @@ function reportCommentModal(studentId, onSave) {
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Class Teacher</label>
+            <label class="input-label" for="rpt_classTeacher">Class Teacher</label>
             <input id="rpt_classTeacher" class="input" placeholder="Teacher's name" value="${DB.query('teachers', t => t.schoolId === currentSchoolId() && t.staffType === 'Academic')[0]?.name || ''}" />
           </div>
           <div>
-            <label class="input-label">Head Teacher / Principal</label>
+            <label class="input-label" for="rpt_headTeacher">Head Teacher / Principal</label>
             <input id="rpt_headTeacher" class="input" placeholder="Head teacher's name" value="Mrs. Patricia Akande" />
           </div>
         </div>
@@ -7783,7 +8294,7 @@ function exportBroadsheet(classId) {
     <h1>Bright Lights Academy</h1>
     <h2>${cls.name} — ${DB.settings().currentTerm} Broadsheet</h2>
     <table border="1" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:12px">
-      <thead><tr><th>Student</th>${subjects.map(s => `<th>${s.name}</th>`).join('')}<th>Avg</th></tr></thead>
+      <th scope="col"ead><tr><th scope="col">Student</th>${subjects.map(s => `<th scope="col">${s.name}</th>`).join('')}<th scope="col">Avg</th></tr></thead>
       <tbody>
         ${students.map(s => {
           const sr = results.filter(r => r.studentId === s.id);
@@ -7903,17 +8414,17 @@ function renderAIInsights(schoolId) {
   const levelCfg = {
     critical: { cls: 'bg-red-50 border-red-200 text-red-900', dot: 'bg-red-500', icon: '🔴' },
     warn:     { cls: 'bg-amber-50 border-amber-200 text-amber-900', dot: 'bg-amber-400', icon: '🟡' },
-    info:     { cls: 'bg-blue-50 border-blue-200 text-blue-900', dot: 'bg-blue-400', icon: '🔵' },
+    info:     { cls: 'bg-brand-50 border-brand-200 text-brand-900', dot: 'bg-brand-400', icon: '🔵' },
     ok:       { cls: 'bg-emerald-50 border-emerald-200 text-emerald-900', dot: 'bg-emerald-500', icon: '🟢' }
   };
   return `
-    <div class="card p-4 mb-4">
+    <div class="card p-5 mb-4">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
           <span class="text-lg">✨</span>
           <h3 class="font-bold text-slate-900">Operational Insights</h3>
         </div>
-        <span class="text-xs text-slate-400">Auto-detected · updated on load</span>
+        <span class="text-xs text-slate-500">Auto-detected · updated on load</span>
       </div>
       <div class="space-y-2">
         ${insights.map(ins => {
@@ -7924,7 +8435,7 @@ function renderAIInsights(schoolId) {
               <span class="text-xs font-bold uppercase tracking-wide opacity-60">${ins.cat}</span>
               <div class="text-sm">${ins.msg}</div>
             </div>
-            ${ins.view ? `<button class="btn btn-ghost !py-1 !px-2 text-xs flex-shrink-0" onclick="APP.go('${ins.view}')" title="Go to ${ins.cat}">View ${icon('arrow_left','w-3 h-3 rotate-180')}</button>` : ''}
+            ${ins.view ? `<button class="btn btn-ghost !py-1 !px-2 text-xs flex-shrink-0" onclick="APP.go('${ins.view}')" aria-label="Go to ${ins.cat}" title="Go to ${ins.cat}">View ${icon('arrow_left','w-3 h-3 rotate-180')}</button>` : ''}
           </div>`;
         }).join('')}
       </div>
@@ -8000,26 +8511,26 @@ function renderEnrollmentReport(schoolId) {
       <div class="card p-5">
         <h3 class="font-bold text-slate-900 mb-3">Enrollment by Class</h3>
         <table class="tbl">
-          <thead><tr><th>Class</th><th class="text-center">Total</th><th class="text-center">Male</th><th class="text-center">Female</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Class</th><th scope="col" class="text-center">Total</th><th scope="col" class="text-center">Male</th><th scope="col" class="text-center">Female</th></tr></thead>
           <tbody>
             ${byClass.map(({ cls, count, male, female }) => `<tr>
               <td class="font-medium">${cls.name}</td>
               <td class="text-center font-semibold">${count}</td>
-              <td class="text-center text-blue-700">${male}</td>
+              <td class="text-center text-brand-700">${male}</td>
               <td class="text-center text-rose-600">${female}</td>
             </tr>`).join('')}
-            <tr class="font-bold bg-slate-50"><td>Total</td><td class="text-center">${students.length}</td><td class="text-center text-blue-700">${students.filter(s=>s.gender==='M').length}</td><td class="text-center text-rose-600">${students.filter(s=>s.gender!=='M').length}</td></tr>
+            <tr class="font-bold bg-slate-50"><td>Total</td><td class="text-center">${students.length}</td><td class="text-center text-brand-700">${students.filter(s=>s.gender==='M').length}</td><td class="text-center text-rose-600">${students.filter(s=>s.gender!=='M').length}</td></tr>
           </tbody>
         </table>
       </div>
       <div class="card p-5">
         <h3 class="font-bold text-slate-900 mb-3">New vs Returning (${currentSession})</h3>
         <div class="space-y-3">
-          <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
-            <div><div class="font-semibold text-blue-900">New Enrollment</div><div class="text-xs text-blue-700">First time joining this session</div></div>
-            <div class="text-2xl font-extrabold text-blue-700">${newEnrolled.length}</div>
+          <div class="p-3 bg-brand-50 rounded-xl flex items-center justify-between">
+            <div><div class="font-semibold text-brand-900">New Enrollment</div><div class="text-xs text-brand-700">First time joining this session</div></div>
+            <div class="text-2xl font-extrabold text-brand-700">${newEnrolled.length}</div>
           </div>
-          <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+          <div class="p-3 bg-emerald-50 rounded-xl flex items-center justify-between">
             <div><div class="font-semibold text-emerald-900">Returning Students</div><div class="text-xs text-emerald-700">Enrolled from previous sessions</div></div>
             <div class="text-2xl font-extrabold text-emerald-700">${returning.length}</div>
           </div>
@@ -8062,13 +8573,13 @@ function renderLeaversReport(schoolId) {
       <div class="card overflow-hidden">
         <div class="px-5 py-3 border-b border-slate-100">
           <h3 class="font-bold text-slate-900">Transfer Students (Currently Enrolled)</h3>
-          <p class="text-xs text-slate-400 mt-0.5">Students who joined this school from another institution</p>
+          <p class="text-xs text-slate-500 mt-0.5">Students who joined this school from another institution</p>
         </div>
         <table class="tbl">
-          <thead><tr><th>Student</th><th>Class</th><th>Previous School</th><th>Last Class</th><th>Transfer Date</th><th>Reason</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Previous School</th><th scope="col">Last Class</th><th scope="col">Transfer Date</th><th scope="col">Reason</th></tr></thead>
           <tbody>
             ${transfersIn.length === 0
-              ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No transfer students recorded yet</td></tr>`
+              ? `<tr><td colspan="6" class="text-center text-slate-500 py-8">No transfer students recorded yet</td></tr>`
               : transfersIn.map(s => {
                   const cls = DB.find('classes', s.classId);
                   return `<tr>
@@ -8091,9 +8602,9 @@ function renderLeaversReport(schoolId) {
           <button class="btn btn-secondary text-sm" onclick="exportLeaversCSV()">${icon('download','w-4 h-4')} CSV</button>
         </div>
         <table class="tbl">
-          <thead><tr><th>Student</th><th>Class</th><th>Status</th><th>Reason</th><th>Date</th><th>Destination</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Status</th><th scope="col">Reason</th><th scope="col">Date</th><th scope="col">Destination</th></tr></thead>
           <tbody>
-            ${leavers.length === 0 ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No leavers recorded yet</td></tr>` : leavers.map(s => {
+            ${leavers.length === 0 ? `<tr><td colspan="6" class="text-center text-slate-500 py-8">No leavers recorded yet</td></tr>` : leavers.map(s => {
               const cls = DB.find('classes', s.classId);
               const date = s.withdrawnAt || s.transferredAt || s.graduatedAt || s.suspendedAt || s.updatedAt || '';
               return `<tr>
@@ -8127,14 +8638,14 @@ function renderAttendanceReport(schoolId) {
   }).filter(x => x.count > 0);
 
   return `
-    <div class="card p-4 mb-4 flex items-end gap-3 flex-wrap">
+    <div class="card p-5 mb-4 flex items-end gap-3 flex-wrap">
       <div><label class="input-label">From</label><input type="date" class="input" value="${dateFrom}" onchange="APP.params.rAttFrom=this.value; APP.render()" /></div>
       <div><label class="input-label">To</label><input type="date" class="input" value="${dateTo}" onchange="APP.params.rAttTo=this.value; APP.render()" /></div>
       <button class="btn btn-secondary" onclick="exportSchoolAttendanceCSV('${dateFrom}','${dateTo}')">${icon('download','w-4 h-4')} Export CSV</button>
     </div>
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Class</th><th class="text-center">Students</th><th class="text-center">Records</th><th class="text-center">Present</th><th>Attendance Rate</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Class</th><th scope="col" class="text-center">Students</th><th scope="col" class="text-center">Records</th><th scope="col" class="text-center">Present</th><th scope="col">Attendance Rate</th></tr></thead>
         <tbody>
           ${byClass.map(({ cls, count, recs: total, present, rate }) => `<tr>
             <td class="font-medium">${cls.name}</td>
@@ -8174,9 +8685,9 @@ function renderApplicationsReport(schoolId) {
         <button class="btn btn-secondary text-sm" onclick="exportApplicationsCSV()">${icon('download','w-4 h-4')} Export CSV</button>
       </div>
       <table class="tbl">
-        <thead><tr><th>Applicant</th><th>Parent</th><th>Class</th><th>Location</th><th>Applied</th><th>Status</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Applicant</th><th scope="col">Parent</th><th scope="col">Class</th><th scope="col">Location</th><th scope="col">Applied</th><th scope="col">Status</th></tr></thead>
         <tbody>
-          ${apps.length === 0 ? `<tr><td colspan="6" class="text-center text-slate-400 py-8">No applications yet</td></tr>` : apps.map(a => {
+          ${apps.length === 0 ? `<tr><td colspan="6" class="text-center text-slate-500 py-8">No applications yet</td></tr>` : apps.map(a => {
             const cls = DB.find('classes', a.requestedClass);
             return `<tr class="cursor-pointer" onclick="viewApplication('${a.id}')">
               <td><div class="flex items-center gap-2">${avatar(a.applicantName,'sm')}<div><div class="font-medium text-sm">${a.applicantName}</div><div class="text-xs text-slate-500">${a.gender === 'M' ? 'Male' : 'Female'} · ${calcAge(a.dob)} yrs</div></div></div></td>
@@ -8268,7 +8779,7 @@ function view_adm_discipline() {
       })}
       <div class="grid lg:grid-cols-3 gap-4">
         <div class="lg:col-span-2 space-y-3">
-          <div class="card p-4 flex items-center gap-4">
+          <div class="card p-5 flex items-center gap-4">
             ${avatar(s ? s.name : '?', 'xl')}
             <div class="flex-1">
               <div class="font-bold text-slate-900 text-lg">${s ? s.name : '—'}</div>
@@ -8282,7 +8793,7 @@ function view_adm_discipline() {
           <div class="card overflow-hidden">
             ${sRecs.length === 0 ? emptyState({ title: 'No discipline records', icon: 'check' }) : `
               <table class="tbl">
-                <thead><tr><th>Type</th><th>Points</th><th>Note</th><th>Recorded By</th><th>Date</th></tr></thead>
+                <th scope="col"ead><tr><th scope="col">Type</th><th scope="col">Points</th><th scope="col">Note</th><th scope="col">Recorded By</th><th scope="col">Date</th></tr></thead>
                 <tbody>
                   ${sRecs.sort((a,b)=>b.date.localeCompare(a.date)).map(r => {
                     const recorder = DB.find('teachers', r.recordedBy) || DB.find('teachers', r.recordedBy);
@@ -8300,11 +8811,11 @@ function view_adm_discipline() {
           </div>
         </div>
         <div class="space-y-3">
-          <div class="card p-4">
+          <div class="card p-5">
             <h4 class="font-bold text-slate-900 mb-2 text-sm">${icon('check','w-4 h-4 inline')} Admission Portal Link</h4>
             <p class="text-xs text-slate-500 mb-3">Discipline records are synced with this student's admission profile for comprehensive tracking.</p>
             ${admissionRecord ? `
-              <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 mb-2">
+              <div class="bg-emerald-50 rounded-xl p-3 text-xs text-emerald-900 mb-2">
                 ${icon('check','w-3.5 h-3.5 inline')} Admission record found
               </div>
               <div class="text-xs space-y-1">
@@ -8312,13 +8823,13 @@ function view_adm_discipline() {
                 <div><span class="text-slate-500">Admitted:</span> <span class="font-semibold">${fdate(admissionRecord.admittedAt || admissionRecord.createdAt || '', { short: true })}</span></div>
               </div>
             ` : `
-              <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+              <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
                 ${icon('bell','w-3.5 h-3.5 inline')} No separate admission record found. Records are tracked here.
               </div>
             `}
             <button class="btn btn-secondary w-full mt-3 text-xs" onclick="APP.go('adm_people', { peopleTab: 'admissions' })">${icon('arrow_left','w-3.5 h-3.5 rotate-180')} View Admission</button>
           </div>
-          <div class="card p-4">
+          <div class="card p-5">
             <h4 class="font-bold text-slate-900 mb-2 text-sm">${icon('parent','w-4 h-4 inline')} Parent / Guardian</h4>
             ${studentParent ? `
               <div class="flex items-center gap-2 mb-2">
@@ -8326,15 +8837,15 @@ function view_adm_discipline() {
                 <span class="font-semibold text-slate-900 text-sm">${studentParent.name}</span>
               </div>
               <div class="text-xs text-slate-600 space-y-1 mt-2">
-                <div>${icon('phone','w-3.5 h-3.5 inline mr-1 text-slate-400')}${studentParent.phone || '—'}</div>
-                ${studentParent.email ? `<div>${icon('edit','w-3.5 h-3.5 inline mr-1 text-slate-400')}${studentParent.email}</div>` : ''}
+                <div>${icon('phone','w-3.5 h-3.5 inline mr-1 text-slate-500')}${studentParent.phone || '—'}</div>
+                ${studentParent.email ? `<div>${icon('edit','w-3.5 h-3.5 inline mr-1 text-slate-500')}${studentParent.email}</div>` : ''}
               </div>
               <a href="https://wa.me/${(studentParent.phone || '').replace(/\D/g, '')}" target="_blank" class="btn btn-secondary w-full mt-3 text-xs text-emerald-700" style="border-color:#86efac">
                 ${icon('check','w-3.5 h-3.5 inline mr-1')} WhatsApp Parent
               </a>
             ` : `<p class="text-xs text-slate-500">No parent linked to this student.</p>`}
           </div>
-          <div class="card p-4">
+          <div class="card p-5">
             <h4 class="font-bold text-slate-900 mb-2 text-sm">Points Summary</h4>
             <div class="space-y-1 text-sm">
               <div class="flex justify-between"><span class="text-slate-500">Commendations</span><span class="text-emerald-700 font-semibold">+${sRecs.filter(r=>r.points>0).reduce((s,r)=>s+r.points,0)}</span></div>
@@ -8375,7 +8886,7 @@ function view_adm_discipline() {
         ${suspensions.length === 0
           ? emptyState({ title: 'No suspension records', body: 'Suspensions appear here when you suspend a student from their profile.', icon: 'check' })
           : `<table class="tbl">
-              <thead><tr><th>Student</th><th>Class</th><th>Reason</th><th class="text-center">Days</th><th>Suspended</th><th>Resume Date</th><th class="text-center">Status</th></tr></thead>
+              <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Reason</th><th scope="col" class="text-center">Days</th><th scope="col">Suspended</th><th scope="col">Resume Date</th><th scope="col" class="text-center">Status</th></tr></thead>
               <tbody>
                 ${suspensions.map(sus => {
                   const stu = DB.find('students', sus.studentId);
@@ -8396,7 +8907,7 @@ function view_adm_discipline() {
         }
       </div>
     ` : `
-      <div class="card p-4 mb-4 flex gap-3">
+      <div class="card p-5 mb-4 flex gap-3">
         <input type="text" class="input flex-1" placeholder="Search students…" value="${APP.params.discSearch || ''}" oninput="APP.params.discSearch=this.value; APP.render()" />
       </div>
       ${studentsWithRecords.length === 0
@@ -8404,7 +8915,7 @@ function view_adm_discipline() {
             action: `<button class="btn btn-primary" onclick="addDisciplineModal()">${icon('plus','w-4 h-4')} New Record</button>` })
         : `<div class="card overflow-hidden">
             <table class="tbl">
-              <thead><tr><th>Student</th><th class="text-center">Records</th><th class="text-center">Net Points</th><th>Latest</th><th></th></tr></thead>
+              <th scope="col"ead><tr><th scope="col">Student</th><th scope="col" class="text-center">Records</th><th scope="col" class="text-center">Net Points</th><th scope="col">Latest</th><th scope="col"></th></tr></thead>
               <tbody>
                 ${studentsWithRecords.map(s => {
                   const latest = s._recs.sort((a,b)=>b.date.localeCompare(a.date))[0];
@@ -8413,7 +8924,7 @@ function view_adm_discipline() {
                     <td class="text-center">${s._recs.length}</td>
                     <td class="text-center font-mono font-bold ${s._points>=0?'text-emerald-700':'text-rose-600'}">${s._points>0?'+':''}${s._points}</td>
                     <td class="text-sm">${latest ? `<span class="badge ${latest.type==='commendation'?'badge-success':'badge-danger'} mr-1">${latest.type}</span>${fdate(latest.date,{short:true})}` : '—'}</td>
-                    <td>${icon('arrow_left','w-4 h-4 rotate-180 text-slate-400')}</td>
+                    <td>${icon('arrow_left','w-4 h-4 rotate-180 text-slate-500')}</td>
                   </tr>`;
                 }).join('')}
               </tbody>
@@ -8429,14 +8940,14 @@ function addDisciplineModal() {
     title: 'New Discipline Record',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Student</label>
+        <div><label class="input-label" for="dc_student">Student</label>
           <select id="dc_student" class="input">${students.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
         </div>
-        <div><label class="input-label">Type</label>
+        <div><label class="input-label" for="dc_type">Type</label>
           <select id="dc_type" class="input"><option value="commendation">Commendation</option><option value="misconduct">Misconduct</option></select>
         </div>
-        <div><label class="input-label">Points</label><input id="dc_points" type="number" class="input" placeholder="e.g. 5 or -2" /></div>
-        <div><label class="input-label">Note</label><textarea id="dc_note" class="input" rows="3" placeholder="What happened?"></textarea></div>
+        <div><label class="input-label" for="dc_points">Points</label><input id="dc_points" type="number" class="input" placeholder="e.g. 5 or -2" /></div>
+        <div><label class="input-label" for="dc_note">Note</label><textarea id="dc_note" class="input" rows="3" placeholder="What happened?"></textarea></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -8475,7 +8986,7 @@ function view_adm_inventory() {
       ${statCard({ label: 'Low Stock', value: lowStock.length, icon: 'bell', color: 'rose' })}
     </div>
 
-    ${lowStock.length ? `<div class="card bg-amber-50 border border-amber-200 p-4 mb-4">
+    ${lowStock.length ? `<div class="card bg-amber-50 p-4 mb-4">
       <div class="flex items-start gap-3">
         <div class="text-amber-700">${icon('bell','w-5 h-5')}</div>
         <div>
@@ -8487,20 +8998,20 @@ function view_adm_inventory() {
 
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Item</th><th>Category</th><th>Stock</th><th>Unit Cost</th><th>Value</th><th>Supplier</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Item</th><th scope="col">Category</th><th scope="col">Stock</th><th scope="col">Unit Cost</th><th scope="col">Value</th><th scope="col">Supplier</th><th scope="col"></th></tr></thead>
         <tbody>
           ${items.map(i => {
             const low = i.quantity < i.minStock;
             return `<tr>
               <td><span class="font-medium">${i.name}</span></td>
               <td><span class="badge badge-neutral">${i.category}</span></td>
-              <td><span class="${low ? 'text-rose-600 font-bold' : 'font-medium'}">${i.quantity}</span> <span class="text-xs text-slate-400">/ min ${i.minStock}</span> ${low ? '<span class="badge badge-danger ml-2">LOW</span>' : ''}</td>
+              <td><span class="${low ? 'text-rose-600 font-bold' : 'font-medium'}">${i.quantity}</span> <span class="text-xs text-slate-500">/ min ${i.minStock}</span> ${low ? '<span class="badge badge-danger ml-2">LOW</span>' : ''}</td>
               <td class="font-mono">${money(i.unitCost)}</td>
               <td class="font-mono font-semibold">${money(i.quantity * i.unitCost)}</td>
               <td>${i.supplier}</td>
               <td class="text-right whitespace-nowrap">
-                <button class="btn btn-ghost !p-1.5" title="Adjust stock" onclick="adjustStockModal('${i.id}')">${icon('edit','w-4 h-4')}</button>
-                <button class="btn btn-ghost !p-1.5" title="History" onclick="viewInventoryHistory('${i.id}')">${icon('reports','w-4 h-4')}</button>
+                <button class="btn btn-ghost !p-1.5" aria-label="Adjust stock" title="Adjust stock" onclick="adjustStockModal('${i.id}')">${icon('edit','w-4 h-4')}</button>
+                <button class="btn btn-ghost !p-1.5" aria-label="History" title="History" onclick="viewInventoryHistory('${i.id}')">${icon('reports','w-4 h-4')}</button>
               </td>
             </tr>`;
           }).join('')}
@@ -8549,11 +9060,11 @@ function adjustStockModal(itemId) {
           <span class="font-bold text-2xl">${it.quantity}</span>
         </div>
         <div>
-          <label class="input-label">Change (use negative to remove, e.g. -5)</label>
+          <label class="input-label" for="adj_delta">Change (use negative to remove, e.g. -5)</label>
           <input id="adj_delta" type="number" class="input" placeholder="+10 to add, -5 to remove" />
         </div>
         <div>
-          <label class="input-label">Reason</label>
+          <label class="input-label" for="adj_reason">Reason</label>
           <select id="adj_reason" class="input">
             <option>Restock from supplier</option>
             <option>Issued to class</option>
@@ -8593,17 +9104,17 @@ function addInventoryModal() {
     title: 'Add Inventory Item',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Item Name</label><input id="iv_name" class="input" /></div>
+        <div><label class="input-label" for="iv_name">Item Name</label><input id="iv_name" class="input" /></div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Category</label>
+          <div><label class="input-label" for="iv_cat">Category</label>
             <select id="iv_cat" class="input"><option>Books</option><option>Uniform</option><option>Stationery</option><option>Equipment</option><option>Other</option></select>
           </div>
-          <div><label class="input-label">Supplier</label><input id="iv_sup" class="input" /></div>
+          <div><label class="input-label" for="iv_sup">Supplier</label><input id="iv_sup" class="input" /></div>
         </div>
         <div class="grid grid-cols-3 gap-3">
-          <div><label class="input-label">Quantity</label><input id="iv_qty" type="number" class="input" /></div>
-          <div><label class="input-label">Min Stock</label><input id="iv_min" type="number" class="input" /></div>
-          <div><label class="input-label">Unit Cost</label><input id="iv_cost" type="number" class="input" /></div>
+          <div><label class="input-label" for="iv_qty">Quantity</label><input id="iv_qty" type="number" class="input" /></div>
+          <div><label class="input-label" for="iv_min">Min Stock</label><input id="iv_min" type="number" class="input" /></div>
+          <div><label class="input-label" for="iv_cost">Unit Cost</label><input id="iv_cost" type="number" class="input" /></div>
         </div>
       </div>
     `,
@@ -8687,12 +9198,12 @@ function renderHRPayrollPanel() {
 
   const stageLabel = { pending_approval: 'Awaiting Accounting approval', approved: 'Approved — disbursement in progress' }[activeRun.stage] || activeRun.stage;
   return `
-    <div class="card p-5 bg-blue-50 border border-blue-200">
+    <div class="card p-5 bg-brand-50">
       <div class="flex items-start gap-3">
-        <div class="w-10 h-10 rounded-lg bg-blue-200 text-blue-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
+        <div class="w-10 h-10 rounded-lg bg-brand-200 text-brand-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
         <div class="flex-1">
-          <div class="font-bold text-blue-900">${activeRun.period} Payroll — ${stageLabel}</div>
-          <p class="text-sm text-blue-800 mt-1">Submitted to Accounting on ${fdate(activeRun.submittedAt, { long: true })}. The accountant will confirm funds and authorize disbursement.</p>
+          <div class="font-bold text-brand-900">${activeRun.period} Payroll — ${stageLabel}</div>
+          <p class="text-sm text-brand-800 mt-1">Submitted to Accounting on ${fdate(activeRun.submittedAt, { long: true })}. The accountant will confirm funds and authorize disbursement.</p>
           <button class="btn btn-secondary text-sm mt-3" onclick="APP.go('adm_finance_hub', { financeTab: 'payroll' })">${icon('fees','w-3.5 h-3.5')} View in Finance →</button>
         </div>
       </div>
@@ -8765,7 +9276,7 @@ function view_adm_staff_att() {
     const c = document.getElementById('staffAttChart2');
     if (c) new Chart(c, {
       type: 'bar',
-      data: { labels: days, datasets: [{ label: 'Staff present', data: dayCounts, backgroundColor: '#10b981', borderRadius: 6 }] },
+      data: { labels: days, datasets: [{ label: 'Staff present', data: dayCounts, backgroundColor: '#00c08f', borderRadius: 6 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
   };
@@ -8779,7 +9290,7 @@ function view_adm_staff_att() {
       `
     })}
 
-    <div class="card p-4 mb-4 grid sm:grid-cols-3 gap-3">
+    <div class="card p-5 mb-4 grid sm:grid-cols-3 gap-3">
       <div><label class="input-label">View Date</label>
         <input type="date" class="input" value="${date}" onchange="APP.params.staffAttDate=this.value; APP.render()" />
       </div>
@@ -8806,7 +9317,7 @@ function view_adm_staff_att() {
         <h3 class="font-bold text-slate-900 mb-3 text-sm">Clock-in Records · ${fdate(date, { long: true })}</h3>
         <div class="overflow-x-auto">
           <table class="tbl">
-            <thead><tr><th>Staff</th><th>Department</th><th>Clock In</th><th>Clock Out</th><th>Status</th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Staff</th><th scope="col">Department</th><th scope="col">Clock In</th><th scope="col">Clock Out</th><th scope="col">Status</th></tr></thead>
             <tbody>
               ${teachers.map(t => {
                 const rec = todayRecs.find(r => r.staffId === t.id);
@@ -8830,7 +9341,7 @@ function view_adm_staff_att() {
         <h3 class="font-bold text-slate-900">Attendance Summary (${dateFrom} → ${dateTo})</h3>
       </div>
       <table class="tbl">
-        <thead><tr><th>Staff</th><th class="text-center">Days Present</th><th class="text-center">Late</th><th class="text-center">Absent</th><th class="text-center">Attendance %</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Staff</th><th scope="col" class="text-center">Days Present</th><th scope="col" class="text-center">Late</th><th scope="col" class="text-center">Absent</th><th scope="col" class="text-center">Attendance %</th></tr></thead>
         <tbody>
           ${teachers.map(t => {
             const tRecs = rangeRecs.filter(r => r.staffId === t.id);
@@ -8892,7 +9403,7 @@ function renderHRLeave() {
     ${filtered.length === 0 ? emptyState({ title: 'No leave requests', icon: 'calendar' }) : `
       <div class="card overflow-hidden">
         <table class="tbl">
-          <thead><tr><th>Staff</th><th>Type</th><th>Dates</th><th>Source</th><th>Status</th><th></th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Staff</th><th scope="col">Type</th><th scope="col">Dates</th><th scope="col">Source</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
           <tbody>
             ${filtered.sort((a, b) => b.requestedAt.localeCompare(a.requestedAt)).map(l => {
               const staff = DB.find('teachers', l.staffId);
@@ -8905,8 +9416,8 @@ function renderHRLeave() {
                 <td>${statusBadge(l.status === 'approved' ? 'successful' : l.status === 'rejected' ? 'failed' : 'pending')}</td>
                 <td class="text-right whitespace-nowrap" onclick="event.stopPropagation()">
                   ${l.status === 'pending' ? `
-                    <button class="btn btn-ghost !p-1.5 text-emerald-700" title="Approve" onclick="decideLeave('${l.id}', 'approved')">${icon('check','w-4 h-4')}</button>
-                    <button class="btn btn-ghost !p-1.5 text-rose-600" title="Reject" onclick="decideLeave('${l.id}', 'rejected')">${icon('x','w-4 h-4')}</button>
+                    <button class="btn btn-ghost !p-1.5 text-emerald-700" aria-label="Approve" title="Approve" onclick="decideLeave('${l.id}', 'approved')">${icon('check','w-4 h-4')}</button>
+                    <button class="btn btn-ghost !p-1.5 text-rose-600" aria-label="Reject" title="Reject" onclick="decideLeave('${l.id}', 'rejected')">${icon('x','w-4 h-4')}</button>
                   ` : icon('arrow_left','w-4 h-4 rotate-180 text-slate-300')}
                 </td>
               </tr>`;
@@ -8945,37 +9456,37 @@ function viewLeaveDetails(leaveId) {
         <!-- Leave details -->
         <div class="grid grid-cols-2 gap-3">
           <div class="bg-slate-50 rounded-xl p-3">
-            <div class="text-xs text-slate-400 uppercase font-semibold mb-1">Leave Type</div>
+            <div class="text-xs text-slate-500 uppercase font-semibold mb-1">Leave Type</div>
             <div class="font-semibold text-slate-900">${l.type}</div>
           </div>
           <div class="bg-slate-50 rounded-xl p-3">
-            <div class="text-xs text-slate-400 uppercase font-semibold mb-1">Duration</div>
+            <div class="text-xs text-slate-500 uppercase font-semibold mb-1">Duration</div>
             <div class="font-semibold text-slate-900">${days} day${days !== 1 ? 's' : ''}</div>
           </div>
           <div class="bg-slate-50 rounded-xl p-3">
-            <div class="text-xs text-slate-400 uppercase font-semibold mb-1">From</div>
+            <div class="text-xs text-slate-500 uppercase font-semibold mb-1">From</div>
             <div class="font-semibold text-slate-900">${fdate(l.from, { long: true })}</div>
           </div>
           <div class="bg-slate-50 rounded-xl p-3">
-            <div class="text-xs text-slate-400 uppercase font-semibold mb-1">To</div>
+            <div class="text-xs text-slate-500 uppercase font-semibold mb-1">To</div>
             <div class="font-semibold text-slate-900">${fdate(l.to, { long: true })}</div>
           </div>
         </div>
 
         <!-- Reason -->
         <div>
-          <div class="text-xs text-slate-400 uppercase font-semibold mb-1">Reason / Notes</div>
-          <div class="p-3 bg-slate-50 rounded-xl text-sm text-slate-700 min-h-10">${l.reason || '<span class="text-slate-400 italic">No reason provided</span>'}</div>
+          <div class="text-xs text-slate-500 uppercase font-semibold mb-1">Reason / Notes</div>
+          <div class="p-3 bg-slate-50 rounded-xl text-sm text-slate-700 min-h-10">${l.reason || '<span class="text-slate-500 italic">No reason provided</span>'}</div>
         </div>
 
         <!-- Meta -->
-        <div class="text-xs text-slate-400 space-y-0.5">
+        <div class="text-xs text-slate-500 space-y-0.5">
           <div>Submitted: ${fdate(l.requestedAt, { long: true })} · ${l.source === 'self' ? 'by staff member' : 'entered by admin'}</div>
           ${l.decidedAt ? `<div>${l.status === 'approved' ? 'Approved' : 'Rejected'} on ${fdate(l.decidedAt, { long: true })}${decidedBy ? ' by ' + decidedBy.name : ''}</div>` : ''}
         </div>
 
         ${l.status === 'pending' ? `
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           ${icon('info','w-4 h-4 inline mr-1')} This request is awaiting your decision. Approve to authorise the leave, or reject to decline it (the staff member will be notified either way).
         </div>` : ''}
       </div>
@@ -9030,7 +9541,7 @@ function suggestSubstituteCoverageModal(leaveId) {
     title: 'Assign Substitute Coverage',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <strong>${staffOnLeave.name}</strong> is on ${l.type.toLowerCase()} leave from ${fdate(l.from, { short: true })} to ${fdate(l.to, { short: true })}. We've ranked available substitutes by subject overlap.
         </div>
         <div>
@@ -9110,17 +9621,17 @@ function newLeaveRequestModal() {
     title: 'New Leave Request',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Staff</label>
+        <div><label class="input-label" for="lv_staff">Staff</label>
           <select id="lv_staff" class="input">${teachers.map(t => `<option value="${t.id}">${t.name} — ${t.role || t.staffType}</option>`).join('')}</select>
         </div>
-        <div><label class="input-label">Leave Type</label>
+        <div><label class="input-label" for="lv_type">Leave Type</label>
           <select id="lv_type" class="input"><option>Casual</option><option>Sick</option><option>Annual</option><option>Maternity</option><option>Bereavement</option><option>Study</option></select>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">From</label><input id="lv_from" type="date" class="input" /></div>
-          <div><label class="input-label">To</label><input id="lv_to" type="date" class="input" /></div>
+          <div><label class="input-label" for="lv_from">From</label><input id="lv_from" type="date" class="input" /></div>
+          <div><label class="input-label" for="lv_to">To</label><input id="lv_to" type="date" class="input" /></div>
         </div>
-        <div><label class="input-label">Reason</label><textarea id="lv_reason" rows="2" class="input" placeholder="e.g. Attending hospital for knee surgery"></textarea></div>
+        <div><label class="input-label" for="lv_reason">Reason</label><textarea id="lv_reason" rows="2" class="input" placeholder="e.g. Attending hospital for knee surgery"></textarea></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -9164,12 +9675,12 @@ function renderHRAttendance() {
     const c = document.getElementById('staffAttChart');
     if (c) new Chart(c, {
       type: 'bar',
-      data: { labels: days, datasets: [{ label: 'Staff present', data: dayCounts, backgroundColor: '#10b981', borderRadius: 6 }] },
+      data: { labels: days, datasets: [{ label: 'Staff present', data: dayCounts, backgroundColor: '#00c08f', borderRadius: 6 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
   };
   return `
-    <div class="card p-4 mb-4 flex flex-col sm:flex-row gap-3 sm:items-end justify-between">
+    <div class="card p-5 mb-4 flex flex-col sm:flex-row gap-3 sm:items-end justify-between">
       <div class="flex-1">
         <label class="input-label">Date</label>
         <input type="date" class="input max-w-xs" value="${date}" onchange="APP.params.staffAttDate=this.value; APP.render()" />
@@ -9182,7 +9693,7 @@ function renderHRAttendance() {
       </div>
     </div>
 
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm text-blue-900">
+    <div class="bg-brand-50 rounded-xl p-3 mb-4 text-sm text-brand-900">
       <strong>How it works:</strong> Staff clock themselves in/out from their dashboard. As an admin, you can also manually record attendance from the gate sign-in book using <em>Mark Attendance</em>.
     </div>
 
@@ -9195,16 +9706,16 @@ function renderHRAttendance() {
         <h3 class="font-bold text-slate-900 mb-3 text-sm">Clock-in records · ${fdate(date, { long: true })}</h3>
         <div class="overflow-x-auto">
           <table class="tbl">
-            <thead><tr><th>Staff</th><th>Clock In</th><th>Clock Out</th><th>Source</th><th>Status</th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Staff</th><th scope="col">Clock In</th><th scope="col">Clock Out</th><th scope="col">Source</th><th scope="col">Status</th></tr></thead>
             <tbody>
               ${teachers.map(t => {
                 const rec = todayRecs.find(r => r.staffId === t.id);
                 const src = rec ? rec.source : null;
-                const srcLabel = src === 'self' ? `<span class="badge badge-info">${icon('user','w-3 h-3')} Self</span>` : src === 'admin' ? `<span class="badge badge-warn">Admin</span>` : src === 'biometric' ? `<span class="badge badge-success">Biometric</span>` : '<span class="text-slate-400 text-xs">Seeded</span>';
+                const srcLabel = src === 'self' ? `<span class="badge badge-info">${icon('user','w-3 h-3')} Self</span>` : src === 'admin' ? `<span class="badge badge-warn">Admin</span>` : src === 'biometric' ? `<span class="badge badge-success">Biometric</span>` : '<span class="text-slate-500 text-xs">Seeded</span>';
                 return `<tr>
                   <td><div class="flex items-center gap-2">${avatar(t.name, 'sm')}<div><div class="font-medium text-sm">${t.name}</div><div class="text-xs text-slate-500">${t.role || t.staffType}</div></div></div></td>
                   <td class="font-mono text-sm">${rec ? rec.clockIn : '—'}</td>
-                  <td class="font-mono text-sm">${rec ? (rec.clockOut || (isToday ? `<button class="btn btn-ghost !py-1 !px-2 text-xs text-rose-600 hover:bg-rose-50 rounded-lg" title="Clock this staff out (gate book)" onclick="adm_clockOutStaff('${rec.id}')">${icon('logout','w-3.5 h-3.5')} Clock out</button>` : '—')) : '—'}</td>
+                  <td class="font-mono text-sm">${rec ? (rec.clockOut || (isToday ? `<button class="btn btn-ghost !py-1 !px-2 text-xs text-rose-600 hover:bg-rose-50 rounded-lg" aria-label="Clock this staff out (gate book)" title="Clock this staff out (gate book)" onclick="adm_clockOutStaff('${rec.id}')">${icon('logout','w-3.5 h-3.5')} Clock out</button>` : '—')) : '—'}</td>
                   <td>${rec ? srcLabel : '—'}</td>
                   <td>${rec ? statusBadge(rec.status) : statusBadge('absent')}</td>
                 </tr>`;
@@ -9267,7 +9778,7 @@ function adminMarkStaffAttendanceModal(date) {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Enter staff attendance from the sign-in book. Non-academic staff (security, cleaners, drivers, etc.) are marked manually by admin. Academic staff can also be overridden here. Anything after <strong>08:00</strong> is marked late by default.
         </div>
         <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
@@ -9399,7 +9910,7 @@ function renderRolesSettings() {
     <div class="grid lg:grid-cols-2 gap-3">
       ${roles.map(r => {
         const staffCount = DB.query('teachers', t => t.schoolId === currentSchoolId() && t.roleId === r.id).length;
-        return `<div class="card p-4 border-l-4" style="border-left-color:${r.color}">
+        return `<div class="card p-5 border-l-4" style="border-left-color:${r.color}">
           <div class="flex items-start justify-between mb-2">
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
@@ -9409,8 +9920,8 @@ function renderRolesSettings() {
               <p class="text-xs text-slate-500 mt-0.5">${r.description}</p>
             </div>
             <div class="flex gap-1">
-              <button class="btn btn-ghost !p-1.5" title="Edit" onclick="editRoleModal('${r.id}')">${icon('edit','w-4 h-4')}</button>
-              ${!r.system ? `<button class="btn btn-ghost !p-1.5 text-rose-600" title="Delete" onclick="deleteRole('${r.id}')">${icon('trash','w-4 h-4')}</button>` : ''}
+              <button class="btn btn-ghost !p-1.5" aria-label="Edit" title="Edit" onclick="editRoleModal('${r.id}')">${icon('edit','w-4 h-4')}</button>
+              ${!r.system ? `<button class="btn btn-ghost !p-1.5 text-rose-600" aria-label="Delete" title="Delete" onclick="deleteRole('${r.id}')">${icon('trash','w-4 h-4')}</button>` : ''}
             </div>
           </div>
           <div class="flex items-center gap-2 text-xs text-slate-500 mb-2">
@@ -9444,26 +9955,26 @@ function roleEditorModal(roleId) {
     { group: 'Communications', perms: [['communications','Announcements'],['messaging','Direct Messaging']] },
     { group: 'Parent-only', perms: [['own_children','View Own Children'],['own_fees','View Own Fees']] }
   ];
-  const colors = ['#7c3aed','#0ea5e9','#06b6d4','#f59e0b','#10b981','#22c55e','#a855f7','#ef4444','#6b7280','#0891b2','#ec4899','#84cc16'];
+  const colors = ['#7c3aed','#0ea5e9','#06b6d4','#f59e0b','#00c08f','#22c55e','#a855f7','#ef4444','#6b7280','#0891b2','#ec4899','#84cc16'];
   const has = (k) => existing ? existing.permissions.includes(k) : false;
 
   modal({
     title: isEdit ? `Edit Role — ${existing.name}` : 'New Role',
     size: 'lg',
     body: `
-      ${existing && existing.system ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900 mb-3">
+      ${existing && existing.system ? `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900 mb-3">
         <strong>System role.</strong> You can change permissions but cannot delete or rename this role.
       </div>` : ''}
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="input-label">Role Name</label><input id="ro_name" class="input" value="${existing ? existing.name : ''}" ${existing && existing.system ? 'readonly' : ''} placeholder="e.g. Sports Coordinator" /></div>
+          <div><label class="input-label" for="ro_name">Role Name</label><input id="ro_name" class="input" value="${existing ? existing.name : ''}" ${existing && existing.system ? 'readonly' : ''} placeholder="e.g. Sports Coordinator" /></div>
           <div><label class="input-label">Color Tag</label>
             <div class="flex gap-1.5 flex-wrap pt-1">
               ${colors.map(c => `<button type="button" class="w-7 h-7 rounded-full ${existing && existing.color === c || (!existing && c === colors[0]) ? 'ring-2 ring-offset-2 ring-slate-700' : ''}" style="background:${c}" onclick="document.querySelectorAll('[data-color]').forEach(b=>b.classList.remove('ring-2','ring-offset-2','ring-slate-700')); this.classList.add('ring-2','ring-offset-2','ring-slate-700'); this.dataset.selected='true'" data-color="${c}" ${existing && existing.color === c || (!existing && c === colors[0]) ? 'data-selected="true"' : ''}></button>`).join('')}
             </div>
           </div>
         </div>
-        <div><label class="input-label">Description</label><textarea id="ro_desc" rows="2" class="input" placeholder="Describe what this role can access and do...">${existing ? existing.description : ''}</textarea></div>
+        <div><label class="input-label" for="ro_desc">Description</label><textarea id="ro_desc" rows="2" class="input" placeholder="Describe what this role can access and do...">${existing ? existing.description : ''}</textarea></div>
         <div>
           <label class="input-label">Permissions</label>
           <div class="space-y-3 max-h-72 overflow-y-auto bg-slate-50 rounded-xl p-3">
@@ -9492,7 +10003,7 @@ function saveRole(roleId) {
   if (!name) { toast('Role name required', 'danger'); return; }
   const description = document.getElementById('ro_desc').value.trim();
   const selectedColor = document.querySelector('[data-selected="true"]');
-  const color = selectedColor ? selectedColor.dataset.color : '#10b981';
+  const color = selectedColor ? selectedColor.dataset.color : '#00c08f';
   const permissions = Array.from(document.querySelectorAll('[data-perm]')).filter(c => c.checked).map(c => c.dataset.perm);
   if (permissions.length === 0) { toast('Select at least one permission', 'danger'); return; }
   if (roleId) {
@@ -9520,7 +10031,7 @@ function deleteRole(roleId) {
   if (!r || r.system) { toast('System roles cannot be deleted', 'danger'); return; }
   const assigned = DB.query('teachers', t => t.schoolId === currentSchoolId() && t.roleId === roleId).length;
   if (assigned > 0) { toast(`Cannot delete — ${assigned} staff still assigned to this role`, 'danger'); return; }
-  confirm(`Delete "${r.name}"? This cannot be undone.`, () => {
+  confirmDialog(`Delete "${r.name}"? This cannot be undone.`, () => {
     DB.remove('schoolRoles', roleId);
     APP.render();
     toast('Role deleted', 'info');
@@ -9603,7 +10114,7 @@ function renderPaymentSettings() {
       <h3 class="font-bold text-slate-900 mb-3">Payment Gateway Configuration</h3>
       <p class="text-sm text-slate-500 mb-4">Connect Paystack to accept payments. Funds settle to your registered school account.</p>
       <div class="space-y-3">
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-3">
+        <div class="bg-emerald-50 rounded-xl p-3 flex items-center gap-3">
           <div class="w-10 h-10 rounded-lg bg-emerald-200 text-emerald-700 flex items-center justify-center">${icon('check','w-5 h-5')}</div>
           <div class="flex-1">
             <div class="font-semibold text-emerald-900">Paystack — Connected</div>
@@ -9642,12 +10153,12 @@ function reconnectPaystackModal() {
     title: 'Reconnect Paystack',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Get your API keys from the Paystack dashboard under <strong>Settings › API Keys & Webhooks</strong>.
         </div>
-        <div><label class="input-label">Public Key</label><input id="ps_pk" class="input font-mono text-sm" placeholder="pk_live_…" /></div>
-        <div><label class="input-label">Secret Key</label><input id="ps_sk" class="input font-mono text-sm" type="password" placeholder="sk_live_…" /></div>
-        <div><label class="input-label">Business Name (shown on receipts)</label><input id="ps_name" class="input" value="${school.name || ''}" /></div>
+        <div><label class="input-label" for="ps_pk">Public Key</label><input id="ps_pk" class="input font-mono text-sm" placeholder="pk_live_…" /></div>
+        <div><label class="input-label" for="ps_sk">Secret Key</label><input id="ps_sk" class="input font-mono text-sm" type="password" placeholder="sk_live_…" /></div>
+        <div><label class="input-label" for="ps_name">Business Name (shown on receipts)</label><input id="ps_name" class="input" value="${school.name || ''}" /></div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -9691,7 +10202,7 @@ function renderBackupSettings() {
       <h4 class="text-xs uppercase font-semibold text-slate-500 mb-2">Recent Backups</h4>
       <div class="card overflow-hidden">
         <table class="tbl">
-          <thead><tr><th>Date</th><th>Type</th><th>Records</th><th>Size</th><th>Status</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col">Records</th><th scope="col">Size</th><th scope="col">Status</th></tr></thead>
           <tbody>
             ${backups.map(b => `<tr>
               <td class="text-sm">${fdate(b.date, { long: true })}</td>
@@ -9716,7 +10227,7 @@ function restoreBackupModal() {
   modal({
     title: 'Restore from Backup',
     body: `<div class="space-y-3">
-      <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-900">
+      <div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-900">
         <strong>Warning:</strong> Restoring will overwrite all current data with the snapshot you choose. This action is reversible only by restoring a newer backup. Schools are typically taken offline during a restore.
       </div>
       <div><label class="input-label">Choose Backup</label>
@@ -9741,21 +10252,21 @@ function renderBrandingSettings() {
       <div class="card p-5">
         <h3 class="font-bold text-slate-900 mb-3">School Identity</h3>
         <div class="space-y-3">
-          <div><label class="input-label">School Name</label><input id="br_name" class="input" value="${school ? school.name : ''}" /></div>
-          <div><label class="input-label">Motto</label><input id="br_motto" class="input" value="${branding.motto || ''}" /></div>
+          <div><label class="input-label" for="br_name">School Name</label><input id="br_name" class="input" value="${school ? school.name : ''}" /></div>
+          <div><label class="input-label" for="br_motto">Motto</label><input id="br_motto" class="input" value="${branding.motto || ''}" /></div>
           <div class="grid grid-cols-2 gap-2">
-            <div><label class="input-label">Primary Color</label>
-              <input id="br_color" type="color" class="input h-12" value="${branding.primaryColor || '#047857'}" />
+            <div><label class="input-label" for="br_color">Primary Color</label>
+              <input id="br_color" type="color" class="input h-12" value="${branding.primaryColor || '#00b386'}" />
             </div>
-            <div><label class="input-label">Logo Text (fallback)</label>
+            <div><label class="input-label" for="br_logoText">Logo Text (fallback)</label>
               <input id="br_logoText" class="input" maxlength="3" value="${branding.logoText || ''}" />
             </div>
           </div>
           <div>
-            <label class="input-label">School Logo</label>
+            <label class="input-label" for="br_logoFile">School Logo</label>
             <input type="file" id="br_logoFile" accept="image/*" class="hidden" onchange="onLogoPick(event)" />
             <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-              <div class="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-extrabold" id="br_logoPreview" style="background:${branding.primaryColor || '#047857'}">
+              <div class="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-extrabold" id="br_logoPreview" style="background:${branding.primaryColor || '#00b386'}">
                 ${branding.logoImage ? `<img src="${branding.logoImage}" class="w-full h-full object-cover rounded-xl"/>` : (branding.logoText || '?')}
               </div>
               <button type="button" class="btn btn-secondary text-sm" onclick="document.getElementById('br_logoFile').click()">${icon('upload','w-4 h-4')} Choose</button>
@@ -9763,13 +10274,13 @@ function renderBrandingSettings() {
             </div>
           </div>
           <div>
-            <label class="input-label">Custom Letterhead</label>
+            <label class="input-label" for="br_letterheadFile">Custom Letterhead</label>
             <p class="text-xs text-slate-500 mb-2">Used on official documents: invoices, transfer certificates, report cards. Recommended: A4 header image (PNG/JPG, max 1MB, transparent background).</p>
             <input type="file" id="br_letterheadFile" accept="image/*" class="hidden" onchange="onLetterheadPick(event)" />
             <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
               ${branding.letterheadImage
                 ? `<img src="${branding.letterheadImage}" class="h-16 object-contain rounded-lg border border-slate-200 bg-white" />`
-                : `<div class="h-16 w-32 rounded-lg border-2 border-dashed border-slate-300 bg-white flex items-center justify-center text-slate-400 text-xs">No letterhead</div>`}
+                : `<div class="h-16 w-32 rounded-lg border-2 border-dashed border-slate-300 bg-white flex items-center justify-center text-slate-500 text-xs">No letterhead</div>`}
               <div class="flex gap-2">
                 <button type="button" class="btn btn-secondary text-sm" onclick="document.getElementById('br_letterheadFile').click()">${icon('upload','w-4 h-4')} Upload</button>
                 ${branding.letterheadImage ? `<button type="button" class="btn btn-ghost text-sm" onclick="clearLetterhead()">Remove</button>` : ''}
@@ -9781,7 +10292,7 @@ function renderBrandingSettings() {
       </div>
       <div class="card p-5">
         <h3 class="font-bold text-slate-900 mb-3">Preview</h3>
-        <div class="rounded-2xl p-5 text-white" style="background: linear-gradient(135deg, ${branding.primaryColor || '#047857'}, ${branding.primaryColor || '#047857'}cc)">
+        <div class="rounded-2xl p-5 text-white" style="background: linear-gradient(135deg, ${branding.primaryColor || '#00b386'}, ${branding.primaryColor || '#00b386'}cc)">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center text-xl font-extrabold backdrop-blur">
               ${branding.logoImage ? `<img src="${branding.logoImage}" class="w-full h-full object-cover rounded-xl"/>` : (branding.logoText || school.name.charAt(0))}
@@ -9873,7 +10384,7 @@ function termClosingWizard() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <strong>End-of-term close-out.</strong> This guided flow walks you through five steps to formally end the current term and prepare for the next.
         </div>
 
@@ -9894,7 +10405,7 @@ function termClosingWizard() {
           </div>`).join('')}
         </div>
 
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           <strong>Tip:</strong> You don't have to do this all in one sitting — steps can be done over a few days. The wizard will remember which are done.
         </div>
       </div>
@@ -9971,7 +10482,7 @@ function renderAssessmentCategoriesSettings() {
     + '<div class="flex items-center justify-between mb-3"><h4 class="font-bold text-slate-900">Assessment Categories</h4>'
     + '<button class="btn btn-secondary text-xs" onclick="adm_addAssessmentCategory()">' + icon('plus','w-3.5 h-3.5') + ' Add Category</button></div>'
     + '<p class="text-xs text-slate-500 mb-3">These appear as the "Category" dropdown when building your exam structure below. Use short keys (no spaces) and clear labels.</p>'
-    + '<table class="tbl"><thead><tr><th>Key (internal)</th><th>Label (shown to staff)</th><th></th></tr></thead>'
+    + '<table class="tbl"><th scope="col"ead><tr><th scope="col">Key (internal)</th><th scope="col">Label (shown to staff)</th><th scope="col"></th></tr></thead>'
     + '<tbody>' + rows + '</tbody></table></div>';
 }
 
@@ -10021,7 +10532,7 @@ function renderExamStructureSettings() {
   const assessmentCats = _getAssessmentCategories();
   return `
     <div class="space-y-4">
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+      <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} Define the assessment types and their weighting for each term. Categories are managed in the section above.
       </div>
       ${examStructure.terms.map((term, ti) => `
@@ -10031,7 +10542,7 @@ function renderExamStructureSettings() {
             <button class="btn btn-secondary text-xs" onclick="addExamTypeToTerm(${ti})">${icon('plus','w-3.5 h-3.5')} Add Type</button>
           </div>
           <table class="tbl">
-            <thead><tr><th>Assessment Type</th><th>Category</th><th>Weight (%)</th><th></th></tr></thead>
+            <th scope="col"ead><tr><th scope="col">Assessment Type</th><th scope="col">Category</th><th scope="col">Weight (%)</th><th scope="col"></th></tr></thead>
             <tbody>
               ${term.types.map((t, xi) => `<tr>
                 <td><input type="text" class="input input-sm" value="${t.label}" onchange="updateExamType(${ti},${xi},'label',this.value)" /></td>
@@ -10101,13 +10612,13 @@ function renderAppraisalSettings() {
   };
   return `
     <div class="space-y-4">
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+      <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} Define how teacher appraisals are scored. Weights must total 100%. These parameters appear on appraisal forms for principals and department heads.
       </div>
       <div class="card p-5">
         <div class="grid sm:grid-cols-2 gap-3 mb-4">
           <div>
-            <label class="input-label">Appraisal Cycle</label>
+            <label class="input-label" for="apr_cycle">Appraisal Cycle</label>
             <select id="apr_cycle" class="input" onchange="">
               <option ${appraisalParams.cycle==='termly'?'selected':''}>termly</option>
               <option ${appraisalParams.cycle==='annual'?'selected':''}>annual</option>
@@ -10119,7 +10630,7 @@ function renderAppraisalSettings() {
           </div>
         </div>
         <table class="tbl">
-          <thead><tr><th>Parameter</th><th>Description</th><th>Weight (%)</th><th></th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Parameter</th><th scope="col">Description</th><th scope="col">Weight (%)</th><th scope="col"></th></tr></thead>
           <tbody>
             ${appraisalParams.parameters.map((p, i) => `<tr>
               <td><input type="text" class="input input-sm" value="${p.label}" onchange="updateAppraisalParam(${i},'label',this.value)" /></td>
@@ -10173,7 +10684,7 @@ function renderBudgetCategoriesSettings() {
   const budgetCats = s.budgetCategories || ['Salaries','Utilities','Maintenance','Supplies','Internet','Transport','Events','Other'];
   return `
     <div class="space-y-4">
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+      <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} These categories appear in the Expenses and Budget sections. Edit, reorder, or add your own categories to match your school's accounting structure.
       </div>
       <div class="card p-5">
@@ -10184,7 +10695,7 @@ function renderBudgetCategoriesSettings() {
         <div class="space-y-2" id="budgetCatList">
           ${budgetCats.map((cat, i) => `
             <div class="flex items-center gap-2 p-2 bg-slate-50 rounded-xl">
-              <div class="text-slate-400 cursor-grab">${icon('menu','w-4 h-4')}</div>
+              <div class="text-slate-500 cursor-grab">${icon('menu','w-4 h-4')}</div>
               <input type="text" class="input flex-1" value="${cat}" id="bcat_${i}" onchange="updateBudgetCategory(${i}, this.value)" />
               <button class="btn btn-ghost !p-1.5 text-rose-600" onclick="removeBudgetCategory(${i})">${icon('trash','w-4 h-4')}</button>
             </div>
@@ -10244,7 +10755,7 @@ function renderCustomListsSettings() {
   const s = DB.settings();
   return `
     <div class="space-y-4">
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+      <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} Every dropdown below is used across the system. Add, rename, or remove items to match your school's terminology. Changes take effect immediately on new entries.
       </div>
       <div class="grid lg:grid-cols-2 gap-4">
@@ -10267,7 +10778,7 @@ function renderCustomListsSettings() {
               </div>
               <div class="mt-3 flex gap-2">
                 <button class="btn btn-primary text-sm" onclick="customListSave('${key}')">${icon('check','w-4 h-4')} Save</button>
-                <button class="btn btn-ghost text-xs text-slate-400" onclick="customListReset('${key}')">Reset to defaults</button>
+                <button class="btn btn-ghost text-xs text-slate-500" onclick="customListReset('${key}')">Reset to defaults</button>
               </div>
             </div>
           `;
@@ -10318,7 +10829,7 @@ function renderAcademicStructure() {
           <button class="btn btn-ghost text-sm" onclick="newSessionModal()">${icon('plus','w-3.5 h-3.5')}</button>
         </div>
         <div class="space-y-2">
-          ${sessions.map(s => `<div class="p-3 ${s.current ? 'bg-brand-50 border border-brand-200' : 'bg-slate-50'} rounded-xl">
+          ${sessions.map(s => `<div class="p-3 ${s.current ? 'bg-brand-50' : 'bg-slate-50'} rounded-xl">
             <div class="font-bold text-sm">${s.name} ${s.current ? '<span class="badge badge-success ml-1">Current</span>' : ''}</div>
             <div class="text-xs text-slate-500 mt-1">${fdate(s.startDate, { short: true })} → ${fdate(s.endDate, { short: true })}</div>
           </div>`).join('')}
@@ -10332,7 +10843,7 @@ function renderAcademicStructure() {
         <div class="space-y-2">
           ${terms.map(t => {
             const sess = sessions.find(s => s.id === t.sessionId);
-            return `<div class="p-3 ${t.current ? 'bg-brand-50 border border-brand-200' : 'bg-slate-50'} rounded-xl">
+            return `<div class="p-3 ${t.current ? 'bg-brand-50' : 'bg-slate-50'} rounded-xl">
               <div class="font-bold text-sm">${t.name} ${t.current ? '<span class="badge badge-success ml-1">Current</span>' : ''}</div>
               <div class="text-xs text-slate-500 mt-1">${sess ? sess.name : ''} · ${fdate(t.startDate, { short: true })} → ${fdate(t.endDate, { short: true })}</div>
             </div>`;
@@ -10362,9 +10873,9 @@ function renderAcademicStructure() {
         ${subjects.length ? subjects.map(sub => `
           <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full text-sm font-medium text-slate-700">
             ${sub.name}
-            <button onclick="deleteSubject('${sub.id}')" class="text-slate-400 hover:text-rose-600 transition-colors leading-none" title="Remove subject">&times;</button>
+            <button onclick="deleteSubject('${sub.id}')" class="text-slate-500 hover:text-rose-600 transition-colors leading-none" aria-label="Remove subject" title="Remove subject">&times;</button>
           </span>
-        `).join('') : `<p class="text-sm text-slate-400">No subjects added yet. Click "Add Subject" to get started.</p>`}
+        `).join('') : `<p class="text-sm text-slate-500">No subjects added yet. Click "Add Subject" to get started.</p>`}
       </div>
     </div>
   `;
@@ -10374,10 +10885,10 @@ function newSessionModal() {
   modal({
     title: 'New Academic Session',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Name</label><input id="ses_name" class="input" placeholder="e.g. 2026/2027" /></div>
+      <div><label class="input-label" for="ses_name">Name</label><input id="ses_name" class="input" placeholder="e.g. 2026/2027" /></div>
       <div class="grid grid-cols-2 gap-2">
-        <div><label class="input-label">Start</label><input id="ses_start" type="date" class="input" /></div>
-        <div><label class="input-label">End</label><input id="ses_end" type="date" class="input" /></div>
+        <div><label class="input-label" for="ses_start">Start</label><input id="ses_start" type="date" class="input" /></div>
+        <div><label class="input-label" for="ses_end">End</label><input id="ses_end" type="date" class="input" /></div>
       </div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -10399,15 +10910,15 @@ function newTermModal() {
   modal({
     title: 'New Term',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Session</label>
+      <div><label class="input-label" for="tm_session">Session</label>
         <select id="tm_session" class="input">${sessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
       </div>
-      <div><label class="input-label">Term Name</label>
+      <div><label class="input-label" for="tm_name">Term Name</label>
         <select id="tm_name" class="input"><option>1st Term</option><option>2nd Term</option><option>3rd Term</option></select>
       </div>
       <div class="grid grid-cols-2 gap-2">
-        <div><label class="input-label">Start</label><input id="tm_start" type="date" class="input" /></div>
-        <div><label class="input-label">End</label><input id="tm_end" type="date" class="input" /></div>
+        <div><label class="input-label" for="tm_start">Start</label><input id="tm_start" type="date" class="input" /></div>
+        <div><label class="input-label" for="tm_end">End</label><input id="tm_end" type="date" class="input" /></div>
       </div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -10432,7 +10943,7 @@ function saveTerm() {
 function newArmModal() {
   modal({
     title: 'New Arm',
-    body: `<div><label class="input-label">Arm Name (e.g. A, B, Gold)</label><input id="arm_name" class="input" placeholder="e.g. A, B, Gold, Diamond" /></div>`,
+    body: `<div><label class="input-label" for="arm_name">Arm Name (e.g. A, B, Gold)</label><input id="arm_name" class="input" placeholder="e.g. A, B, Gold, Diamond" /></div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveArm()">Save</button>`
   });
@@ -10452,7 +10963,7 @@ function newSubjectModal() {
     title: 'Add Subject',
     body: `<div class="space-y-3">
       <div>
-        <label class="input-label">Subject Name</label>
+        <label class="input-label" for="sub_name">Subject Name</label>
         <input id="sub_name" class="input" placeholder="e.g. Mathematics, English Language, Basic Science" />
       </div>
     </div>`,
@@ -10482,10 +10993,11 @@ function deleteSubject(subjectId) {
     toast(`"${sub.name}" is referenced in schemes or results and cannot be removed`, 'warn');
     return;
   }
-  if (!confirm(`Remove "${sub.name}"? This cannot be undone.`)) return;
-  DB.remove('subjects', subjectId);
-  APP.render();
-  toast('Subject removed');
+  confirmDialog(`Remove "${sub.name}"? This cannot be undone.`, () => {
+    DB.remove('subjects', subjectId);
+    APP.render();
+    toast('Subject removed');
+  }, { yesLabel: 'Remove', danger: true });
 }
 
 function renderAcademicCalendar() {
@@ -10525,7 +11037,7 @@ function renderAcademicCalendar() {
         </div>
       </div>
       <div class="mb-3">
-        <label class="input-label">Session (e.g. 2025/2026)</label>
+        <label class="input-label" for="atd_session">Session (e.g. 2025/2026)</label>
         <input id="atd_session" class="input w-48" value="${atd.session || ''}" placeholder="2025/2026" />
       </div>
       <div class="space-y-5">
@@ -10569,8 +11081,8 @@ function renderAcademicCalendar() {
             <div class="text-xs text-slate-500">${dateLabel} · ${e.audience}</div>
           </div>
           <span class="badge ${typeBadge}">${e.type}</span>
-          <button class="btn btn-ghost !p-1.5" onclick="newCalendarEventModal('${e.id}')" title="Edit">${icon('edit','w-3.5 h-3.5')}</button>
-          <button class="btn btn-ghost !p-1.5 text-rose-500" onclick="cal_deleteSettingsEvent('${e.id}')" title="Delete">${icon('x','w-3.5 h-3.5')}</button>
+          <button class="btn btn-ghost !p-1.5" onclick="newCalendarEventModal('${e.id}')" aria-label="Edit" title="Edit">${icon('edit','w-3.5 h-3.5')}</button>
+          <button class="btn btn-ghost !p-1.5 text-rose-500" onclick="cal_deleteSettingsEvent('${e.id}')" aria-label="Delete" title="Delete">${icon('x','w-3.5 h-3.5')}</button>
         </div>`;
       }).join('')}
     </div>
@@ -10593,14 +11105,14 @@ function newCalendarEventModal(editId) {
   modal({
     title: ev ? 'Edit School Event' : 'Add School Event',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Event Title *</label>
+      <div><label class="input-label" for="cal_title">Event Title *</label>
         <input id="cal_title" class="input" placeholder="e.g. PTA Meeting, Inter-House Sports Day, Prize Giving" value="${ev ? ev.title : ''}" /></div>
       <div class="grid grid-cols-2 gap-2">
-        <div><label class="input-label">Start Date *</label><input id="cal_start" type="date" class="input" value="${ev ? ev.startDate : today()}" /></div>
-        <div><label class="input-label">End Date</label><input id="cal_end" type="date" class="input" value="${ev ? (ev.endDate || '') : ''}" /></div>
+        <div><label class="input-label" for="cal_start">Start Date *</label><input id="cal_start" type="date" class="input" value="${ev ? ev.startDate : today()}" /></div>
+        <div><label class="input-label" for="cal_end">End Date</label><input id="cal_end" type="date" class="input" value="${ev ? (ev.endDate || '') : ''}" /></div>
       </div>
       <div class="grid grid-cols-2 gap-2">
-        <div><label class="input-label">Type</label>
+        <div><label class="input-label" for="cal_type">Type</label>
           <select id="cal_type" class="input">
             <option value="event" ${ev&&ev.type==='event'?'selected':''}>Event</option>
             <option value="meeting" ${ev&&ev.type==='meeting'?'selected':''}>Meeting</option>
@@ -10609,7 +11121,7 @@ function newCalendarEventModal(editId) {
             <option value="milestone" ${ev&&ev.type==='milestone'?'selected':''}>Milestone</option>
           </select>
         </div>
-        <div><label class="input-label">Audience</label>
+        <div><label class="input-label" for="cal_audience">Audience</label>
           <select id="cal_audience" class="input">
             <option value="all" ${ev&&ev.audience==='all'?'selected':''}>Everyone</option>
             <option value="parents" ${ev&&ev.audience==='parents'?'selected':''}>Parents Only</option>
@@ -10618,7 +11130,7 @@ function newCalendarEventModal(editId) {
           </select>
         </div>
       </div>
-      <div><label class="input-label">Description (optional)</label>
+      <div><label class="input-label" for="cal_desc">Description (optional)</label>
         <textarea id="cal_desc" rows="2" class="input" placeholder="Extra details shown when people click the event">${ev ? (ev.description || '') : ''}</textarea></div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -10647,7 +11159,7 @@ function saveCalendarEvent(editId) {
 }
 
 function cal_deleteSettingsEvent(id) {
-  confirm('Delete this event from the calendar?', () => {
+  confirmDialog('Delete this event from the calendar?', () => {
     DB.remove('schoolEvents', id);
     APP.render();
     toast('Event removed', 'info');
@@ -10764,13 +11276,13 @@ function view_adm_admissions() {
 
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Applicant</th><th>Parent</th><th>Class</th><th>Applied</th><th>Documents</th><th>Status</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Applicant</th><th scope="col">Parent</th><th scope="col">Class</th><th scope="col">Applied</th><th scope="col">Documents</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
         <tbody>
           ${filtered.length === 0
             ? `<tr><td colspan="7" class="py-14 text-center">
                 ${apps.length === 0
                   ? `<div class="space-y-2">
-                      <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">${icon('user','w-7 h-7')}</div>
+                      <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-500">${icon('user','w-7 h-7')}</div>
                       <div class="font-semibold text-slate-700 text-base">No applications yet</div>
                       <div class="text-sm text-slate-500 max-w-sm mx-auto">Share your public admission link with prospective parents, or use <strong>New Application</strong> to enter a walk-in enquiry manually.</div>
                     </div>`
@@ -10810,20 +11322,20 @@ function newApplicationModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           ${icon('info','w-4 h-4 inline')} Use this for walk-in enquiries or phone calls. For online self-service, share your <strong>public admission link</strong>.
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div class="col-span-2">
-            <label class="input-label">Applicant Full Name *</label>
+            <label class="input-label" for="na_name">Applicant Full Name *</label>
             <input id="na_name" class="input" placeholder="e.g. Chisom Okafor" />
           </div>
           <div>
-            <label class="input-label">Date of Birth *</label>
+            <label class="input-label" for="na_dob">Date of Birth *</label>
             <input id="na_dob" type="date" class="input" />
           </div>
           <div>
-            <label class="input-label">Gender *</label>
+            <label class="input-label" for="na_gender">Gender *</label>
             <select id="na_gender" class="input">
               <option value="">— Select —</option>
               <option value="M">Male</option>
@@ -10831,14 +11343,14 @@ function newApplicationModal() {
             </select>
           </div>
           <div>
-            <label class="input-label">Class Applying For *</label>
+            <label class="input-label" for="na_class">Class Applying For *</label>
             <select id="na_class" class="input">
               <option value="">— Select class —</option>
               ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
             </select>
           </div>
           <div>
-            <label class="input-label">Current / Previous School</label>
+            <label class="input-label" for="na_school">Current / Previous School</label>
             <input id="na_school" class="input" placeholder="School name" />
           </div>
         </div>
@@ -10846,25 +11358,25 @@ function newApplicationModal() {
           <div class="text-xs uppercase text-slate-500 font-semibold mb-2">Parent / Guardian Details</div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="input-label">Parent Name *</label>
+              <label class="input-label" for="na_pname">Parent Name *</label>
               <input id="na_pname" class="input" placeholder="Full name" />
             </div>
             <div>
-              <label class="input-label">Phone *</label>
+              <label class="input-label" for="na_pphone">Phone *</label>
               <input id="na_pphone" class="input" placeholder="+234…" />
             </div>
             <div>
-              <label class="input-label">Email</label>
+              <label class="input-label" for="na_pemail">Email</label>
               <input id="na_pemail" type="email" class="input" placeholder="parent@email.com" />
             </div>
             <div>
-              <label class="input-label">Home Address</label>
+              <label class="input-label" for="na_address">Home Address</label>
               <input id="na_address" class="input" placeholder="Residential address" />
             </div>
           </div>
         </div>
         <div>
-          <label class="input-label">Reason / Notes</label>
+          <label class="input-label" for="na_reason">Reason / Notes</label>
           <textarea id="na_reason" rows="2" class="input" placeholder="e.g. Transfer from another school, referral by parent…"></textarea>
         </div>
       </div>
@@ -10944,27 +11456,27 @@ function viewApplication(appId) {
             statusOrder.map((s, i) => {
               const done = i <= currentIdx, active = i === currentIdx;
               return '<div class="flex flex-col items-center gap-1 text-center flex-1 relative z-10">' +
-                '<div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ' + (done ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400') + (active ? ' ring-2 ring-brand-300 ring-offset-1' : '') + '">' +
+                '<div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ' + (done ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500') + (active ? ' ring-2 ring-brand-300 ring-offset-1' : '') + '">' +
                 (done ? icon('check','w-3.5 h-3.5') : String(i + 1)) +
-                '</div><div class="text-xs leading-tight max-w-[3.5rem] ' + (active ? 'text-brand-700 font-semibold' : done ? 'text-slate-600' : 'text-slate-400') + '">' + stepLabels[s] + '</div></div>';
+                '</div><div class="text-xs leading-tight max-w-[3.5rem] ' + (active ? 'text-brand-700 font-semibold' : done ? 'text-slate-600' : 'text-slate-500') + '">' + stepLabels[s] + '</div></div>';
             }).join('') +
           '</div>'
-        : '<div class="bg-rose-50 border border-rose-200 rounded-xl p-2 text-xs text-rose-700 text-center font-semibold">This application has been rejected</div>'}
+        : '<div class="bg-rose-50 rounded-xl p-2 text-xs text-rose-700 text-center font-semibold">This application has been rejected</div>'}
 
         <!-- What happens next (pending/reviewing only) -->
-        ${a.status === 'pending' ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        ${a.status === 'pending' ? `<div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           <div class="font-semibold mb-0.5">${icon('bell','w-3.5 h-3.5 inline mr-1')} Next step: Review the application</div>
           Click <strong>Review</strong> to log notes and mark it as actively considered. Once reviewing, you can <strong>Schedule a Visit</strong> or go straight to <strong>Accept &amp; Enrol</strong> if the family walked in.
         </div>` : ''}
-        ${a.status === 'reviewing' ? `<div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        ${a.status === 'reviewing' ? `<div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <div class="font-semibold mb-0.5">${icon('calendar','w-3.5 h-3.5 inline mr-1')} Next step: Schedule a school visit</div>
           Use <strong>Schedule Visit</strong> to pick a date and notify the parent. After the family visits, click <strong>Mark Visit Done</strong> — this unlocks the fee preview in the parent portal. You can also <strong>Accept &amp; Enrol</strong> directly without a visit.
         </div>` : ''}
-        ${a.status === 'visit_scheduled' ? `<div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        ${a.status === 'visit_scheduled' ? `<div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <div class="font-semibold mb-0.5">${icon('check','w-3.5 h-3.5 inline mr-1')} Waiting for the visit to happen</div>
           Once the family comes in, click <strong>Mark Visit Done</strong>. This confirms the visit, creates a parent account (if they don't have one), and unlocks the fee preview for them.
         </div>` : ''}
-        ${a.status === 'visit_confirmed' ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        ${a.status === 'visit_confirmed' ? `<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           <div class="font-semibold mb-0.5">${icon('check','w-3.5 h-3.5 inline mr-1')} Visit done — ready to enrol</div>
           The parent can now see the fee structure in their portal. Click <strong>Accept &amp; Enrol</strong> to create the student record, assign an admission number, and auto-generate the first invoice.
         </div>` : ''}
@@ -10979,12 +11491,12 @@ function viewApplication(appId) {
           <div><div class="text-xs uppercase text-slate-500 font-semibold mb-1">Home Address</div><div>${a.location || a.address || '—'}</div></div>
         </div>
 
-        ${a.reviewNotes ? `<div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
-          <div class="text-xs uppercase text-blue-600 font-semibold mb-1">Review Notes</div>
-          <div class="text-sm text-blue-900">${a.reviewNotes}</div>
-          ${a.reviewedAt ? `<div class="text-xs text-blue-500 mt-1">Noted ${fdate(a.reviewedAt, { relative: true })}</div>` : ''}
+        ${a.reviewNotes ? `<div class="bg-brand-50 rounded-xl p-3">
+          <div class="text-xs uppercase text-brand-600 font-semibold mb-1">Review Notes</div>
+          <div class="text-sm text-brand-900">${a.reviewNotes}</div>
+          ${a.reviewedAt ? `<div class="text-xs text-brand-500 mt-1">Noted ${fdate(a.reviewedAt, { relative: true })}</div>` : ''}
         </div>` : ''}
-        ${a.status === 'rejected' && a.rejectionReason ? `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3">
+        ${a.status === 'rejected' && a.rejectionReason ? `<div class="bg-rose-50 rounded-xl p-3">
           <div class="text-xs uppercase text-rose-600 font-semibold mb-1">Rejection Reason</div>
           <div class="text-sm text-rose-900">${a.rejectionReason}</div>
           ${a.decidedAt ? `<div class="text-xs text-rose-400 mt-1">Decided ${fdate(a.decidedAt, { relative: true })}</div>` : ''}
@@ -11011,7 +11523,7 @@ function viewApplication(appId) {
             ${docList.map(d => {
               const doc = docs[d.key];
               if (!doc) {
-                return `<div class="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+                return `<div class="flex items-center gap-2 p-2.5 bg-amber-50 rounded-xl text-sm">
                   <span class="text-amber-600">${icon('bell','w-4 h-4')}</span>
                   <div class="flex-1">
                     <div class="font-semibold text-amber-900">${d.label}</div>
@@ -11019,7 +11531,7 @@ function viewApplication(appId) {
                   </div>
                 </div>`;
               }
-              return `<button type="button" class="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-left hover:bg-emerald-100 transition w-full" onclick="previewAdmissionDoc('${a.id}', '${d.key}')">
+              return `<button type="button" class="flex items-center gap-2 p-2.5 bg-emerald-50 rounded-xl text-sm text-left hover:bg-emerald-100 transition w-full" onclick="previewAdmissionDoc('${a.id}', '${d.key}')">
                 <span class="text-emerald-600 flex-shrink-0">${icon('paperclip','w-4 h-4')}</span>
                 <div class="flex-1 min-w-0">
                   <div class="font-semibold text-emerald-900 truncate">${d.label}</div>
@@ -11086,7 +11598,7 @@ function previewAdmissionDoc(appId, docKey) {
           <span class="badge ${a.status === 'pending' ? 'badge-warn' : 'badge-info'}">${a.status}</span>
         </div>
         ${placeholder}
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           <strong>${icon('check','w-3 h-3 inline')} Verified at submission</strong> — uploaded by ${a.parentName} on ${fdate(a.appliedAt, { long: true })}. File checksum on record.
         </div>
       </div>
@@ -11103,15 +11615,15 @@ function reviewApplicationModal(appId) {
     title: 'Review Application — ' + a.applicantName,
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Mark this application as under review and record notes. The application remains visible to your team but is clearly flagged as being actively reviewed.
         </div>
         <div>
-          <label class="input-label">Review Notes (optional)</label>
+          <label class="input-label" for="rev_notes">Review Notes (optional)</label>
           <textarea id="rev_notes" rows="3" class="input" placeholder="e.g. Awaiting last term report card from parent, scheduled school visit on Friday...">${a.reviewNotes || ''}</textarea>
         </div>
         <div>
-          <label class="input-label">Follow-up Action</label>
+          <label class="input-label" for="rev_followup">Follow-up Action</label>
           <select id="rev_followup" class="input">
             <option value="">— None —</option>
             <option value="request_docs">Request additional documents</option>
@@ -11154,12 +11666,12 @@ function rejectApplicationModal(appId) {
     title: 'Reject Application — ' + a.applicantName,
     body: `
       <div class="space-y-3">
-        <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-900">
+        <div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-900">
           ${icon('x_circle','w-4 h-4 inline')} This will mark the application as <strong>rejected</strong>.
           If the parent has a portal account, they will receive a notification.
         </div>
         <div>
-          <label class="input-label">Reason (optional — visible to parent)</label>
+          <label class="input-label" for="rej_reason">Reason (optional — visible to parent)</label>
           <textarea id="rej_reason" rows="3" class="input" placeholder="e.g. No vacancy in the requested class for this term. The family is welcome to reapply next session."></textarea>
         </div>
       </div>
@@ -11197,25 +11709,25 @@ function scheduleVisitModal(appId) {
     title: 'Schedule School Visit — ' + a.applicantName,
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Schedule a visit for <strong>${a.parentName}</strong> to bring <strong>${a.applicantName}</strong> to school.
           Fee information will only be revealed to the parent <strong>after</strong> the visit is confirmed as complete.
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label">Visit Date <span class="text-red-500">*</span></label>
+            <label class="input-label" for="vis_date">Visit Date <span class="text-red-500">*</span></label>
             <input type="date" id="vis_date" class="input" value="${a.visitDate || ''}" min="${today()}">
           </div>
           <div>
-            <label class="input-label">Preferred Time</label>
+            <label class="input-label" for="vis_time">Preferred Time</label>
             <input type="time" id="vis_time" class="input" value="${a.visitTime || '10:00'}">
           </div>
         </div>
         <div>
-          <label class="input-label">Instructions for Parent (optional)</label>
+          <label class="input-label" for="vis_notes">Instructions for Parent (optional)</label>
           <textarea id="vis_notes" rows="2" class="input" placeholder="e.g. Please bring last term's report card and the child's birth certificate…">${a.visitNotes || ''}</textarea>
         </div>
-        <div class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+        <div class="flex items-start gap-2 bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
           ${icon('bell','w-4 h-4 flex-shrink-0 mt-0.5')}
           <span>A notification will be sent to the parent with visit details. Fees remain hidden until you mark the visit as done.</span>
         </div>
@@ -11260,7 +11772,7 @@ function markVisitCompleteModal(appId) {
     title: 'Confirm Visit Attended — ' + a.applicantName,
     body: `
       <div class="space-y-3">
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        <div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           <div class="font-semibold mb-0.5">${icon('check','w-4 h-4 inline')} Confirm ${a.applicantName} visited the school</div>
           <div class="text-xs text-emerald-700">After confirmation the parent will gain access to fee information for their child's class.</div>
         </div>
@@ -11269,10 +11781,10 @@ function markVisitCompleteModal(appId) {
           <div><span class="font-semibold">Scheduled:</span> ${fdate(a.visitDate, { long: true })}${a.visitTime ? ' at ' + a.visitTime : ''}</div>
         </div>` : ''}
         <div>
-          <label class="input-label">Visit Notes (optional)</label>
+          <label class="input-label" for="vc_notes">Visit Notes (optional)</label>
           <textarea id="vc_notes" rows="2" class="input" placeholder="e.g. Child participated well in assessment. Parent asked questions about transport..."></textarea>
         </div>
-        <div class="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+        <div class="flex items-start gap-2 bg-brand-50 rounded-xl p-3 text-xs text-brand-900">
           ${icon('bell','w-4 h-4 flex-shrink-0 mt-0.5')}
           <span>If the parent has no portal account yet, one will be created and login credentials sent to them so they can view fees.</span>
         </div>
@@ -11438,7 +11950,7 @@ function view_adm_sickbay() {
     ${records.length === 0 ? emptyState({ title: 'No sick bay records', body: 'Log a visit to start tracking.', icon: 'bell' }) : `
       <div class="card overflow-hidden">
         <table class="tbl">
-          <thead><tr><th>Student</th><th>Date</th><th>Complaint</th><th>Temp</th><th>Treatment</th><th>Referred</th><th>Parent</th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Date</th><th scope="col">Complaint</th><th scope="col">Temp</th><th scope="col">Treatment</th><th scope="col">Referred</th><th scope="col">Parent</th></tr></thead>
           <tbody>
             ${records.map(r => {
               const s = DB.find('students', r.studentId);
@@ -11464,15 +11976,15 @@ function newSickBayModal() {
   modal({
     title: 'New Sick Bay Visit',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Student</label>
+      <div><label class="input-label" for="sb_student">Student</label>
         <select id="sb_student" class="input">${students.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
       </div>
-      <div><label class="input-label">Complaint</label><textarea id="sb_complaint" rows="2" class="input" placeholder="e.g. Stomach pain, dizziness"></textarea></div>
+      <div><label class="input-label" for="sb_complaint">Complaint</label><textarea id="sb_complaint" rows="2" class="input" placeholder="e.g. Stomach pain, dizziness"></textarea></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Temperature (°C)</label><input id="sb_temp" type="number" step="0.1" class="input" value="36.5" /></div>
-        <div><label class="input-label">Attended By</label><input id="sb_attendedBy" class="input" value="School Nurse" /></div>
+        <div><label class="input-label" for="sb_temp">Temperature (°C)</label><input id="sb_temp" type="number" step="0.1" class="input" value="36.5" /></div>
+        <div><label class="input-label" for="sb_attendedBy">Attended By</label><input id="sb_attendedBy" class="input" value="School Nurse" /></div>
       </div>
-      <div><label class="input-label">Treatment / Action</label><textarea id="sb_treatment" rows="2" class="input" placeholder="e.g. Paracetamol 500mg given, advised to rest"></textarea></div>
+      <div><label class="input-label" for="sb_treatment">Treatment / Action</label><textarea id="sb_treatment" rows="2" class="input" placeholder="e.g. Paracetamol 500mg given, advised to rest"></textarea></div>
       <label class="flex items-center gap-2 text-sm"><input id="sb_referred" type="checkbox" /> Referred to hospital</label>
       <label class="flex items-center gap-2 text-sm"><input id="sb_notify" type="checkbox" checked /> Notify parent via WhatsApp</label>
     </div>`,
@@ -11506,7 +12018,7 @@ function saveSickBay() {
 
 /* ---------- Visitor Log ---------- */
 function view_adm_visitors() {
-  const log = DB.query('visitorLog', l => l.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).sort((a,b) => b.checkIn.localeCompare(a.checkIn));
+  const log = DB.query('visitorLog', l => l.schoolId === currentSchoolId()).sort((a,b) => b.checkIn.localeCompare(a.checkIn));
   const today_ = today();
   const todayCount = log.filter(l => l.checkIn.startsWith(today_)).length;
   return `
@@ -11523,7 +12035,7 @@ function view_adm_visitors() {
     </div>
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Visitor</th><th>To See</th><th>Purpose</th><th>Vehicle</th><th>Check In</th><th>Check Out</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Visitor</th><th scope="col">To See</th><th scope="col">Purpose</th><th scope="col">Vehicle</th><th scope="col">Check In</th><th scope="col">Check Out</th></tr></thead>
         <tbody>
           ${log.map(l => `<tr>
             <td><div class="flex items-center gap-2">${avatar(l.visitor, 'sm')}<div><div class="font-medium text-sm">${l.visitor}</div><div class="text-xs text-slate-500">${l.relation}</div></div></div></td>
@@ -11544,18 +12056,18 @@ function newVisitorModal() {
   modal({
     title: 'Check-in Visitor',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Visitor Name</label><input id="vis_name" class="input" placeholder="e.g. Mrs. Amaka Okonkwo" /></div>
+      <div><label class="input-label" for="vis_name">Visitor Name</label><input id="vis_name" class="input" placeholder="e.g. Mrs. Amaka Okonkwo" /></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Phone</label><input id="vis_phone" class="input" placeholder="e.g. 0803 123 4567" /></div>
-        <div><label class="input-label">Relation</label>
+        <div><label class="input-label" for="vis_phone">Phone</label><input id="vis_phone" class="input" placeholder="e.g. 0803 123 4567" /></div>
+        <div><label class="input-label" for="vis_rel">Relation</label>
           <select id="vis_rel" class="input"><option>Parent</option><option>Vendor</option><option>Maintenance</option><option>Government Official</option><option>Visitor</option><option>Delivery</option></select>
         </div>
       </div>
-      <div><label class="input-label">To See</label>
+      <div><label class="input-label" for="vis_tosee">To See</label>
         <select id="vis_tosee" class="input"><option>Mr. Olusegun Adebayo (Proprietor)</option>${teachers.map(t => `<option>${t.name}</option>`).join('')}</select>
       </div>
-      <div><label class="input-label">Purpose</label><input id="vis_purpose" class="input" placeholder="e.g. Collect report card" /></div>
-      <div><label class="input-label">Vehicle (or "Foot")</label><input id="vis_vehicle" class="input" placeholder="e.g. Toyota Camry LSD-241-AB" /></div>
+      <div><label class="input-label" for="vis_purpose">Purpose</label><input id="vis_purpose" class="input" placeholder="e.g. Collect report card" /></div>
+      <div><label class="input-label" for="vis_vehicle">Vehicle (or "Foot")</label><input id="vis_vehicle" class="input" placeholder="e.g. Toyota Camry LSD-241-AB" /></div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="saveVisitor()">${icon('check','w-4 h-4')} Check In</button>`
@@ -11631,7 +12143,7 @@ function renderLibraryCatalog(books) {
   return `
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Title</th><th>Author</th><th>ISBN</th><th>Category</th><th>Available</th><th>Location</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Title</th><th scope="col">Author</th><th scope="col">ISBN</th><th scope="col">Category</th><th scope="col">Available</th><th scope="col">Location</th><th scope="col"></th></tr></thead>
         <tbody>
           ${books.map(b => `<tr>
             <td><div class="flex items-center gap-2"><div class="w-8 h-8 rounded bg-brand-100 text-brand-700 flex items-center justify-center">${icon('book','w-4 h-4')}</div><span class="font-medium text-sm">${b.title}</span></div></td>
@@ -11641,7 +12153,7 @@ function renderLibraryCatalog(books) {
             <td><strong>${b.copiesAvailable}</strong> / ${b.copiesTotal}</td>
             <td class="text-xs text-slate-500">${b.location}</td>
             <td class="text-right">
-              <button class="btn btn-ghost !p-1.5" title="Issue" onclick="issueBookModal('${b.id}')" ${b.copiesAvailable === 0 ? 'disabled' : ''}>${icon('arrow_left','w-4 h-4 rotate-180')}</button>
+              <button class="btn btn-ghost !p-1.5" aria-label="Issue" title="Issue" onclick="issueBookModal('${b.id}')" ${b.copiesAvailable === 0 ? 'disabled' : ''}>${icon('arrow_left','w-4 h-4 rotate-180')}</button>
             </td>
           </tr>`).join('')}
         </tbody>
@@ -11654,7 +12166,7 @@ function renderLibraryLoans(loans, books, showOverdueOnly) {
   if (loans.length === 0) return emptyState({ title: showOverdueOnly ? 'No overdue books' : 'No active loans', icon: 'book' });
   return `<div class="card overflow-hidden">
     <table class="tbl">
-      <thead><tr><th>Book</th><th>Borrower</th><th>Borrowed</th><th>Due</th><th>Status</th><th></th></tr></thead>
+      <th scope="col"ead><tr><th scope="col">Book</th><th scope="col">Borrower</th><th scope="col">Borrowed</th><th scope="col">Due</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
       <tbody>
         ${loans.map(l => {
           const book = books.find(b => b.id === l.bookId);
@@ -11679,17 +12191,17 @@ function addBookModal() {
   modal({
     title: 'Add Book',
     body: `<div class="space-y-3">
-      <div><label class="input-label">Title</label><input id="bk_title" class="input" placeholder="e.g. New General Mathematics JSS1" /></div>
+      <div><label class="input-label" for="bk_title">Title</label><input id="bk_title" class="input" placeholder="e.g. New General Mathematics JSS1" /></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Author</label><input id="bk_author" class="input" placeholder="e.g. M.F. Macrae" /></div>
-        <div><label class="input-label">ISBN</label><input id="bk_isbn" class="input" placeholder="e.g. 978-0-582-60324-0" /></div>
+        <div><label class="input-label" for="bk_author">Author</label><input id="bk_author" class="input" placeholder="e.g. M.F. Macrae" /></div>
+        <div><label class="input-label" for="bk_isbn">ISBN</label><input id="bk_isbn" class="input" placeholder="e.g. 978-0-582-60324-0" /></div>
       </div>
       <div class="grid grid-cols-3 gap-3">
-        <div><label class="input-label">Category</label>
+        <div><label class="input-label" for="bk_category">Category</label>
           <select id="bk_category" class="input"><option>Fiction</option><option>Reference</option><option>Maths</option><option>Science</option><option>Languages</option><option>History</option><option>Other</option></select>
         </div>
-        <div><label class="input-label">Copies</label><input id="bk_copies" type="number" class="input" value="1" /></div>
-        <div><label class="input-label">Location</label><input id="bk_location" class="input" placeholder="Shelf A-01" /></div>
+        <div><label class="input-label" for="bk_copies">Copies</label><input id="bk_copies" type="number" class="input" value="1" /></div>
+        <div><label class="input-label" for="bk_location">Location</label><input id="bk_location" class="input" placeholder="Shelf A-01" /></div>
       </div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -11720,11 +12232,11 @@ function issueBookModal(bookId) {
   modal({
     title: 'Issue: ' + book.title,
     body: `<div class="space-y-3">
-      <div><label class="input-label">Borrower</label>
+      <div><label class="input-label" for="iss_student">Borrower</label>
         <select id="iss_student" class="input">${students.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
       </div>
-      <div><label class="input-label">Due Date</label><input id="iss_due" type="date" class="input" value="${daysAhead(14)}" /></div>
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">${book.copiesAvailable} of ${book.copiesTotal} copies available · ${book.location}</div>
+      <div><label class="input-label" for="iss_due">Due Date</label><input id="iss_due" type="date" class="input" value="${daysAhead(14)}" /></div>
+      <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">${book.copiesAvailable} of ${book.copiesTotal} copies available · ${book.location}</div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
              <button class="btn btn-primary" onclick="issueBook('${bookId}')">Issue Book</button>`
@@ -11797,7 +12309,7 @@ function renderLiveChat() {
       </div>
       <div class="flex-1 overflow-y-auto p-4 space-y-3 scroll-area" id="liveChatBody">
         ${msgs.map(m => m.from === 'agent'
-          ? `<div class="flex gap-2 items-end"><span class="avatar sm">CS</span><div class="bg-slate-100 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[75%]"><div class="text-xs text-slate-400 mb-0.5">${m.agentName || 'Support'}</div><div class="text-sm">${m.text}</div></div></div>`
+          ? `<div class="flex gap-2 items-end"><span class="avatar sm">CS</span><div class="bg-slate-100 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[75%]"><div class="text-xs text-slate-500 mb-0.5">${m.agentName || 'Support'}</div><div class="text-sm">${m.text}</div></div></div>`
           : `<div class="flex justify-end"><div class="bg-brand-600 text-white rounded-2xl rounded-br-sm px-3 py-2 max-w-[75%] text-sm">${m.text}</div></div>`
         ).join('')}
       </div>
@@ -11835,7 +12347,7 @@ function renderSupportTickets() {
     <div class="flex justify-end mb-3"><button class="btn btn-primary" onclick="raiseTicketModal()">${icon('plus','w-4 h-4')} Raise a Ticket</button></div>
     ${tickets.length === 0 ? emptyState({ title: 'No tickets yet', body: 'Raise a ticket and our team will respond within SLA.', icon: 'chat' }) : `
       <div class="card overflow-hidden"><div class="overflow-x-auto"><table class="tbl">
-        <thead><tr><th>Ticket</th><th>Subject</th><th>Priority</th><th>Status</th><th>Raised</th><th>SLA</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Ticket</th><th scope="col">Subject</th><th scope="col">Priority</th><th scope="col">Status</th><th scope="col">Raised</th><th scope="col">SLA</th></tr></thead>
         <tbody>
           ${tickets.map(t => `<tr>
             <td><code class="text-xs">${t.id.toUpperCase()}</code></td>
@@ -11856,10 +12368,10 @@ function raiseTicketModal() {
     title: 'Raise a Support Ticket',
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Subject</label><input id="tk_subject" class="input" placeholder="Briefly, what do you need help with?" /></div>
-        <div><label class="input-label">Details</label><textarea id="tk_desc" rows="4" class="input" placeholder="Describe the issue…"></textarea></div>
-        <div><label class="input-label">Priority</label><select id="tk_priority" class="input"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">${icon('info','w-4 h-4 inline mr-1')} Our team responds within the SLA based on priority (High: 4h, Medium: 24h, Low: 48h).</div>
+        <div><label class="input-label" for="tk_subject">Subject</label><input id="tk_subject" class="input" placeholder="Briefly, what do you need help with?" /></div>
+        <div><label class="input-label" for="tk_desc">Details</label><textarea id="tk_desc" rows="4" class="input" placeholder="Describe the issue…"></textarea></div>
+        <div><label class="input-label" for="tk_priority">Priority</label><select id="tk_priority" class="input"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
+        <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-900">${icon('info','w-4 h-4 inline mr-1')} Our team responds within the SLA based on priority (High: 4h, Medium: 24h, Low: 48h).</div>
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
@@ -11891,7 +12403,7 @@ function renderHelpCentre() {
   return `
     <div class="card p-3 mb-4">
       <div class="relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${icon('search','w-4 h-4')}</span>
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">${icon('search','w-4 h-4')}</span>
         <input class="input pl-9" placeholder="Search help articles…" value="${q}" oninput="APP.params.helpQ=this.value; APP.render()" />
       </div>
     </div>
@@ -11901,7 +12413,7 @@ function renderHelpCentre() {
           <div>
             <h3 class="font-bold text-slate-700 mb-2">${cat}</h3>
             <div class="space-y-2">
-              ${byCat[cat].map(a => `<details class="card p-4">
+              ${byCat[cat].map(a => `<details class="card p-5">
                 <summary class="font-semibold text-slate-900 cursor-pointer">${a.question}</summary>
                 <p class="text-sm text-slate-600 mt-2">${a.answer}</p>
               </details>`).join('')}
@@ -11921,7 +12433,7 @@ function renderHelpCentre() {
 
 function _renderPrintCenter() {
   const card = ({ title, desc, onPrint, onCsv }) => `
-    <div class="card p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
+    <div class="card p-5 flex flex-col gap-3 hover:shadow-md transition-shadow">
       <div class="flex-1">
         <div class="font-bold text-slate-900 mb-1">${title}</div>
         <p class="text-xs text-slate-500 leading-relaxed">${desc}</p>
@@ -11942,7 +12454,7 @@ function _renderPrintCenter() {
     </div>`;
 
   return `
-    <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-900 mb-5 flex items-start gap-3">
+    <div class="bg-brand-50 rounded-xl px-4 py-3 text-sm text-brand-900 mb-5 flex items-start gap-3">
       ${icon('reports','w-5 h-5 flex-shrink-0 mt-0.5')}
       <span>Click <strong>Print / Save as PDF</strong> on any report to open a formatted, ready-to-print document you can save, share or file. <strong>Download Spreadsheet</strong> gives you an Excel-compatible file for those who want to work with the numbers.</span>
     </div>
@@ -11979,8 +12491,8 @@ function _rptHead(title, subtitle) {
   const term = DB.settings().currentTerm || '';
   const date = new Date().toLocaleDateString('en-NG', { day:'numeric', month:'long', year:'numeric' });
   return `
-    <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:28px">
-      <h1 style="margin:0 0 4px;font-size:22px;color:#047857;letter-spacing:.5px">${(sc.name||'School').toUpperCase()}</h1>
+    <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:28px">
+      <h1 style="margin:0 0 4px;font-size:22px;color:#00b386;letter-spacing:.5px">${(sc.name||'School').toUpperCase()}</h1>
       ${sc.address ? `<p style="margin:2px 0;color:#555;font-size:12px">${sc.address}</p>` : ''}
       ${sc.phone ? `<p style="margin:2px 0;color:#555;font-size:12px">Tel: ${sc.phone}</p>` : ''}
       <h2 style="margin:16px 0 4px;font-size:18px;font-weight:700">${title}</h2>
@@ -12014,7 +12526,7 @@ function rpt_studentRegister() {
   }).join('');
   printElement(`
     ${_rptHead('Full Student Register', `${students.length} active students`)}
-    <table><thead><tr><th>#</th><th>Full Name</th><th>Class</th><th>Admission No.</th><th>Sex</th><th>Date of Birth</th><th>Parent / Guardian</th><th>Phone</th></tr></thead>
+    <table><th scope="col"ead><tr><th scope="col">#</th><th scope="col">Full Name</th><th scope="col">Class</th><th scope="col">Admission No.</th><th scope="col">Sex</th><th scope="col">Date of Birth</th><th scope="col">Parent / Guardian</th><th scope="col">Phone</th></tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr><td colspan="8">Total active students: <strong>${students.length}</strong></td></tr></tfoot></table>
     ${_rptSign()}
@@ -12054,7 +12566,7 @@ function rpt_outstandingFees() {
   }).join('');
   printElement(`
     ${_rptHead('Outstanding Fees Report', `${invoices.length} students with unpaid balances`)}
-    <table><thead><tr><th>#</th><th>Student</th><th>Class</th><th style="text-align:right">Billed</th><th style="text-align:right">Paid</th><th style="text-align:right">Outstanding</th><th>Due Date</th></tr></thead>
+    <table><th scope="col"ead><tr><th scope="col">#</th><th scope="col">Student</th><th scope="col">Class</th><th scope="col" style="text-align:right">Billed</th><th scope="col" style="text-align:right">Paid</th><th scope="col" style="text-align:right">Outstanding</th><th scope="col">Due Date</th></tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr><td colspan="5" style="text-align:right">Total Outstanding:</td><td style="text-align:right;color:#dc2626"><strong>${money(total)}</strong></td><td></td></tr></tfoot></table>
     ${_rptSign()}
@@ -12100,7 +12612,7 @@ function rpt_attendanceSummary() {
   }).join('');
   printElement(`
     ${_rptHead('Attendance Summary', `${students.length} students · ${DB.settings().currentTerm}`)}
-    <table><thead><tr><th>#</th><th>Student</th><th>Class</th><th style="text-align:right">Present</th><th style="text-align:right">Absent</th><th style="text-align:right">Late</th><th style="text-align:right">Days Recorded</th><th style="text-align:right">Attendance %</th></tr></thead>
+    <table><th scope="col"ead><tr><th scope="col">#</th><th scope="col">Student</th><th scope="col">Class</th><th scope="col" style="text-align:right">Present</th><th scope="col" style="text-align:right">Absent</th><th scope="col" style="text-align:right">Late</th><th scope="col" style="text-align:right">Days Recorded</th><th scope="col" style="text-align:right">Attendance %</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${_rptSign()}
   `);
@@ -12143,7 +12655,7 @@ function rpt_newAdmissions() {
   }).join('');
   printElement(`
     ${_rptHead('New Admissions', `${students.length} students admitted recently`)}
-    <table><thead><tr><th>#</th><th>Student</th><th>Class</th><th>Admission No.</th><th>Date Admitted</th><th>Parent</th><th>Phone</th></tr></thead>
+    <table><th scope="col"ead><tr><th scope="col">#</th><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Admission No.</th><th scope="col">Date Admitted</th><th scope="col">Parent</th><th scope="col">Phone</th></tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr><td colspan="7">Total new admissions: <strong>${students.length}</strong></td></tr></tfoot></table>
     ${_rptSign()}
@@ -12174,7 +12686,7 @@ function rpt_feeCollection() {
   }).join('');
   printElement(`
     ${_rptHead('Fee Collection Report', DB.settings().currentTerm)}
-    <table><thead><tr><th>#</th><th>Student</th><th>Class</th><th>Due Date</th><th>Status</th><th style="text-align:right">Billed</th><th style="text-align:right">Paid</th><th style="text-align:right">Outstanding</th></tr></thead>
+    <table><th scope="col"ead><tr><th scope="col">#</th><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Due Date</th><th scope="col">Status</th><th scope="col" style="text-align:right">Billed</th><th scope="col" style="text-align:right">Paid</th><th scope="col" style="text-align:right">Outstanding</th></tr></thead>
     <tbody>${body}</tbody>
     <tfoot><tr><td colspan="5" style="font-weight:700">SCHOOL TOTAL</td><td style="text-align:right">${money(totalBilled)}</td><td style="text-align:right;color:#16a34a">${money(totalPaid)}</td><td style="text-align:right;color:#dc2626">${money(totalOwe)}</td></tr></tfoot></table>
     ${_rptSign()}
@@ -12247,7 +12759,7 @@ function rpt_paymentsLog() {
   }).join('');
   printElement(`
     ${_rptHead('Payments Received', `${txns.length} transactions · ${DB.settings().currentTerm}`)}
-    <table><thead><tr><th>#</th><th>Date</th><th>Student</th><th style="text-align:right">Amount</th><th>Method</th><th>Reference</th><th>Gateway</th></tr></thead>
+    <table><th scope="col"ead><tr><th scope="col">#</th><th scope="col">Date</th><th scope="col">Student</th><th scope="col" style="text-align:right">Amount</th><th scope="col">Method</th><th scope="col">Reference</th><th scope="col">Gateway</th></tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr><td colspan="3">Total received:</td><td style="text-align:right"><strong>${money(total)}</strong></td><td colspan="3">&nbsp;</td></tr></tfoot></table>
     ${_rptSign()}
@@ -12279,7 +12791,7 @@ function rpt_expenseRecord() {
   </tr>`).join('');
   printElement(`
     ${_rptHead('Expense Record', `${expenses.length} entries · ${DB.settings().currentTerm}`)}
-    <table><thead><tr><th>#</th><th>Date</th><th>Category</th><th>Description</th><th style="text-align:right">Amount</th></tr></thead>
+    <table><th scope="col"ead><tr><th scope="col">#</th><th scope="col">Date</th><th scope="col">Category</th><th scope="col">Description</th><th scope="col" style="text-align:right">Amount</th></tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr><td colspan="4" style="text-align:right">Total Expenses:</td><td style="text-align:right"><strong>${money(total)}</strong></td></tr></tfoot></table>
     ${_rptSign()}
@@ -12310,7 +12822,7 @@ function rpt_staffDirectory() {
   </tr>`).join('');
   printElement(`
     ${_rptHead('Staff Directory', `${staff.length} staff members`)}
-    <table><thead><tr><th>#</th><th>Name</th><th>Type</th><th>Subjects / Dept.</th><th>Phone</th><th>Email</th><th>Date Hired</th><th style="text-align:right">Monthly Salary</th></tr></thead>
+    <table><th scope="col"ead><tr><th scope="col">#</th><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Subjects / Dept.</th><th scope="col">Phone</th><th scope="col">Email</th><th scope="col">Date Hired</th><th scope="col" style="text-align:right">Monthly Salary</th></tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr><td colspan="7">Total staff: <strong>${staff.length}</strong></td><td style="text-align:right">${money(staff.reduce((s,t)=>s+(t.salary||0),0))}/month</td></tr></tfoot></table>
     ${_rptSign()}
@@ -12346,7 +12858,7 @@ function rpt_payrollSummary() {
   }).join('');
   printElement(`
     ${_rptHead('Payroll Summary', `Period: ${run.period} · ${run.staffCount} staff`)}
-    <table><thead><tr><th>#</th><th>Staff Member</th><th style="text-align:right">Gross Pay</th><th style="text-align:right">PAYE Tax</th><th style="text-align:right">Pension</th><th style="text-align:right">Net Pay</th><th>Bank Details</th></tr></thead>
+    <table><th scope="col"ead><tr><th scope="col">#</th><th scope="col">Staff Member</th><th scope="col" style="text-align:right">Gross Pay</th><th scope="col" style="text-align:right">PAYE Tax</th><th scope="col" style="text-align:right">Pension</th><th scope="col" style="text-align:right">Net Pay</th><th scope="col">Bank Details</th></tr></thead>
     <tbody>${rows}</tbody>
     <tfoot>
       <tr><td colspan="2">TOTALS</td><td style="text-align:right">${money(run.grossTotal)}</td><td style="text-align:right;color:#dc2626">−${money(run.payeTotal)}</td><td style="text-align:right;color:#dc2626">−${money(run.pensionTotal)}</td><td style="text-align:right;color:#15803d">${money(run.netTotal)}</td><td></td></tr>
@@ -12405,10 +12917,10 @@ function rpt_academicSummary() {
   printElement(`
     ${_rptHead('Academic Results Summary', DB.settings().currentTerm)}
     <h3 style="margin-top:0;font-size:14px;color:#374151">Performance by Class</h3>
-    <table><thead><tr><th>Class</th><th style="text-align:right">Students</th><th style="text-align:right">Entries</th><th style="text-align:right">Average Score</th><th style="text-align:right">Pass Rate</th></tr></thead>
+    <table><th scope="col"ead><tr><th scope="col">Class</th><th scope="col" style="text-align:right">Students</th><th scope="col" style="text-align:right">Entries</th><th scope="col" style="text-align:right">Average Score</th><th scope="col" style="text-align:right">Pass Rate</th></tr></thead>
     <tbody>${rows}</tbody></table>
     <h3 style="margin-top:24px;font-size:14px;color:#374151">Performance by Subject</h3>
-    <table><thead><tr><th>Subject</th><th style="text-align:right">Entries</th><th style="text-align:right">Average Score</th></tr></thead>
+    <table><th scope="col"ead><tr><th scope="col">Subject</th><th scope="col" style="text-align:right">Entries</th><th scope="col" style="text-align:right">Average Score</th></tr></thead>
     <tbody>${subRows}</tbody></table>
     ${_rptSign()}
   `);
@@ -12436,7 +12948,7 @@ function rpt_classBroadsheet(classId) {
   const subjects = DB.get('subjects');
   const results  = DB.query('results', r => r.classId === classId && r.schoolId === sid);
   const cols = subjects.filter(sub => results.some(r=>r.subjectId===sub.id));
-  const thead = `<tr><th>S/N</th><th>Student</th>${cols.map(s=>`<th style="text-align:right;font-size:11px">${s.name}</th>`).join('')}<th style="text-align:right">Total</th><th style="text-align:right">Avg</th><th>Grade</th></tr>`;
+  const thead = `<tr><th scope="col">S/N</th><th scope="col">Student</th>${cols.map(s=>`<th scope="col" style="text-align:right;font-size:11px">${s.name}</th>`).join('')}<th scope="col" style="text-align:right">Total</th><th scope="col" style="text-align:right">Avg</th><th scope="col">Grade</th></tr>`;
   const tbody = students.map((stu,i) => {
     const stuRes = results.filter(r=>r.studentId===stu.id);
     let grandTotal=0, count=0;
@@ -12452,7 +12964,7 @@ function rpt_classBroadsheet(classId) {
   }).join('');
   printElement(`
     ${_rptHead(`${cls?cls.name:''} — Broadsheet`, `${students.length} students · ${cols.length} subjects · ${DB.settings().currentTerm}`)}
-    <div style="overflow-x:auto"><table><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>
+    <div style="overflow-x:auto"><table><th scope="col"ead>${thead}</thead><tbody>${tbody}</tbody></table></div>
     ${_rptSign()}
   `);
 }
@@ -12472,31 +12984,31 @@ function view_adm_audit() {
   };
 
   const ACTION_META = {
-    student_login:             { label: 'Student login',          color: 'bg-blue-100 text-blue-700' },
+    student_login:             { label: 'Student login',          color: 'bg-brand-100 text-brand-700' },
     added_student:             { label: 'Student added',          color: 'bg-emerald-100 text-emerald-700' },
-    updated_student:           { label: 'Student updated',        color: 'bg-sky-100 text-sky-700' },
-    promoted_student:          { label: 'Student promoted',       color: 'bg-violet-100 text-violet-700' },
-    bulk_promoted:             { label: 'Bulk promotion',         color: 'bg-violet-100 text-violet-700' },
+    updated_student:           { label: 'Student updated',        color: 'bg-brand-100 text-brand-700' },
+    promoted_student:          { label: 'Student promoted',       color: 'bg-brand-100 text-brand-700' },
+    bulk_promoted:             { label: 'Bulk promotion',         color: 'bg-brand-100 text-brand-700' },
     bulk_graduated:            { label: 'Bulk graduation',        color: 'bg-amber-100 text-amber-700' },
     graduated_student:         { label: 'Graduated',              color: 'bg-amber-100 text-amber-700' },
-    transferred_student:       { label: 'Transfer out',           color: 'bg-orange-100 text-orange-700' },
+    transferred_student:       { label: 'Transfer out',           color: 'bg-amber-100 text-amber-700' },
     withdrew_student:          { label: 'Withdrawal',             color: 'bg-red-100 text-red-700' },
     suspended_student:         { label: 'Suspension',             color: 'bg-red-100 text-red-700' },
     changed_status:            { label: 'Status change',          color: 'bg-slate-100 text-slate-600' },
-    deferred_promotion:        { label: 'Promotion deferred',     color: 'bg-orange-100 text-orange-700' },
-    issued_refund:             { label: 'Refund issued',          color: 'bg-pink-100 text-pink-700' },
+    deferred_promotion:        { label: 'Promotion deferred',     color: 'bg-amber-100 text-amber-700' },
+    issued_refund:             { label: 'Refund issued',          color: 'bg-brand-100 text-brand-700' },
     staff_hired:               { label: 'Staff hired',            color: 'bg-emerald-100 text-emerald-700' },
     staff_terminated:          { label: 'Staff terminated',       color: 'bg-red-100 text-red-700' },
-    staff_updated:             { label: 'Staff updated',          color: 'bg-sky-100 text-sky-700' },
-    payroll_draft_created:     { label: 'Payroll started',        color: 'bg-blue-100 text-blue-700' },
+    staff_updated:             { label: 'Staff updated',          color: 'bg-brand-100 text-brand-700' },
+    payroll_draft_created:     { label: 'Payroll started',        color: 'bg-brand-100 text-brand-700' },
     payroll_submitted:         { label: 'Payroll submitted',      color: 'bg-amber-100 text-amber-700' },
     payroll_approved:          { label: 'Payroll approved',       color: 'bg-emerald-100 text-emerald-700' },
     payroll_paid:              { label: 'Payroll disbursed',      color: 'bg-emerald-100 text-emerald-700' },
-    lesson_plan_note_added:    { label: 'Plan note added',        color: 'bg-indigo-100 text-indigo-700' },
-    lesson_plan_note_updated:  { label: 'Plan note updated',      color: 'bg-indigo-100 text-indigo-700' },
+    lesson_plan_note_added:    { label: 'Plan note added',        color: 'bg-brand-100 text-brand-700' },
+    lesson_plan_note_updated:  { label: 'Plan note updated',      color: 'bg-brand-100 text-brand-700' },
     lesson_plan_note_deleted:  { label: 'Plan note removed',      color: 'bg-slate-100 text-slate-600' },
-    opened_appraisal_cycle:    { label: 'Appraisal opened',       color: 'bg-violet-100 text-violet-700' },
-    appraisal_outcome_set:     { label: 'Appraisal outcome set',  color: 'bg-violet-100 text-violet-700' }
+    opened_appraisal_cycle:    { label: 'Appraisal opened',       color: 'bg-brand-100 text-brand-700' },
+    appraisal_outcome_set:     { label: 'Appraisal outcome set',  color: 'bg-brand-100 text-brand-700' }
   };
 
   const nowTs  = Date.parse(now());
@@ -12549,7 +13061,7 @@ function view_adm_audit() {
           </div>
         </div>
       </div>`;
-  }).join('') : `<div class="py-12 text-center text-slate-400">${icon('reports','w-8 h-8 mx-auto mb-2 opacity-30')}<div>No activity found for this filter</div></div>`;
+  }).join('') : `<div class="py-12 text-center text-slate-500">${icon('reports','w-8 h-8 mx-auto mb-2 opacity-30')}<div>No activity found for this filter</div></div>`;
 
   return `
     ${pageHeader({ title: 'Audit Log', subtitle: 'A complete record of all significant actions taken in the system' })}
@@ -12600,11 +13112,11 @@ function renderStudentWallet(studentId, schoolId) {
       </div>
       <div class="flex-1 min-w-0">
         <div class="text-sm font-medium text-slate-800 truncate">${e.description}</div>
-        <div class="text-xs text-slate-400">${fdate(e.date, { short: true })}</div>
+        <div class="text-xs text-slate-500">${fdate(e.date, { short: true })}</div>
       </div>
       <div class="text-right flex-shrink-0">
         <div class="font-bold text-sm ${e.type === 'credit' ? 'text-emerald-700' : 'text-red-600'}">${e.type === 'credit' ? '+' : '−'}${money(e.amount)}</div>
-        <div class="text-xs text-slate-400">Bal: ${money(e.balance)}</div>
+        <div class="text-xs text-slate-500">Bal: ${money(e.balance)}</div>
       </div>
     </div>`).join('');
 
@@ -12633,7 +13145,7 @@ function renderStudentWallet(studentId, schoolId) {
         <span class="text-sm font-semibold text-slate-700">Transaction Ledger</span>
       </div>
       <div class="px-4 max-h-64 overflow-y-auto">
-        ${rows || '<div class="py-6 text-center text-slate-400 text-sm">No transactions yet.</div>'}
+        ${rows || '<div class="py-6 text-center text-slate-500 text-sm">No transactions yet.</div>'}
       </div>
     </div>`;
 }
@@ -12646,8 +13158,8 @@ function adm_walletEntry(studentId, type) {
     body: `
       <div class="space-y-3">
         <p class="text-sm text-slate-600">${type === 'credit' ? 'Add a credit (payment, bursary, overpayment, etc.) to' : 'Record a debit (charge, deduction) against'} <strong>${s.name}</strong>'s account.</p>
-        <div><label class="input-label">Amount (₦)</label><input id="we_amount" type="number" class="input" placeholder="e.g. 50000" min="1"></div>
-        <div><label class="input-label">Description</label><input id="we_desc" class="input" placeholder="${type === 'credit' ? 'e.g. Bursary grant, Overpayment refund' : 'e.g. Miscellaneous charge, Lost textbook'}"></div>
+        <div><label class="input-label" for="we_amount">Amount (₦)</label><input id="we_amount" type="number" class="input" placeholder="e.g. 50000" min="1"></div>
+        <div><label class="input-label" for="we_desc">Description</label><input id="we_desc" class="input" placeholder="${type === 'credit' ? 'e.g. Bursary grant, Overpayment refund' : 'e.g. Miscellaneous charge, Lost textbook'}"></div>
       </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
              <button class="btn ${type === 'credit' ? 'btn-primary' : 'btn-danger'}" onclick="adm_saveWalletEntry('${studentId}','${type}')">${type === 'credit' ? 'Add Credit' : 'Record Debit'}</button>`

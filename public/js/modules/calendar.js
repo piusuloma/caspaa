@@ -7,8 +7,8 @@
 
 const CAL_TYPES = {
   holiday:   { label: 'Holiday',      color: 'bg-red-100 text-red-700 border-red-200',      dot: 'bg-red-500' },
-  meeting:   { label: 'Meeting',      color: 'bg-blue-100 text-blue-700 border-blue-200',    dot: 'bg-blue-500' },
-  event:     { label: 'Event',        color: 'bg-purple-100 text-purple-700 border-purple-200', dot: 'bg-purple-500' },
+  meeting:   { label: 'Meeting',      color: 'bg-brand-100 text-brand-700 border-brand-200',    dot: 'bg-brand-500' },
+  event:     { label: 'Event',        color: 'bg-brand-100 text-brand-700 border-brand-200', dot: 'bg-brand-500' },
   exam:      { label: 'Exam',         color: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
   milestone: { label: 'Milestone',    color: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   other:     { label: 'Other',        color: 'bg-slate-100 text-slate-700 border-slate-200', dot: 'bg-slate-400' }
@@ -77,7 +77,7 @@ function cal_renderCalendar(params) {
             <button onclick="APP.params.month=${nextMonth.month};APP.params.year=${nextMonth.year};APP.render()" class="btn btn-secondary px-3 py-1.5 text-sm">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
           </div>
           <!-- Day headers -->
-          <div class="grid grid-cols-7 text-center text-xs font-semibold text-slate-400 uppercase mb-2">
+          <div class="grid grid-cols-7 text-center text-xs font-semibold text-slate-500 uppercase mb-2">
             ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="py-1">${d}</div>`).join('')}
           </div>
           <!-- Date cells -->
@@ -93,7 +93,7 @@ function cal_renderCalendar(params) {
                   const t = CAL_TYPES[e.type] || CAL_TYPES.other;
                   return `<div class="text-xs truncate px-1 py-0.5 rounded mb-0.5 border ${t.color} leading-tight">${e.title}</div>`;
                 }).join('')}
-                ${dayEvents.length > 2 ? `<div class="text-xs text-slate-400 px-1">+${dayEvents.length-2} more</div>` : ''}
+                ${dayEvents.length > 2 ? `<div class="text-xs text-slate-500 px-1">+${dayEvents.length-2} more</div>` : ''}
               </div>`;
             }).join('')}
           </div>
@@ -107,7 +107,7 @@ function cal_renderCalendar(params) {
       <!-- Upcoming events sidebar -->
       <div class="space-y-3">
         <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">Upcoming</h3>
-        ${upcoming.length === 0 ? `<div class="card p-5 text-sm text-slate-400 text-center">No upcoming events in the next 90 days.</div>` :
+        ${upcoming.length === 0 ? `<div class="card p-5 text-sm text-slate-500 text-center">No upcoming events in the next 90 days.</div>` :
           upcoming.map(e => {
             const t = CAL_TYPES[e.type] || CAL_TYPES.other;
             const dateStr = e.endDate && e.endDate !== e.startDate
@@ -118,7 +118,7 @@ function cal_renderCalendar(params) {
                 <span class="w-2.5 h-2.5 rounded-full ${t.dot} mt-1.5 flex-shrink-0"></span>
                 <div class="flex-1 min-w-0">
                   <div class="font-semibold text-slate-900 text-sm leading-tight">${e.title}</div>
-                  <div class="text-xs text-slate-400 mt-0.5">${dateStr}</div>
+                  <div class="text-xs text-slate-500 mt-0.5">${dateStr}</div>
                   <span class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full border ${t.color}">${t.label}</span>
                 </div>
                 ${isAdmin ? `<button onclick="event.stopPropagation();cal_deleteEvent('${e.id}')" class="text-slate-300 hover:text-red-400 flex-shrink-0">${icon('trash','w-4 h-4')}</button>` : ''}
@@ -136,13 +136,13 @@ function view_cal_main(params) {
   const activeTab = (APP.params && APP.params.calTab) || 'calendar';
 
   const tabBar = `<div class="flex gap-2 mb-4 border-b border-slate-200 pb-1">
-    <button onclick="APP.params.calTab='calendar'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'calendar' ? 'bg-white border border-b-white border-slate-200 text-sky-600' : 'text-slate-500 hover:text-slate-700'}">
+    <button onclick="APP.params.calTab='calendar'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'calendar' ? 'bg-white border border-b-white border-slate-200 text-brand-600' : 'text-slate-500 hover:text-slate-700'}">
       <i class="ph ph-calendar mr-1"></i>Calendar
     </button>
-    <button onclick="APP.params.calTab='academic_year'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'academic_year' ? 'bg-white border border-b-white border-slate-200 text-sky-600' : 'text-slate-500 hover:text-slate-700'}">
+    <button onclick="APP.params.calTab='academic_year'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'academic_year' ? 'bg-white border border-b-white border-slate-200 text-brand-600' : 'text-slate-500 hover:text-slate-700'}">
       <i class="ph ph-graduation-cap mr-1"></i>Academic Year
     </button>
-    <button onclick="APP.params.calTab='noticeboard'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'noticeboard' ? 'bg-white border border-b-white border-slate-200 text-sky-600' : 'text-slate-500 hover:text-slate-700'}">
+    <button onclick="APP.params.calTab='noticeboard'; APP.render()" class="px-4 py-2 text-sm font-medium rounded-t ${activeTab === 'noticeboard' ? 'bg-white border border-b-white border-slate-200 text-brand-600' : 'text-slate-500 hover:text-slate-700'}">
       <i class="ph ph-note mr-1"></i>Notice Board
     </button>
   </div>`;
@@ -197,7 +197,7 @@ function cal_showEvent(id) {
         <span class="text-sm text-slate-500">${dateStr}</span>
       </div>
       <div class="bg-slate-50 rounded-xl p-3">
-        <div class="text-xs uppercase font-semibold text-slate-400 mb-1">Audience</div>
+        <div class="text-xs uppercase font-semibold text-slate-500 mb-1">Audience</div>
         <div class="text-sm font-semibold text-slate-700 capitalize">${e.audience}</div>
       </div>
       ${e.description ? `<p class="text-sm text-slate-700">${e.description}</p>` : ''}
@@ -357,7 +357,7 @@ function cal_renderAcademicYear() {
         <div class="text-4xl mb-3">📅</div>
         <h3 class="font-bold text-slate-900 mb-2">Academic Year Not Configured</h3>
         <p class="text-sm text-slate-500 mb-4">Set the term dates in Settings → Calendar to generate the academic year overview.</p>
-        ${isAdmin ? `<button class="btn btn-primary" onclick="APP.go('adm_settings', { setTab: 'calendar' })">${icon('settings','w-4 h-4')} Configure Term Dates</button>` : '<p class="text-sm text-slate-400">Please ask your school admin to configure the academic calendar.</p>'}
+        ${isAdmin ? `<button class="btn btn-primary" onclick="APP.go('adm_settings', { setTab: 'calendar' })">${icon('settings','w-4 h-4')} Configure Term Dates</button>` : '<p class="text-sm text-slate-500">Please ask your school admin to configure the academic calendar.</p>'}
       </div>
     `;
   }
@@ -367,7 +367,7 @@ function cal_renderAcademicYear() {
   const holidayDates = holidays.filter(h => h.type === 'holiday').map(h => h.startDate);
 
   const termColors = [
-    { bg: 'bg-blue-50', border: 'border-blue-300', header: 'bg-blue-600', text: 'text-blue-900', label: 'text-blue-700' },
+    { bg: 'bg-brand-50', border: 'border-brand-300', header: 'bg-brand-600', text: 'text-brand-900', label: 'text-brand-700' },
     { bg: 'bg-emerald-50', border: 'border-emerald-300', header: 'bg-emerald-600', text: 'text-emerald-900', label: 'text-emerald-700' },
     { bg: 'bg-amber-50', border: 'border-amber-300', header: 'bg-amber-600', text: 'text-amber-900', label: 'text-amber-700' }
   ];
@@ -419,14 +419,14 @@ function cal_renderAcademicYear() {
             ${(term.midtermStart && term.midtermEnd) ? `<tr class="bg-red-50"><td class="px-4 py-2.5 text-sm font-semibold text-red-700">Mid-Term Break</td><td class="px-4 py-2.5 text-sm text-red-800">${fmtRange(term.midtermStart, term.midtermEnd)}</td><td class="px-4 py-2.5 text-xs text-right text-red-600 font-bold">${midtermDays} days</td></tr>` : ''}
             ${(term.secondHalfStart && term.termEndDate) ? `<tr class="bg-white"><td class="px-4 py-2.5 text-sm font-semibold text-slate-700">Second Half</td><td class="px-4 py-2.5 text-sm text-slate-800">${fmtRange(term.secondHalfStart, term.termEndDate)}</td><td class="px-4 py-2.5 text-xs text-right ${c.label} font-bold">${secondHalfDays} days</td></tr>` : ''}
             ${termHolidays.length ? `
-              <tr class="bg-purple-50">
-                <td class="px-4 py-2.5 text-sm font-semibold text-purple-700 align-top">School Events</td>
+              <tr class="bg-brand-50">
+                <td class="px-4 py-2.5 text-sm font-semibold text-brand-700 align-top">School Events</td>
                 <td class="px-4 py-2.5 text-sm text-slate-800" colspan="2">
                   <div class="space-y-1.5">
                     ${termHolidays.map(h => {
-                      const typeColor = h.type==='exam'?'bg-red-100 text-red-700':h.type==='holiday'?'bg-blue-100 text-blue-700':h.type==='meeting'?'bg-amber-100 text-amber-700':h.type==='milestone'?'bg-emerald-100 text-emerald-700':'bg-purple-100 text-purple-700';
+                      const typeColor = h.type==='exam'?'bg-red-100 text-red-700':h.type==='holiday'?'bg-brand-100 text-brand-700':h.type==='meeting'?'bg-amber-100 text-amber-700':h.type==='milestone'?'bg-emerald-100 text-emerald-700':'bg-brand-100 text-brand-700';
                       const dateStr = h.endDate && h.endDate !== h.startDate ? `${fdate(h.startDate,{long:true})} – ${fdate(h.endDate,{long:true})}` : fdate(h.startDate,{long:true});
-                      return `<div class="flex items-center gap-2"><span class="text-xs px-2 py-0.5 rounded-full font-semibold ${typeColor}">${h.type}</span><span>${h.title}</span><span class="text-slate-400 text-xs">— ${dateStr}</span></div>`;
+                      return `<div class="flex items-center gap-2"><span class="text-xs px-2 py-0.5 rounded-full font-semibold ${typeColor}">${h.type}</span><span>${h.title}</span><span class="text-slate-500 text-xs">— ${dateStr}</span></div>`;
                     }).join('')}
                   </div>
                 </td>
@@ -489,7 +489,7 @@ function cal_renderNoticeBoard() {
          <p>No notices posted yet.</p>
        </div>`
     : notices.map(n => `
-      <div class="card p-5 border-l-4 border-sky-400">
+      <div class="card p-5 border-l-4 border-brand-400">
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
             <div class="flex items-center gap-2 mb-1">
@@ -497,9 +497,9 @@ function cal_renderNoticeBoard() {
               <span class="badge badge-info text-xs">${audienceLabels[n.audience] || n.audience || 'Everyone'}</span>
             </div>
             <p class="text-sm text-slate-600 whitespace-pre-line">${n.body || n.message || ''}</p>
-            <p class="text-xs text-slate-400 mt-2">${n.authorName || 'School Admin'} · ${(n.createdAt || n.timestamp || '').slice(0, 10)}</p>
+            <p class="text-xs text-slate-500 mt-2">${n.authorName || 'School Admin'} · ${(n.createdAt || n.timestamp || '').slice(0, 10)}</p>
           </div>
-          ${canPost ? `<button onclick="cal_deleteNotice('${n.id}')" class="btn btn-sm text-slate-400 hover:text-rose-500" aria-label="Delete" title="Delete"><i class="ph ph-trash"></i></button>` : ''}
+          ${canPost ? `<button onclick="cal_deleteNotice('${n.id}')" class="btn btn-sm text-slate-500 hover:text-rose-500" aria-label="Delete" title="Delete"><i class="ph ph-trash"></i></button>` : ''}
         </div>
       </div>`).join('');
 

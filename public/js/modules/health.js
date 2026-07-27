@@ -76,7 +76,7 @@ function adm_renderLogVisitTab(students) {
             </select>
           </div>
 
-          <div id="hv_allergyWarning" class="hidden bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-900">
+          <div id="hv_allergyWarning" class="hidden bg-rose-50 rounded-xl p-3 text-sm text-rose-900">
             ${icon('bell','w-4 h-4 inline mr-1')} <strong>Known Allergies:</strong> <span id="hv_allergyText"></span>
           </div>
 
@@ -224,7 +224,7 @@ function adm_renderVisitHistoryTab(visits, schoolId) {
   return `
     <div class="mb-4">
       <div class="relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${icon('book','w-4 h-4')}</span>
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">${icon('book','w-4 h-4')}</span>
         <input type="text" class="input pl-9" placeholder="Search by student name or complaint…"
           value="${q}" oninput="APP.params.healthQ = this.value; APP.render()" />
       </div>
@@ -257,7 +257,7 @@ function adm_renderVisitHistoryTab(visits, schoolId) {
                   ${avatar(student || { name: '?' }, 'sm')}
                   <div>
                     <div class="font-semibold text-sm">${student ? student.name : '—'}</div>
-                    <div class="text-xs text-slate-400">${cls ? cls.name : ''}</div>
+                    <div class="text-xs text-slate-500">${cls ? cls.name : ''}</div>
                   </div>
                 </div>
               </td>
@@ -266,7 +266,7 @@ function adm_renderVisitHistoryTab(visits, schoolId) {
               <td>${health_outcomeBadge(v.outcome)}</td>
               <td>${v.parentNotified
                   ? `<span class="text-xs text-emerald-600 font-semibold">${icon('check','w-3.5 h-3.5 inline')} Yes</span>`
-                  : `<span class="text-xs text-slate-400">No</span>`}
+                  : `<span class="text-xs text-slate-500">No</span>`}
               </td>
               <td class="text-right">
                 <button class="btn btn-ghost !p-1.5 text-brand-600 hover:bg-brand-50" aria-label="View full details" title="View full details"
@@ -274,11 +274,11 @@ function adm_renderVisitHistoryTab(visits, schoolId) {
               </td>
             </tr>`;
           }).join('')}
-          ${filtered.length === 0 ? `<tr><td colspan="7" class="text-center text-slate-400 py-8">No matching records found.</td></tr>` : ''}
+          ${filtered.length === 0 ? `<tr><td colspan="7" class="text-center text-slate-500 py-8">No matching records found.</td></tr>` : ''}
         </tbody>
       </table>
     </div>
-    <p class="text-xs text-slate-400 mt-2 text-right">${filtered.length} of ${visits.length} records</p>
+    <p class="text-xs text-slate-500 mt-2 text-right">${filtered.length} of ${visits.length} records</p>
   `;
 }
 
@@ -301,35 +301,35 @@ function adm_viewVisit(visitId) {
             <div class="text-sm text-slate-500">${cls ? cls.name : ''}${student && student.allergies && student.allergies.toLowerCase() !== 'none' && student.allergies.trim() !== '' ? ` · ⚠️ ${student.allergies}` : ''}</div>
           </div>
           <div class="ml-auto text-right">
-            <div class="text-xs text-slate-400 uppercase">Date</div>
+            <div class="text-xs text-slate-500 uppercase">Date</div>
             <div class="font-semibold text-slate-800">${fdate(v.date, { long: true })}</div>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div class="bg-slate-50 rounded-xl p-3">
-            <div class="text-xs font-semibold text-slate-400 uppercase mb-1">Temperature</div>
+            <div class="text-xs font-semibold text-slate-500 uppercase mb-1">Temperature</div>
             <div class="font-bold text-slate-900 text-lg">${v.temperature != null ? v.temperature + ' °C' : '—'}</div>
           </div>
           <div class="bg-slate-50 rounded-xl p-3">
-            <div class="text-xs font-semibold text-slate-400 uppercase mb-1">Outcome</div>
+            <div class="text-xs font-semibold text-slate-500 uppercase mb-1">Outcome</div>
             <div>${health_outcomeBadge(v.outcome)}</div>
           </div>
         </div>
 
         <div>
-          <div class="text-xs font-semibold text-slate-400 uppercase mb-1">Complaint / Symptoms</div>
-          <div class="bg-rose-50 border border-rose-100 rounded-xl p-3 text-sm text-slate-800">${v.complaint || '—'}</div>
+          <div class="text-xs font-semibold text-slate-500 uppercase mb-1">Complaint / Symptoms</div>
+          <div class="bg-rose-50 rounded-xl p-3 text-sm text-slate-800">${v.complaint || '—'}</div>
         </div>
 
         ${v.treatment ? `
           <div>
-            <div class="text-xs font-semibold text-slate-400 uppercase mb-1">Treatment / Action</div>
-            <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-sm text-slate-800">${v.treatment}</div>
+            <div class="text-xs font-semibold text-slate-500 uppercase mb-1">Treatment / Action</div>
+            <div class="bg-emerald-50 rounded-xl p-3 text-sm text-slate-800">${v.treatment}</div>
           </div>
         ` : ''}
 
-        <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100">
+        <div class="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
           <span>Recorded by: <strong>${recorder ? recorder.name : v.recordedBy || '—'}</strong></span>
           <span>Parent notified: <strong>${v.parentNotified ? 'Yes' : 'No'}</strong></span>
         </div>
@@ -356,7 +356,7 @@ function adm_renderHealthProfilesTab(students, visits) {
 
   return `
     ${withAllergies.length > 0 ? `
-      <div class="mb-4 card p-3 bg-rose-50 border border-rose-200 flex items-center gap-3">
+      <div class="mb-4 card p-3 bg-rose-50 flex items-center gap-3">
         <div class="text-rose-600">${icon('bell','w-5 h-5')}</div>
         <div class="text-sm text-rose-800">
           <strong>${withAllergies.length} student${withAllergies.length !== 1 ? 's' : ''}</strong> have known allergies — shown first below.
@@ -390,12 +390,12 @@ function adm_renderHealthProfilesTab(students, visits) {
               <td class="text-sm text-slate-500">${cls ? cls.name : '—'}</td>
               <td>
                 ${hasAllergies
-                  ? `<span class="inline-flex items-center gap-1 text-xs bg-rose-100 text-rose-800 border border-rose-200 px-2 py-0.5 rounded-full font-semibold">${icon('bell','w-3 h-3')} ${s.allergies}</span>`
-                  : `<span class="text-xs text-slate-400">None known</span>`}
+                  ? `<span class="inline-flex items-center gap-1 text-xs bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-semibold">${icon('bell','w-3 h-3')} ${s.allergies}</span>`
+                  : `<span class="text-xs text-slate-500">None known</span>`}
               </td>
               <td>
                 <span class="font-bold text-slate-900">${visitCount}</span>
-                <span class="text-xs text-slate-400 ml-1">${visitCount === 1 ? 'visit' : 'visits'}</span>
+                <span class="text-xs text-slate-500 ml-1">${visitCount === 1 ? 'visit' : 'visits'}</span>
               </td>
               <td class="text-right">
                 <button class="btn btn-secondary text-xs py-1.5 px-3" onclick="adm_viewStudentHealth('${s.id}')">View Profile</button>
@@ -429,13 +429,13 @@ function adm_viewStudentHealth(studentId) {
           <div>
             <div class="font-bold text-slate-900 text-lg">${student.name}</div>
             <div class="text-sm text-slate-500">${cls ? cls.name : ''} · Adm No: ${student.admissionNo || '—'}</div>
-            <div class="text-xs text-slate-400">Blood Group: ${student.bloodGroup || '—'}</div>
+            <div class="text-xs text-slate-500">Blood Group: ${student.bloodGroup || '—'}</div>
           </div>
         </div>
 
         <!-- Allergies card -->
         ${hasAllergies ? `
-          <div class="bg-rose-50 border-2 border-rose-300 rounded-xl p-4 flex items-start gap-3">
+          <div class="bg-rose-50 rounded-xl p-4 flex items-start gap-3">
             <div class="text-rose-600 flex-shrink-0">${icon('bell','w-5 h-5 mt-0.5')}</div>
             <div>
               <div class="font-bold text-rose-800 mb-1">Known Allergies</div>
@@ -443,7 +443,7 @@ function adm_viewStudentHealth(studentId) {
             </div>
           </div>
         ` : `
-          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-3">
+          <div class="bg-emerald-50 rounded-xl p-3 flex items-center gap-3">
             <div class="text-emerald-600">${icon('check','w-4 h-4')}</div>
             <div class="text-sm text-emerald-800 font-medium">No known allergies</div>
           </div>
@@ -453,10 +453,10 @@ function adm_viewStudentHealth(studentId) {
         <div>
           <h4 class="font-bold text-slate-800 mb-3">
             Sickbay Visits
-            <span class="ml-2 text-sm font-normal text-slate-400">${visits.length} total</span>
+            <span class="ml-2 text-sm font-normal text-slate-500">${visits.length} total</span>
           </h4>
           ${visits.length === 0 ? `
-            <div class="text-sm text-slate-400 text-center py-6 bg-slate-50 rounded-xl">No sickbay visits on record.</div>
+            <div class="text-sm text-slate-500 text-center py-6 bg-slate-50 rounded-xl">No sickbay visits on record.</div>
           ` : `
             <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
               ${visits.map(v => {
@@ -468,12 +468,12 @@ function adm_viewStudentHealth(studentId) {
                       <div>${health_outcomeBadge(v.outcome)}</div>
                     </div>
                     <div class="text-sm text-slate-700 mb-2">
-                      <span class="text-xs text-slate-400 uppercase font-semibold">Complaint: </span>${v.complaint || '—'}
+                      <span class="text-xs text-slate-500 uppercase font-semibold">Complaint: </span>${v.complaint || '—'}
                     </div>
                     ${v.treatment ? `<div class="text-sm text-slate-600 mb-2">
-                      <span class="text-xs text-slate-400 uppercase font-semibold">Treatment: </span>${v.treatment}
+                      <span class="text-xs text-slate-500 uppercase font-semibold">Treatment: </span>${v.treatment}
                     </div>` : ''}
-                    <div class="flex items-center gap-3 text-xs text-slate-400 mt-1">
+                    <div class="flex items-center gap-3 text-xs text-slate-500 mt-1">
                       ${v.temperature != null ? `<span>Temp: ${v.temperature}°C</span>` : ''}
                       <span>Recorded by: ${recorder ? recorder.name : '—'}</span>
                       ${v.parentNotified ? `<span class="text-emerald-600 font-semibold">${icon('check','w-3 h-3 inline')} Parent notified</span>` : ''}
@@ -528,7 +528,7 @@ function view_par_health(params) {
       <div>
         <h3 class="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wide">Allergy Information</h3>
         ${hasAllergies ? `
-          <div class="card p-5 bg-rose-50 border-2 border-rose-300 flex items-start gap-3">
+          <div class="card p-5 bg-rose-50 flex items-start gap-3">
             <div class="text-rose-600 flex-shrink-0 mt-0.5">${icon('bell','w-5 h-5')}</div>
             <div>
               <div class="font-bold text-rose-800">Known Allergies</div>
@@ -537,7 +537,7 @@ function view_par_health(params) {
             </div>
           </div>
         ` : `
-          <div class="card p-5 bg-emerald-50 border border-emerald-200 flex items-center gap-3">
+          <div class="card p-5 bg-emerald-50 flex items-center gap-3">
             <div class="text-emerald-600">${icon('check','w-5 h-5')}</div>
             <div>
               <div class="font-semibold text-emerald-800">No known allergies</div>
@@ -551,7 +551,7 @@ function view_par_health(params) {
       <div>
         <div class="flex items-center justify-between mb-3">
           <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">Sickbay Visit History</h3>
-          ${visits.length > 0 ? `<span class="text-xs text-slate-400">${visits.length} visit${visits.length !== 1 ? 's' : ''} recorded</span>` : ''}
+          ${visits.length > 0 ? `<span class="text-xs text-slate-500">${visits.length} visit${visits.length !== 1 ? 's' : ''} recorded</span>` : ''}
         </div>
 
         ${visits.length === 0 ? `
@@ -565,24 +565,24 @@ function view_par_health(params) {
                   <div class="flex items-start justify-between gap-3 flex-wrap mb-3">
                     <div>
                       <div class="font-semibold text-slate-900">${fdate(v.date, { long: true })}</div>
-                      ${v.temperature != null ? `<div class="text-xs text-slate-400 mt-0.5">Temperature: ${v.temperature}°C</div>` : ''}
+                      ${v.temperature != null ? `<div class="text-xs text-slate-500 mt-0.5">Temperature: ${v.temperature}°C</div>` : ''}
                     </div>
                     ${health_outcomeBadge(v.outcome)}
                   </div>
                   <div class="space-y-2">
                     <div>
-                      <div class="text-xs font-semibold text-slate-400 uppercase mb-1">Complaint</div>
+                      <div class="text-xs font-semibold text-slate-500 uppercase mb-1">Complaint</div>
                       <div class="text-sm text-slate-700">${v.complaint || '—'}</div>
                     </div>
                     ${v.treatment ? `
                       <div>
-                        <div class="text-xs font-semibold text-slate-400 uppercase mb-1">Treatment</div>
+                        <div class="text-xs font-semibold text-slate-500 uppercase mb-1">Treatment</div>
                         <div class="text-sm text-slate-700">${v.treatment}</div>
                       </div>
                     ` : ''}
                   </div>
                   ${v.outcome === 'referred_hospital' ? `
-                    <div class="mt-3 bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-800">
+                    <div class="mt-3 bg-rose-50 rounded-xl p-3 text-xs text-rose-800">
                       ${icon('bell','w-3.5 h-3.5 inline mr-1')} ${child ? child.name : 'Your child'} was referred to hospital. Contact the school for details.
                     </div>
                   ` : ''}

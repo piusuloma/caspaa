@@ -42,7 +42,7 @@ function house_studentPoints(studentId) {
 // ── Admin ──────────────────────────────────────────────────────
 
 function view_adm_houses(params) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const tab = APP.params.housesTab || 'leaderboard';
 
   const events = DB.query('houseEvents', e => e.schoolId === schoolId);
@@ -91,7 +91,7 @@ function view_adm_houses(params) {
                   <div class="font-bold text-slate-900 text-lg">${ev.name}</div>
                   <div class="flex items-center gap-2 mt-1">
                     <span class="badge badge-neutral">${ev.type}</span>
-                    <span class="text-xs text-slate-400">${fdate(ev.date, { long: true })}</span>
+                    <span class="text-xs text-slate-500">${fdate(ev.date, { long: true })}</span>
                   </div>
                 </div>
                 <button class="btn btn-danger text-xs py-1 px-3" onclick="hp_deleteEvent('${ev.id}')">Delete</button>
@@ -122,7 +122,7 @@ function view_adm_houses(params) {
       ${tabBar}
       <div class="card overflow-hidden">
         <table class="tbl">
-          <thead><tr><th>Student</th><th>Class</th><th>House</th><th>Personal Points</th><th></th></tr></thead>
+          <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">Class</th><th scope="col">House</th><th scope="col">Personal Points</th><th scope="col"></th></tr></thead>
           <tbody>
             ${students.map(s => {
               const cls = DB.find('classes', s.classId);
@@ -131,7 +131,7 @@ function view_adm_houses(params) {
               return `<tr>
                 <td><div class="flex items-center gap-2">${avatar(s, 'sm')}<span class="font-semibold">${s.name}</span></div></td>
                 <td>${cls ? cls.name : '—'}</td>
-                <td>${house ? `<span class="font-bold" style="color:${house.color}">${house.icon} ${house.name}</span>` : '<span class="text-slate-400 text-sm">Unassigned</span>'}</td>
+                <td>${house ? `<span class="font-bold" style="color:${house.color}">${house.icon} ${house.name}</span>` : '<span class="text-slate-500 text-sm">Unassigned</span>'}</td>
                 <td><span class="font-bold text-slate-900">${pts}</span></td>
                 <td><button class="btn btn-secondary text-xs py-1 px-2" onclick="hp_assignHouseModal('${s.id}')">Change House</button></td>
               </tr>`;
@@ -160,7 +160,7 @@ function view_adm_houses(params) {
           return `<div class="card p-5 text-center">
             <div class="text-4xl mb-2">${h.icon}</div>
             <h3 class="font-bold text-lg mb-0.5" style="color:${h.color}">${h.name}</h3>
-            <div class="text-xs text-slate-400 italic mb-4">${h.motto || ''}</div>
+            <div class="text-xs text-slate-500 italic mb-4">${h.motto || ''}</div>
             <div class="grid grid-cols-2 gap-2 mb-4 text-center">
               <div class="bg-slate-50 rounded-xl p-2">
                 <div class="text-xl font-bold text-slate-900">${pts + evtPts}</div>
@@ -173,7 +173,7 @@ function view_adm_houses(params) {
             </div>
             <div class="flex gap-2">
               <button class="btn btn-secondary text-sm flex-1" onclick="hp_editHouseModal('${h.id}')">Edit</button>
-              <button class="btn btn-danger text-sm" onclick="hp_deleteHouseModal('${h.id}')" title="Delete house">${icon('trash', 'w-4 h-4')}</button>
+              <button class="btn btn-danger text-sm" onclick="hp_deleteHouseModal('${h.id}')" aria-label="Delete house" title="Delete house">${icon('trash', 'w-4 h-4')}</button>
             </div>
           </div>`;
         }).join('')}
@@ -193,7 +193,7 @@ function view_adm_houses(params) {
     ${tabBar}
     <div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Student</th><th>House</th><th>Points</th><th>Category</th><th>Reason</th><th>By</th><th>Date</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">House</th><th scope="col">Points</th><th scope="col">Category</th><th scope="col">Reason</th><th scope="col">By</th><th scope="col">Date</th></tr></thead>
         <tbody>
           ${allPoints.map(p => {
             const s = DB.find('students', p.studentId);
@@ -207,10 +207,10 @@ function view_adm_houses(params) {
               <td><span class="badge badge-neutral">${p.category}</span></td>
               <td class="max-w-xs truncate text-sm">${p.reason}</td>
               <td class="text-sm">${t ? t.name : '—'}</td>
-              <td class="text-xs text-slate-400">${fdate(p.awardedAt, { short: true })}</td>
+              <td class="text-xs text-slate-500">${fdate(p.awardedAt, { short: true })}</td>
             </tr>`;
           }).join('')}
-          ${allPoints.length === 0 ? `<tr><td colspan="7" class="text-center text-slate-400 py-8">No points recorded yet.</td></tr>` : ''}
+          ${allPoints.length === 0 ? `<tr><td colspan="7" class="text-center text-slate-500 py-8">No points recorded yet.</td></tr>` : ''}
         </tbody>
       </table>
     </div>
@@ -231,12 +231,12 @@ function renderLeaderboard(totals, schoolId, isAdmin) {
         ${totals[0].total > 0 ? `<div class="h-2 bg-slate-100 rounded-full overflow-hidden">
           <div class="h-full rounded-full transition-all" style="background:${h.color};width:${Math.round(h.total / totals[0].total * 100)}%"></div>
         </div>` : ''}
-        ${h.individualPts !== undefined ? `<div class="mt-3 text-xs text-slate-400">${h.individualPts} merit pts · ${h.eventPts} competition pts</div>` : ''}
+        ${h.individualPts !== undefined ? `<div class="mt-3 text-xs text-slate-500">${h.individualPts} merit pts · ${h.eventPts} competition pts</div>` : ''}
       </div>`).join('')}
     </div>
     ${isAdmin ? `<div class="card overflow-hidden">
       <table class="tbl">
-        <thead><tr><th>Rank</th><th>House</th><th>Total Points</th><th>Merit (Individual)</th><th>Competition Events</th><th>Members</th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Rank</th><th scope="col">House</th><th scope="col">Total Points</th><th scope="col">Merit (Individual)</th><th scope="col">Competition Events</th><th scope="col">Members</th></tr></thead>
         <tbody>
           ${totals.map((h, i) => {
             const members = DB.query('students', s => s.houseId === h.id && s.status === 'active');
@@ -261,12 +261,12 @@ function hp_createHouseModal() {
   modal({
     title: 'Create House',
     body: `<div class="space-y-3">
-      <div><label class="input-label">House Name <span class="text-rose-500">*</span></label><input id="hc_name" class="input" placeholder="e.g. Eagle House, Red House"></div>
+      <div><label class="input-label" for="hc_name">House Name <span class="text-rose-500">*</span></label><input id="hc_name" class="input" placeholder="e.g. Eagle House, Red House"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Icon / Emoji</label><input id="hc_icon" class="input" placeholder="e.g. 🦅 🔴 ⚡" value="🏠"></div>
-        <div><label class="input-label">Colour</label><input id="hc_color" type="color" class="input h-11" value="#047857"></div>
+        <div><label class="input-label" for="hc_icon">Icon / Emoji</label><input id="hc_icon" class="input" placeholder="e.g. 🦅 🔴 ⚡" value="🏠"></div>
+        <div><label class="input-label" for="hc_color">Colour</label><input id="hc_color" type="color" class="input h-11" value="#00b386"></div>
       </div>
-      <div><label class="input-label">Motto</label><input id="hc_motto" class="input" placeholder="e.g. Courage and Integrity"></div>
+      <div><label class="input-label" for="hc_motto">Motto</label><input id="hc_motto" class="input" placeholder="e.g. Courage and Integrity"></div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
              <button class="btn btn-primary" onclick="hp_saveHouse(null)">Create House</button>`
@@ -279,12 +279,12 @@ function hp_editHouseModal(houseId) {
   modal({
     title: `Edit House — ${h.name}`,
     body: `<div class="space-y-3">
-      <div><label class="input-label">House Name <span class="text-rose-500">*</span></label><input id="hc_name" class="input" value="${h.name}"></div>
+      <div><label class="input-label" for="hc_name">House Name <span class="text-rose-500">*</span></label><input id="hc_name" class="input" value="${h.name}"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Icon / Emoji</label><input id="hc_icon" class="input" value="${h.icon || '🏠'}"></div>
-        <div><label class="input-label">Colour</label><input id="hc_color" type="color" class="input h-11" value="${h.color || '#047857'}"></div>
+        <div><label class="input-label" for="hc_icon">Icon / Emoji</label><input id="hc_icon" class="input" value="${h.icon || '🏠'}"></div>
+        <div><label class="input-label" for="hc_color">Colour</label><input id="hc_color" type="color" class="input h-11" value="${h.color || '#00b386'}"></div>
       </div>
-      <div><label class="input-label">Motto</label><input id="hc_motto" class="input" value="${h.motto || ''}"></div>
+      <div><label class="input-label" for="hc_motto">Motto</label><input id="hc_motto" class="input" value="${h.motto || ''}"></div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
              <button class="btn btn-primary" onclick="hp_saveHouse('${houseId}')">Save Changes</button>`
@@ -294,11 +294,11 @@ function hp_editHouseModal(houseId) {
 function hp_saveHouse(houseId) {
   const name = (document.getElementById('hc_name') || {}).value.trim();
   if (!name) { toast('House name is required', 'danger'); return; }
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const payload = {
     name,
     icon:  (document.getElementById('hc_icon')  || {}).value.trim() || '🏠',
-    color: (document.getElementById('hc_color') || {}).value || '#047857',
+    color: (document.getElementById('hc_color') || {}).value || '#00b386',
     motto: (document.getElementById('hc_motto') || {}).value.trim() || ''
   };
   if (houseId) {
@@ -316,7 +316,7 @@ function hp_saveHouse(houseId) {
 function hp_deleteHouseModal(houseId) {
   const h = DB.find('houses', houseId);
   if (!h) return;
-  confirm(`Delete "${h.name}"? All point records for this house will be preserved in the log.`, () => {
+  confirmDialog(`Delete "${h.name}"? All point records for this house will be preserved in the log.`, () => {
     DB.remove('houses', houseId);
     APP.params.housesTab = 'manage';
     APP.render();
@@ -328,15 +328,15 @@ function hp_deleteHouseModal(houseId) {
 
 function hp_assignHouseModal(studentId) {
   const s = DB.find('students', studentId);
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const houses = DB.query('houses', h => h.schoolId === schoolId);
   modal({
     title: `Assign House — ${s ? s.name : ''}`,
     body: `<div class="grid grid-cols-2 gap-3">
-      ${houses.map(h => `<button onclick="hp_doAssign('${studentId}','${h.id}')" class="card p-4 text-center hover:shadow-md transition-shadow ${s && s.houseId === h.id ? 'ring-2 ring-brand-500' : ''}">
+      ${houses.map(h => `<button onclick="hp_doAssign('${studentId}','${h.id}')" class="card p-5 text-center hover:shadow-md transition-shadow ${s && s.houseId === h.id ? 'ring-2 ring-brand-500' : ''}">
         <div class="text-3xl">${h.icon}</div>
         <div class="font-bold mt-1" style="color:${h.color}">${h.name}</div>
-        <div class="text-xs text-slate-400 italic mt-0.5">${h.motto || ''}</div>
+        <div class="text-xs text-slate-500 italic mt-0.5">${h.motto || ''}</div>
         ${s && s.houseId === h.id ? '<div class="text-xs text-brand-600 mt-1 font-semibold">Current</div>' : ''}
       </button>`).join('')}
     </div>`,
@@ -353,16 +353,16 @@ function hp_doAssign(studentId, houseId) {
 }
 
 function hp_bulkAssignModal() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const houses = DB.query('houses', h => h.schoolId === schoolId);
   const classes = DB.query('classes', c => c.schoolId === schoolId);
   modal({
     title: 'Bulk Assign Class to House',
     body: `<div class="space-y-3">
       <p class="text-sm text-slate-500">Assigns all students in a class to the selected house at once.</p>
-      <div><label class="input-label">Class</label>
+      <div><label class="input-label" for="ba_class">Class</label>
         <select id="ba_class" class="input">${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
-      <div><label class="input-label">House</label>
+      <div><label class="input-label" for="ba_house">House</label>
         <select id="ba_house" class="input">${houses.map(h => `<option value="${h.id}">${h.icon} ${h.name}</option>`).join('')}</select></div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -386,7 +386,7 @@ function hp_doBulkAssign() {
 // ── Award / Deduct points ─────────────────────────────────────
 
 function hp_awardModal(studentId, context) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   let studentOptions = '';
   if (!studentId) {
     const classes = context === 'admin' ? DB.query('classes', c => c.schoolId === schoolId) : teacherClasses();
@@ -402,7 +402,7 @@ function hp_awardModal(studentId, context) {
     title: 'Award or Deduct Inter House Points',
     body: `<div class="space-y-4">
       ${!studentId
-        ? `<div><label class="input-label">Student <span class="text-rose-500">*</span></label>
+        ? `<div><label class="input-label" for="ha_student">Student <span class="text-rose-500">*</span></label>
             <select id="ha_student" class="input">${studentOptions}</select></div>`
         : `<input type="hidden" id="ha_student" value="${studentId}">`}
 
@@ -422,15 +422,15 @@ function hp_awardModal(studentId, context) {
       </div>
 
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Points</label>
+        <div><label class="input-label" for="ha_pts">Points</label>
           <select id="ha_pts" class="input">
             ${[1, 2, 3, 4, 5].map(n => `<option value="${n}">${n} point${n > 1 ? 's' : ''}</option>`).join('')}
           </select></div>
-        <div><label class="input-label">Category</label>
+        <div><label class="input-label" for="ha_cat">Category</label>
           <select id="ha_cat" class="input">${HP_CATEGORIES.map(c => `<option>${c}</option>`).join('')}</select></div>
       </div>
 
-      <div><label class="input-label">Reason <span class="text-rose-500">*</span></label>
+      <div><label class="input-label" for="ha_reason">Reason <span class="text-rose-500">*</span></label>
         <input id="ha_reason" class="input" placeholder="e.g. Best essay in class, Late to school three times…"></div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -472,7 +472,7 @@ function hp_savePoints() {
     return;
   }
 
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   DB.insert('housePoints', {
     id: uid('hp'), schoolId,
     studentId, houseId: s.houseId,
@@ -509,7 +509,7 @@ function tch_awardHousePoint(studentId) {
 // ── Inter-house competition events ────────────────────────────
 
 function hp_recordEventModal() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const houses   = DB.query('houses', h => h.schoolId === schoolId);
 
   if (houses.length < 2) {
@@ -533,12 +533,12 @@ function hp_recordEventModal() {
     title: 'Record Inter-House Competition',
     size: 'md',
     body: `<div class="space-y-4">
-      <div><label class="input-label">Competition Name <span class="text-rose-500">*</span></label>
+      <div><label class="input-label" for="ev_name">Competition Name <span class="text-rose-500">*</span></label>
         <input id="ev_name" class="input" placeholder="e.g. Annual Sports Day 2025/26, Inter-House Quiz"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="input-label">Type</label>
+        <div><label class="input-label" for="ev_type">Type</label>
           <select id="ev_type" class="input">${HP_EVENT_TYPES.map(t => `<option>${t}</option>`).join('')}</select></div>
-        <div><label class="input-label">Date</label>
+        <div><label class="input-label" for="ev_date">Date</label>
           <input id="ev_date" class="input" type="date" value="${today()}"></div>
       </div>
       <div>
@@ -546,7 +546,7 @@ function hp_recordEventModal() {
         <div class="bg-slate-50 rounded-xl p-3 space-y-1">
           ${positionRows}
         </div>
-        <p class="text-xs text-slate-400 mt-2">Points are automatically credited to each house's total.</p>
+        <p class="text-xs text-slate-500 mt-2">Points are automatically credited to each house's total.</p>
       </div>
     </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
@@ -555,7 +555,7 @@ function hp_recordEventModal() {
 }
 
 function hp_saveEvent(numHouses) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const name = (document.getElementById('ev_name') || {}).value.trim();
   const type = (document.getElementById('ev_type') || {}).value;
   const date = (document.getElementById('ev_date') || {}).value;
@@ -605,7 +605,7 @@ function hp_saveEvent(numHouses) {
 function hp_deleteEvent(eventId) {
   const ev = DB.find('houseEvents', eventId);
   if (!ev) return;
-  confirm(`Delete "${ev.name}"? The points credited from this event will be removed from the leaderboard.`, () => {
+  confirmDialog(`Delete "${ev.name}"? The points credited from this event will be removed from the leaderboard.`, () => {
     DB.remove('houseEvents', eventId);
     APP.render();
     toast('Event deleted', 'info');
@@ -615,7 +615,7 @@ function hp_deleteEvent(eventId) {
 // ── Teacher: house standings in their classes ─────────────────
 
 function view_tch_houses() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const totals = house_totals(schoolId);
   const myClasses = teacherClasses();
   const myStudents = [];
@@ -630,14 +630,14 @@ function view_tch_houses() {
     <div class="card overflow-hidden mt-4">
       <div class="px-4 py-3 border-b border-slate-100 font-bold text-slate-900">My Students' Points</div>
       <table class="tbl">
-        <thead><tr><th>Student</th><th>House</th><th>Personal Points</th><th></th></tr></thead>
+        <th scope="col"ead><tr><th scope="col">Student</th><th scope="col">House</th><th scope="col">Personal Points</th><th scope="col"></th></tr></thead>
         <tbody>
           ${myStudents.map(s => {
             const h = s.houseId ? DB.find('houses', s.houseId) : null;
             const pts = house_studentPoints(s.id);
             return `<tr>
               <td><div class="flex items-center gap-2">${avatar(s, 'sm')}<span class="font-medium">${s.name}</span></div></td>
-              <td>${h ? `<span class="font-bold" style="color:${h.color}">${h.icon} ${h.name}</span>` : '<span class="text-slate-400 text-sm">No house</span>'}</td>
+              <td>${h ? `<span class="font-bold" style="color:${h.color}">${h.icon} ${h.name}</span>` : '<span class="text-slate-500 text-sm">No house</span>'}</td>
               <td><span class="font-bold text-slate-900">${pts > 0 ? '+' : ''}${pts}</span></td>
               <td><button class="btn btn-secondary text-xs py-1 px-2" onclick="hp_awardModal('${s.id}','teacher')">Award / Deduct</button></td>
             </tr>`;
@@ -668,21 +668,21 @@ function view_stu_houses() {
       <div class="flex items-center gap-4 flex-wrap">
         <div class="text-6xl">${myHouse.icon}</div>
         <div class="flex-1">
-          <div class="text-xs font-semibold uppercase text-slate-400 mb-1">Your House</div>
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-1">Your House</div>
           <div class="text-2xl font-extrabold" style="color:${myHouse.color}">${myHouse.name}</div>
           <div class="text-sm text-slate-500 italic">${myHouse.motto || ''}</div>
         </div>
         <div class="text-right">
           <div class="text-3xl font-extrabold text-slate-900">${myHouseTotal}</div>
-          <div class="text-xs text-slate-400">house total pts</div>
+          <div class="text-xs text-slate-500">house total pts</div>
           <div class="text-sm font-bold mt-1" style="color:${myHouse.color}">${['🥇 1st','🥈 2nd','🥉 3rd','4th'][myHouseRank-1] || myHouseRank + 'th'} place</div>
         </div>
         <div class="text-right pl-4 border-l border-slate-200">
           <div class="text-3xl font-extrabold" style="color:${myHouse.color}">${myPoints > 0 ? '+' : ''}${myPoints}</div>
-          <div class="text-xs text-slate-400">your personal pts</div>
+          <div class="text-xs text-slate-500">your personal pts</div>
         </div>
       </div>
-    </div>` : `<div class="card p-4 mb-5 bg-amber-50 border border-amber-200 text-sm text-amber-800">You haven't been assigned to a house yet. Ask your class teacher.</div>`}
+    </div>` : `<div class="card p-5 mb-5 bg-amber-50 text-sm text-amber-800">You haven't been assigned to a house yet. Ask your class teacher.</div>`}
 
     ${renderLeaderboard(totals, schoolId, false)}
 
@@ -694,7 +694,7 @@ function view_stu_houses() {
         return `<div class="px-4 py-3 border-b border-slate-100 last:border-0">
           <div class="flex items-center justify-between mb-2">
             <div class="font-semibold text-slate-900 text-sm">${ev.name}</div>
-            <div class="text-xs text-slate-400">${fdate(ev.date, { short: true })}</div>
+            <div class="text-xs text-slate-500">${fdate(ev.date, { short: true })}</div>
           </div>
           <div class="flex gap-3 flex-wrap">
             ${results.map((r, i) => {
@@ -717,7 +717,7 @@ function view_stu_houses() {
             <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 ${isNeg ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}">${isNeg ? '' : '+'}${p.points}</div>
             <div class="flex-1 min-w-0">
               <div class="font-semibold text-slate-900 text-sm">${p.reason}</div>
-              <div class="text-xs text-slate-400">${p.category} · ${t ? t.name : 'Teacher'} · ${fdate(p.awardedAt, { short: true })}</div>
+              <div class="text-xs text-slate-500">${p.category} · ${t ? t.name : 'Teacher'} · ${fdate(p.awardedAt, { short: true })}</div>
             </div>
             <span class="badge ${isNeg ? 'badge-danger' : 'badge-neutral'} text-xs">${p.category}</span>
           </div>`;
@@ -753,11 +753,11 @@ function view_par_houses() {
             <div class="font-bold text-slate-900">${child.name}</div>
             ${myHouse
               ? `<div class="text-sm font-semibold" style="color:${myHouse.color}">${myHouse.icon} ${myHouse.name} · ${['🥇 1st','🥈 2nd','🥉 3rd','4th'][rank-1]||rank+'th'} place</div>`
-              : '<div class="text-sm text-slate-400">Not yet assigned to a house</div>'}
+              : '<div class="text-sm text-slate-500">Not yet assigned to a house</div>'}
           </div>
           <div class="text-right">
             <div class="text-2xl font-extrabold text-slate-900">${myPoints > 0 ? '+' : ''}${myPoints}</div>
-            <div class="text-xs text-slate-400">personal pts</div>
+            <div class="text-xs text-slate-500">personal pts</div>
           </div>
         </div>
         ${history.length ? history.map(p => {
@@ -766,9 +766,9 @@ function view_par_houses() {
           return `<div class="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
             <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${isNeg ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}">${isNeg ? '' : '+'}${p.points}</span>
             <span class="text-sm flex-1">${p.reason}</span>
-            <span class="text-xs text-slate-400">${fdate(p.awardedAt, { short: true })}</span>
+            <span class="text-xs text-slate-500">${fdate(p.awardedAt, { short: true })}</span>
           </div>`;
-        }).join('') : '<div class="text-sm text-slate-400">No individual points yet.</div>'}
+        }).join('') : '<div class="text-sm text-slate-500">No individual points yet.</div>'}
       </div>`;
     }).join('')}
 
@@ -780,10 +780,10 @@ function view_par_houses() {
       ${events.map(ev => {
         const results = (ev.results || []).sort((a, b) => a.position - b.position);
         const medals  = ['🥇','🥈','🥉','4️⃣'];
-        return `<div class="card p-4">
+        return `<div class="card p-5">
           <div class="flex items-center justify-between mb-3">
             <div><div class="font-semibold text-slate-900">${ev.name}</div>
-            <div class="text-xs text-slate-400">${ev.type} · ${fdate(ev.date, { short: true })}</div></div>
+            <div class="text-xs text-slate-500">${ev.type} · ${fdate(ev.date, { short: true })}</div></div>
           </div>
           <div class="flex flex-wrap gap-2">
             ${results.map((r, i) => {

@@ -43,16 +43,16 @@ function processPayment(invoiceId) {
       document.getElementById('modalBackdrop').click();
       const student = DB.find('students', inv.studentId);
       const studentName = student ? student.name : inv.studentId;
-      const schoolName = (DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School';
+      const schoolName = (DB.find('schools', currentSchoolId()) || {}).name || 'School';
       modal({
         title: 'Pay via Bank Transfer',
         body: `<div class="space-y-4">
-          <div class="bg-brand-50 border border-brand-200 rounded-2xl p-5 text-center">
+          <div class="bg-brand-50 rounded-2xl p-5 text-center">
             <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Transfer exactly</div>
             <div class="text-3xl font-extrabold text-brand-700">${money(amount)}</div>
-            <div class="text-xs text-slate-400 mt-1">to this dedicated account</div>
+            <div class="text-xs text-slate-500 mt-1">to this dedicated account</div>
           </div>
-          <div class="card p-4 space-y-3">
+          <div class="card p-5 space-y-3">
             <div class="flex justify-between text-sm">
               <span class="text-slate-500">Bank</span>
               <span class="font-semibold text-slate-900">Wema Bank</span>
@@ -70,7 +70,7 @@ function processPayment(invoiceId) {
               <span class="font-semibold text-slate-900">${studentName} School Fees</span>
             </div>
           </div>
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
+          <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-700">
             This is a dedicated virtual account. Use the narration above so your payment is matched automatically within 5 minutes of transfer.
           </div>
         </div>`,
@@ -95,7 +95,7 @@ function processPayment(invoiceId) {
 // ── Card input step ──────────────────────────────────────────────────────────
 
 function pay_showCardInput(invoiceId, amount, txFee, charged) {
-  const schoolName = (DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School';
+  const schoolName = (DB.find('schools', currentSchoolId()) || {}).name || 'School';
   modal({
     size: 'sm',
     title: '',
@@ -106,7 +106,7 @@ function pay_showCardInput(invoiceId, amount, txFee, charged) {
           Secure Payment
         </div>
         <div class="text-3xl font-extrabold text-slate-900">${money(charged)}</div>
-        ${txFee > 0 ? `<div class="text-xs text-slate-400 mt-1">Includes transaction fee: ${money(txFee)} (1.5%)</div>` : ''}
+        ${txFee > 0 ? `<div class="text-xs text-slate-500 mt-1">Includes transaction fee: ${money(txFee)} (1.5%)</div>` : ''}
         <div class="text-sm text-slate-500 mt-1">${schoolName}</div>
       </div>
 
@@ -141,7 +141,7 @@ function pay_showCardInput(invoiceId, amount, txFee, charged) {
         </div>
       </div>
 
-      <div class="flex items-center justify-center gap-3 mt-4 text-xs text-slate-400">
+      <div class="flex items-center justify-center gap-3 mt-4 text-xs text-slate-500">
         <span class="font-semibold">Visa</span>
         <span class="w-px h-3 bg-slate-300"></span>
         <span class="font-semibold">Mastercard</span>
@@ -266,7 +266,7 @@ function pay_downloadReceipt(invoiceId, amount) {
   const inv = DB.find('invoices', invoiceId);
   const student = inv ? DB.find('students', inv.studentId) : null;
   const ref = 'CSP-' + Date.now().toString(36).toUpperCase().slice(-8);
-  const schoolName = (DB.find('schools', AUTH.current.schoolId || 'sch_brightlights') || {}).name || 'School';
+  const schoolName = (DB.find('schools', currentSchoolId()) || {}).name || 'School';
   const receiptHtml = `
     <!DOCTYPE html>
     <html>
@@ -274,14 +274,14 @@ function pay_downloadReceipt(invoiceId, amount) {
       <title>Payment Receipt — ${ref}</title>
       <style>
         body{font-family:system-ui,sans-serif;max-width:480px;margin:40px auto;padding:24px;color:#1e293b;}
-        .logo{background:#047857;color:#fff;text-align:center;padding:16px;border-radius:12px 12px 0 0;font-size:20px;font-weight:700;}
+        .logo{background:#00b386;color:#fff;text-align:center;padding:16px;border-radius:12px 12px 0 0;font-size:20px;font-weight:700;}
         .body{border:1px solid #e2e8f0;border-top:none;padding:24px;border-radius:0 0 12px 12px;}
         .row{display:flex;justify-content:space-between;margin-bottom:12px;font-size:14px;}
         .label{color:#64748b;}
         .val{font-weight:600;text-align:right;}
-        .amount{font-size:28px;font-weight:800;color:#047857;text-align:center;margin:20px 0;padding:16px;background:#ecfdf5;border-radius:8px;}
-        .ref{font-family:monospace;font-size:12px;color:#94a3b8;text-align:center;margin-top:16px;}
-        .badge{display:inline-block;background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
+        .amount{font-size:28px;font-weight:800;color:#00b386;text-align:center;margin:20px 0;padding:16px;background:#e6f8f3;border-radius:8px;}
+        .ref{font-family:'Figtree',system-ui,sans-serif;font-size:12px;color:#94a3b8;text-align:center;margin-top:16px;}
+        .badge{display:inline-block;background:#c3f0e2;color:#00966f;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
         @media print{button{display:none;}}
       </style>
     </head>
@@ -294,13 +294,13 @@ function pay_downloadReceipt(invoiceId, amount) {
         </div>
         <div class="amount">${money(amount)}</div>
         <div class="row"><span class="label">Student</span><span class="val">${student ? student.name : '—'}</span></div>
-        <div class="row"><span class="label">Invoice ID</span><span class="val" style="font-family:monospace;font-size:12px;">${invoiceId}</span></div>
+        <div class="row"><span class="label">Invoice ID</span><span class="val" style="font-family:'Figtree',system-ui,sans-serif;font-size:12px;">${invoiceId}</span></div>
         <div class="row"><span class="label">Payment Method</span><span class="val">Debit / Credit Card</span></div>
         <div class="row"><span class="label">Gateway</span><span class="val">Paystack</span></div>
         <div class="row"><span class="label">Date & Time</span><span class="val">${new Date().toLocaleString('en-NG')}</span></div>
         <div class="ref">Reference: ${ref}</div>
         <div style="text-align:center;margin-top:20px;">
-          <button onclick="window.print()" style="background:#047857;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;">Print Receipt</button>
+          <button onclick="window.print()" style="background:#00b386;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;">Print Receipt</button>
         </div>
         <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:16px;">
           Keep this receipt as proof of payment.<br>

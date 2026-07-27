@@ -16,16 +16,23 @@ export const NAV_LINKS = [
 
 export const HERO = {
   eyebrow: 'THE SCHOOL OPERATING SYSTEM',
+  // title is the canonical headline: what SSR renders, what a crawler and a
+  // screen reader get, and the fallback when motion is off. It must stay first
+  // in titles below.
   title: 'Run your entire school on one platform.',
-  subtitle:
-    'CASPAA replaces the disconnected tools your school juggles today — admissions, fees, payments, attendance, results, communication and accounting — with a single Edu-Fintech operating system. Online or offline, you get complete visibility and control.',
-  microtrust: 'No spreadsheets. No manual reconciliation. No waiting for reports.',
-  chips: [
-    { icon: '⚡', label: 'Works fully offline' },
-    { icon: '💳', label: 'Parents pay in 30 seconds' },
-    { icon: '🔁', label: 'Real-time reconciliation' },
-    { icon: '📊', label: 'Executive dashboards, live' },
+  // Cycled by the hero typewriter. Every line restates a claim the site already
+  // makes elsewhere, so the headline never promises more than the product does.
+  // Kept to a similar length: a much longer line would re-wrap the block and
+  // jump the page on each pass.
+  titles: [
+    'Run your entire school on one platform.',
+    'Collect every fee without chasing a parent.',
+    "See your school's numbers in real time.",
+    "Keep running when the network doesn't.",
   ],
+  subtitle:
+    'One Edu-Fintech operating system for admissions, fees, attendance, results and accounting. Online or offline, you keep complete visibility and control.',
+  microtrust: 'No spreadsheets. No manual reconciliation. No waiting for reports.',
 }
 
 export const METRICS = [
@@ -37,34 +44,34 @@ export const METRICS = [
 
 export const PROBLEMS = [
   {
-    icon: '💸',
+    icon: 'trending-down',
     title: 'Revenue leakage',
     body: 'Untracked fees, missed reminders and manual reconciliation quietly drain income every term.',
   },
   {
-    icon: '🧩',
+    icon: 'puzzle',
     title: 'Disconnected tools',
     body: 'Records, fees, accounting and communication live in separate systems that never sync.',
   },
   {
-    icon: '📵',
+    icon: 'wifi-off',
     title: 'Internet dependency',
     body: 'When the network drops, work stops — attendance, payments and updates all stall.',
   },
   {
-    icon: '⏳',
+    icon: 'hourglass',
     title: 'Reports that arrive too late',
     body: 'By the time you get the numbers, the decision window has already closed.',
   },
 ]
 
 export const PLATFORM_TILES = [
-  { icon: '⚙️', title: 'Works Offline', body: 'Mark attendance and keep working with no signal; syncs automatically when you reconnect.' },
-  { icon: '💳', title: 'Payments', body: 'Parents pay fees in 30 seconds through secure, integrated payment infrastructure.' },
-  { icon: '🏦', title: 'Fee Financing', body: 'School-fee lending with loans approved in as little as 24 hours.' },
-  { icon: '🤖', title: 'AI Assistant', body: 'Write report comments, insights and summaries instantly.' },
-  { icon: '📝', title: 'CBT & Learning', body: 'Run digital tests and exams for every class.' },
-  { icon: '✅', title: 'Digital Consent', body: 'Approve activities and trips online — no paper forms.' },
+  { icon: 'cloud-off', title: 'Works Offline', body: 'Mark attendance and keep working with no signal; syncs automatically when you reconnect.' },
+  { icon: 'card', title: 'Payments', body: 'Parents pay fees in 30 seconds through secure, integrated payment infrastructure.' },
+  { icon: 'bank', title: 'Fee Financing', body: 'School-fee lending with loans approved in as little as 24 hours.' },
+  { icon: 'sparkles', title: 'AI Assistant', body: 'Write report comments, insights and summaries instantly.' },
+  { icon: 'file-edit', title: 'CBT & Learning', body: 'Run digital tests and exams for every class.' },
+  { icon: 'check-circle', title: 'Digital Consent', body: 'Approve activities and trips online — no paper forms.' },
 ]
 
 export const ROLES = [
@@ -230,15 +237,15 @@ export const ADVANTAGES = [
 ]
 
 export const OUTCOMES = [
-  { icon: '📈', title: 'Increase fee-collection efficiency', body: 'Automated reminders and instant payments get more fees in, faster.' },
-  { icon: '🔒', title: 'Eliminate revenue leakages', body: 'Real-time reconciliation closes the gaps manual tracking misses.' },
-  { icon: '💬', title: 'Improve parent engagement', body: 'Reach every family on WhatsApp and email, automatically.' },
-  { icon: '🧮', title: 'Strengthen financial control', body: 'Integrated accounting keeps your books accurate and current.' },
-  { icon: '🌐', title: 'Operate online & offline', body: 'Never let connectivity stop your school day.' },
-  { icon: '🎧', title: 'Dedicated real-time support', body: 'Live chat and 24/7 help whenever you need it.' },
-  { icon: '🗂️', title: 'Simplify administration', body: 'One system replaces the many tools you juggle today.' },
-  { icon: '👥', title: 'Enhance staff accountability', body: 'Digital attendance and clear ownership across teams.' },
-  { icon: '🧠', title: 'Gain business intelligence', body: 'Turn everyday data into decisions that grow your school.' },
+  { icon: 'trending-up', title: 'Increase fee-collection efficiency', body: 'Automated reminders and instant payments get more fees in, faster.' },
+  { icon: 'lock', title: 'Eliminate revenue leakages', body: 'Real-time reconciliation closes the gaps manual tracking misses.' },
+  { icon: 'message', title: 'Improve parent engagement', body: 'Reach every family on WhatsApp and email, automatically.' },
+  { icon: 'calculator', title: 'Strengthen financial control', body: 'Integrated accounting keeps your books accurate and current.' },
+  { icon: 'globe', title: 'Operate online & offline', body: 'Never let connectivity stop your school day.' },
+  { icon: 'headset', title: 'Dedicated real-time support', body: 'Live chat and 24/7 help whenever you need it.' },
+  { icon: 'folders', title: 'Simplify administration', body: 'One system replaces the many tools you juggle today.' },
+  { icon: 'users', title: 'Enhance staff accountability', body: 'Digital attendance and clear ownership across teams.' },
+  { icon: 'lightbulb', title: 'Gain business intelligence', body: 'Turn everyday data into decisions that grow your school.' },
 ]
 
 export const PRICING = [
@@ -337,11 +344,11 @@ export const STEPS = [
 ]
 
 export const SECURITY = [
-  { icon: '🔐', label: 'Encrypted data, in transit & at rest' },
-  { icon: '🛡️', label: 'Secure payment infrastructure' },
-  { icon: '👤', label: 'Role-based access controls' },
-  { icon: '🔁', label: 'Automated backups & sync' },
-  { icon: '🕒', label: '99.9% uptime' },
+  { icon: 'lock', label: 'Encrypted data, in transit & at rest' },
+  { icon: 'shield', label: 'Secure payment infrastructure' },
+  { icon: 'user', label: 'Role-based access controls' },
+  { icon: 'sync', label: 'Automated backups & sync' },
+  { icon: 'clock', label: '99.9% uptime' },
 ]
 
 export const FAQ = [

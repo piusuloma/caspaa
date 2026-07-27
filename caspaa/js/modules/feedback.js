@@ -18,7 +18,7 @@ function fb_questionInput(q, idx) {
           >☆</button>
         `).join('')}
         <input type="hidden" id="ans_${q.id}" value="" />
-        <span id="star_label_${q.id}" class="ml-2 text-sm text-slate-400"></span>
+        <span id="star_label_${q.id}" class="ml-2 text-sm text-slate-500"></span>
       </div>
     `;
   }
@@ -71,10 +71,10 @@ function fb_setYesNo(qid, val) {
   const noBtn  = document.getElementById('yesno_no_'  + qid);
   if (yesBtn && noBtn) {
     yesBtn.className = val === 'yes'
-      ? 'px-6 py-2.5 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-sm font-semibold text-emerald-800 transition'
+      ? 'px-6 py-2.5 rounded-xl bg-emerald-50 text-sm font-semibold text-emerald-800 transition'
       : 'px-6 py-2.5 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50';
     noBtn.className = val === 'no'
-      ? 'px-6 py-2.5 rounded-xl border-2 border-rose-500 bg-rose-50 text-sm font-semibold text-rose-800 transition'
+      ? 'px-6 py-2.5 rounded-xl bg-rose-50 text-sm font-semibold text-rose-800 transition'
       : 'px-6 py-2.5 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-700 transition hover:border-rose-400 hover:bg-rose-50';
   }
 }
@@ -83,7 +83,7 @@ function fb_setYesNo(qid, val) {
    PARENT VIEW
    ============================================================ */
 function view_par_feedback(params) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const forms = DB.query('feedbackForms', f => f.schoolId === schoolId && f.status === 'active');
 
   return `
@@ -97,7 +97,7 @@ function view_par_feedback(params) {
         ? emptyState({ icon: 'chat', title: 'No active surveys right now', body: 'Check back soon — the school will post surveys here for parents to complete.' })
         : `<div class="space-y-3">
             ${forms.map(form => {
-              const myResponse = DB.query('feedbackResponses', r => r.formId === form.id && r.parentId === AUTH.current.id && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights'))[0];
+              const myResponse = DB.query('feedbackResponses', r => r.formId === form.id && r.parentId === AUTH.current.id && r.schoolId === currentSchoolId())[0];
               const qCount = (form.questions || []).length;
               return `
                 <div class="card p-5">
@@ -112,7 +112,7 @@ function view_par_feedback(params) {
                     <div class="flex-shrink-0 flex items-center gap-2">
                       ${myResponse
                         ? `<span class="badge badge-success">${icon('check', 'w-3 h-3')} Submitted</span>
-                           <span class="text-xs text-slate-400">${fdate(myResponse.submittedAt, { short: true })}</span>`
+                           <span class="text-xs text-slate-500">${fdate(myResponse.submittedAt, { short: true })}</span>`
                         : `<button class="btn btn-primary" onclick="par_openFeedbackForm('${form.id}')">
                              ${icon('chat', 'w-4 h-4')} Fill Out
                            </button>`
@@ -189,7 +189,7 @@ function par_submitFeedback(formId) {
   DB.insert('feedbackResponses', {
     id:          uid('fr'),
     formId,
-    schoolId:    AUTH.current.schoolId || 'sch_brightlights',
+    schoolId:    currentSchoolId(),
     parentId:    AUTH.current.id,
     answers,
     submittedAt: now()
@@ -204,7 +204,7 @@ function par_submitFeedback(formId) {
    ADMIN VIEW
    ============================================================ */
 function view_adm_feedback(params) {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const tab = (params && params.fbTab) || APP.params.fbTab || 'active';
 
   const allForms = DB.query('feedbackForms', f => f.schoolId === schoolId)
@@ -236,7 +236,7 @@ function view_adm_feedback(params) {
           ? emptyState({ icon: 'chat', title: `No ${tab} surveys`, body: tab === 'active' ? 'Create a survey to collect parent feedback.' : 'Closed surveys will appear here.' })
           : displayed.map(form => {
               const qCount    = (form.questions || []).length;
-              const responses = DB.query('feedbackResponses', r => r.formId === form.id && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+              const responses = DB.query('feedbackResponses', r => r.formId === form.id && r.schoolId === currentSchoolId());
               return `
                 <div class="card p-5">
                   <div class="flex items-start justify-between gap-3 flex-wrap">
@@ -263,7 +263,7 @@ function view_adm_feedback(params) {
                           ${icon('x', 'w-4 h-4')} Close Survey
                         </button>
                       ` : ''}
-                      <button class="btn btn-ghost !p-1.5 text-rose-600" title="Delete survey" onclick="adm_deleteSurvey('${form.id}')">${icon('trash', 'w-4 h-4')}</button>
+                      <button class="btn btn-ghost !p-1.5 text-rose-600" aria-label="Delete survey" title="Delete survey" onclick="adm_deleteSurvey('${form.id}')">${icon('trash', 'w-4 h-4')}</button>
                     </div>
                   </div>
                 </div>
@@ -284,11 +284,11 @@ function adm_createSurveyModal() {
     body: `
       <div class="space-y-4">
         <div>
-          <label class="input-label">Survey Title *</label>
+          <label class="input-label" for="sv_title">Survey Title *</label>
           <input id="sv_title" class="input" placeholder="e.g. End of Term Parent Survey 2025/26" />
         </div>
         <div>
-          <label class="input-label">Deadline (optional)</label>
+          <label class="input-label" for="sv_deadline">Deadline (optional)</label>
           <input id="sv_deadline" type="date" class="input max-w-xs" value="${daysAhead(21)}" />
         </div>
 
@@ -305,7 +305,7 @@ function adm_createSurveyModal() {
           </div>
         </div>
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-900">
           ${icon('info', 'w-4 h-4 inline mr-1')} Choose: <strong>Star</strong> (1–5 rating), <strong>Yes / No</strong> (binary), or <strong>Text</strong> (open response).
         </div>
       </div>
@@ -363,7 +363,7 @@ function adm_renumberQuestions() {
 
 /* ---------- Save survey ---------- */
 function adm_saveSurvey() {
-  const schoolId = AUTH.current.schoolId || 'sch_brightlights';
+  const schoolId = currentSchoolId();
   const title    = document.getElementById('sv_title').value.trim();
   if (!title) { toast('Survey title is required', 'danger'); return; }
 
@@ -416,7 +416,7 @@ function adm_saveSurvey() {
 function adm_closeSurvey(formId) {
   const form = DB.find('feedbackForms', formId);
   if (!form) { toast('Survey not found', 'danger'); return; }
-  confirm(`Close "${form.title}"? Parents will no longer be able to submit new responses.`, () => {
+  confirmDialog(`Close "${form.title}"? Parents will no longer be able to submit new responses.`, () => {
     DB.update('feedbackForms', formId, { status: 'closed' });
     APP.render();
     toast('Survey closed', 'info');
@@ -427,10 +427,10 @@ function adm_closeSurvey(formId) {
 function adm_deleteSurvey(formId) {
   const form = DB.find('feedbackForms', formId);
   if (!form) { toast('Survey not found', 'danger'); return; }
-  const rCount = DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).length;
-  confirm(`Delete "${form.title}"?${rCount ? ` This will also remove ${rCount} response${rCount !== 1 ? 's' : ''}.` : ''} This cannot be undone.`, () => {
+  const rCount = DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === currentSchoolId()).length;
+  confirmDialog(`Delete "${form.title}"?${rCount ? ` This will also remove ${rCount} response${rCount !== 1 ? 's' : ''}.` : ''} This cannot be undone.`, () => {
     DB.remove('feedbackForms', formId);
-    DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights')).forEach(r => DB.remove('feedbackResponses', r.id));
+    DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === currentSchoolId()).forEach(r => DB.remove('feedbackResponses', r.id));
     APP.render();
     toast('Survey deleted', 'info');
   }, { yesLabel: 'Delete', danger: true });
@@ -441,7 +441,7 @@ function adm_viewFeedbackResults(formId) {
   const form = DB.find('feedbackForms', formId);
   if (!form) { toast('Survey not found', 'danger'); return; }
 
-  const responses = DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === (AUTH.current.schoolId || 'sch_brightlights'));
+  const responses = DB.query('feedbackResponses', r => r.formId === formId && r.schoolId === currentSchoolId());
   const questions  = form.questions || [];
   const total      = responses.length;
 
@@ -490,11 +490,11 @@ function adm_viewFeedbackResults(formId) {
         <div class="p-4 bg-slate-50 rounded-xl">
           <div class="font-semibold text-sm text-slate-800 mb-3">${q.text}</div>
           <div class="grid grid-cols-2 gap-3 text-center">
-            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+            <div class="bg-emerald-50 rounded-xl p-3">
               <div class="text-2xl font-extrabold text-emerald-700">${yesCount}</div>
               <div class="text-xs text-emerald-600">Yes · ${yesPct}%</div>
             </div>
-            <div class="bg-rose-50 border border-rose-200 rounded-xl p-3">
+            <div class="bg-rose-50 rounded-xl p-3">
               <div class="text-2xl font-extrabold text-rose-700">${noCount}</div>
               <div class="text-xs text-rose-600">No · ${noPct}%</div>
             </div>
@@ -505,7 +505,7 @@ function adm_viewFeedbackResults(formId) {
               <div class="h-full bg-rose-400 transition-all" style="width:${noPct}%"></div>
             </div>
           ` : ''}
-          <p class="text-xs text-slate-400 mt-1.5 text-right">${answered} answered</p>
+          <p class="text-xs text-slate-500 mt-1.5 text-right">${answered} answered</p>
         </div>
       `;
     }
@@ -515,16 +515,16 @@ function adm_viewFeedbackResults(formId) {
       <div class="p-4 bg-slate-50 rounded-xl">
         <div class="font-semibold text-sm text-slate-800 mb-3">${q.text}</div>
         ${vals.length === 0
-          ? `<p class="text-sm text-slate-400 italic">No responses yet.</p>`
+          ? `<p class="text-sm text-slate-500 italic">No responses yet.</p>`
           : `<div class="space-y-2 max-h-56 overflow-y-auto scroll-area">
               ${vals.map((v, i) => `
                 <div class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
-                  ${icon('chat', 'w-3.5 h-3.5 inline mr-1 text-slate-400')} ${v}
+                  ${icon('chat', 'w-3.5 h-3.5 inline mr-1 text-slate-500')} ${v}
                 </div>
               `).join('')}
             </div>`
         }
-        <p class="text-xs text-slate-400 mt-1.5 text-right">${vals.length} response${vals.length !== 1 ? 's' : ''}</p>
+        <p class="text-xs text-slate-500 mt-1.5 text-right">${vals.length} response${vals.length !== 1 ? 's' : ''}</p>
       </div>
     `;
   }).join('');
@@ -535,7 +535,7 @@ function adm_viewFeedbackResults(formId) {
     body: `
       <div class="space-y-5">
         <!-- Summary -->
-        <div class="flex items-center gap-4 p-4 bg-brand-50 border border-brand-200 rounded-xl">
+        <div class="flex items-center gap-4 p-4 bg-brand-50 rounded-xl">
           <div class="w-12 h-12 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0">
             ${icon('reports', 'w-6 h-6')}
           </div>

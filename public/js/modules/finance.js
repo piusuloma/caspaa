@@ -20,7 +20,7 @@ function view_fin_dashboard() {
         type: 'doughnut',
         data: {
           labels: ['Collected', 'Outstanding'],
-          datasets: [{ data: [collected, outstanding], backgroundColor: ['#047857', '#fbbf24'], borderWidth: 0 }]
+          datasets: [{ data: [collected, outstanding], backgroundColor: ['#00b386', '#fbbf24'], borderWidth: 0 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
       });
@@ -32,7 +32,7 @@ function view_fin_dashboard() {
         data: {
           labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
           datasets: [
-            { label: 'Revenue', data: [3200000, 3800000, 4100000, 3900000, 4500000, collected], backgroundColor: '#10b981', borderRadius: 6 },
+            { label: 'Revenue', data: [3200000, 3800000, 4100000, 3900000, 4500000, collected], backgroundColor: '#00c08f', borderRadius: 6 },
             { label: 'Expenses', data: [2400000, 2600000, 2800000, 2500000, 2700000, expense], backgroundColor: '#ef4444', borderRadius: 6 }
           ]
         },
@@ -52,7 +52,7 @@ function view_fin_dashboard() {
         ${statCard({ label: 'Net Cashflow', value: money(netCash), icon: 'trending_up', color: 'blue' })}
       </div>
 
-      ${unreconciled ? `<div class="card bg-amber-50 border border-amber-200 p-3 flex items-center justify-between">
+      ${unreconciled ? `<div class="card bg-amber-50 p-3 flex items-center justify-between">
         <div class="flex items-center gap-3"><div class="text-amber-700">${icon('bell','w-5 h-5')}</div>
           <div><div class="font-semibold text-amber-900">${unreconciled} transaction${unreconciled>1?'s':''} unreconciled</div>
           <div class="text-sm text-amber-800">Review and confirm to update student balances.</div></div>
@@ -65,19 +65,19 @@ function view_fin_dashboard() {
                            .sort((a, b) => b.computedAt.localeCompare(a.computedAt))[0];
         if (!activeRun || activeRun.stage === 'draft') return '';
         if (activeRun.stage === 'pending_approval') {
-          return `<div class="card bg-blue-50 border border-blue-200 p-4 flex items-center justify-between gap-4">
+          return `<div class="card bg-brand-50 p-4 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center flex-shrink-0">${icon('bell','w-5 h-5')}</div>
+              <div class="w-10 h-10 rounded-full bg-brand-200 text-brand-800 flex items-center justify-center flex-shrink-0">${icon('bell','w-5 h-5')}</div>
               <div>
-                <div class="font-bold text-blue-900">Payroll awaiting your authorization — ${activeRun.period}</div>
-                <div class="text-sm text-blue-800 mt-0.5">HR has submitted the payroll run. ${activeRun.staffCount} staff · Net ${money(activeRun.netTotal)}. Confirm fund availability and authorize disbursement.</div>
+                <div class="font-bold text-brand-900">Payroll awaiting your authorization — ${activeRun.period}</div>
+                <div class="text-sm text-brand-800 mt-0.5">HR has submitted the payroll run. ${activeRun.staffCount} staff · Net ${money(activeRun.netTotal)}. Confirm fund availability and authorize disbursement.</div>
               </div>
             </div>
             <button class="btn btn-primary flex-shrink-0" onclick="APP.go('fin_payroll')">${icon('check','w-4 h-4')} Review &amp; Authorize →</button>
           </div>`;
         }
         if (activeRun.stage === 'approved') {
-          return `<div class="card bg-emerald-50 border border-emerald-200 p-4 flex items-center justify-between gap-4">
+          return `<div class="card bg-emerald-50 p-4 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-emerald-200 text-emerald-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
               <div>
@@ -146,7 +146,7 @@ function view_fin_dashboard() {
                   <button class="text-xs text-brand-700 font-semibold" onclick="sendManualReminder('${i.id}')">Send reminder</button>
                 </div>
               </div>`;
-            }).join('') || '<div class="py-6 text-center text-slate-400 text-sm font-medium">All fees collected — no outstanding balances</div>'}
+            }).join('') || '<div class="py-6 text-center text-slate-500 text-sm font-medium">All fees collected — no outstanding balances</div>'}
           </div>
         </div>
       </div>
@@ -183,8 +183,8 @@ function view_fin_dashboard() {
                     <td class="text-sm text-slate-500">${cls ? cls.name : '—'}</td>
                     <td class="text-right font-mono text-sm">${money(total)}</td>
                     <td class="text-right font-mono text-sm text-emerald-700">${money(paid)}</td>
-                    <td class="text-right font-mono text-sm ${balance>0?'text-rose-600 font-semibold':'text-slate-400'}">${money(balance)}</td>
-                    <td class="text-center">${inv ? statusBadge(inv.status) : '<span class="text-xs text-slate-400">No invoice</span>'}</td>
+                    <td class="text-right font-mono text-sm ${balance>0?'text-rose-600 font-semibold':'text-slate-500'}">${money(balance)}</td>
+                    <td class="text-center">${inv ? statusBadge(inv.status) : '<span class="text-xs text-slate-500">No invoice</span>'}</td>
                   </tr>`;
                 }).join('');
               })()}
@@ -220,7 +220,7 @@ function sendBulkReminders() {
     title: 'Send Bulk Reminders',
     body: `
       <div class="space-y-3">
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           ${icon('bell','w-4 h-4 inline')} This will send a payment reminder to <strong>${invoices.length} parent(s)</strong> with outstanding balances. Each reminder includes the student's unique ID for reference.
         </div>
         <div>
@@ -262,7 +262,7 @@ function invoiceReminderSettingsModal() {
     size: 'lg',
     body: `
       <div class="space-y-4">
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           ${icon('info','w-4 h-4 inline')} These settings are saved for reference. Automated sending requires a server-side scheduler — use the <strong>Manual Reminder Trigger</strong> below to send reminders now.
         </div>
         <div class="card p-5 space-y-3">
@@ -341,7 +341,7 @@ function bulkGenerateInvoicesModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Generate invoices for all returning students who don't yet have one for <strong>${currentTerm}</strong>. New enrollments are excluded — their invoices are created during student registration.
         </div>
         <div class="grid grid-cols-3 gap-3 text-center">
@@ -358,7 +358,7 @@ function bulkGenerateInvoicesModal() {
             <div class="text-xs text-emerald-600">Will be invoiced</div>
           </div>
         </div>
-        ${noInvoiceYet.length === 0 ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">All returning students already have invoices for this term. Nothing to generate.</div>` : `
+        ${noInvoiceYet.length === 0 ? `<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">All returning students already have invoices for this term. Nothing to generate.</div>` : `
         <div class="bg-slate-50 rounded-xl p-3 text-sm space-y-1 max-h-48 overflow-y-auto">
           <div class="font-semibold text-slate-700 mb-2">Students to be invoiced:</div>
           ${noInvoiceYet.map(s => {
@@ -366,12 +366,12 @@ function bulkGenerateInvoicesModal() {
             const fs = feeStructures.find(f => f.classId === s.classId && f.term === currentTerm);
             const total = fs ? fs.tuition + fs.books + fs.uniform + fs.pta : 0;
             return `<div class="flex items-center justify-between py-1 border-b border-slate-200 last:border-0">
-              <div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-xs">${s.name}</div><div class="text-xs text-slate-400">${cls ? cls.name : '—'}</div></div></div>
+              <div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-xs">${s.name}</div><div class="text-xs text-slate-500">${cls ? cls.name : '—'}</div></div></div>
               <span class="text-xs font-mono ${total > 0 ? 'text-slate-700' : 'text-amber-600'}">${total > 0 ? money(total) : 'No fee structure'}</span>
             </div>`;
           }).join('')}
         </div>
-        <div class="text-xs text-slate-500 bg-amber-50 border border-amber-200 rounded-xl p-3">
+        <div class="text-xs text-slate-500 bg-amber-50 rounded-xl p-3">
           Students without a matching fee structure for ${currentTerm} will be skipped. Set up fee structures under <strong>Fee Structure → New Structure</strong>.
         </div>`}
       </div>
@@ -508,8 +508,8 @@ function renderFeeStructuresTab() {
         </tbody>
       </table>
     </div>
-    <div class="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-      ${icon('info','w-3.5 h-3.5 flex-shrink-0 text-blue-500')}
+    <div class="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-brand-50 rounded-xl px-4 py-3">
+      ${icon('info','w-3.5 h-3.5 flex-shrink-0 text-brand-500')}
       <span>Extracurricular fees (swimming, ballet, music, etc.) are charged <strong>per student</strong> — manage them under the <button class="text-brand-700 font-semibold underline" onclick="APP.params.feeTab='activities'; APP.render()">Activities tab</button> and assign from each student's profile.</span>
     </div>
   `;
@@ -533,7 +533,7 @@ function renderActivitiesTab() {
       <div class="bg-white border border-slate-200 rounded-2xl p-4">
         <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">Total Enrollments</div>
         <div class="text-2xl font-extrabold text-slate-900">${totalEnrolled}</div>
-        <div class="text-xs text-slate-400 mt-0.5">across all activities</div>
+        <div class="text-xs text-slate-500 mt-0.5">across all activities</div>
       </div>
       <div class="bg-white border border-slate-200 rounded-2xl p-4">
         <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">Activity Revenue / Term</div>
@@ -572,9 +572,9 @@ function renderActivitiesTab() {
                 <td class="px-5 py-4 text-right">
                   ${enrolled > 0
                     ? `<button class="inline-flex items-center gap-1.5 text-brand-700 hover:underline font-semibold" onclick="viewActivityEnrollments('${a.id}')">${icon('students','w-3.5 h-3.5')} ${enrolled}</button>`
-                    : `<span class="text-slate-400">0</span>`}
+                    : `<span class="text-slate-500">0</span>`}
                 </td>
-                <td class="px-5 py-4 text-right font-mono font-semibold ${revenue > 0 ? 'text-brand-700' : 'text-slate-400'}">${money(revenue)}</td>
+                <td class="px-5 py-4 text-right font-mono font-semibold ${revenue > 0 ? 'text-brand-700' : 'text-slate-500'}">${money(revenue)}</td>
                 <td class="px-5 py-4 text-right whitespace-nowrap">
                   <button class="btn btn-ghost !p-1.5 hover:bg-slate-100 rounded-lg" aria-label="Edit" title="Edit" onclick="editActivityModal('${a.id}')">${icon('edit','w-4 h-4 text-slate-500')}</button>
                   <button class="btn btn-ghost !p-1.5 hover:bg-rose-50 rounded-lg" aria-label="Delete" title="Delete" onclick="deleteActivity('${a.id}')">${icon('trash','w-4 h-4 text-rose-400')}</button>
@@ -620,10 +620,10 @@ function viewActivityEnrollments(actId) {
               <div class="font-semibold text-sm">${s.name}</div>
               <div class="text-xs text-slate-500">${cls ? cls.name : '—'} · Enrolled ${fdate(sa.enrolledAt, { short: true })}</div>
             </div>
-            <button class="btn btn-ghost !p-1.5 text-slate-400 hover:text-slate-700" aria-label="View student" title="View student" onclick="document.getElementById('modalBackdrop')?.click(); viewStudent('${s.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
+            <button class="btn btn-ghost !p-1.5 text-slate-500 hover:text-slate-700" aria-label="View student" title="View student" onclick="document.getElementById('modalBackdrop')?.click(); viewStudent('${s.id}')">${icon('arrow_left','w-4 h-4 rotate-180')}</button>
           </div>`;
         }).join('')}
-        ${students.length === 0 ? `<p class="text-sm text-slate-400 text-center py-4">No students enrolled yet.</p>` : ''}
+        ${students.length === 0 ? `<p class="text-sm text-slate-500 text-center py-4">No students enrolled yet.</p>` : ''}
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>`
@@ -655,7 +655,7 @@ function editActivityModal(actId) {
           <label class="input-label" for="act_price">Fee per term (₦) *</label>
           <input id="act_price" type="number" class="input" placeholder="e.g. 15000" value="${existing ? existing.price : ''}" />
         </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
           ${icon('info','w-4 h-4 inline mr-1')} This fee is charged <strong>per student</strong> who enrolls. Enroll students from their profile (Students → open student → Activities tab).
         </div>
       </div>
@@ -715,8 +715,8 @@ function exportFeeStructurePDF() {
   const classes = DB.get('classes');
   const html = `
     <div style="max-width:800px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#00b386">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:18px">FEE STRUCTURE — ${DB.settings().currentTerm}</h2>
       </div>
       <table border="1" cellpadding="10" style="border-collapse:collapse;width:100%;font-size:13px">
@@ -727,7 +727,7 @@ function exportFeeStructurePDF() {
           ${structures.map(f => {
             const cls = classes.find(c => c.id === f.classId);
             const total = f.tuition + f.books + f.uniform + f.pta;
-            return `<tr><td><strong>${cls ? cls.name : '—'}</strong></td><td align="right">${money(f.tuition)}</td><td align="right">${money(f.books)}</td><td align="right">${money(f.uniform)}</td><td align="right">${money(f.pta)}</td><td align="right" style="background:#d1fae5"><strong>${money(total)}</strong></td><td align="right">${fdate(f.dueDate, { short: true })}</td></tr>`;
+            return `<tr><td><strong>${cls ? cls.name : '—'}</strong></td><td align="right">${money(f.tuition)}</td><td align="right">${money(f.books)}</td><td align="right">${money(f.uniform)}</td><td align="right">${money(f.pta)}</td><td align="right" style="background:#c3f0e2"><strong>${money(total)}</strong></td><td align="right">${fdate(f.dueDate, { short: true })}</td></tr>`;
           }).join('')}
         </tbody>
       </table>
@@ -787,9 +787,9 @@ function feeStructureModal(editingId) {
               </div>
             `).join('')}
           </div>
-          ${!(existing && existing.extraItems && existing.extraItems.length) ? '<p id="fs_extra_hint" class="text-xs text-slate-400 mt-1">No additional fees — add rows for items like Lab Fee, ICT Levy, etc.</p>' : ''}
+          ${!(existing && existing.extraItems && existing.extraItems.length) ? '<p id="fs_extra_hint" class="text-xs text-slate-500 mt-1">No additional fees — add rows for items like Lab Fee, ICT Levy, etc.</p>' : ''}
         </div>
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-xs text-brand-900">
           ${icon('info','w-4 h-4 inline mr-1')} Extracurricular fees (swimming, ballet, music, etc.) are <strong>per student</strong> — set them under the <strong>Activities tab</strong> and assign to each student from their profile.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -800,7 +800,7 @@ function feeStructureModal(editingId) {
           <div>
             <label class="input-label" for="fs_discountDeadline">Prompt Payment Discount Deadline</label>
             <input id="fs_discountDeadline" type="date" class="input" value="${existing ? (existing.discountDeadline || '') : ''}" />
-            <p class="text-xs text-slate-400 mt-1">Prompt payment discounts expire after this date</p>
+            <p class="text-xs text-slate-500 mt-1">Prompt payment discounts expire after this date</p>
           </div>
         </div>
         <div class="bg-brand-50 rounded-xl p-3 flex items-center justify-between">
@@ -835,7 +835,7 @@ function feeStructureModal(editingId) {
             </div>
           </div>
         </div>
-        ${isEdit ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+        ${isEdit ? `<div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-900">
           <strong>Note:</strong> Editing this structure does not retroactively change existing invoices. New invoices generated from this point will use the updated amounts.
         </div>` : ''}
       </div>
@@ -1031,7 +1031,7 @@ function view_fin_invoices() {
     </div>
 
     ${scope === 'all' && leaverDebt > 0 ? `
-      <div class="flex items-start gap-2 text-xs text-slate-600 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3">
+      <div class="flex items-start gap-2 text-xs text-slate-600 bg-amber-50 rounded-xl p-3 mb-3">
         ${icon('info','w-4 h-4 flex-shrink-0 text-amber-600')}
         <span><strong>${money(leaverDebt)}</strong> of the balance above is owed by students who have left (alumni, transferred or withdrawn). It stays on the books until paid or written off — switch scope to <em>Current students</em> to exclude it.</span>
       </div>` : ''}
@@ -1039,7 +1039,7 @@ function view_fin_invoices() {
     <div class="card p-3 mb-3">
       <div class="flex flex-wrap gap-2 items-center">
         <div class="relative flex-1 min-w-[200px]">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${icon('search','w-4 h-4')}</span>
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">${icon('search','w-4 h-4')}</span>
           <label for="inv_search" class="sr-only">Search invoices by student name or admission number</label>
           <input id="inv_search" type="search" class="input pl-9" placeholder="Name or admission no…" value="${q}"
                  oninput="APP.params.invQ = this.value; APP.render()" />
@@ -1100,7 +1100,7 @@ function view_fin_invoices() {
                         ${leaver ? `<span class="badge badge-neutral text-[10px] flex-shrink-0">${(s.status || '').charAt(0).toUpperCase() + (s.status || '').slice(1)}</span>` : ''}
                         ${orphaned ? `<span class="badge badge-danger text-[10px] flex-shrink-0">Orphaned</span>` : ''}
                       </div>
-                      <div class="text-xs text-slate-400">${orphaned ? inv.studentId : (s.admissionNo || s.id.slice(-6).toUpperCase())}</div>
+                      <div class="text-xs text-slate-500">${orphaned ? inv.studentId : (s.admissionNo || s.id.slice(-6).toUpperCase())}</div>
                     </div>
                   </div>
                 </td>
@@ -1111,11 +1111,11 @@ function view_fin_invoices() {
                 </td>
                 <td class="text-right font-mono tabular-nums">${money(inv.total)}</td>
                 <td class="text-right font-mono tabular-nums text-emerald-700">${money(inv.paid)}</td>
-                <td class="text-right font-mono tabular-nums font-semibold ${inv.balance > 0 ? 'text-rose-700' : 'text-slate-400'}">${money(inv.balance)}</td>
-                <td class="text-right font-mono tabular-nums ${credit > 0 ? 'text-blue-700 font-semibold' : 'text-slate-300'}">${credit > 0 ? money(credit) : '—'}</td>
+                <td class="text-right font-mono tabular-nums font-semibold ${inv.balance > 0 ? 'text-rose-700' : 'text-slate-500'}">${money(inv.balance)}</td>
+                <td class="text-right font-mono tabular-nums ${credit > 0 ? 'text-brand-700 font-semibold' : 'text-slate-300'}">${credit > 0 ? money(credit) : '—'}</td>
                 <td>${arStateBadge(state)}</td>
                 <td class="text-right pr-2">
-                  <button class="btn btn-ghost !p-1.5 text-slate-400 hover:text-slate-700"
+                  <button class="btn btn-ghost !p-1.5 text-slate-500 hover:text-slate-700"
                           aria-label="Actions for ${name}'s invoice"
                           onclick="openLedgerMenu(this,'${inv.id}',${inv.balance > 0},${inv.paid > 0},${credit > 0 && inv.balance > 0})">${icon('more','w-4 h-4')}</button>
                 </td>
@@ -1269,7 +1269,7 @@ function openLedgerMenu(btn, invoiceId, hasBalance, hasPaid, hasCredit) {
   const rect = btn.getBoundingClientRect();
   const items = [
     hasBalance ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 font-medium text-brand-700" onclick="document.getElementById('_ledgerMenu')?.remove();ledgerQuickPay('${invoiceId}')">Record Payment</button>` : '',
-    hasCredit  ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-blue-600" onclick="document.getElementById('_ledgerMenu')?.remove();ledgerApplyCredit('${invoiceId}')">Apply Advance Payment</button>` : '',
+    hasCredit  ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-brand-600" onclick="document.getElementById('_ledgerMenu')?.remove();ledgerApplyCredit('${invoiceId}')">Apply Advance Payment</button>` : '',
     `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50" onclick="document.getElementById('_ledgerMenu')?.remove();sendInvoiceToParent('${invoiceId}')">Send Invoice</button>`,
     hasPaid    ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-emerald-600" onclick="document.getElementById('_ledgerMenu')?.remove();sendReceiptToParent('${invoiceId}')">Send Receipt</button>` : '',
     hasBalance ? `<button class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 text-amber-600" onclick="document.getElementById('_ledgerMenu')?.remove();sendManualReminder('${invoiceId}')">Send Reminder</button>` : '',
@@ -1332,7 +1332,7 @@ function view_fin_payments() {
     })}
     <div class="card p-3 mb-3">
       <div class="relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${icon('search','w-4 h-4')}</span>
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">${icon('search','w-4 h-4')}</span>
         <input type="text" class="input pl-9" placeholder="Search by student name, reference or method…" value="${q}" oninput="APP.params.payQ = this.value; APP.render()" />
       </div>
     </div>
@@ -1344,7 +1344,7 @@ function view_fin_payments() {
             const s = DB.find('students', t.studentId);
             return `<tr>
               <td><code class="text-xs">${t.reference}</code></td>
-              <td><div class="font-medium text-sm">${s ? s.name : '—'}</div>${s && s.admissionNo ? `<div class="text-xs text-slate-400">${s.admissionNo}</div>` : ''}</td>
+              <td><div class="font-medium text-sm">${s ? s.name : '—'}</div>${s && s.admissionNo ? `<div class="text-xs text-slate-500">${s.admissionNo}</div>` : ''}</td>
               <td class="font-mono font-semibold">${money(t.amount)}</td>
               <td><span class="badge badge-neutral uppercase">${t.method}</span></td>
               <td>${statusBadge(t.status)}</td>
@@ -1364,7 +1364,7 @@ function manualPaymentModal() {
     title: 'Record Manual Payment',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Use for <strong>cash</strong>, <strong>cheque</strong>, or <strong>bank transfer</strong> payments received at the school. These post directly to the student's invoice with no Paystack involved.
         </div>
         <div>
@@ -1377,7 +1377,7 @@ function manualPaymentModal() {
             }).join('')}
           </select>
         </div>
-        <div id="mp_balanceHint" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-900"></div>
+        <div id="mp_balanceHint" class="hidden bg-amber-50 rounded-xl p-2.5 text-xs text-amber-900"></div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label" for="mp_amount">Amount (NGN)</label><input id="mp_amount" type="number" class="input" /></div>
           <div><label class="input-label" for="mp_method">Method</label>
@@ -1410,7 +1410,7 @@ function updateManualPaymentBalance() {
   const amount = document.getElementById('mp_amount');
   if (balance > 0) {
     hint.classList.remove('hidden');
-    hint.innerHTML = `Outstanding balance: <strong>${money(balance)}</strong>. <button class="text-blue-700 underline" onclick="document.getElementById('mp_amount').value=${balance}">Pay in full</button>`;
+    hint.innerHTML = `Outstanding balance: <strong>${money(balance)}</strong>. <button class="text-brand-700 underline" onclick="document.getElementById('mp_amount').value=${balance}">Pay in full</button>`;
     amount.placeholder = `up to ${money(balance)}`;
   } else {
     hint.classList.add('hidden');
@@ -1488,7 +1488,7 @@ function view_fin_recon() {
         <button class="btn btn-secondary" onclick="autoMatchAllTransactions()">${icon('ai','w-4 h-4')} Auto-Match All</button>
       `
     })}
-    <div class="card bg-blue-50 border border-blue-200 p-3 mb-4 text-sm text-blue-900">
+    <div class="card bg-brand-50 p-3 mb-4 text-sm text-brand-900">
       ${icon('info','w-4 h-4 inline mr-1')} <strong>${unreconciled.length}</strong> payment${unreconciled.length!==1?'s':''} need${unreconciled.length===1?'s':''} matching. Primary match: <strong>Student ID</strong> in payment narration or reference. Fallback: name-based matching. You can also enter the Student ID manually.
     </div>
     <div class="card overflow-hidden">
@@ -1514,7 +1514,7 @@ function view_fin_recon() {
                 <td class="font-mono font-bold">${money(t.amount)}</td>
                 <td><span class="badge badge-neutral uppercase text-xs">${t.method}</span></td>
                 <td>${matchType === 'ID' ? `<span class="badge badge-success text-xs">${icon('check','w-3 h-3')} ID matched</span>` : matchType === 'Name' ? `<span class="badge badge-warn text-xs">${icon('ai','w-3 h-3')} Name match</span>` : `<div class="flex gap-1"><input type="text" class="input input-sm w-28 font-mono" placeholder="Student ID" id="sid_${t.id}" /><button class="btn btn-ghost !p-1 text-xs" onclick="lookupStudentId('${t.id}')">${icon('search','w-3.5 h-3.5')}</button></div>`}</td>
-                <td>${finalMatch ? `<div class="font-semibold text-sm">${finalMatch.name}</div><div class="text-xs text-slate-500">ID: ${finalMatch.studentId || finalMatch.id.slice(-6)}</div>` : '<span class="text-slate-400 text-sm">Not found</span>'}</td>
+                <td>${finalMatch ? `<div class="font-semibold text-sm">${finalMatch.name}</div><div class="text-xs text-slate-500">ID: ${finalMatch.studentId || finalMatch.id.slice(-6)}</div>` : '<span class="text-slate-500 text-sm">Not found</span>'}</td>
                 <td class="whitespace-nowrap">
                   <button class="btn btn-primary !py-1.5 text-xs" onclick="reconcileTxn('${t.id}', '${finalMatch ? finalMatch.id : ''}')">${icon('check','w-3 h-3')} Match</button>
                 </td>
@@ -1606,7 +1606,7 @@ function recordCashPaymentModal() {
     title: 'Record Cash Payment',
     body: `
       <div class="space-y-3">
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        <div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           ${icon('check','w-4 h-4 inline')} Use the student's unique ID to ensure accurate payment matching.
         </div>
         <div>
@@ -1772,7 +1772,7 @@ function view_fin_lending() {
       </table>
     </div>
 
-    ${pending.length ? `<div class="card p-5 mt-4 bg-amber-50 border border-amber-200">
+    ${pending.length ? `<div class="card p-5 mt-4 bg-amber-50">
       <h4 class="font-semibold text-amber-900 mb-3">${pending.length} pending application${pending.length>1?'s':''} — review before deciding</h4>
       <div class="space-y-2">
         ${pending.map(l => {
@@ -1837,7 +1837,7 @@ function reviewLoanApplication(loanId) {
           <div class="flex-1">
             <h2 class="text-xl font-bold text-slate-900">${parent.name}</h2>
             <p class="text-sm text-slate-500">${parent.occupation} · ${parent.phone}</p>
-            <p class="text-xs text-slate-400">${parent.address || ''}</p>
+            <p class="text-xs text-slate-500">${parent.address || ''}</p>
           </div>
           <div class="text-right">
             <div class="text-xs text-slate-500 uppercase">Applied</div>
@@ -2074,7 +2074,7 @@ function view_fin_payroll() {
             ${teachers.map(t => `<tr>
               <td><div class="flex items-center gap-2">${avatar(t.name, 'sm')}<div><div class="font-medium text-sm">${t.name}</div><div class="text-xs text-slate-500">${t.role || ''}</div></div></div></td>
               <td><span class="badge ${t.staffType === 'Academic' || !t.staffType ? 'badge-success' : 'badge-info'}">${t.staffType || 'Academic'}</span></td>
-              <td class="text-sm">${t.bank ? t.bank.name : '<span class="text-slate-400">Not set</span>'}</td>
+              <td class="text-sm">${t.bank ? t.bank.name : '<span class="text-slate-500">Not set</span>'}</td>
               <td><code class="text-xs">${t.bank ? t.bank.account : '—'}</code></td>
               <td class="text-right font-mono font-semibold">${money(t.salary || 0)}</td>
             </tr>`).join('')}
@@ -2134,7 +2134,7 @@ function renderPayrollStepper(run) {
 function renderPayrollStageAction(run) {
   if (run.stage === 'draft') {
     return `
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+      <div class="bg-amber-50 rounded-xl p-4">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-lg bg-amber-200 text-amber-800 flex items-center justify-center flex-shrink-0">${icon('edit','w-5 h-5')}</div>
           <div class="flex-1">
@@ -2154,18 +2154,18 @@ function renderPayrollStageAction(run) {
     const cashOnHand = txns.reduce((s, t) => s + t.amount, 0) - (DB.query('expenses', e => e.schoolId === currentSchoolId()).reduce((s, e) => s + e.amount, 0));
     const sufficient = cashOnHand >= run.netTotal;
     return `
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+      <div class="bg-brand-50 rounded-xl p-4">
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-lg bg-blue-200 text-blue-800 flex items-center justify-center flex-shrink-0">${icon('check','w-5 h-5')}</div>
+          <div class="w-10 h-10 rounded-lg bg-brand-200 text-brand-800 flex items-center justify-center flex-shrink-0">${icon('check','w-5 h-5')}</div>
           <div class="flex-1">
-            <div class="font-bold text-blue-900">Accountant — Confirm Funds &amp; Authorize Disbursement</div>
-            <p class="text-sm text-blue-800 mt-1">HR submitted this payroll on ${fdate(run.submittedAt, { long: true })}. As Accountant, your role is to confirm fund availability and authorize the payment. HR cannot disburse without your authorization.</p>
+            <div class="font-bold text-brand-900">Accountant — Confirm Funds &amp; Authorize Disbursement</div>
+            <p class="text-sm text-brand-800 mt-1">HR submitted this payroll on ${fdate(run.submittedAt, { long: true })}. As Accountant, your role is to confirm fund availability and authorize the payment. HR cannot disburse without your authorization.</p>
             <div class="bg-white rounded-lg p-3 mt-2 grid grid-cols-3 gap-3 text-sm">
               <div><div class="text-xs text-slate-500">Amount Required</div><div class="font-mono font-bold">${money(run.netTotal)}</div></div>
               <div><div class="text-xs text-slate-500">Available Balance</div><div class="font-mono font-bold ${sufficient ? 'text-emerald-700' : 'text-rose-700'}">${money(Math.max(0, cashOnHand))}</div></div>
               <div><div class="text-xs text-slate-500">Fund Status</div><div class="font-bold ${sufficient ? 'text-emerald-700' : 'text-rose-700'}">${sufficient ? icon('check','w-3 h-3 inline') + ' Sufficient' : icon('x','w-3 h-3 inline') + ' Insufficient'}</div></div>
             </div>
-            ${!sufficient ? `<div class="bg-rose-50 border border-rose-200 rounded-lg p-2 mt-2 text-xs text-rose-900">${icon('bell','w-3.5 h-3.5 inline')} Available funds may be insufficient. Review expenses and collections before authorizing.</div>` : ''}
+            ${!sufficient ? `<div class="bg-rose-50 rounded-lg p-2 mt-2 text-xs text-rose-900">${icon('bell','w-3.5 h-3.5 inline')} Available funds may be insufficient. Review expenses and collections before authorizing.</div>` : ''}
             <div class="flex gap-2 mt-3 flex-wrap">
               <button class="btn btn-secondary text-sm" onclick="sendBackPayroll('${run.id}')">${icon('arrow_left','w-3.5 h-3.5')} Return to HR</button>
               <button class="btn btn-primary ${!sufficient ? '!bg-amber-600' : ''}" onclick="approvePayrollRun('${run.id}')">${icon('check','w-4 h-4')} ${sufficient ? 'Authorize Disbursement →' : 'Authorize Anyway →'}</button>
@@ -2177,7 +2177,7 @@ function renderPayrollStageAction(run) {
   }
   if (run.stage === 'approved') {
     return `
-      <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+      <div class="bg-emerald-50 rounded-xl p-4">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-lg bg-emerald-200 text-emerald-800 flex items-center justify-center flex-shrink-0">${icon('send','w-5 h-5')}</div>
           <div class="flex-1">
@@ -2282,7 +2282,7 @@ function postPayrollModal(runId) {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">
+        <div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">
           ${run.staffCount} staff paid ${money(run.netTotal)} via NIBSS. Now handle the regulatory side.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -2358,7 +2358,7 @@ function viewPayrollRun(runId) {
             }).join('')}
           </div>
         </div>` : ''}
-        ${run.stage === 'paid' ? `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-900">${icon('check','w-4 h-4 inline')} Payslips have been issued to all staff via in-app + email.</div>` : ''}
+        ${run.stage === 'paid' ? `<div class="bg-emerald-50 rounded-xl p-3 text-sm text-emerald-900">${icon('check','w-4 h-4 inline')} Payslips have been issued to all staff via in-app + email.</div>` : ''}
       </div>
     `,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
@@ -2371,8 +2371,8 @@ function downloadPayrollSummary(runId) {
   const teachers = DB.query('teachers', t => t.schoolId === run.schoolId);
   const html = `
     <div style="max-width:800px;margin:0 auto;font-family:system-ui">
-      <div style="text-align:center;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:20px">
-        <h1 style="margin:0;color:#047857">BRIGHT LIGHTS ACADEMY</h1>
+      <div style="text-align:center;border-bottom:3px solid #00b386;padding-bottom:16px;margin-bottom:20px">
+        <h1 style="margin:0;color:#00b386">BRIGHT LIGHTS ACADEMY</h1>
         <h2 style="margin:14px 0 4px;font-size:18px">PAYROLL SUMMARY — ${run.period}</h2>
       </div>
       <table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-size:13px">
@@ -2385,7 +2385,7 @@ function downloadPayrollSummary(runId) {
             return `<tr><td>${t.name}</td><td>${t.role || t.staffType || ''}</td><td align="right">${money(gross)}</td><td align="right">${money(paye)}</td><td align="right">${money(pension)}</td><td align="right"><strong>${money(gross - paye - pension)}</strong></td></tr>`;
           }).join('')}
         </tbody>
-        <tfoot style="background:#d1fae5;font-weight:bold"><tr><td colspan="2">TOTAL</td><td align="right">${money(run.grossTotal)}</td><td align="right">${money(run.payeTotal)}</td><td align="right">${money(run.pensionTotal)}</td><td align="right">${money(run.netTotal)}</td></tr></tfoot>
+        <tfoot style="background:#c3f0e2;font-weight:bold"><tr><td colspan="2">TOTAL</td><td align="right">${money(run.grossTotal)}</td><td align="right">${money(run.payeTotal)}</td><td align="right">${money(run.pensionTotal)}</td><td align="right">${money(run.netTotal)}</td></tr></tfoot>
       </table>
       <p style="margin-top:30px;text-align:center;color:#999;font-size:11px">Generated by CASPAA on ${fdate(now(), { long: true })}</p>
     </div>
@@ -2401,7 +2401,7 @@ function manageAdjustmentsModal(runId) {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Add bonuses, overtime, fines or leave deductions for this run. They apply on top of base salary.
         </div>
         <div class="space-y-1.5">
@@ -2525,7 +2525,7 @@ function view_fin_cost_center() {
   const byType = {};
   teachers.forEach(t => { const k = t.staffType || 'Other'; byType[k] = (byType[k]||0) + (t.salary||0); });
   const totalStaffCost = Object.values(byType).reduce((s,v) => s+v, 0);
-  const colors = ['bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-purple-500'];
+  const colors = ['bg-brand-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-brand-500'];
 
   const revenueView = APP.params.revenueView || 'termly';
 
@@ -2545,7 +2545,7 @@ function view_fin_cost_center() {
     }
     new Chart(ctx, {
       type: 'bar',
-      data: { labels, datasets: [{ label: 'Collected (₦)', data, backgroundColor: '#047857', borderRadius: 6, maxBarThickness: 60 }] },
+      data: { labels, datasets: [{ label: 'Collected (₦)', data, backgroundColor: '#00b386', borderRadius: 6, maxBarThickness: 60 }] },
       options: {
         responsive: true, maintainAspectRatio: false, animation: { duration: 0 },
         plugins: { legend: { display: false } },
@@ -2558,7 +2558,7 @@ function view_fin_cost_center() {
     const pct = totalExp > 0 ? Math.round(amt/totalExp*100) : 0;
     return '<tr><td class="text-sm text-slate-700">' + cat + '</td>'
       + '<td class="text-sm font-semibold text-right font-mono">' + money(amt) + '</td>'
-      + '<td class="text-xs text-slate-400 text-right">' + pct + '%</td>'
+      + '<td class="text-xs text-slate-500 text-right">' + pct + '%</td>'
       + '<td class="w-24"><div class="progress h-1.5"><div class="progress-bar h-full" style="width:' + pct + '%"></div></div></td></tr>';
   }).join('');
 
@@ -2634,7 +2634,7 @@ function view_fin_cost_center() {
     <div class="grid lg:grid-cols-2 gap-4">
       <div class="card p-5">
         <h3 class="font-bold text-slate-900 mb-3">Expense Breakdown by Category</h3>
-        ${!Object.keys(expByCat).length ? '<p class="text-sm text-slate-400">No expenses recorded yet.</p>' : `
+        ${!Object.keys(expByCat).length ? '<p class="text-sm text-slate-500">No expenses recorded yet.</p>' : `
           <table class="tbl">
             <th scope="col"ead><tr><th scope="col">Category</th><th scope="col" class="text-right">Amount</th><th scope="col" class="text-right">%</th><th scope="col"></th></tr></thead>
             <tbody>${expCatRows}</tbody>
@@ -2644,7 +2644,7 @@ function view_fin_cost_center() {
       </div>
       <div class="card p-5">
         <h3 class="font-bold text-slate-900 mb-3">Staff Cost by Type</h3>
-        ${!Object.keys(byType).length ? '<p class="text-sm text-slate-400">No staff salary data.</p>' : staffTypeRows + `
+        ${!Object.keys(byType).length ? '<p class="text-sm text-slate-500">No staff salary data.</p>' : staffTypeRows + `
           <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between text-sm font-bold">
             <span>Total Staff Cost</span><span class="font-mono text-rose-700">${money(totalStaffCost)}</span>
           </div>
@@ -2693,11 +2693,11 @@ function renderFinanceActivityLog() {
   const sid = currentSchoolId();
   const FIN_ACTIONS = ['payroll_draft_created','payroll_submitted','payroll_approved','payroll_paid','issued_refund'];
   const ACTION_META = {
-    payroll_draft_created: { label: 'Payroll started',    color: 'bg-blue-100 text-blue-700' },
+    payroll_draft_created: { label: 'Payroll started',    color: 'bg-brand-100 text-brand-700' },
     payroll_submitted:     { label: 'Payroll submitted',  color: 'bg-amber-100 text-amber-700' },
     payroll_approved:      { label: 'Payroll approved',   color: 'bg-emerald-100 text-emerald-700' },
     payroll_paid:          { label: 'Payroll disbursed',  color: 'bg-emerald-100 text-emerald-700' },
-    issued_refund:         { label: 'Refund issued',      color: 'bg-pink-100 text-pink-700' }
+    issued_refund:         { label: 'Refund issued',      color: 'bg-brand-100 text-brand-700' }
   };
   const allTeachers = DB.get('teachers');
   function actorName(id) {
@@ -2707,7 +2707,7 @@ function renderFinanceActivityLog() {
   const logs = DB.query('auditLog', l => l.schoolId === sid && FIN_ACTIONS.includes(l.action))
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
-  if (!logs.length) return `<div class="card py-12 text-center text-slate-400">${icon('reports','w-8 h-8 mx-auto mb-2 opacity-30')}<div>No finance activity recorded yet</div></div>`;
+  if (!logs.length) return `<div class="card py-12 text-center text-slate-500">${icon('reports','w-8 h-8 mx-auto mb-2 opacity-30')}<div>No finance activity recorded yet</div></div>`;
 
   return `
     <div class="card p-0">
@@ -2887,7 +2887,7 @@ function renderUnitEconomics() {
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-5">
         ${ageBuckets.map(b => {
           const total = b.list.reduce((s, i) => s + i.balance, 0);
-          const tones = { slate: 'bg-slate-50 text-slate-700 border-slate-200', amber: 'bg-amber-50 text-amber-900 border-amber-200', orange: 'bg-orange-50 text-orange-900 border-orange-200', red: 'bg-red-50 text-red-900 border-red-200', rose: 'bg-rose-100 text-rose-900 border-rose-300' };
+          const tones = { slate: 'bg-slate-50 text-slate-700 border-slate-200', amber: 'bg-amber-50 text-amber-900 border-amber-200', orange: 'bg-amber-50 text-amber-900 border-amber-200', red: 'bg-red-50 text-red-900 border-red-200', rose: 'bg-rose-100 text-rose-900 border-rose-300' };
           return `<div class="${tones[b.color]} border rounded-xl p-3 text-center">
             <div class="text-xs font-bold uppercase mb-1">${b.label}</div>
             <div class="text-base font-bold font-mono">${money(total)}</div>
@@ -2896,9 +2896,9 @@ function renderUnitEconomics() {
         }).join('')}
       </div>
       ${ageBuckets.filter(b => b.color !== 'slate' && b.list.length > 0).reverse().map(b => {
-        const tones = { amber: 'text-amber-700 bg-amber-50', orange: 'text-orange-700 bg-orange-50', red: 'text-red-700 bg-red-50', rose: 'text-rose-800 bg-rose-50' };
+        const tones = { amber: 'text-amber-700 bg-amber-50', orange: 'text-amber-700 bg-amber-50', red: 'text-red-700 bg-red-50', rose: 'text-rose-800 bg-rose-50' };
         return `<div class="mb-3">
-          <div class="text-xs font-bold ${b.color === 'amber' ? 'text-amber-700' : b.color === 'orange' ? 'text-orange-700' : b.color === 'red' ? 'text-red-700' : 'text-rose-700'} uppercase mb-1.5">${b.label} Overdue · ${money(b.list.reduce((s, i) => s + i.balance, 0))}</div>
+          <div class="text-xs font-bold ${b.color === 'amber' ? 'text-amber-700' : b.color === 'orange' ? 'text-amber-700' : b.color === 'red' ? 'text-red-700' : 'text-rose-700'} uppercase mb-1.5">${b.label} Overdue · ${money(b.list.reduce((s, i) => s + i.balance, 0))}</div>
           <div class="space-y-1">
             ${b.list.sort((a, c) => c.balance - a.balance).map(inv => {
               const stu = DB.find('students', inv.studentId);
@@ -2951,8 +2951,8 @@ function renderUnitEconomics() {
               <tr class="border-b"><td class="py-2 text-slate-500">Period</td><td class="text-right font-semibold">${lastPayroll.period}</td></tr>
               <tr class="border-b"><td class="py-2 text-slate-500">Staff count</td><td class="text-right font-semibold">${lastPayroll.staffCount}</td></tr>
               <tr class="border-b"><td class="py-2 text-slate-500">Gross Pay</td><td class="text-right font-mono font-bold">${money(lastPayroll.grossTotal)}</td></tr>
-              <tr class="border-b"><td class="py-2 pl-5 text-slate-400 text-xs">− PAYE withheld</td><td class="text-right font-mono text-xs text-slate-400">−${money(lastPayroll.payeTotal)}</td></tr>
-              <tr class="border-b"><td class="py-2 pl-5 text-slate-400 text-xs">− Employee pension</td><td class="text-right font-mono text-xs text-slate-400">−${money(lastPayroll.pensionTotal)}</td></tr>
+              <tr class="border-b"><td class="py-2 pl-5 text-slate-500 text-xs">− PAYE withheld</td><td class="text-right font-mono text-xs text-slate-500">−${money(lastPayroll.payeTotal)}</td></tr>
+              <tr class="border-b"><td class="py-2 pl-5 text-slate-500 text-xs">− Employee pension</td><td class="text-right font-mono text-xs text-slate-500">−${money(lastPayroll.pensionTotal)}</td></tr>
               <tr class="border-b bg-slate-50 font-bold"><td class="py-2.5">Net Pay (take-home)</td><td class="text-right font-mono">${money(lastPayroll.netTotal)}</td></tr>
               <tr class="border-b"><td class="py-2 text-slate-500">Employer pension (8%)</td><td class="text-right font-mono text-slate-600">${money(Math.round(lastPayroll.grossTotal * 0.08))}</td></tr>
               <tr class="bg-amber-50 font-bold"><td class="py-2.5">Total payroll cost</td><td class="text-right font-mono text-amber-900">${money(Math.round(lastPayroll.grossTotal * 1.08))}</td></tr>
@@ -3141,7 +3141,7 @@ function renderBudgets() {
                 <span class="font-mono ${over ? 'text-rose-700' : 'text-slate-600'}">${money(actual)} / ${money(b.planned)}</span>
               </div>
               <div class="progress"><div class="progress-bar ${over ? '!bg-rose-500' : ''}" style="width: ${Math.min(100, pct)}%"></div></div>
-              <div class="text-xs ${over ? 'text-rose-600' : 'text-slate-400'} mt-1">${over ? `Over budget by ${money(actual - b.planned)}` : `${pct}% used · ${money(b.planned - actual)} remaining`}</div>
+              <div class="text-xs ${over ? 'text-rose-600' : 'text-slate-500'} mt-1">${over ? `Over budget by ${money(actual - b.planned)}` : `${pct}% used · ${money(b.planned - actual)} remaining`}</div>
             </div>`;
           }).join('')}
         </div>
@@ -3199,7 +3199,7 @@ function exportPL() {
       <tr><th scope="col" align="left">EXPENSES</th><th scope="col"></th></tr>
       ${expenses.map(e => `<tr><td>${e.category} - ${e.description}</td><td align="right">${money(e.amount)}</td></tr>`).join('')}
       <tr><th scope="col" align="left">Total Expenses</th><th scope="col" align="right">${money(totalExp)}</th></tr>
-      <tr style="background:${profit >= 0 ? '#d1fae5' : '#fee2e2'}"><th scope="col" align="left">${profit >= 0 ? 'NET PROFIT' : 'NET LOSS'}</th><th scope="col" align="right">${money(Math.abs(profit))}</th></tr>
+      <tr style="background:${profit >= 0 ? '#c3f0e2' : '#fee2e2'}"><th scope="col" align="left">${profit >= 0 ? 'NET PROFIT' : 'NET LOSS'}</th><th scope="col" align="right">${money(Math.abs(profit))}</th></tr>
     </table>
   `;
   printElement(html);
@@ -3232,7 +3232,7 @@ function _storeView() {
       const marginPct = it.sellingPrice > 0 ? Math.round(margin / it.sellingPrice * 100) : 0;
       const sold = purchases.filter(p => p.itemId === it.id).reduce((s,p) => s + (p.qty||1), 0);
       return `<tr>
-        <td><div class="font-semibold text-slate-900 text-sm">${it.name}</div><div class="text-xs text-slate-400">${it.category} · per ${it.unit||'unit'}</div></td>
+        <td><div class="font-semibold text-slate-900 text-sm">${it.name}</div><div class="text-xs text-slate-500">${it.category} · per ${it.unit||'unit'}</div></td>
         <td class="text-right font-semibold">${money(it.sellingPrice)}</td>
         <td class="text-right text-slate-500">${money(it.costPrice)}</td>
         <td class="text-right font-bold ${margin>0?'text-emerald-700':'text-red-700'}">${money(margin)}</td>
@@ -3285,7 +3285,7 @@ function _storeView() {
       const cst = (p.costPrice||0) * (p.qty||1);
       return `<tr>
         <td class="text-sm text-slate-500 whitespace-nowrap">${fdate(p.purchasedAt,{short:true})}</td>
-        <td><div class="font-semibold text-sm">${stu?stu.name:'—'}</div><div class="text-xs text-slate-400">${cls?cls.name:'—'}</div></td>
+        <td><div class="font-semibold text-sm">${stu?stu.name:'—'}</div><div class="text-xs text-slate-500">${cls?cls.name:'—'}</div></td>
         <td>${itm?itm.name:'—'}</td>
         <td class="text-center">${p.qty||1}</td>
         <td class="text-right font-semibold">${money(rev)}</td>
@@ -3341,7 +3341,7 @@ function _storeView() {
     const itemRows = itemSummary.map(x => {
       const unitMargin = x.it.sellingPrice - x.it.costPrice;
       return `<tr>
-        <td><div class="font-semibold text-sm">${x.it.name}</div><div class="text-xs text-slate-400">${x.it.category}</div></td>
+        <td><div class="font-semibold text-sm">${x.it.name}</div><div class="text-xs text-slate-500">${x.it.category}</div></td>
         <td class="text-right">${x.unitsSold}</td>
         <td class="text-right text-slate-600">${money(x.cost)}</td>
         <td class="text-right font-bold ${unitMargin>0?'text-emerald-700':'text-red-700'}">${money(unitMargin)}</td>
@@ -3363,7 +3363,7 @@ function _storeView() {
       const stu = students.find(s=>s.id===stuId);
       const cls = stu ? classes.find(c=>c.id===stu.classId) : null;
       return `<tr>
-        <td><div class="font-semibold text-sm">${stu?stu.name:'—'}</div><div class="text-xs text-slate-400">${cls?cls.name:'—'}</div></td>
+        <td><div class="font-semibold text-sm">${stu?stu.name:'—'}</div><div class="text-xs text-slate-500">${cls?cls.name:'—'}</div></td>
         <td class="text-right">${d.items}</td>
         <td class="text-right font-semibold">${money(d.revenue)}</td>
         <td class="text-right text-slate-500">${money(d.cost)}</td>
@@ -3434,11 +3434,11 @@ function addStoreItemModal(editId) {
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="input-label" for="si_sell">Selling Price <span class="text-slate-400 font-normal">(what parent pays)</span></label>
+            <label class="input-label" for="si_sell">Selling Price <span class="text-slate-500 font-normal">(what parent pays)</span></label>
             <input id="si_sell" type="number" class="input" placeholder="20000" value="${edit ? edit.sellingPrice : ''}">
           </div>
           <div>
-            <label class="input-label" for="si_cost">Cost Price <span class="text-slate-400 font-normal">(what it costs you)</span></label>
+            <label class="input-label" for="si_cost">Cost Price <span class="text-slate-500 font-normal">(what it costs you)</span></label>
             <input id="si_cost" type="number" class="input" placeholder="15000" value="${edit ? edit.costPrice : ''}">
           </div>
         </div>

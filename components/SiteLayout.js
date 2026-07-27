@@ -1,17 +1,53 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { NAV_LINKS, CONTACT, ROLES } from '../data/site'
+import Icon from './Icons'
 
-// Small, reusable brand mark (Africa-inspired ring).
+// Reveals [data-reveal] elements as they scroll in. One observer for the whole
+// page rather than one per element. Elements are unobserved once shown, so
+// nothing re-animates on scroll-back and the observer drains as you read.
+// Bails out to "everything visible" if IntersectionObserver is missing or the
+// visitor asked for reduced motion.
+function useScrollReveal() {
+  useEffect(() => {
+    const nodes = Array.from(document.querySelectorAll('[data-reveal]'))
+    if (!nodes.length) return
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduced || typeof IntersectionObserver === 'undefined') {
+      nodes.forEach((n) => n.classList.add('is-visible'))
+      return
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return
+          entry.target.classList.add('is-visible')
+          io.unobserve(entry.target)
+        })
+      },
+      // Start slightly before the element's top edge arrives, so the motion
+      // finishes about when it reaches comfortable reading height. Kept early
+      // and shallow because the reveal itself runs long (1.3s).
+      { threshold: 0.05, rootMargin: '0px 0px -4% 0px' }
+    )
+    nodes.forEach((n) => io.observe(n))
+    return () => io.disconnect()
+  }, [])
+}
+
+// Official CASPAA wordmark. `light` swaps to the white cut for dark surfaces.
 export function Logo({ light = false }) {
-  const text = light ? 'text-white' : 'text-brand-800'
   return (
-    <Link href="/home" className="flex items-center gap-2 shrink-0">
-      <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 text-white grid place-items-center font-extrabold shadow-md">
-        C
-      </span>
-      <span className={`text-xl font-extrabold tracking-tight ${text}`}>CASPAA</span>
+    <Link href="/home" className="flex items-center shrink-0" aria-label="CASPAA home">
+      <img
+        src={light ? '/logo/caspaa-white.svg' : '/logo/caspaa-navy.svg'}
+        alt="CASPAA"
+        className="h-8 w-auto"
+      />
     </Link>
   )
 }
@@ -20,7 +56,7 @@ export function PrimaryButton({ href, children, className = '' }) {
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gold-500 hover:bg-gold-600 text-brand-900 font-bold text-sm shadow-lg shadow-gold-500/20 transition ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-accent-400 hover:bg-accent-300 text-[#04252a] font-bold text-sm shadow-lg shadow-accent-400/25 hover:shadow-xl hover:shadow-accent-400/40 mkt-btn ${className}`}
     >
       {children}
     </Link>
@@ -30,11 +66,11 @@ export function PrimaryButton({ href, children, className = '' }) {
 export function GhostButton({ href, children, light = false, className = '' }) {
   const base = light
     ? 'text-white border-white/30 hover:bg-white/10'
-    : 'text-brand-800 border-brand-200 hover:bg-brand-50'
+    : 'text-site-700 border-site-200 hover:bg-site-50'
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border font-semibold text-sm transition ${base} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border font-semibold text-sm mkt-btn ${base} ${className}`}
     >
       {children}
     </Link>
@@ -43,13 +79,13 @@ export function GhostButton({ href, children, light = false, className = '' }) {
 
 export function Eyebrow({ children, light = false }) {
   return (
-    <p className={`text-xs font-bold tracking-[0.15em] mb-3 ${light ? 'text-gold-400' : 'text-brand-600'}`}>
+    <p className={`text-xs font-bold tracking-[0.15em] mb-3 ${light ? 'text-accent-300' : 'text-site-700'}`}>
       {children}
     </p>
   )
 }
 
-export function Check({ className = 'text-brand-600' }) {
+export function Check({ className = 'text-site-600' }) {
   return (
     <svg viewBox="0 0 20 20" className={`w-5 h-5 shrink-0 ${className}`} fill="currentColor" aria-hidden="true">
       <path
@@ -61,40 +97,107 @@ export function Check({ className = 'text-brand-600' }) {
   )
 }
 
+// The header floats transparently over the hero and fades to white on scroll.
+// Every page under this layout opens on a bg-site-800 section, which is what
+// makes the white-on-transparent state legible; a page starting on a light
+// section would need `solid` forced on.
 function Nav() {
   const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const { pathname } = useRouter()
+
+  // "Solutions" points at /solutions/proprietors but must stay lit on every
+  // role page, so match the section rather than the exact href.
+  const isActive = (href) =>
+    href.startsWith('/solutions') ? pathname.startsWith('/solutions') : pathname === href
+
+  useEffect(() => {
+    // Past ~24px the hero has moved under the bar, so the white plate comes in.
+    const onScroll = () => setScrolled(window.scrollY > 24)
+    onScroll() // catch a restored scroll position on load / back-navigation
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // The open mobile drawer is a white panel, so the bar must go solid with it
+  // regardless of scroll — otherwise its links would be white on white.
+  const solid = scrolled || open
+
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-100">
+    <header
+      className={`fixed top-0 inset-x-0 z-40 transition-colors duration-300 ${
+        solid ? 'bg-white/90 backdrop-blur border-b border-slate-100' : 'bg-transparent border-b border-transparent'
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
-        <Logo />
-        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
-          {NAV_LINKS.map((l) => (
-            <Link key={l.href} href={l.href} className="hover:text-brand-700 transition">
-              {l.label}
-            </Link>
-          ))}
+        <Logo light={!solid} />
+        <nav className={`hidden md:flex items-center gap-8 text-sm font-semibold ${solid ? 'text-slate-600' : 'text-white/80'}`}>
+          {NAV_LINKS.map((l) => {
+            const active = isActive(l.href)
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                aria-current={active ? 'page' : undefined}
+                className={`relative py-1 transition-colors ${
+                  active
+                    ? solid ? 'text-site-700' : 'text-white'
+                    : solid ? 'hover:text-site-700' : 'hover:text-white'
+                }`}
+              >
+                {l.label}
+                {active && (
+                  <span
+                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-accent-600"
+                    aria-hidden="true"
+                  />
+                )}
+              </Link>
+            )
+          })}
         </nav>
         <div className="hidden md:flex items-center gap-3">
-          <a href="/signin" className="text-sm font-semibold text-slate-600 hover:text-brand-700">
+          <a
+            href="/signin"
+            className={`text-sm font-semibold transition-colors ${
+              solid ? 'text-slate-600 hover:text-site-700' : 'text-white/80 hover:text-white'
+            }`}
+          >
             Sign in
           </a>
           <PrimaryButton href="/contact" className="px-4 py-2.5">Book a Demo</PrimaryButton>
         </div>
         <button
-          className="md:hidden w-10 h-10 grid place-items-center rounded-lg border border-slate-200"
+          className={`md:hidden w-10 h-10 grid place-items-center rounded-lg border transition-colors ${
+            solid ? 'border-slate-200 text-slate-700' : 'border-white/30 text-white'
+          }`}
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
+          aria-expanded={open}
         >
-          <span className="text-xl leading-none">{open ? '✕' : '☰'}</span>
+          <Icon name={open ? 'close' : 'menu'} className="w-5 h-5" />
         </button>
       </div>
       {open && (
         <div className="md:hidden border-t border-slate-100 bg-white px-5 py-4 flex flex-col gap-3">
-          {NAV_LINKS.map((l) => (
-            <Link key={l.href} href={l.href} className="py-1.5 font-semibold text-slate-700" onClick={() => setOpen(false)}>
-              {l.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((l) => {
+            const active = isActive(l.href)
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                aria-current={active ? 'page' : undefined}
+                className={`py-1.5 font-semibold flex items-center gap-2 ${active ? 'text-site-700' : 'text-slate-700'}`}
+                onClick={() => setOpen(false)}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${active ? 'bg-accent-600' : 'bg-transparent'}`}
+                  aria-hidden="true"
+                />
+                {l.label}
+              </Link>
+            )
+          })}
           <a href="/signin" className="py-1.5 font-semibold text-slate-700" onClick={() => setOpen(false)}>
             Sign in
           </a>
@@ -128,14 +231,20 @@ function Footer() {
     },
   ]
   return (
-    <footer className="bg-brand-900 text-slate-300">
+    <footer className="bg-site-800 text-slate-300">
       <div className="max-w-7xl mx-auto px-5 py-14 grid gap-10 md:grid-cols-5">
         <div className="md:col-span-2">
           <Logo light />
           <p className="mt-4 text-sm text-slate-400 max-w-xs">{CONTACT.tagline}</p>
           <div className="mt-5 text-sm space-y-1">
-            <p>📧 <a className="hover:text-white" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></p>
-            <p>📞 {CONTACT.phones.join(' · ')}</p>
+            <p className="flex items-center gap-2">
+              <Icon name="mail" className="w-4 h-4 shrink-0 text-accent-300" />
+              <a className="hover:text-white" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+            </p>
+            <p className="flex items-center gap-2">
+              <Icon name="phone" className="w-4 h-4 shrink-0 text-accent-300" />
+              {CONTACT.phones.join(' · ')}
+            </p>
           </div>
         </div>
         {cols.map((c) => (
@@ -167,6 +276,7 @@ function Footer() {
 
 export default function SiteLayout({ children, title, description }) {
   const pageTitle = title ? `${title} — CASPAA` : 'CASPAA — School Operating System'
+  useScrollReveal()
   return (
     <>
       <Head>
@@ -177,7 +287,7 @@ export default function SiteLayout({ children, title, description }) {
         />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
-      <div className="min-h-screen bg-white text-slate-800">
+      <div className="mkt-shell min-h-screen bg-white text-slate-800">
         <Nav />
         <main>{children}</main>
         <Footer />

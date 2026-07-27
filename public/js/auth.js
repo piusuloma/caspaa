@@ -50,34 +50,6 @@ const DEMO_ACCOUNTS = [
   { id: 'stu_002', role: 'student', name: 'Tobi Okafor', email: 'tobi@brightlights.ng',          title: 'Student',          subtitle: 'JSS 1 — Bright Lights Academy', schoolId: 'sch_brightlights' }
 ];
 
-/* ---------- Role-differentiated login presentation ----------
-   Each role tab only changes what the login card *says* (heading, field
-   label, placeholder, image). The identifier is still resolved by
-   routeLoginIdentifier / resolveLogin — nobody's type is trusted from the
-   tab they pick, so the security model is unchanged. This mirrors the
-   Edves model (Students / Parents / Educator / Tour / Admissions) while
-   keeping CASPAA's brand colours. */
-const LOGIN_ROLES = {
-  student: {
-    key: 'student', label: 'Students', icon: 'students',
-    heading: 'Student Login', subtitle: 'Access your learning dashboard',
-    fieldLabel: 'Admission Number', placeholder: 'e.g. BL/2025/001',
-    hint: 'Sign in with your admission number, then your date of birth.'
-  },
-  parent: {
-    key: 'parent', label: 'Parents', icon: 'user',
-    heading: 'Parent Login', subtitle: 'Follow your child\'s progress',
-    fieldLabel: 'Email or Phone', placeholder: 'you@email.com · +234…',
-    hint: 'Use the email or phone number your school has on record.'
-  },
-  educator: {
-    key: 'educator', label: 'School / Staff', icon: 'teacher',
-    heading: 'School & Staff Login', subtitle: 'Owners, admins & teachers',
-    fieldLabel: 'Work email', placeholder: 'you@yourschool.ng',
-    hint: 'School owners, admins and staff sign in with their work email.'
-  }
-};
-
 /* ============================================================
    PUBLIC PROSPECTIVE-PARENT FUNNEL (pre-account, no login required)
    - Book a Tour   → tourBookings
@@ -111,7 +83,7 @@ function publicSuccess(title, ref, message) {
         <h3 class="text-xl font-bold text-slate-900 mb-1">${title}</h3>
         <p class="text-sm text-slate-500 mb-4">${message}</p>
         <div class="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2">
-          <span class="text-xs uppercase tracking-wide text-slate-400 font-semibold">Reference</span>
+          <span class="text-xs uppercase tracking-wide text-slate-500 font-semibold">Reference</span>
           <span class="font-mono font-bold text-slate-800">${ref}</span>
         </div>
       </div>`,
@@ -127,7 +99,7 @@ function bookTourModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Pick a day and time to visit. The school will confirm your slot and share directions.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -177,6 +149,112 @@ function saveTourBooking() {
   publicSuccess('Tour requested!', ref, `We've received your request for ${date} at ${time}. The school will confirm shortly by email or phone.`);
 }
 
+/* ---------- Book a Tour — full page (opened from the portal, not a modal) ---------- */
+function openTourPage() {
+  document.getElementById('modalBackdrop')?.click(); // close any open modal first
+  APP.publicView = 'tour';
+  APP.render();
+}
+
+function closeTourPage() {
+  APP.publicView = null;
+  APP.render();
+}
+
+function renderTourPage() {
+  const { schoolName } = publicSchoolContext();
+  const displayName = (typeof APP !== 'undefined' && APP.portalSchoolId && schoolName) ? schoolName : 'CASPAA';
+  return `
+    <div class="login-bg min-h-screen flex">
+
+      <!-- Hero panel (left) — CASPAA Blue field -->
+      <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12">
+        <div class="relative text-white">
+          <div class="flex items-center gap-3 mb-8">
+            <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-8 w-auto" onerror="this.remove()" />
+            ${displayName === 'CASPAA' ? '' : `<div class="pl-3 border-l border-white/25">
+              <h1 class="text-lg font-extrabold tracking-tight leading-tight">${displayName}</h1>
+              <p class="text-white/70 text-xs">Powered by CASPAA</p>
+            </div>`}
+          </div>
+
+          <h2 class="text-3xl xl:text-4xl font-extrabold leading-tight mb-2">
+            Come and see the school for yourself
+          </h2>
+          <p class="text-white/80 text-sm max-w-md mb-7">Book a visit at a time that suits you. Meet the team, walk the grounds and see how ${displayName === 'CASPAA' ? 'the school' : displayName} runs day to day. We'll confirm your slot and share directions.</p>
+
+          <div class="grid grid-cols-2 gap-3">
+            ${PORTAL_FEATURES.map(portalFeatureCard).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Form area (right) -->
+      <div class="flex-1 flex items-center justify-center p-6 sm:p-10 overflow-y-auto">
+        <div class="login-card w-full max-w-md">
+          <img src="logo/caspaa-navy.svg" alt="CASPAA" class="lg:hidden h-8 w-auto mx-auto mb-8" onerror="this.remove()" />
+
+          <button type="button" onclick="closeTourPage()" class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-4">
+            <span class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">${icon('arrow_left', 'w-4 h-4')}</span>
+            <span class="font-semibold text-slate-700">Back to sign in</span>
+          </button>
+
+          <div class="bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-6 sm:p-8">
+            <h3 class="text-2xl font-bold text-slate-900 leading-tight mb-1">Book a Tour${displayName === 'CASPAA' ? '' : ' · ' + displayName}</h3>
+            <p class="text-sm text-slate-500 mb-5">Pick a day and time to visit. All fields marked * are required.</p>
+
+            <div class="space-y-3">
+              <div><label class="input-label">Parent / Guardian Name *</label><input id="tr_name" class="input" placeholder="e.g. Mrs. Grace Bello" /></div>
+              <div><label class="input-label">Phone *</label><input id="tr_phone" class="input" placeholder="+234…" /></div>
+              <div><label class="input-label">Email *</label><input id="tr_email" type="email" class="input" placeholder="you@email.com" autocomplete="email" /></div>
+              <div class="grid grid-cols-2 gap-3">
+                <div><label class="input-label">Child's Name</label><input id="tr_child" class="input" placeholder="Optional" /></div>
+                <div><label class="input-label">Class of Interest</label>
+                  <select id="tr_class" class="input">${CLASS_LEVELS.map(c => `<option>${c}</option>`).join('')}</select>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div><label class="input-label">Preferred Date *</label><input id="tr_date" type="date" class="input" min="${today()}" /></div>
+                <div><label class="input-label">Preferred Time *</label>
+                  <select id="tr_time" class="input">${TOUR_SLOTS.map(s => `<option>${s}</option>`).join('')}</select>
+                </div>
+              </div>
+              <div><label class="input-label">Anything we should know?</label><textarea id="tr_note" class="input" rows="2" placeholder="Optional"></textarea></div>
+              <button class="btn btn-primary w-full !py-2.5" onclick="saveTourBookingPage()">${icon('calendar','w-4 h-4')} Request Tour</button>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-500 text-center mt-5">Prefer to talk first? Your school will confirm the slot by email or phone.</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveTourBookingPage() {
+  const g = id => (document.getElementById(id).value || '').trim();
+  const name = g('tr_name'), phone = g('tr_phone'), email = g('tr_email');
+  const date = g('tr_date'), time = g('tr_time');
+  if (!name || !phone || !email) { toast('Please fill your name, phone and email', 'danger'); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Enter a valid email', 'danger'); return; }
+  if (!date) { toast('Please choose a preferred date', 'danger'); return; }
+
+  const { schoolId } = publicSchoolContext();
+  const ref = publicRef('TOUR');
+  DB.insert('tourBookings', {
+    id: uid('tour'), ref, schoolId,
+    parentName: name, phone, email,
+    childName: g('tr_child'), classOfInterest: g('tr_class'),
+    date, time, note: g('tr_note'),
+    status: 'requested', createdAt: now()
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId, actor: email, action: 'tour_requested', target: name, timestamp: now() });
+  // Return to sign-in, then confirm.
+  APP.publicView = null;
+  APP.render();
+  publicSuccess('Tour requested!', ref, `We've received your request for ${date} at ${time}. The school will confirm shortly by email or phone.`);
+}
+
 /* ---------- Admissions application ---------- */
 function admissionsModal() {
   const { schoolName } = publicSchoolContext();
@@ -185,10 +263,10 @@ function admissionsModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Submit your child's details to begin the application. The school reviews it and reaches out to schedule a visit and next steps.
         </div>
-        <div class="text-xs font-semibold uppercase text-slate-400 pt-1">Child's details</div>
+        <div class="text-xs font-semibold uppercase text-slate-500 pt-1">Child's details</div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label" for="ad_child">Child's Full Name *</label><input id="ad_child" class="input" placeholder="e.g. Tobi Okafor" /></div>
           <div><label class="input-label" for="ad_dob">Date of Birth *</label><input id="ad_dob" type="date" class="input" max="${today()}" /></div>
@@ -202,7 +280,7 @@ function admissionsModal() {
           </div>
         </div>
         <div><label class="input-label" for="ad_prev">Previous School</label><input id="ad_prev" class="input" placeholder="Optional" /></div>
-        <div class="text-xs font-semibold uppercase text-slate-400 pt-1">Parent / Guardian</div>
+        <div class="text-xs font-semibold uppercase text-slate-500 pt-1">Parent / Guardian</div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label" for="ad_parent">Full Name *</label><input id="ad_parent" class="input" placeholder="e.g. Mr. Tunde Okafor" /></div>
           <div><label class="input-label" for="ad_phone">Phone *</label><input id="ad_phone" class="input" placeholder="+234…" /></div>
@@ -256,7 +334,7 @@ function careersModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Interested in joining the team? Tell us about yourself and we'll be in touch when a matching role opens.
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -298,16 +376,6 @@ function saveCareerApplication() {
   publicSuccess('Interest registered!', ref, `Thanks ${name.split(' ')[0]} — we've saved your details and will reach out when a matching role opens.`);
 }
 
-// Module-level: which role tab is active (null = neutral / any).
-let _loginRole = null;
-
-function loginRoleTab(r) {
-  return `<button type="button" data-loginrole="${r.key}"
-      class="login-role-tab flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:text-brand-700 hover:bg-brand-50 transition whitespace-nowrap">
-      ${icon(r.icon, 'w-4 h-4')}<span>${r.label}</span>
-    </button>`;
-}
-
 /* ---------- Public portal feature cards (glass on brand gradient) ---------- */
 const PORTAL_FEATURES = [
   { icon: 'book',    title: 'Learning Assistant', desc: 'Personalised, curriculum-aligned help for every learner' },
@@ -328,55 +396,34 @@ function portalActionBtn(label, iconName, onclick) {
   return `<button type="button" onclick="${onclick}" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 border border-white/15 text-white text-sm font-semibold hover:bg-white/20 transition">${icon(iconName, 'w-4 h-4')}${label}</button>`;
 }
 
-function quickAccessBtn(label, iconName, onclick) {
-  return `<button type="button" onclick="${onclick}" class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:border-brand-400 hover:text-brand-700 hover:bg-brand-50 transition">${icon(iconName, 'w-4 h-4')}${label}</button>`;
-}
-
 /* ---------- Login screen (public portal) ---------- */
 function renderLogin() {
   const { schoolName } = publicSchoolContext();
   const displayName = (typeof APP !== 'undefined' && APP.portalSchoolId && schoolName) ? schoolName : 'CASPAA';
   return `
-    <div class="login-bg min-h-screen flex items-center justify-center p-4 lg:p-8">
-      <div class="w-full max-w-6xl grid lg:grid-cols-2 gap-6 lg:gap-10 items-center">
+    <div class="login-bg min-h-screen flex">
 
-        <!-- Portal / branding side -->
-        <div class="text-white order-2 lg:order-1">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="w-12 h-12 rounded-2xl bg-brand-500 flex items-center justify-center text-xl font-extrabold shadow-lg">${displayName.charAt(0).toUpperCase()}</div>
-            <div>
-              <h1 class="text-2xl font-extrabold tracking-tight">${displayName}</h1>
-              <p class="text-brand-200 text-xs">${displayName === 'CASPAA' ? 'School Operating System' : 'Powered by CASPAA'}</p>
-            </div>
-          </div>
+      <!-- Hero panel (left) — image only; the wordmark now sits above the form heading. -->
+      <div id="loginHero" class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col items-center justify-start p-10 xl:p-12" style="background-image:url('logo/hero-default.jpg')">
+        ${displayName === 'CASPAA' ? '' : `<div class="relative text-white text-center">
+          <h1 class="text-xl font-extrabold tracking-tight leading-tight">${displayName}</h1>
+          <p class="text-white/70 text-xs">Powered by CASPAA</p>
+        </div>`}
+      </div>
 
-          <h2 class="text-3xl lg:text-4xl font-extrabold leading-tight mb-2">
-            Your whole school, <span class="text-brand-300">one platform</span>
-          </h2>
-          <p class="text-brand-100/80 text-sm lg:text-base max-w-md mb-6">From admissions and learning to attendance, results and fees — CASPAA brings everything your school runs on into one secure place for students, parents and staff.</p>
+      <!-- Form area (right) -->
+      <div class="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <div class="login-card w-full max-w-md">
 
-          <div class="grid grid-cols-2 gap-3 max-w-lg">
-            ${PORTAL_FEATURES.map(portalFeatureCard).join('')}
-          </div>
-
-          <div class="flex flex-wrap gap-2 mt-6">
-            ${portalActionBtn('Admissions', 'students', 'admissionsModal()')}
-            ${portalActionBtn('Careers', 'teacher', 'careersModal()')}
-            ${portalActionBtn('Book a Tour', 'calendar', 'bookTourModal()')}
-          </div>
-        </div>
-
-        <!-- Login card (role-differentiated tabs → identifier-first, two-step) -->
-        <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 order-1 lg:order-2 w-full max-w-md mx-auto lg:mx-0">
+        <!-- Login card (identifier-first, two-step) -->
+        <div class="bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-6 sm:p-8">
 
           <!-- Step 1: who are you? -->
           <div id="loginStep1">
-            <div class="flex items-center gap-3 mb-1">
-              <div id="loginRoleImg" class="hidden w-11 h-11 rounded-2xl bg-brand-50 text-brand-700 flex-shrink-0 items-center justify-center"></div>
-              <div>
-                <h3 id="loginHeading" class="text-xl font-bold text-slate-900 leading-tight">Sign in to your dashboard</h3>
-                <p id="loginSubtitle" class="text-sm text-slate-500">Choose who you are, or just enter your details below.</p>
-              </div>
+            <img src="logo/caspaa-navy.svg" alt="CASPAA" class="h-6 w-auto mb-4" onerror="this.remove()" />
+            <div class="mb-1">
+              <h3 class="text-xl font-bold text-slate-900 leading-tight">Sign in to your dashboard</h3>
+              <p class="text-sm text-slate-500">Enter your details below to continue.</p>
             </div>
             <div class="space-y-3 mt-5">
               <div>
@@ -384,22 +431,12 @@ function renderLogin() {
                 <input type="text" class="input" id="loginIdentifier" placeholder="you@school.ng  ·  BL/2025/001" autocomplete="username" />
               </div>
               <button class="btn btn-primary w-full" id="loginContinueBtn">Continue</button>
-              <p class="text-xs text-slate-400 text-center" id="loginFieldHint">Staff &amp; parents use email · students use their admission number</p>
+              <p class="text-xs text-slate-500 text-center" id="loginFieldHint">Staff &amp; parents use email · students use their admission number</p>
             </div>
 
-            <!-- Sign in as: the three member roles of an onboarded school -->
-            <div class="mt-5 pt-5 border-t border-slate-100">
-              <div class="text-xs font-semibold uppercase text-slate-400 text-center mb-2.5">Sign in as</div>
-              <div class="grid grid-cols-3 gap-2">
-                ${quickAccessBtn('School / Staff', 'teacher', "selectLoginRole('educator')")}
-                ${quickAccessBtn('Parents', 'user', "selectLoginRole('parent')")}
-                ${quickAccessBtn('Students', 'students', "selectLoginRole('student')")}
-              </div>
-            </div>
-
-            <div class="mt-4 pt-4 border-t border-slate-100 text-center">
-              <p class="text-xs text-slate-400">Prospective parent?
-                <button type="button" class="text-slate-500 font-medium hover:text-slate-700 underline" onclick="bookTourModal()">Book a tour</button>
+            <div class="mt-5 pt-5 border-t border-slate-100 text-center">
+              <p class="text-xs text-slate-500">Prospective parent?
+                <button type="button" class="text-slate-500 font-medium hover:text-slate-700 underline" onclick="openTourPage()">Book a tour</button>
                 or
                 <button type="button" class="text-slate-500 font-medium hover:text-slate-700 underline" onclick="admissionsModal()">apply for admission</button>
               </p>
@@ -416,53 +453,13 @@ function renderLogin() {
           </div>
 
           <div class="mt-6 pt-5 border-t border-slate-100 text-center">
-            <p class="text-xs text-slate-400">By signing in, you agree to CASPAA's Terms and Privacy Policy. Your data is encrypted with AES-256.</p>
+            <p class="text-xs text-slate-500">By signing in, you agree to CASPAA's Terms and Privacy Policy. Your data is encrypted with AES-256.</p>
           </div>
         </div>
-
+        </div>
       </div>
     </div>
   `;
-}
-
-/* ---------- Apply a role tab's presentation (does not change auth logic) ---------- */
-function selectLoginRole(roleKey) {
-  const r = LOGIN_ROLES[roleKey] || null;
-  _loginRole = r ? r.key : null;
-
-  const heading = document.getElementById('loginHeading');
-  const subtitle = document.getElementById('loginSubtitle');
-  const fieldLabel = document.getElementById('loginFieldLabel');
-  const hint = document.getElementById('loginFieldHint');
-  const input = document.getElementById('loginIdentifier');
-  const img = document.getElementById('loginRoleImg');
-
-  if (r) {
-    heading.textContent = r.heading;
-    subtitle.textContent = r.subtitle;
-    fieldLabel.textContent = r.fieldLabel;
-    hint.textContent = r.hint;
-    input.placeholder = r.placeholder;
-    img.innerHTML = icon(r.icon, 'w-6 h-6');
-    img.classList.remove('hidden'); img.classList.add('flex');
-  } else {
-    heading.textContent = 'Sign in to your dashboard';
-    subtitle.textContent = 'Choose who you are, or just enter your details below.';
-    fieldLabel.textContent = 'Email or Admission Number';
-    hint.textContent = 'Staff & parents use email · students use their admission number';
-    input.placeholder = 'you@school.ng  ·  BL/2025/001';
-    img.classList.add('hidden'); img.classList.remove('flex');
-  }
-
-  // Active-tab styling
-  document.querySelectorAll('.login-role-tab').forEach(t => {
-    const active = t.dataset.loginrole === _loginRole;
-    t.classList.toggle('bg-brand-50', active);
-    t.classList.toggle('text-brand-700', active);
-    t.classList.toggle('text-slate-500', !active);
-  });
-
-  if (input) setTimeout(() => input.focus(), 0);
 }
 
 /* ---------- Resolve an email + password against every account source ----------
@@ -575,7 +572,7 @@ function bindLoginHandlers() {
           <label class="input-label" for="loginPassword">Password</label>
           <div class="relative">
             <input type="password" class="input pr-10" id="loginPassword" placeholder="••••••••" autocomplete="current-password" />
-            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" aria-label="Show or hide password">
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600" onclick="togglePwVisibility('loginPassword', this)" aria-label="Show or hide password">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
           </div>
@@ -585,7 +582,7 @@ function bindLoginHandlers() {
           <button type="button" class="text-sm text-brand-700 font-semibold" onclick="toast('If that account exists, a reset link has been sent.','info')">Forgot password?</button>
         </div>
         <button class="btn btn-primary w-full" id="loginSubmitBtn">Sign in</button>
-        <p class="text-xs text-slate-400 text-center">Demo accounts use password <strong>demo1234</strong></p>`;
+        <p class="text-xs text-slate-500 text-center">Demo accounts use password <strong>demo1234</strong></p>`;
     }
 
     step1.classList.add('hidden');
@@ -613,7 +610,7 @@ function bindLoginHandlers() {
     if (res.acceptInvite) res.acceptInvite();
     const user = res.user;
     if (user.role === 'superadmin' || user.role === 'finance') {
-      showOTPModal(user);
+      showOTPScreen(user);
     } else {
       AUTH.login(user);
       APP.render();
@@ -646,15 +643,6 @@ function bindLoginHandlers() {
   idInput.addEventListener('keydown', e => { if (e.key === 'Enter') goToStep2(); });
   document.getElementById('loginBackBtn').onclick = goToStep1;
 
-  // Role tabs: presentation only — toggling off a re-clicked tab returns to neutral.
-  _loginRole = null;
-  document.querySelectorAll('.login-role-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const key = tab.dataset.loginrole;
-      selectLoginRole(_loginRole === key ? null : key);
-    });
-  });
-
   setTimeout(() => idInput.focus(), 0);
 }
 
@@ -669,8 +657,8 @@ function signupSchoolModal() {
     title: 'Sign up your school',
     size: 'lg',
     body: `
-      <div class="space-y-3">
-        <div class="bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-900">
+      <div class="signup-form space-y-4">
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
           Register your school with your <strong>official school email</strong> and upload a verification document. To keep the platform secure, our team reviews every school before the dashboard is unlocked — usually within 1 business day.
         </div>
         <div><label class="input-label" for="su_name">School Name *</label><input id="su_name" class="input" placeholder="e.g. Sunrise Academy" /></div>
@@ -688,22 +676,22 @@ function signupSchoolModal() {
         </div>
         <div><label class="input-label" for="su_doc">School Verification Document *</label>
           <input id="su_doc" type="file" class="input" accept=".pdf,.jpg,.jpeg,.png" />
-          <p class="text-xs text-slate-400 mt-1">CAC certificate, Ministry of Education approval, or similar proof. Required to verify your school.</p>
+          <p class="text-xs text-slate-500 mt-1">CAC certificate, Ministry of Education approval, or similar proof. Required to verify your school.</p>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label" for="su_pw">Password *</label>
             <div class="relative">
               <input id="su_pw" type="password" class="input pr-10" placeholder="Min 8 characters" />
-              <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('su_pw', this)" aria-label="Show or hide password">${eye}</button>
+              <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600" onclick="togglePwVisibility('su_pw', this)" aria-label="Show or hide password">${eye}</button>
             </div>
           </div>
           <div><label class="input-label" for="su_pw2">Confirm Password *</label><input id="su_pw2" type="password" class="input" placeholder="Repeat password" /></div>
         </div>
-        <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" id="su_terms" class="w-4 h-4 accent-brand-600" /> I agree to CASPAA's Terms and Privacy Policy</label>
+        <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" id="su_terms" class="w-5 h-5 accent-brand-600" /> I agree to CASPAA's Terms and Privacy Policy</label>
       </div>
     `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
-             <button class="btn btn-primary" onclick="saveSchoolSignup()">${icon('check','w-4 h-4')} Create account</button>`
+    footer: `<button class="btn btn-lg btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+             <button class="btn btn-lg btn-primary" onclick="saveSchoolSignup()">${icon('check','w-5 h-5')} Create account</button>`
   });
 }
 
@@ -781,23 +769,23 @@ function renderVerificationPending(school) {
             : `Thanks, ${(school.proprietor || '').split(' ')[0]}. Our team is reviewing <strong>${school.name}</strong>. You'll get full access as soon as it's approved — usually within 1 business day.`}
         </p>
 
-        ${rejected && v.reason ? `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-800 text-left mb-4"><strong>Reviewer note:</strong> ${v.reason}</div>` : ''}
+        ${rejected && v.reason ? `<div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-800 text-left mb-4"><strong>Reviewer note:</strong> ${v.reason}</div>` : ''}
 
         <div class="bg-slate-50 rounded-xl p-4 text-left mb-5">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold uppercase text-slate-500">Status</span>
             <span class="badge ${rejected ? 'badge-danger' : 'badge-warn'}">${rejected ? 'Rejected' : 'Under review'}</span>
           </div>
-          <div class="text-sm text-slate-600"><span class="text-slate-400">School:</span> ${school.name}</div>
-          <div class="text-sm text-slate-600"><span class="text-slate-400">Official email:</span> ${school.email}</div>
-          <div class="text-sm text-slate-600"><span class="text-slate-400">Documents:</span> ${docs.length ? docs.map(d => d.name).join(', ') : '—'}</div>
+          <div class="text-sm text-slate-600"><span class="text-slate-500">School:</span> ${school.name}</div>
+          <div class="text-sm text-slate-600"><span class="text-slate-500">Official email:</span> ${school.email}</div>
+          <div class="text-sm text-slate-600"><span class="text-slate-500">Documents:</span> ${docs.length ? docs.map(d => d.name).join(', ') : '—'}</div>
         </div>
 
         <div class="flex flex-col gap-2">
           <button class="btn btn-primary w-full" onclick="addVerificationDoc()">${icon('paperclip','w-4 h-4')} ${rejected ? 'Re-submit document' : 'Add another document'}</button>
           <button class="btn btn-secondary w-full" onclick="AUTH.logout()">${icon('logout','w-4 h-4')} Sign out</button>
         </div>
-        <p class="text-xs text-slate-400 mt-4">Need help? Contact the CASPAA team at support@caspaa.com</p>
+        <p class="text-xs text-slate-500 mt-4">Need help? Contact the CASPAA team at support@caspaa.com</p>
       </div>
     </div>
   `;
@@ -849,14 +837,14 @@ function promptFirstLoginPasswordChange(account) {
     title: 'Change Your Password',
     body: `
       <div class="space-y-3">
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
           <strong>Action required:</strong> For your security, please set a personal password before continuing. You will not be able to proceed until this is done.
         </div>
         <div>
           <label class="input-label" for="fl_pw_new">New Password</label>
           <div class="relative">
             <input type="password" id="fl_pw_new" class="input pr-10" placeholder="Minimum 8 characters" />
-            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_new',this)" aria-label="Show or hide password">
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_new',this)" aria-label="Show or hide password">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
           </div>
@@ -865,7 +853,7 @@ function promptFirstLoginPasswordChange(account) {
           <label class="input-label" for="fl_pw_confirm">Confirm Password</label>
           <div class="relative">
             <input type="password" id="fl_pw_confirm" class="input pr-10" placeholder="Repeat new password" />
-            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_confirm',this)" aria-label="Show or hide password">
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600" onclick="togglePwVisibility('fl_pw_confirm',this)" aria-label="Show or hide password">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
           </div>
@@ -897,40 +885,61 @@ function saveFirstLoginPassword(accountId) {
   APP.render();
 }
 
-function showOTPModal(account) {
+function showOTPScreen(account) {
   const otp = String(Math.floor(100000 + Math.random() * 900000));
-  // In real app, we'd send via email. Here we display it.
-  modal({
-    title: 'Two-Factor Authentication',
-    size: '',
-    body: `
-      <div class="text-center py-4">
-        <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center">${icon('bell', 'w-7 h-7')}</div>
-        <p class="text-slate-700 mb-1">For security, we need to verify your identity.</p>
-        <p class="text-sm text-slate-500 mb-5">A 6-digit code was sent to <strong>${account.email}</strong></p>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm">
-          <div class="text-amber-800 font-semibold mb-1">Demo OTP (for testing)</div>
-          <div class="text-2xl font-mono font-bold text-amber-900 tracking-widest">${otp}</div>
-        </div>
-        <input id="otpInput" maxlength="6" class="input text-center text-2xl font-mono tracking-widest" placeholder="000000" />
+  // In a real app the code is emailed; here we display it for the demo.
+  document.getElementById('app').innerHTML = `
+    <div class="login-bg min-h-screen flex">
+
+      <!-- Hero panel (left) — deep CASPAA Green -->
+      <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12">
+        <img src="logo/caspaa-white.svg" alt="CASPAA" class="relative h-8 w-auto" onerror="this.remove()" />
       </div>
-    `,
-    footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click()">Cancel</button>
-      <button class="btn btn-primary" id="otpVerify">Verify & Sign in</button>
-    `
-  });
 
-  setTimeout(() => document.getElementById('otpInput').focus(), 100);
+      <!-- Verification card (right) -->
+      <div class="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <div class="login-card w-full max-w-md">
+          <img src="logo/caspaa-navy.svg" alt="CASPAA" class="lg:hidden h-8 w-auto mx-auto mb-8" />
+          <div class="bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-6 sm:p-8">
+            <div class="w-12 h-12 mb-4 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center">${icon('shield', 'w-6 h-6')}</div>
+            <h3 class="text-2xl font-bold text-slate-900 mb-1">Two-factor authentication</h3>
+            <p class="text-sm text-slate-500 mb-6">A 6-digit code was sent to <strong class="text-slate-700">${account.email}</strong></p>
 
-  document.getElementById('otpVerify').onclick = () => {
-    const entered = document.getElementById('otpInput').value.trim();
+            <div class="bg-amber-50 rounded-lg p-3 mb-5 text-center">
+              <div class="text-xs text-amber-800 font-semibold mb-1 uppercase tracking-wide">Demo code (for testing)</div>
+              <div class="text-2xl font-mono font-bold text-amber-900 tracking-[0.3em]">${otp}</div>
+            </div>
+
+            <form id="otpForm" class="space-y-4">
+              <div>
+                <label class="input-label" for="otpInput">Verification code</label>
+                <input id="otpInput" inputmode="numeric" maxlength="6" class="input text-center text-2xl font-mono tracking-[0.4em]" placeholder="000000" autocomplete="one-time-code" />
+              </div>
+              <button type="submit" class="btn btn-accent w-full" id="otpVerify">Verify &amp; sign in</button>
+            </form>
+
+            <div class="text-center mt-4">
+              <button type="button" id="otpBack" class="text-sm text-coral-600 hover:text-coral-700 font-semibold">← Back to sign in</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const input = document.getElementById('otpInput');
+  setTimeout(() => input && input.focus(), 100);
+
+  document.getElementById('otpForm').onsubmit = (e) => {
+    e.preventDefault();
+    const entered = input.value.trim();
     if (entered !== otp) { toast('Invalid code. Please try again.', 'danger'); return; }
-    document.getElementById('modalBackdrop').click();
     AUTH.login(account);
-    toast(`Welcome back, ${account.name.split(' ')[0]}!`);
+    toast(`Welcome back, ${account.name.split(' ')[0]}!`, 'success');
     APP.render();
   };
+
+  document.getElementById('otpBack').onclick = () => { APP.render(); };
 }
 
 AUTH.init();
