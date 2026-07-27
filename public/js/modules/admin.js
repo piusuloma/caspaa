@@ -9,6 +9,9 @@
    - Principal / Finance / etc.: stored on AUTH.current.schoolId
    ============================================================ */
 function currentSchoolId() {
+  // Multi-branch: a group owner browsing a specific branch scopes everything to it
+  // (see modules/group.js). When no branch is selected they see the group overview.
+  if (typeof isGroupOwner === 'function' && isGroupOwner() && APP._activeBranchId) return APP._activeBranchId;
   return (AUTH.current && AUTH.current.schoolId) || (AUTH.current && AUTH.current.id) || 'sch_brightlights';
 }
 

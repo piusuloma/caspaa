@@ -981,7 +981,7 @@ function view_stu_timetable() {
 function view_stu_wallet() {
   const s = me();
   if (!s) return emptyState({ title: 'Not found', icon: 'user', body: 'Please sign in again.' });
-  return renderStudentWallet(s.id, s.schoolId);
+  return `${pageHeader({ title: 'My Wallet', subtitle: 'School fees, payments, and account balance' })}${renderStudentWallet(s.id, s.schoolId)}`;
 }
 
 function renderStudentWallet(studentId, schoolId) {
