@@ -7,6 +7,13 @@
 const DB_KEY = 'caspaa_db_v5';
 const SESSION_KEY = 'caspaa_session_v1';
 
+/* Seed schema version. A browser that stored its database before a new block of
+   seed data existed would never see that data again — DB.load() only seeds when
+   the key is absent. Bump this when seedDatabase() gains something an existing
+   database should also get, and add the matching step in DB._migrate(). Data the
+   user entered is never touched: migrations only ADD what is missing. */
+const SEED_VERSION = 6;
+
 /* ---------- Utility ---------- */
 const uid = (prefix = 'id') => `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 const today = () => new Date().toISOString().slice(0, 10);
@@ -1387,6 +1394,7 @@ function seedDatabase() {
   })();
 
   return {
+    _seedVersion: SEED_VERSION,
     schools, schoolGroups, classes, subjects, teachers, parents, students,
     feeStructures, invoices, transactions, walletLedger, attendance, results,
     assignments, conversations, announcements, inventory,
@@ -1426,6 +1434,45 @@ function seedDatabase() {
   };
 }
 
+/* ---------- Seed migrations ----------
+   Each step brings an ALREADY-STORED database up to the next SEED_VERSION by
+   adding only what is missing. Never remove or overwrite a row: a stored
+   database may contain real work done during a demo. */
+
+// v6 — the multi-branch layer (school group + the Bright Lights Ikeja branch).
+// Without this, a browser seeded before multi-branch existed has no schoolGroups
+// table and no groupId on the HQ school, so hasFeature('multibranch') is false,
+// the Group Overview / Branches nav never appears and isGroupOwner() stays false.
+function seedMigration6(d) {
+  if (Array.isArray(d.schoolGroups) && d.schoolGroups.length) return false;
+
+  const fresh = seedDatabase();
+  const BRANCH_ID = 'sch_brightlights_ikeja';
+
+  d.schoolGroups = fresh.schoolGroups || [];
+
+  // Pull across every seeded row that belongs to the group layer or the new
+  // branch, skipping any id the stored database already has.
+  Object.keys(fresh).forEach(table => {
+    if (!Array.isArray(fresh[table])) return;
+    if (!Array.isArray(d[table])) d[table] = [];
+    const have = new Set(d[table].map(r => r && r.id));
+    fresh[table].forEach(row => {
+      if (!row || have.has(row.id)) return;
+      if (row.id === BRANCH_ID || row.schoolId === BRANCH_ID || row.groupId) d[table].push(row);
+    });
+  });
+
+  // The HQ school joins the group and keeps its add-on entitlements. Bright
+  // Lights is on Professional, so multibranch is a per-school override.
+  const hq = (d.schools || []).find(s => s.id === 'sch_brightlights');
+  if (hq) {
+    hq.groupId = 'grp_brightlights';
+    hq.features = Object.assign({ }, hq.features, { multibranch: true, transport: true });
+  }
+  return true;
+}
+
 /* ---------- DB Interface ---------- */
 const DB = {
   _data: null,
@@ -1433,12 +1480,33 @@ const DB = {
     if (this._data) return this._data;
     const raw = localStorage.getItem(DB_KEY);
     if (raw) {
-      try { this._data = JSON.parse(raw); return this._data; }
+      try {
+        this._data = JSON.parse(raw);
+        if (this._migrate()) this.save();
+        return this._data;
+      }
       catch (e) { console.warn('DB corrupt, reseeding'); }
     }
     this._data = seedDatabase();
     this.save();
     return this._data;
+  },
+  // Runs on every load of a stored database; a no-op once it is current.
+  _migrate() {
+    const d = this._data;
+    if (!d || typeof d !== 'object') return false;
+    // Databases stored before versioning began are v5 — the release this shipped in.
+    const from = typeof d._seedVersion === 'number' ? d._seedVersion : 5;
+    if (from >= SEED_VERSION) return false;
+    let changed = false;
+    try {
+      if (from < 6) changed = seedMigration6(d) || changed;
+    } catch (e) {
+      console.error('Seed migration failed; leaving the stored database untouched.', e);
+      return false;
+    }
+    d._seedVersion = SEED_VERSION;
+    return true;
   },
   // Writes mutate the in-memory cache first, so a failed persist leaves the UI
   // showing data that is already gone on reload. Never fail silently here.
