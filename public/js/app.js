@@ -207,6 +207,8 @@ const APP = {
 
     const user = AUTH.current;
     const nav = this.navFor(user.role);
+    // Coloured sidebar for every role except the platform super admin (kept clean white).
+    const sidebarBg = user.role === 'superadmin' ? 'bg-white' : 'sidebar-tinted';
 
     // render() replaces the whole shell via innerHTML, which destroys the element the user
     // is typing into — every search box lost focus after ONE character, and callers worked
@@ -222,7 +224,7 @@ const APP = {
       <div class="min-h-screen flex bg-slate-50">
 
         <!-- Sidebar (desktop) -->
-        <aside class="hidden lg:flex w-64 bg-white border-r border-slate-200 flex-col fixed h-screen">
+        <aside class="hidden lg:flex w-64 ${sidebarBg} border-r border-slate-200 flex-col fixed h-screen">
           <div class="px-5 py-5 border-b border-slate-200">
             <img src="logo/caspaa-navy.svg" alt="CASPAA" class="h-6 w-auto" />
             <div class="text-xs text-slate-500 mt-2">${roleLabel(user.role)}</div>
@@ -247,7 +249,7 @@ const APP = {
         ${this.sidebarOpen ? `
           <div class="lg:hidden fixed inset-0 z-40">
             <div class="absolute inset-0 bg-slate-900/60" onclick="APP.sidebarOpen=false; APP.render()"></div>
-            <aside class="absolute left-0 top-0 bottom-0 w-72 bg-white flex flex-col">
+            <aside class="absolute left-0 top-0 bottom-0 w-72 ${sidebarBg} flex flex-col">
               <div class="px-5 py-5 border-b border-slate-200">
                 <img src="logo/caspaa-navy.svg" alt="CASPAA" class="h-6 w-auto" />
                 <div class="text-xs text-slate-500 mt-2">${roleLabel(user.role)}</div>

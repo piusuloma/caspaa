@@ -136,6 +136,14 @@ select.input option { color: #0f172a; }
 .nav-item.signout:hover { background: #fee2e2; color: #b91c1c; }
 .nav-item.signout.active { background: #fee2e2; color: #b91c1c; }
 
+/* Coloured sidebar — every role except the super admin. Soft website-teal
+   wash; nav items read as teal-grey, the active item lifts to a white pill. */
+.sidebar-tinted { background: linear-gradient(180deg, #daedee 0%, #eef6f7 100%); border-right-color: #b6dade !important; }
+.sidebar-tinted .nav-item:not(.signout) { color: #3f5e63; }
+.sidebar-tinted .nav-item:not(.signout):hover { background: rgba(255,255,255,0.6); color: #06545d; }
+.sidebar-tinted .nav-item.active:not(.signout) { background: #ffffff; color: #086c77; font-weight: 600; box-shadow: 0 1px 4px rgba(8,84,119,0.15); }
+.sidebar-tinted .nav-item.active:not(.signout):hover { background: #ffffff; color: #086c77; }
+
 /* Mobile bottom nav */
 .bnav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px var(--s-2); font-size: 0.65rem; color: var(--muted); font-weight: 500; cursor: pointer; flex: 1; }
 .bnav-item.active { color: var(--brand-600); }
