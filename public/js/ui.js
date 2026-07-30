@@ -245,20 +245,31 @@ function renderSubView(viewFnName) {
 
 /* ---------- Stat Card ---------- */
 function statCard({ label, value, trend, icon: iconName, color = 'brand', tooltip }) {
-  const colorMap = {
-    brand: 'bg-brand-50 text-brand-700',
-    gold: 'bg-amber-50 text-amber-700',
-    blue: 'bg-brand-50 text-brand-700',
-    rose: 'bg-rose-50 text-rose-700',
-    purple: 'bg-brand-50 text-brand-700',
-    // Aliases callers already pass — previously fell through to class="undefined".
-    // Off-brand hues resolve to the brand scale; amber/red stay semantic.
-    slate: 'bg-slate-100 text-slate-700',
-    emerald: 'bg-brand-50 text-brand-700',
-    green: 'bg-brand-50 text-brand-700',
-    amber: 'bg-amber-50 text-amber-700',
-    red: 'bg-rose-50 text-rose-700'
+  // Colourful, brand-anchored stat cards: a soft tinted card + a vivid gradient
+  // icon chip per hue. Anchored on the website teal (site #0a8491), CASPAA green
+  // (accent) and gold, extended with harmonious data hues (sky/violet/rose).
+  // `!bg-…` wins over the base .stat white background regardless of CSS order.
+  const C = {
+    brand:   { tint: '!bg-site-50',    chip: 'from-site-400 to-site-600' },
+    teal:    { tint: '!bg-site-50',    chip: 'from-site-400 to-site-600' },
+    green:   { tint: '!bg-accent-50',  chip: 'from-accent-400 to-accent-600' },
+    emerald: { tint: '!bg-accent-50',  chip: 'from-accent-400 to-accent-600' },
+    gold:    { tint: '!bg-amber-50',   chip: 'from-amber-400 to-amber-500' },
+    amber:   { tint: '!bg-amber-50',   chip: 'from-amber-400 to-amber-500' },
+    blue:    { tint: '!bg-sky-50',     chip: 'from-sky-400 to-sky-600' },
+    sky:     { tint: '!bg-sky-50',     chip: 'from-sky-400 to-sky-600' },
+    indigo:  { tint: '!bg-indigo-50',  chip: 'from-indigo-400 to-indigo-600' },
+    purple:  { tint: '!bg-violet-50',  chip: 'from-violet-400 to-violet-600' },
+    violet:  { tint: '!bg-violet-50',  chip: 'from-violet-400 to-violet-600' },
+    rose:    { tint: '!bg-rose-50',    chip: 'from-rose-400 to-rose-600' },
+    red:     { tint: '!bg-rose-50',    chip: 'from-rose-400 to-rose-600' },
+    pink:    { tint: '!bg-pink-50',    chip: 'from-pink-400 to-pink-600' },
+    orange:  { tint: '!bg-orange-50',  chip: 'from-orange-400 to-orange-600' },
+    cyan:    { tint: '!bg-cyan-50',    chip: 'from-cyan-400 to-cyan-600' },
+    navy:    { tint: '!bg-brand-50',   chip: 'from-brand-500 to-brand-700' },
+    slate:   { tint: '!bg-slate-50',   chip: 'from-slate-400 to-slate-600' }
   };
+  const c = C[color] || C.brand;
   const tooltipId = tooltip ? 'tip_' + Math.random().toString(36).slice(2, 8) : null;
   if (tooltipId) {
     // Defer the click handler binding
@@ -268,7 +279,7 @@ function statCard({ label, value, trend, icon: iconName, color = 'brand', toolti
     }, 0);
   }
   return `
-    <div class="stat">
+    <div class="stat ${c.tint}">
       <div class="flex items-start justify-between">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1 stat-label">
@@ -286,7 +297,7 @@ function statCard({ label, value, trend, icon: iconName, color = 'brand', toolti
           // same baseline across the row.
           : `<div class="stat-trend" aria-hidden="true">&nbsp;</div>`}
         </div>
-        ${iconName ? `<div class="w-10 h-10 rounded-xl flex items-center justify-center ${colorMap[color] || colorMap.brand} flex-shrink-0">${icon(iconName, 'w-5 h-5')}</div>` : ''}
+        ${iconName ? `<div class="w-11 h-11 rounded-xl flex items-center justify-center bg-gradient-to-br ${c.chip} text-white shadow-sm flex-shrink-0">${icon(iconName, 'w-5 h-5')}</div>` : ''}
       </div>
     </div>
   `;
