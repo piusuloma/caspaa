@@ -20,12 +20,23 @@ const NAV_HUES = {
   package: '#d69e00', bus: '#d69e00',
   search: '#808d9b', settings: '#808d9b'
 };
-const navHue = (name) => NAV_HUES[name] || '#0a8491';
+
+/* Per-item overrides, which win over the icon table. Menus reuse generic icons
+   — the student rail ran four identical teals off book/classes/reports/dashboard
+   and read as one flat block. Colour is assigned per nav item, not per glyph, so
+   no two neighbouring rows share a hue in any role's menu. */
+const NAV_KEY_HUES = {
+  stu_learning: '#7a5cd6', stu_behaviour: '#e0655c', stu_timetable: '#4bb543',
+  sa_schools: '#e69514', sa_audit: '#4bb543',
+  adm_admissions: '#4bb543', adm_reports: '#7a5cd6', adm_audit: '#7a5cd6',
+  par_results: '#7a5cd6', par_wallet: '#d69e00'
+};
+const navHue = (n) => NAV_KEY_HUES[n.key] || NAV_HUES[n.icon] || '#0a8491';
 
 /* One nav row: the icon sits in a module-tinted tile that fills solid when the
    row is active, which is what makes a 19-item menu scannable. */
 const navRow = (n, isActive) => {
-  const hue = navHue(n.icon);
+  const hue = navHue(n);
   const tile = isActive
     ? `background:${hue};color:#fff`
     : `background:${hue}1a;color:${hue}`;
