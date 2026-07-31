@@ -3205,11 +3205,11 @@ function view_adm_dashboard() {
             ? `<p class="text-sm text-slate-500">No students enrolled yet.</p>`
             : `<div class="flex h-14 rounded-xl overflow-hidden">
                  <div class="bg-brand-600 flex items-center justify-center text-white font-extrabold text-xl" style="width:${malePct}%" title="Boys: ${maleCount}">${malePct >= 12 ? malePct + '%' : ''}</div>
-                 <div class="bg-brand-600 flex items-center justify-center text-white font-extrabold text-xl" style="width:${femalePct}%" title="Girls: ${femaleCount}">${femalePct >= 12 ? femalePct + '%' : ''}</div>
+                 <div class="bg-gold-500 flex items-center justify-center text-white font-extrabold text-xl" style="width:${femalePct}%" title="Girls: ${femaleCount}">${femalePct >= 12 ? femalePct + '%' : ''}</div>
                </div>
                <div class="flex justify-between text-xs mt-2">
                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-brand-600"></span><span class="text-slate-600">Boys · <strong class="text-slate-900">${maleCount}</strong></span></span>
-                 <span class="flex items-center gap-1.5"><span class="text-slate-600">Girls · <strong class="text-slate-900">${femaleCount}</strong></span><span class="w-2.5 h-2.5 rounded-full bg-brand-600"></span></span>
+                 <span class="flex items-center gap-1.5"><span class="text-slate-600">Girls · <strong class="text-slate-900">${femaleCount}</strong></span><span class="w-2.5 h-2.5 rounded-full bg-gold-500"></span></span>
                </div>
                <p class="text-xs text-slate-500 mt-3">Total enrolled: ${students.length}</p>`}
         </div>
@@ -3511,11 +3511,12 @@ function view_adm_students() {
           <h3 class="font-semibold text-slate-900 text-sm">Gender Split</h3>
           <div class="flex items-center gap-4 text-sm">
             <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-brand-500 inline-block"></span><strong class="text-brand-900">${boys}</strong> <span class="text-slate-500">boys (${boysPct}%)</span></span>
-            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-brand-500 inline-block"></span><strong class="text-brand-900">${girls}</strong> <span class="text-slate-500">girls (${girlsPct}%)</span></span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-gold-500 inline-block"></span><strong class="text-brand-900">${girls}</strong> <span class="text-slate-500">girls (${girlsPct}%)</span></span>
           </div>
         </div>
-        <div class="h-3 rounded-full overflow-hidden bg-brand-200 flex">
+        <div class="h-3 rounded-full overflow-hidden flex">
           <div class="h-full bg-brand-500 transition-all" style="width:${boysPct}%"></div>
+          <div class="h-full bg-gold-500 transition-all" style="width:${girlsPct}%"></div>
         </div>
       </div>`;
     })()}
