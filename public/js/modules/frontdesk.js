@@ -16,25 +16,48 @@ function frontdeskCounts() {
   };
 }
 
+/* ---------- Dismissal ----------
+   The banner is a notice, not a permanent panel, so it can be closed. We store
+   the count it was dismissed at rather than a plain flag: closing it silences
+   THAT batch, and the next enquiry to arrive changes the total and brings the
+   notice back on its own. */
+const ENQ_DISMISS_KEY = () => 'caspaa_enq_dismissed_' + currentSchoolId();
+
+function enquiriesDismissed(total) {
+  try { return localStorage.getItem(ENQ_DISMISS_KEY()) === String(total); } catch (e) { return false; }
+}
+
+function dismissEnquiriesBanner(total) {
+  try { localStorage.setItem(ENQ_DISMISS_KEY(), String(total)); } catch (e) {}
+  APP.render();
+}
+
 /* ---------- Dashboard banner (rendered on view_adm_dashboard) ---------- */
 function enquiriesBanner() {
   const c = frontdeskCounts();
   const total = c.tours + c.careers + c.admissions;
-  if (!total) return '';
+  if (!total || enquiriesDismissed(total)) return '';
   const chip = (n, label, view, params) => n
-    ? `<button onclick="APP.go('${view}'${params ? ", " + JSON.stringify(params) : ''})" class="flex items-center gap-2 bg-white/15 hover:bg-white/25 transition rounded-xl px-3 py-2 text-left">
-         <span class="text-lg font-extrabold">${n}</span>
-         <span class="text-xs leading-tight">new<br>${label}</span>
+    ? `<button onclick="APP.go('${view}'${params ? ", " + JSON.stringify(params) : ''})" class="flex items-center gap-2 bg-white hover:bg-gold-50 border border-gold-200 transition rounded-xl px-3 py-2 text-left">
+         <span class="text-lg font-extrabold text-gold-700">${n}</span>
+         <span class="text-xs leading-tight text-slate-600">new<br>${label}</span>
        </button>`
     : '';
+  // Gold is the attention hue in the brand guide — reminders and things
+  // awaiting a decision. Soft wash with a solid gold tile, not a gold fill:
+  // white on #e69514 is only ~2.3:1 and this block carries body copy.
   return `
-    <div class="bg-gradient-to-br from-brand-600 to-brand-700 rounded-2xl p-4 lg:p-5 text-white">
-      <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div class="rounded-2xl p-4 lg:p-5 relative" style="background:#fdf6e0; border:1px solid #f7d78a; border-top:3px solid #e69514">
+      <button onclick="dismissEnquiriesBanner(${total})" aria-label="Dismiss this notice"
+        class="absolute top-3 right-3 p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-black/5 transition">
+        ${icon('x','w-4 h-4')}
+      </button>
+      <div class="flex items-center justify-between gap-4 flex-wrap pr-8">
         <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center">${icon('bell','w-6 h-6')}</div>
+          <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white" style="background:#e69514">${icon('bell','w-6 h-6')}</div>
           <div>
-            <div class="font-bold text-lg leading-tight">You have ${total} new enquir${total === 1 ? 'y' : 'ies'}</div>
-            <div class="text-brand-100 text-sm">Submitted from your public portal — review and respond.</div>
+            <div class="font-bold text-lg leading-tight text-slate-900">You have ${total} new enquir${total === 1 ? 'y' : 'ies'}</div>
+            <div class="text-sm text-slate-600">Submitted from your public portal — review and respond.</div>
           </div>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
