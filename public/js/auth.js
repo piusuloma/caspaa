@@ -658,8 +658,9 @@ function signupSchoolModal() {
     size: 'lg',
     body: `
       <div class="signup-form space-y-4">
-        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
-          Register your school with your <strong>official school email</strong> and upload a verification document. To keep the platform secure, our team reviews every school before the dashboard is unlocked — usually within 1 business day.
+        <div class="rounded-xl p-3 flex items-start gap-3 text-sm" style="background: var(--mod-academic-soft); border-top: 3px solid var(--mod-academic); color: var(--ink)">
+          <span class="w-9 h-9 rounded-xl grid place-items-center shrink-0 text-white" style="background: var(--mod-academic)">${icon('check','w-5 h-5')}</span>
+          <span>Register your school with your <strong>official school email</strong> and upload a verification document. To keep the platform secure, our team reviews every school before the dashboard is unlocked — usually within 1 business day.</span>
         </div>
         <div><label class="input-label" for="su_name">School Name *</label><input id="su_name" class="input" placeholder="e.g. Sunrise Academy" /></div>
         <div class="grid grid-cols-2 gap-3">
@@ -687,11 +688,11 @@ function signupSchoolModal() {
           </div>
           <div><label class="input-label" for="su_pw2">Confirm Password *</label><input id="su_pw2" type="password" class="input" placeholder="Repeat password" /></div>
         </div>
-        <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" id="su_terms" class="w-5 h-5 accent-brand-600" /> I agree to CASPAA's Terms and Privacy Policy</label>
+        <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" id="su_terms" class="w-5 h-5 accent-accent-600" /> I agree to CASPAA's Terms and Privacy Policy</label>
       </div>
     `,
     footer: `<button class="btn btn-lg btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
-             <button class="btn btn-lg btn-primary" onclick="saveSchoolSignup()">${icon('check','w-5 h-5')} Create account</button>`
+             <button class="btn btn-lg btn-accent" onclick="saveSchoolSignup()">${icon('check','w-5 h-5')} Create account</button>`
   });
 }
 

@@ -1,0 +1,88 @@
+/* ============================================================
+   CASPAA — BRAND THEME LAYER
+   Loaded after css/styles.css, so it wins on equal specificity.
+
+   The app shipped a deep navy (#0a2540) as its action colour and #f4b400 as
+   gold. The brand guide is the source of truth for colour, and it has neither.
+   This file re-points the custom properties styles.css already consumes at the
+   guide palette, so every .btn / .nav-item / .avatar / .progress / .chip /
+   .bubble / .tab flips to brand colour with no component edits.
+
+   Brand guide palette (CASPAA BRAND GUIDELINE, p.9):
+     CASPAA GREEN #00B386   CASPAA BLUE (teal) #0A8491   ACCENT GOLD #E69514
+     SOFT WHITE   #F8FAFC   LIGHT GRAY         #CBD5E1   DARK GRAY   #1E293B
+   Dark Gray is used for TEXT only — never as a surface.
+
+   The Tailwind ramps in pages/_document.js carry the same values, since
+   utility classes compile to literal hex and can't read these variables.
+   ============================================================ */
+
+:root {
+  /* --brand-* now IS the CASPAA Blue (teal) ramp. Nothing navy remains. */
+  --brand-50:  #eef6f7;
+  --brand-100: #d3ebed;
+  --brand-200: #b6dade;
+  --brand-300: #84c2c8;
+  --brand-400: #3fa0aa;
+  --brand-500: #0a8491;   /* CASPAA BLUE */
+  --brand-600: #0a8491;   /* the action colour styles.css consumes */
+  --brand-700: #086c77;
+  --brand-800: #06545d;
+  --brand-900: #053f46;
+  --brand-ring: rgba(10, 132, 145, 0.22);
+
+  /* Dark surfaces are deep teal, not navy. */
+  --navy-500: #22909c;
+  --navy-700: #06545d;
+  --navy-800: #06545d;
+  --navy-900: #053f46;
+
+  /* Accent Gold restored to the guide's value. */
+  --gold-500: #e69514;
+  --gold-600: #c67d0c;
+  --apricot: #e69514;
+  --apricot-600: #c67d0c;
+
+  /* Guide neutrals */
+  --line: #e2e8f0;
+  --line-soft: #f1f5f9;
+  --sand-300: #cbd5e1;   /* LIGHT GRAY */
+  --soft-white: #f8fafc; /* SOFT WHITE */
+  --ink: #1e293b;        /* DARK GRAY — text only */
+
+  /* Module colours — a school runs many modules, and flat single-hue chrome
+     makes them indistinguishable. Each gets a fill + soft wash, drawn from or
+     harmonised with the three brand hues. */
+  --mod-fees: #00b386;        --mod-fees-soft: #e6f8f3;
+  --mod-academic: #0a8491;    --mod-academic-soft: #eef6f7;
+  --mod-students: #e69514;    --mod-students-soft: #fdf1de;
+  --mod-staff: #14a3a0;       --mod-staff-soft: #e4f6f5;
+  --mod-attendance: #4bb543;  --mod-attendance-soft: #ecf8eb;
+  --mod-reports: #7a5cd6;     --mod-reports-soft: #f0ecfc;
+  --mod-comms: #e0655c;       --mod-comms-soft: #fdeceb;
+  --mod-store: #d69e00;       --mod-store-soft: #fdf6e0;
+}
+
+/* styles.css hard-codes navy text on the green and gold buttons. */
+.btn-accent { background: #00b386; color: #ffffff; }
+.btn-accent:hover { background: #00966f; color: #ffffff; }
+.btn-gold { background: #e69514; color: #ffffff; }
+.btn-gold:hover { background: #c67d0c; color: #ffffff; }
+
+/* White sidebar (super admin): green marker on a teal-tinted row reads as
+   "school", not "bank". The .sidebar-tinted rules in styles.css are more
+   specific, so the coloured sidebars every other role gets are untouched. */
+.nav-item.active { background: var(--brand-50); color: var(--brand-700); box-shadow: inset 3px 0 0 #00b386; }
+.nav-item.active:hover { background: var(--brand-100); color: var(--brand-800); }
+
+/* Fee progress is green (money in), not chrome-coloured. */
+.progress-bar { background: #00b386; }
+.progress-bar.is-warn { background: #e69514; }
+.progress-bar.is-danger { background: #dc2626; }
+
+/* Stat tiles take a 3px coloured top rule so a dashboard row reads as distinct
+   modules. statCard() sets --stat-accent per card; teal is the fallback. */
+.stat { border-top: 3px solid var(--stat-accent, #0a8491); }
+
+/* Active tab keeps the green underline over teal type. */
+.tab.active { color: var(--brand-700); border-bottom-color: #00b386; }
