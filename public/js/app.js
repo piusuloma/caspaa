@@ -4,6 +4,40 @@
    - Role-based navigation menus
    ============================================================ */
 
+/* ---------- Module hues for the sidebar ----------
+   A school runs many modules, and a flat single-hue rail makes them
+   indistinguishable. Each nav item's icon sits in its module's colour, keyed
+   off the icon name so every role's menu is covered by one table.
+   Values are the --mod-* set in css/theme.css. */
+const NAV_HUES = {
+  dashboard: '#0a8491', classes: '#0a8491', book: '#0a8491', building: '#0a8491', reports: '#0a8491',
+  fees: '#00b386', naira: '#00b386', wallet: '#00b386',
+  results: '#e69514', students: '#e69514', user: '#e69514', sparkles: '#e69514',
+  teacher: '#14a3a0', check: '#14a3a0', calendar: '#14a3a0', info: '#14a3a0',
+  attendance: '#4bb543', shield: '#4bb543',
+  loan: '#7a5cd6', edit: '#7a5cd6',
+  chat: '#e0655c', bell: '#e0655c', trending_down: '#e0655c',
+  package: '#d69e00', bus: '#d69e00',
+  search: '#808d9b', settings: '#808d9b'
+};
+const navHue = (name) => NAV_HUES[name] || '#0a8491';
+
+/* One nav row: the icon sits in a module-tinted tile that fills solid when the
+   row is active, which is what makes a 19-item menu scannable. */
+const navRow = (n, isActive) => {
+  const hue = navHue(n.icon);
+  const tile = isActive
+    ? `background:${hue};color:#fff`
+    : `background:${hue}1a;color:${hue}`;
+  return `
+    <a class="nav-item ${isActive ? 'active' : ''}" onclick="APP.go('${n.key}')">
+      <span class="w-7 h-7 rounded-lg grid place-items-center shrink-0" style="${tile}">
+        ${icon(n.icon, 'w-4 h-4')}
+      </span>
+      <span>${n.label}</span>
+    </a>`;
+};
+
 const APP = {
   view: 'dashboard',
   params: {},
@@ -207,10 +241,11 @@ const APP = {
 
     const user = AUTH.current;
     const nav = this.navFor(user.role);
-    // Coloured sidebar for every role except the platform super admin (kept clean white).
-    const sidebarBg = user.role === 'superadmin' ? 'bg-white' : 'sidebar-tinted';
-    // Dark-teal rail needs the white logo; the super admin's white rail keeps navy.
-    const sidebarLogo = user.role === 'superadmin' ? 'logo/caspaa-navy.svg' : 'logo/caspaa-white.svg';
+    // Design system: a white rail for every role. Chrome stays calm and the
+    // colour arrives through each item's module-tinted icon tile, so a long
+    // menu stays legible instead of reading as one flat block.
+    const sidebarBg = 'bg-white';
+    const sidebarLogo = 'logo/caspaa-green.svg';
 
     // render() replaces the whole shell via innerHTML, which destroys the element the user
     // is typing into — every search box lost focus after ONE character, and callers worked
@@ -230,14 +265,10 @@ const APP = {
           <div class="px-5 py-5 border-b border-slate-200">
             <img src="${sidebarLogo}" alt="CASPAA" class="h-6 w-auto" />
             <div class="text-xs text-slate-500 mt-2">${roleLabel(user.role)}</div>
+            <div class="mt-3 h-1 rounded-full" style="background: linear-gradient(90deg,#00b386 0 34%,#0a8491 34% 67%,#e69514 67% 100%)"></div>
           </div>
           <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scroll-area">
-            ${nav.map(n => `
-              <a class="nav-item ${this.view === n.key ? 'active' : ''}" onclick="APP.go('${n.key}')">
-                ${icon(n.icon, 'w-5 h-5')}
-                <span>${n.label}</span>
-              </a>
-            `).join('')}
+            ${nav.map(n => navRow(n, this.view === n.key)).join('')}
           </nav>
           <div class="p-3 border-t border-slate-200">
             <a class="nav-item signout" onclick="AUTH.logout()">
@@ -255,14 +286,10 @@ const APP = {
               <div class="px-5 py-5 border-b border-slate-200">
                 <img src="${sidebarLogo}" alt="CASPAA" class="h-6 w-auto" />
                 <div class="text-xs text-slate-500 mt-2">${roleLabel(user.role)}</div>
+                <div class="mt-3 h-1 rounded-full" style="background: linear-gradient(90deg,#00b386 0 34%,#0a8491 34% 67%,#e69514 67% 100%)"></div>
               </div>
               <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scroll-area">
-                ${nav.map(n => `
-                  <a class="nav-item ${this.view === n.key ? 'active' : ''}" onclick="APP.go('${n.key}')">
-                    ${icon(n.icon, 'w-5 h-5')}
-                    <span>${n.label}</span>
-                  </a>
-                `).join('')}
+                ${nav.map(n => navRow(n, this.view === n.key)).join('')}
               </nav>
               <div class="p-3 border-t border-slate-200">
                 <a class="nav-item signout" onclick="AUTH.logout()">${icon('logout', 'w-5 h-5')} <span>Sign out</span></a>

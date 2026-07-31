@@ -136,18 +136,9 @@ select.input option { color: #0f172a; }
 .nav-item.signout:hover { background: #fee2e2; color: #b91c1c; }
 .nav-item.signout.active { background: #fee2e2; color: #b91c1c; }
 
-/* Coloured sidebar — every role except the super admin. Dark website-teal
-   rail with white nav text; the active item lifts to a white pill. */
-.sidebar-tinted { background: linear-gradient(180deg, #0a8491 0%, #06545d 100%); border-right-color: #053f46 !important; }
-.sidebar-tinted .nav-item:not(.signout) { color: rgba(255,255,255,0.82); }
-.sidebar-tinted .nav-item:not(.signout):hover { background: rgba(255,255,255,0.12); color: #ffffff; }
-.sidebar-tinted .nav-item.active:not(.signout) { background: #ffffff; color: #06545d; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
-.sidebar-tinted .nav-item.active:not(.signout):hover { background: #ffffff; color: #06545d; }
-.sidebar-tinted .nav-item.signout { color: #fca5a5; }
-.sidebar-tinted .nav-item.signout:hover { background: rgba(255,255,255,0.10); color: #fecaca; }
-/* Soften light dividers + the role label against the dark rail */
-.sidebar-tinted .border-slate-200 { border-color: rgba(255,255,255,0.14) !important; }
-.sidebar-tinted .text-slate-500 { color: rgba(255,255,255,0.62) !important; }
+/* The sidebar is a white rail for every role — colour arrives through each
+   item's module-tinted icon tile (see navRow() in js/app.js), not the
+   background. The active row's marker and tint live in css/theme.css. */
 
 /* Mobile bottom nav */
 .bnav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px var(--s-2); font-size: 0.65rem; color: var(--muted); font-weight: 500; cursor: pointer; flex: 1; }

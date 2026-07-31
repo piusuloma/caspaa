@@ -69,9 +69,9 @@
 .btn-gold { background: #e69514; color: #ffffff; }
 .btn-gold:hover { background: #c67d0c; color: #ffffff; }
 
-/* White sidebar (super admin): green marker on a teal-tinted row reads as
-   "school", not "bank". The .sidebar-tinted rules in styles.css are more
-   specific, so the coloured sidebars every other role gets are untouched. */
+/* Sidebar active row: green marker on a teal-tinted row reads as "school",
+   not "bank". Every role gets the white rail; the per-item module hue comes
+   from the icon tile navRow() renders in js/app.js. */
 .nav-item.active { background: var(--brand-50); color: var(--brand-700); box-shadow: inset 3px 0 0 #00b386; }
 .nav-item.active:hover { background: var(--brand-100); color: var(--brand-800); }
 
