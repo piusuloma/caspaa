@@ -1,0 +1,120 @@
+<!-- @dsCard group="Components" viewport="700x470" subtitle="Buttons, badges, chips, fields, stat tiles and table — the shipped .btn/.badge/.tbl classes" name="App primitives" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="../../ui_kits/tw-config.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>body{margin:0;padding:20px;background:#fff;color:#1e293b;font-family:'Figtree',system-ui,sans-serif}.lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#808d9b;margin-bottom:8px}.hex{font-size:11px;color:#9aa5b1;font-variant-numeric:tabular-nums}</style>
+</head><body>
+
+<div class="lbl">Buttons</div>
+<div class="flex flex-wrap items-center gap-2 mb-5">
+  <button class="btn btn-primary">Record Payment</button>
+  <button class="btn btn-accent">Confirm</button>
+  <button class="btn btn-secondary">Cancel</button>
+  <button class="btn btn-ghost">View all</button>
+  <button class="btn btn-danger">Delete</button>
+  <button class="btn btn-warn">Suspend</button>
+  <button class="btn btn-gold">Talk to Sales</button>
+  <button class="btn btn-primary btn-lg">Large action</button>
+  <button class="btn btn-ghost !p-2" aria-label="Notifications"><span class="w-5 h-5 inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg></span></button>
+</div>
+
+<div class="grid grid-cols-2 gap-5 mb-5">
+  <div>
+    <div class="lbl">Badges — status vocabulary</div>
+    <div class="flex flex-wrap gap-2">
+      <span class="badge badge-success">Paid</span>
+      <span class="badge badge-warn">Partial</span>
+      <span class="badge badge-danger">Outstanding</span>
+      <span class="badge badge-info">Trial</span>
+      <span class="badge badge-neutral">Withdrawn</span>
+    </div>
+    <div class="lbl" style="margin-top:16px">Chips</div>
+    <div class="flex flex-wrap gap-2">
+      <span class="chip active">All</span><span class="chip">JSS 2</span><span class="chip">SS 1</span>
+    </div>
+    <div class="lbl" style="margin-top:16px">Avatars · progress</div>
+    <div class="flex items-center gap-3 mb-3">
+      <span class="avatar sm">AO</span><span class="avatar md">IB</span><span class="avatar lg">GU</span>
+    </div>
+    <div class="progress"><div class="progress-bar" style="width:92%"></div></div>
+  </div>
+  <div>
+    <div class="lbl">Fields</div>
+    <label class="input-label" for="c1">Amount Paid</label>
+    <input id="c1" class="input" value="48,000" />
+    <label class="input-label" for="c2" style="margin-top:10px">Term</label>
+    <select id="c2" class="input"><option>Second Term</option></select>
+    <div class="lbl" style="margin-top:16px">Tabs</div>
+    <div class="tabs"><button class="tab active">Invoices</button><button class="tab">Payments</button><button class="tab">Reconciliation<span class="ml-2 badge badge-danger">3</span></button></div>
+  </div>
+</div>
+
+<div class="lbl">Stat tiles — coloured top rule per module</div>
+<div class="grid grid-cols-4 gap-3 mb-5">
+  
+  <div class="stat" style="--stat-accent:#0a8491">
+    <div class="flex items-start justify-between">
+      <div class="flex-1 min-w-0">
+        <div class="stat-label">Collected</div>
+        <div class="stat-value">₦12,400,000</div>
+        <div class="stat-trend up">▲ <span>8.2% vs last term</span></div>
+      </div>
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-brand-50 text-brand-600 flex-shrink-0">
+        <span class="w-5 h-5 inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1M18 11h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-3a2 2 0 0 1 0-4z"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="stat" style="--stat-accent:#00b386">
+    <div class="flex items-start justify-between">
+      <div class="flex-1 min-w-0">
+        <div class="stat-label">Collection Rate</div>
+        <div class="stat-value">92%</div>
+        <div class="stat-trend up">▲ <span>3.1%</span></div>
+      </div>
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-brand-50 text-brand-600 flex-shrink-0">
+        <span class="w-5 h-5 inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1M18 11h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-3a2 2 0 0 1 0-4z"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="stat" style="--stat-accent:#e0655c">
+    <div class="flex items-start justify-between">
+      <div class="flex-1 min-w-0">
+        <div class="stat-label">Outstanding</div>
+        <div class="stat-value">₦1,080,000</div>
+        <div class="stat-trend down">▼ <span>12%</span></div>
+      </div>
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-brand-50 text-brand-600 flex-shrink-0">
+        <span class="w-5 h-5 inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1M18 11h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-3a2 2 0 0 1 0-4z"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="stat" style="--stat-accent:#e69514">
+    <div class="flex items-start justify-between">
+      <div class="flex-1 min-w-0">
+        <div class="stat-label">Students</div>
+        <div class="stat-value">1,284</div>
+        <div class="stat-trend">&nbsp;</div>
+      </div>
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-brand-50 text-brand-600 flex-shrink-0">
+        <span class="w-5 h-5 inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1M18 11h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-3a2 2 0 0 1 0-4z"/></svg></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card overflow-hidden">
+  <table class="tbl">
+    <thead><tr><th>Student</th><th>Class</th><th class="num">Invoiced</th><th class="num">Paid</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Adaeze Okoro</td><td>JSS 2</td><td class="num">₦48,000</td><td class="num">₦48,000</td><td><span class="badge badge-success">Paid</span></td></tr>
+      <tr><td>Ibrahim Bello</td><td>SS 1</td><td class="num">₦52,000</td><td class="num">₦24,000</td><td><span class="badge badge-warn">Partial</span></td></tr>
+      <tr><td>Chidi Nwosu</td><td>JSS 3</td><td class="num">₦52,000</td><td class="num">₦0</td><td><span class="badge badge-danger">Outstanding</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+</body></html>

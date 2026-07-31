@@ -1,0 +1,43 @@
+/* CASPAA — Typography. Source: pages/_document.js (Google Fonts link) +
+   public/css/styles.css. Figtree at 400/500/600/700/800. */
+
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --font-sans: 'Figtree', system-ui, sans-serif;
+  /* The app maps mono to Figtree too (tailwind.config fontFamily.mono). */
+  --font-mono: 'Figtree', system-ui, sans-serif;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-extrabold: 800;
+
+  /* 16px base, 1.5 line-height — 12 / 14 / 16 / 18 / 20 / 24 / 30 / 36 */
+  --fs-xs: 12px;    /* 0.75rem — stat labels, badges, kbd */
+  --fs-sm: 14px;    /* 0.875rem — table + button text, body small */
+  --fs-base: 16px;
+  --fs-lg: 18px;
+  --fs-xl: 20px;
+  --fs-2xl: 24px;   /* page-title */
+  --fs-3xl: 30px;   /* stat-value is 1.875rem = 30px */
+  --fs-4xl: 36px;
+
+  /* Marketing headline sizes (pages/home.js: text-5xl to text-7xl) */
+  --fs-hero: 48px;
+  --fs-hero-md: 60px;
+  --fs-hero-lg: 72px;
+  --fs-section: 36px;   /* md:text-4xl section headings */
+
+  /* The app's own smaller steps, kept because components use them verbatim */
+  --fs-badge: 11.2px;   /* 0.7rem */
+  --fs-input: 14.4px;   /* 0.9rem */
+
+  --lh-body: 1.5;
+  --lh-tight: 1.25;
+  --lh-hero: 1.05;
+  --ls-tight: -0.01em;      /* page-title / tracking-tight */
+  --ls-eyebrow: 0.15em;     /* marketing eyebrows */
+  --ls-label: 0.04em;       /* .stat-label / .tbl th uppercase */
+}

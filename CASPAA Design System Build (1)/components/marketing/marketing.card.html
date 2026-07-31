@@ -1,0 +1,60 @@
+<!-- @dsCard group="Components" viewport="700x380" subtitle="Logo cuts, CTA + ghost buttons, eyebrows, checks, icon tiles" name="Marketing primitives" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{site:{'50':'#eef6f7','100':'#daedee','200':'#b6dade','300':'#84c2c8','400':'#4aa4ae','500':'#22909c','600':'#0a8491','700':'#086c77','800':'#06545d','900':'#053f46'},brand:{'50':'#e8ecf1','100':'#c5d0dd','200':'#94a7bf','300':'#5d7a9c','400':'#315479','500':'#143a5c','600':'#0a2540','700':'#081d33','800':'#061627','900':'#04101c'},accent:{'50':'#e6f8f3','100':'#c3f0e2','200':'#8ae4c9','300':'#4fd6ae','400':'#1ec79a','500':'#00c08f','600':'#00b386','700':'#00966f','800':'#007a5b','900':'#005e46'},gold:{'50':'#fef8e7','100':'#fdecb8','200':'#fbdd85','300':'#f9cd52','400':'#f7c02c','500':'#f4b400','600':'#d69e00','700':'#ab7f00'},scholar:{'400':'#9aa5b1','500':'#808d9b','600':'#6b7784'}},borderRadius:{'sm':'7px','DEFAULT':'7px','md':'7px','lg':'7px','xl':'7px','2xl':'7px','3xl':'7px','full':'9999px'},fontFamily:{sans:['Figtree','system-ui','sans-serif']}}}}</script>
+<style>body{margin:0;padding:20px;background:#fff;color:#1e293b;font-family:'Figtree',system-ui,sans-serif}.lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#808d9b;margin-bottom:8px}.hex{font-size:11px;color:#9aa5b1;font-variant-numeric:tabular-nums}</style>
+</head><body>
+
+<div class="lbl">Logo</div>
+<div class="flex items-center gap-6 mb-5">
+  <img src="../../assets/logo/caspaa-green.svg" alt="CASPAA" class="h-8 w-auto" />
+  <div class="px-4 py-3 rounded-xl bg-site-800"><img src="../../assets/logo/caspaa-white.svg" alt="CASPAA" class="h-8 w-auto" /></div>
+  <img src="../../assets/logo/caspaa-green.svg" alt="CASPAA" class="h-8 w-auto" />
+  <img src="../../assets/logo/caspaa-icon.svg" alt="CASPAA icon" class="h-10 w-10 rounded-xl" />
+</div>
+
+<div class="grid grid-cols-2 gap-4 mb-5">
+  <div class="p-5 rounded-xl border border-slate-100">
+    <p class="text-xs font-bold tracking-[0.15em] mb-3 text-site-700">THE SOLUTION</p>
+    <div class="flex flex-wrap gap-2">
+      <a class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-accent-400 text-[#04252a] font-bold text-sm shadow-lg">Book a Demo</a>
+      <a class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border font-semibold text-sm text-site-700 border-site-200">See Pricing →</a>
+    </div>
+  </div>
+  <div class="p-5 rounded-xl bg-site-800">
+    <p class="text-xs font-bold tracking-[0.15em] mb-3 text-accent-300">OUR UNIQUE ADVANTAGES</p>
+    <div class="flex flex-wrap gap-2">
+      <a class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-accent-400 text-[#04252a] font-bold text-sm shadow-lg">Book a Free Demo</a>
+      <a class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border font-semibold text-sm text-white border-white/30">Learn more →</a>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-3 gap-4">
+  
+  <div class="rounded-xl border border-slate-100 p-5 shadow-sm">
+    <div class="w-11 h-11 rounded-xl bg-site-50 text-site-600 grid place-items-center">
+      <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"/><path d="M5.8 5.8A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.3-.2"/><path d="M21.5 16.5A4.5 4.5 0 0 0 17.5 10h-1.8A7 7 0 0 0 10 5.1"/></svg>
+    </div>
+    <h3 class="mt-3 font-bold text-slate-900">Works Offline</h3>
+    <p class="mt-2 text-sm text-slate-600 flex items-start gap-2"><svg viewBox="0 0 20 20" class="w-5 h-5 shrink-0 text-site-600" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0l-3.5-3.5a1 1 0 111.4-1.4l2.8 2.8 6.8-6.8a1 1 0 011.4 0z" clip-rule="evenodd"/></svg> Included on every plan</p>
+  </div>
+  <div class="rounded-xl border border-slate-100 p-5 shadow-sm">
+    <div class="w-11 h-11 rounded-xl bg-site-50 text-site-600 grid place-items-center">
+      <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M2 10h20"/></svg>
+    </div>
+    <h3 class="mt-3 font-bold text-slate-900">Payments</h3>
+    <p class="mt-2 text-sm text-slate-600 flex items-start gap-2"><svg viewBox="0 0 20 20" class="w-5 h-5 shrink-0 text-site-600" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0l-3.5-3.5a1 1 0 111.4-1.4l2.8 2.8 6.8-6.8a1 1 0 011.4 0z" clip-rule="evenodd"/></svg> Included on every plan</p>
+  </div>
+  <div class="rounded-xl border border-slate-100 p-5 shadow-sm">
+    <div class="w-11 h-11 rounded-xl bg-site-50 text-site-600 grid place-items-center">
+      <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-6 10 6"/><path d="M3 22h18"/><path d="M6 18v-7M10 18v-7M14 18v-7M18 18v-7"/></svg>
+    </div>
+    <h3 class="mt-3 font-bold text-slate-900">Fee Financing</h3>
+    <p class="mt-2 text-sm text-slate-600 flex items-start gap-2"><svg viewBox="0 0 20 20" class="w-5 h-5 shrink-0 text-site-600" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0l-3.5-3.5a1 1 0 111.4-1.4l2.8 2.8 6.8-6.8a1 1 0 011.4 0z" clip-rule="evenodd"/></svg> Included on every plan</p>
+  </div>
+</div>
+
+</body></html>

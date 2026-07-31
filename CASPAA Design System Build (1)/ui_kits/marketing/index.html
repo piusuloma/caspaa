@@ -1,0 +1,92 @@
+<!-- @dsCard group="Marketing site" viewport="1440x900" subtitle="Home page — hero, trust bar, platform marquee, roles, pricing, FAQ" name="Marketing home" -->
+<!-- @startingPoint section="Marketing" subtitle="CASPAA marketing home page" viewport="1440x900" -->
+<!DOCTYPE html>
+<html lang="en" class="reveal-ready">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a8491">
+  <title>CASPAA — School Operating System</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo/caspaa-icon.svg">
+  <link rel="stylesheet" href="../../styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="../tw-config.js"></script>
+  <style>
+    body { margin: 0; font-family: 'Figtree', system-ui, sans-serif; color: #1e293b; background: #fff; }
+    a { color: inherit; text-decoration: none; }
+    a:hover { color: inherit; }
+  </style>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js" crossorigin></script>
+  <script src="site-data.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" src="Sections.jsx"></script>
+  <script type="text/babel" data-presets="react">
+    function DemoModal({ onClose }) {
+      const [sent, setSent] = React.useState(false);
+      return (
+        <div className="modal-backdrop" onClick={onClose}>
+          <div className="modal-panel" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h3 className="font-bold text-lg text-slate-900">{sent ? 'Request received' : 'Book a Demo'}</h3>
+              <button className="btn btn-ghost !p-1.5" aria-label="Close dialog" onClick={onClose}>&#10005;</button>
+            </div>
+            <div className="px-5 py-4">
+              {sent ? (
+                <p className="text-slate-600">Thanks — a CASPAA specialist will call your school within one working day.</p>
+              ) : (
+                <div className="signup-form space-y-3">
+                  {[['School name', 'Bright Lights Academy'], ['Your name', 'Grace Umeh'], ['Work email', 'bursar@brightlights.ng'], ['Students enrolled', '1,284']].map(function (row) {
+                    return (
+                      <div key={row[0]}>
+                        <label className="input-label">{row[0]}</label>
+                        <input className="input" placeholder={row[1]} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
+              <button className="btn btn-secondary" onClick={onClose}>Close</button>
+              {!sent && <button className="btn btn-primary" onClick={() => setSent(true)}>Request Demo</button>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [demo, setDemo] = React.useState(false);
+      const open = () => setDemo(true);
+      return (
+        <div className="mkt-shell min-h-screen bg-white text-slate-800">
+          <MK.Nav onCta={open} />
+          <main>
+            <MK.Hero onCta={open} />
+            <MK.TrustBar />
+            <MK.Problem />
+            <MK.Solution onCta={open} />
+            <MK.PlatformMarquee />
+            <MK.Roles />
+            <MK.Comparison />
+            <MK.Advantages />
+            <MK.Outcomes />
+            <MK.Onboarding />
+            <MK.Pricing onCta={open} />
+            <MK.Security />
+            <MK.Faq />
+            <MK.FinalCta onCta={open} />
+          </main>
+          <MK.Footer />
+          {demo && <DemoModal onClose={() => setDemo(false)} />}
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

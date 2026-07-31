@@ -1,0 +1,25 @@
+/* CASPAA — Spacing & layout. 8pt grid (public/css/styles.css --s-*),
+   plus the layout metrics the shells actually use. */
+
+:root {
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 16px;
+  --s-4: 24px;
+  --s-5: 32px;
+  --s-6: 40px;
+
+  /* App shell (public/js/app.js) */
+  --sidebar-w: 256px;          /* w-64 fixed sidebar */
+  --sidebar-w-mobile: 288px;   /* w-72 drawer */
+  --topbar-h: 56px;            /* h-14 sticky topbar */
+  --app-pad: 16px;             /* p-4 then lg:p-6 */
+  --app-pad-lg: 24px;
+
+  /* Marketing shell (components/SiteLayout.js) */
+  --site-header-h: 64px;       /* h-16 floating header */
+  --container-max: 1280px;     /* max-w-7xl */
+  --container-pad: 20px;       /* px-5 */
+  --section-y: 96px;           /* py-24 */
+  --section-y-lg: 128px;       /* md:py-32 */
+}

@@ -1,0 +1,36 @@
+/* CASPAA — Radii, shadows, motion. Source: public/css/styles.css and the
+   tailwind borderRadius override in pages/_document.js. */
+
+:root {
+  /* Every radius in CASPAA is 7px. The Tailwind config overrides sm through 3xl
+     to 7px, so a "rounded-2xl" in the markup is still 7px. Only pills are round. */
+  --r-sm: 7px;
+  --r-md: 7px;
+  --r-lg: 7px;
+  --r-pill: 999px;
+
+  /* Card resting shadow, verbatim */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-card-hover: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-pop: 0 8px 24px rgba(15, 23, 42, 0.12);   /* menus, date picker */
+  --shadow-toast: 0 8px 24px rgba(15, 23, 42, 0.15);
+  --scrim-modal: rgba(16, 34, 48, 0.55);
+  --scrim-drawer: rgba(15, 23, 42, 0.6);
+
+  /* Focus: 3px brand ring on fields, 2px outline elsewhere */
+  --focus-ring: 0 0 0 3px var(--brand-ring);
+  --focus-outline: 2px solid var(--brand-500);
+
+  /* Motion */
+  --dur-fast: 150ms;      /* .btn, .nav-item */
+  --dur-card: 180ms;      /* .card-hover, .mkt-btn */
+  --dur-view: 250ms;      /* .fade-in, toast slide-in */
+  --dur-rise: 450ms;      /* .rise-in dashboard entrance */
+  --dur-progress: 400ms;  /* .progress-bar width */
+  --dur-reveal: 1300ms;   /* marketing scroll-reveal */
+  --ease-standard: ease;
+  --ease-expressive: cubic-bezier(0.16, 1, 0.3, 1);
+  --stagger-card: 45ms;   /* animateViewIn() */
+  --marquee-duration: 55s;
+  --marquee-gap: 28px;
+}

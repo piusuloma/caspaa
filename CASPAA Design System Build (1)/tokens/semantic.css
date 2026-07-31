@@ -1,0 +1,53 @@
+/* CASPAA — Semantic aliases. Prefer these in new product UI; they map onto the
+   values the shipped app already uses. */
+
+:root {
+  /* Surfaces */
+  --surface-page: var(--soft-white);
+  --surface-card: var(--white);
+  --surface-sunken: var(--line-soft);
+  --surface-inverse: var(--brand-800);    /* deep teal — dark panels, footers */
+  --surface-marketing: var(--site-800);   /* dark teal — marketing sections */
+  --surface-brand-soft: var(--brand-50);
+
+  /* Text */
+  --text-primary: var(--ink);
+  --text-secondary: #475569;
+  --text-muted: var(--scholar-500);
+  --text-on-brand: var(--on-brand);
+  --text-link: var(--brand-600);
+  --text-link-hover: var(--brand-700);
+  --text-eyebrow: var(--site-700);
+  --text-eyebrow-light: var(--accent-300);
+
+  /* Lines */
+  --border-default: var(--line);
+  --border-subtle: var(--line-soft);
+  --divider: var(--line-soft);
+
+  /* Actions */
+  /* Green is the primary action (money in, confirm, create); teal is chrome. */
+  --action-primary: var(--accent-600);
+  --action-primary-hover: var(--accent-700);
+  --action-chrome: var(--brand-600);
+  --action-chrome-hover: var(--brand-700);
+  --action-accent: var(--accent-600);       /* app .btn-accent */
+  --action-accent-hover: var(--accent-700);
+  --action-cta: var(--accent-600);          /* marketing PrimaryButton — brand green */
+  --action-cta-hover: var(--accent-500);
+  --action-cta-text: #ffffff;
+  --action-gold: var(--gold-500);
+
+  /* Status */
+  --status-success: var(--success-500);
+  --status-warning: var(--warn-500);
+  --status-danger: var(--danger-500);
+  --status-info: var(--brand-600);
+
+  /* Data-viz — Chart.js / ApexCharts series order */
+  --viz-1: var(--brand-600);
+  --viz-2: var(--accent-600);
+  --viz-3: var(--gold-500);
+  --viz-4: var(--site-600);
+  --viz-5: var(--sand-300);
+}

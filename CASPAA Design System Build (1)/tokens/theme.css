@@ -1,0 +1,90 @@
+/* CASPAA — COLOURFUL BRAND THEME (overrides the vendored app stylesheet)
+   ------------------------------------------------------------------
+   The shipped app used a deep navy (#0a2540) as its action colour. That navy is
+   OUT. This file re-points the same custom properties the vendored CSS already
+   consumes at the brand-guide palette, so every .btn / .nav-item / .avatar /
+   .progress / .chip / .bubble flips to brand colour with no component edits.
+
+   Brand guide palette (CASPAA BRAND GUIDELINE, p.9):
+     CASPAA GREEN  #00B386   CASPAA BLUE (teal) #0A8491   ACCENT GOLD #E69514
+     SOFT WHITE    #F8FAFC   LIGHT GRAY         #CBD5E1   DARK GRAY   #1E293B
+   Dark Gray is used for TEXT only — never as a surface. */
+
+:root {
+  /* --brand-* now IS the CASPAA Blue (teal) ramp. Nothing navy remains. */
+  --brand-50:  #eef6f7;
+  --brand-100: #d3ebed;
+  --brand-200: #b6dade;
+  --brand-300: #84c2c8;
+  --brand-400: #3fa0aa;
+  --brand-500: #0a8491;   /* CASPAA BLUE */
+  --brand-600: #0a8491;   /* the vendored sheet's action colour */
+  --brand-700: #086c77;
+  --brand-800: #06545d;
+  --brand-900: #053f46;
+  --brand-ring: rgba(10, 132, 145, 0.22);
+
+  /* Dark surfaces are deep teal, not navy. */
+  --navy-500: #22909c;
+  --navy-700: #06545d;
+  --navy-800: #06545d;
+  --navy-900: #053f46;
+
+  /* Accent Gold restored to the guide's value. */
+  --gold-500: #e69514;
+  --gold-600: #c67d0c;
+  --apricot: #e69514;
+  --apricot-600: #c67d0c;
+
+  /* Guide neutrals */
+  --line: #e2e8f0;
+  --line-soft: #f1f5f9;
+  --sand-300: #cbd5e1;   /* LIGHT GRAY */
+  --soft-white: #f8fafc; /* SOFT WHITE */
+  --ink: #1e293b;        /* DARK GRAY — text only */
+
+  /* ── Module colours ───────────────────────────────────────────
+     A school runs many modules, and flat single-hue chrome makes them
+     indistinguishable. Each module gets a fill + soft wash, drawn from or
+     harmonised with the three brand hues. */
+  --mod-fees: #00b386;        --mod-fees-soft: #e6f8f3;
+  --mod-academic: #0a8491;    --mod-academic-soft: #eef6f7;
+  --mod-students: #e69514;    --mod-students-soft: #fdf1de;
+  --mod-staff: #14a3a0;       --mod-staff-soft: #e4f6f5;
+  --mod-attendance: #4bb543;  --mod-attendance-soft: #ecf8eb;
+  --mod-reports: #7a5cd6;     --mod-reports-soft: #f0ecfc;
+  --mod-comms: #e0655c;       --mod-comms-soft: #fdeceb;
+  --mod-store: #d69e00;       --mod-store-soft: #fdf6e0;
+}
+
+/* The vendored sheet hard-codes navy text on the green and gold buttons. */
+.btn-accent { background: #00b386; color: #ffffff; }
+.btn-accent:hover { background: #00966f; color: #ffffff; }
+.btn-gold { background: #e69514; color: #ffffff; }
+.btn-gold:hover { background: #c67d0c; color: #ffffff; }
+
+/* Sidebar active row: green marker on a teal-tinted row reads as "school", not "bank". */
+.nav-item.active { background: var(--brand-50); color: var(--brand-700); box-shadow: inset 3px 0 0 #00b386; }
+.nav-item.active:hover { background: var(--brand-100); color: var(--brand-800); }
+
+/* Avatars alternate the brand hues instead of one flat fill. */
+.avatar { background: var(--brand-600); }
+.avatar.tone-green { background: #00b386; }
+.avatar.tone-gold { background: #e69514; color: #ffffff; }
+.avatar.tone-teal { background: #0a8491; }
+
+/* Fee progress is green (money in), not chrome-coloured. */
+.progress-bar { background: #00b386; }
+.progress-bar.is-warn { background: #e69514; }
+.progress-bar.is-danger { background: #dc2626; }
+
+/* Stat tiles get a coloured top rule so a dashboard row reads as distinct modules. */
+.stat { border-top: 3px solid var(--stat-accent, #0a8491); }
+
+/* Active tab keeps the green underline over teal type. */
+.tab.active { color: var(--brand-700); border-bottom-color: #00b386; }
+
+/* Chat bubbles: mine in teal, theirs light — never navy. */
+.bubble.mine { background: var(--brand-600); }
+
+/* Marketing dark sections stay the guide's teal family (site-800 already is). */

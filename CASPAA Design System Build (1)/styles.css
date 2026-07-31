@@ -1,0 +1,17 @@
+/* CASPAA design system — CSS entry point.
+   tokens/palette.css …… full colour ramps (source: tailwind.config in pages/_document.js)
+   tokens/typography.css … Figtree + type scale
+   tokens/spacing.css …… 8pt grid + layout metrics
+   tokens/effects.css …… radii (all 7px), shadows, motion
+   tokens/semantic.css …… role aliases for product UI
+   tokens/caspaa-app.css … VENDORED VERBATIM from the repo (public/css/styles.css):
+                           the real component classes (.btn, .card, .input, .tbl, …). */
+@import url("tokens/typography.css");
+@import url("tokens/palette.css");
+@import url("tokens/spacing.css");
+@import url("tokens/effects.css");
+@import url("tokens/semantic.css");
+@import url("tokens/caspaa-app.css");
+/* theme.css must come LAST — it re-points the vendored sheet off navy and onto
+   the brand-guide palette, and adds the per-module colour set. */
+@import url("tokens/theme.css");
