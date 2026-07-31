@@ -893,8 +893,15 @@ function showOTPScreen(account) {
     <div class="login-bg min-h-screen flex">
 
       <!-- Hero panel (left) — deep CASPAA Green -->
-      <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12">
-        <img src="logo/caspaa-white.svg" alt="CASPAA" class="relative h-8 w-auto" onerror="this.remove()" />
+      <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12" style="background-image:url('logo/hero-default.jpg')">
+        <!-- Deep-teal scrim: the photograph runs dark and busy, so the mark and
+             copy need a brand-coloured wash under them to stay legible. -->
+        <div class="absolute inset-0" style="background: linear-gradient(180deg, rgba(10,132,145,0.62) 0%, rgba(5,63,70,0.86) 100%)"></div>
+        <div class="relative text-white">
+          <img src="logo/caspaa-white.svg" alt="CASPAA" class="h-8 w-auto mb-8" onerror="this.remove()" />
+          <h2 class="text-3xl xl:text-4xl font-extrabold leading-tight mb-2">One more step</h2>
+          <p class="text-white/80 text-sm max-w-md">This account can reach money and platform-wide settings, so we ask for a fresh code every time you sign in.</p>
+        </div>
       </div>
 
       <!-- Verification card (right) -->
