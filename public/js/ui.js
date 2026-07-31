@@ -249,25 +249,27 @@ function statCard({ label, value, trend, icon: iconName, color = 'brand', toolti
   // icon chip per hue. Anchored on the website teal (site #0a8491), CASPAA green
   // (accent) and gold, extended with harmonious data hues (sky/violet/rose).
   // `!bg-…` wins over the base .stat white background regardless of CSS order.
+  // `accent` drives the 3px top rule (--stat-accent, see css/theme.css) so a
+  // dashboard row reads as distinct modules rather than one flat hue.
   const C = {
-    brand:   { tint: '!bg-site-50',    chip: 'from-site-400 to-site-600' },
-    teal:    { tint: '!bg-site-50',    chip: 'from-site-400 to-site-600' },
-    green:   { tint: '!bg-accent-50',  chip: 'from-accent-400 to-accent-600' },
-    emerald: { tint: '!bg-accent-50',  chip: 'from-accent-400 to-accent-600' },
-    gold:    { tint: '!bg-amber-50',   chip: 'from-amber-400 to-amber-500' },
-    amber:   { tint: '!bg-amber-50',   chip: 'from-amber-400 to-amber-500' },
-    blue:    { tint: '!bg-sky-50',     chip: 'from-sky-400 to-sky-600' },
-    sky:     { tint: '!bg-sky-50',     chip: 'from-sky-400 to-sky-600' },
-    indigo:  { tint: '!bg-indigo-50',  chip: 'from-indigo-400 to-indigo-600' },
-    purple:  { tint: '!bg-violet-50',  chip: 'from-violet-400 to-violet-600' },
-    violet:  { tint: '!bg-violet-50',  chip: 'from-violet-400 to-violet-600' },
-    rose:    { tint: '!bg-rose-50',    chip: 'from-rose-400 to-rose-600' },
-    red:     { tint: '!bg-rose-50',    chip: 'from-rose-400 to-rose-600' },
-    pink:    { tint: '!bg-pink-50',    chip: 'from-pink-400 to-pink-600' },
-    orange:  { tint: '!bg-orange-50',  chip: 'from-orange-400 to-orange-600' },
-    cyan:    { tint: '!bg-cyan-50',    chip: 'from-cyan-400 to-cyan-600' },
-    navy:    { tint: '!bg-brand-50',   chip: 'from-brand-500 to-brand-700' },
-    slate:   { tint: '!bg-slate-50',   chip: 'from-slate-400 to-slate-600' }
+    brand:   { tint: '!bg-site-50',    chip: 'from-site-400 to-site-600',       accent: '#0a8491' },
+    teal:    { tint: '!bg-site-50',    chip: 'from-site-400 to-site-600',       accent: '#0a8491' },
+    green:   { tint: '!bg-accent-50',  chip: 'from-accent-400 to-accent-600',   accent: '#00b386' },
+    emerald: { tint: '!bg-accent-50',  chip: 'from-accent-400 to-accent-600',   accent: '#00b386' },
+    gold:    { tint: '!bg-amber-50',   chip: 'from-amber-400 to-amber-500',     accent: '#e69514' },
+    amber:   { tint: '!bg-amber-50',   chip: 'from-amber-400 to-amber-500',     accent: '#e69514' },
+    blue:    { tint: '!bg-sky-50',     chip: 'from-sky-400 to-sky-600',         accent: '#0284c7' },
+    sky:     { tint: '!bg-sky-50',     chip: 'from-sky-400 to-sky-600',         accent: '#0284c7' },
+    indigo:  { tint: '!bg-indigo-50',  chip: 'from-indigo-400 to-indigo-600',   accent: '#4f46e5' },
+    purple:  { tint: '!bg-violet-50',  chip: 'from-violet-400 to-violet-600',   accent: '#7a5cd6' },
+    violet:  { tint: '!bg-violet-50',  chip: 'from-violet-400 to-violet-600',   accent: '#7a5cd6' },
+    rose:    { tint: '!bg-rose-50',    chip: 'from-rose-400 to-rose-600',       accent: '#e0655c' },
+    red:     { tint: '!bg-rose-50',    chip: 'from-rose-400 to-rose-600',       accent: '#e0655c' },
+    pink:    { tint: '!bg-pink-50',    chip: 'from-pink-400 to-pink-600',       accent: '#db2777' },
+    orange:  { tint: '!bg-orange-50',  chip: 'from-orange-400 to-orange-600',   accent: '#d69e00' },
+    cyan:    { tint: '!bg-cyan-50',    chip: 'from-cyan-400 to-cyan-600',       accent: '#14a3a0' },
+    navy:    { tint: '!bg-brand-50',   chip: 'from-brand-500 to-brand-700',     accent: '#06545d' },
+    slate:   { tint: '!bg-slate-50',   chip: 'from-slate-400 to-slate-600',     accent: '#808d9b' }
   };
   const c = C[color] || C.brand;
   const tooltipId = tooltip ? 'tip_' + Math.random().toString(36).slice(2, 8) : null;
@@ -279,7 +281,7 @@ function statCard({ label, value, trend, icon: iconName, color = 'brand', toolti
     }, 0);
   }
   return `
-    <div class="stat ${c.tint}">
+    <div class="stat ${c.tint}" style="--stat-accent:${c.accent}">
       <div class="flex items-start justify-between">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1 stat-label">

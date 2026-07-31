@@ -75,7 +75,7 @@ function adm_renderRoutesTab(routes, schoolId) {
 
   const chartRows = routes.map((r, i) => {
     const count = DB.query('busAssignments', a => a.routeId === r.id && a.schoolId === schoolId).length;
-    return { name: r.name, count, color: ['#0a2540','#00c08f','#f59e0b','#ef4444','#143a5c','#ec4899','#06b6d4','#f97316'][i % 8] };
+    return { name: r.name, count, color: ['#0a8491','#00b386','#e69514','#e0655c','#06545d','#7a5cd6','#14a3a0','#d69e00'][i % 8] };
   }).filter(d => d.count > 0);
 
   const totalAssigned = chartRows.reduce((s, d) => s + d.count, 0);

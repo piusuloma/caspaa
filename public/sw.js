@@ -15,13 +15,14 @@
    Bump CACHE_VERSION on any deploy that must invalidate the old cache.
    ============================================================ */
 
-const CACHE_VERSION = 'caspaa-v3';
+const CACHE_VERSION = 'caspaa-v4';
 const SHELL_URL = '/';
 
 // Best-effort precache of the app shell so the very first offline load works.
 const SHELL_ASSETS = [
   '/',
   '/css/styles.css',
+  '/css/theme.css',
   '/manifest.webmanifest',
   '/icon.svg',
 ];

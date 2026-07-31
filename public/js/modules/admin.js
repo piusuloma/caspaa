@@ -4049,12 +4049,12 @@ function printStudentID(studentId) {
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
     body { background: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
     .card { width: 86mm; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
-    .header { background: linear-gradient(135deg, #1e3a5f, #081d33); color: white; padding: 16px; text-align: center; }
+    .header { background: linear-gradient(135deg, #0a8491, #053f46); color: white; padding: 16px; text-align: center; }
     .school-name { font-size: 13px; font-weight: bold; letter-spacing: 0.5px; }
     .school-sub { font-size: 9px; opacity: 0.8; margin-top: 2px; text-transform: uppercase; }
     .id-label { font-size: 10px; font-weight: bold; background: rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 8px; margin-top: 8px; display: inline-block; letter-spacing: 1px; }
     .body { padding: 16px; }
-    .avatar { width: 64px; height: 64px; border-radius: 50%; background: #dbeafe; color: #1d4ed8; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 12px; border: 3px solid #081d33; }
+    .avatar { width: 64px; height: 64px; border-radius: 50%; background: #eef6f7; color: #086c77; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 12px; border: 3px solid #06545d; }
     .name { font-size: 16px; font-weight: bold; color: #0f172a; text-align: center; }
     .class { font-size: 11px; color: #64748b; text-align: center; margin-top: 2px; }
     .adm { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px; font-family: monospace; }
@@ -5883,7 +5883,7 @@ function view_adm_enrollment_analytics() {
         data: {
           labels: classLabels,
           datasets: [{ label: 'Students', data: classData,
-            backgroundColor: '#0a2540', borderRadius: 6 }]
+            backgroundColor: '#0a8491', borderRadius: 6 }]
         },
         options: { responsive: true, plugins: { legend: { display: false } },
           scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
@@ -5896,7 +5896,7 @@ function view_adm_enrollment_analytics() {
         data: {
           labels: ['Male', 'Female', 'Other'],
           datasets: [{ data: [maleCount, femaleCount, otherCount],
-            backgroundColor: ['#0a2540', '#f472b6', '#94a3b8'] }]
+            backgroundColor: ['#0a8491', '#e69514', '#cbd5e1'] }]
         },
         options: { responsive: true, cutout: '65%',
           plugins: { legend: { position: 'bottom' } } }
