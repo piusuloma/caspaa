@@ -346,11 +346,16 @@ function viewSchoolDetail(schoolId) {
           </div>
         </div>
       </div>
+      ${s.pendingPlan ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+        <strong>School-scheduled change:</strong> moves to <strong>${s.pendingPlan}</strong> at the next renewal
+        ${s.nextRenewal ? `(${fdate(s.nextRenewal, { long: true })})` : ''}. Renewing now applies it.
+        <button class="btn btn-ghost text-xs !py-0.5 ml-1" onclick="clearPendingPlan('${s.id}')">Clear</button>
+      </div>` : ''}
       <div>
         <label class="input-label">Change Plan</label>
         <div class="grid grid-cols-3 gap-2">
           ${['Essential','Professional','Enterprise'].map(p => {
-            const fees = { Essential: 45000, Professional: 95000, Enterprise: 250000 };
+            const fees = typeof PLAN_PRICING !== 'undefined' ? PLAN_PRICING : { Essential: 45000, Professional: 95000, Enterprise: 250000 };
             const isCurrent = s.subscriptionPlan === p;
             return `<button class="p-3 rounded-xl border-2 ${isCurrent ? 'border-brand-500 bg-brand-50' : 'border-slate-200 hover:border-brand-500'} text-left text-sm" ${isCurrent ? '' : `onclick="changeSchoolPlan('${s.id}', '${p}')"`}>
               <div class="font-bold text-slate-900">${p}</div>
@@ -446,12 +451,20 @@ function viewSchoolDetail(schoolId) {
 }
 
 function changeSchoolPlan(schoolId, newPlan) {
-  const fees = { Essential: 45000, Professional: 95000, Enterprise: 250000 };
+  const fees = typeof PLAN_PRICING !== 'undefined' ? PLAN_PRICING : { Essential: 45000, Professional: 95000, Enterprise: 250000 };
   const s = DB.find('schools', schoolId);
   const oldPlan = s.subscriptionPlan;
   DB.update('schools', schoolId, { subscriptionPlan: newPlan, monthlyFee: fees[newPlan] });
   DB.insert('auditLog', { id: uid('aud'), schoolId: 'platform', actor: AUTH.current.id, action: 'changed_plan', target: `${s.name}: ${oldPlan} → ${newPlan}`, timestamp: now() });
   toast(`${s.name} moved from ${oldPlan} to ${newPlan}`, 'success');
+  viewSchoolDetail(schoolId);
+}
+
+function clearPendingPlan(schoolId) {
+  const s = DB.find('schools', schoolId);
+  DB.update('schools', schoolId, { pendingPlan: null });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: 'platform', actor: AUTH.current.id, action: 'cancelled_plan_change', target: `${s.name} stays on ${s.subscriptionPlan}`, timestamp: now() });
+  toast(`Scheduled change cleared — ${s.name} stays on ${s.subscriptionPlan}`);
   viewSchoolDetail(schoolId);
 }
 
@@ -463,16 +476,26 @@ function toggleAutoRenew(schoolId, on) {
 function renewSchoolSubscription(schoolId) {
   const s = DB.find('schools', schoolId);
   const newRenewal = daysAhead(30);
+  // A downgrade the school scheduled from its own Billing tab takes effect at
+  // this renewal — that's the whole point of scheduling it rather than applying
+  // it on the spot, so bill the new tier from here on.
+  const fees = typeof PLAN_PRICING !== 'undefined' ? PLAN_PRICING : { Essential: 45000, Professional: 95000, Enterprise: 250000 };
+  const plan = s.pendingPlan || s.subscriptionPlan;
+  const amount = s.pendingPlan ? (fees[s.pendingPlan] || s.monthlyFee) : s.monthlyFee;
   // Create a paid invoice for this renewal period
   const period = new Date().toLocaleString('en-GB', { month: 'long', year: 'numeric' });
   DB.insert('schoolInvoices', {
-    id: uid('sinv'), schoolId, period, plan: s.subscriptionPlan,
-    amount: s.monthlyFee, status: 'paid',
+    id: uid('sinv'), schoolId, period, plan,
+    amount, status: 'paid',
     dueDate: today(), paidAt: now(),
     remindersSent: 0
   });
-  DB.update('schools', schoolId, { nextRenewal: newRenewal, status: s.status === 'trial' ? 'active' : s.status });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: 'platform', actor: AUTH.current.id, action: 'renewed_subscription', target: `${s.name} (${money(s.monthlyFee)})`, timestamp: now() });
+  DB.update('schools', schoolId, {
+    nextRenewal: newRenewal,
+    status: s.status === 'trial' ? 'active' : s.status,
+    subscriptionPlan: plan, monthlyFee: amount, pendingPlan: null
+  });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: 'platform', actor: AUTH.current.id, action: 'renewed_subscription', target: `${s.name} (${money(amount)})${s.pendingPlan ? ` · moved to ${s.pendingPlan}` : ''}`, timestamp: now() });
   toast(`${s.name} renewed — next billing ${fdate(newRenewal, { long: true })}`, 'success');
   viewSchoolDetail(schoolId);
 }
@@ -597,7 +620,7 @@ function onboardSchoolModal() {
 
 function saveNewSchool() {
   const plan = document.getElementById('ns_plan').value;
-  const planFees = { 'Essential': 45000, 'Professional': 95000, 'Enterprise': 250000 };
+  const planFees = typeof PLAN_PRICING !== 'undefined' ? PLAN_PRICING : { 'Essential': 45000, 'Professional': 95000, 'Enterprise': 250000 };
   const name = document.getElementById('ns_name').value.trim();
   const proprietor = document.getElementById('ns_prop').value.trim();
   const email = document.getElementById('ns_email').value.trim();
