@@ -3191,7 +3191,7 @@ function view_adm_dashboard() {
             <p class="text-xs font-semibold ${renewalDays !== null && renewalDays <= 7 ? 'text-rose-600' : 'text-slate-500'}">
               ${renewalDays === null ? 'No renewal date set.' : renewalDays <= 0 ? 'EXPIRED' : `Renews in ${renewalDays} days.`}
             </p>
-            <button class="btn btn-secondary !py-1 !px-2.5 text-xs whitespace-nowrap" onclick="APP.go('adm_settings')">Upgrade Plan</button>
+            <button class="btn btn-secondary !py-1 !px-2.5 text-xs whitespace-nowrap" onclick="APP.go('adm_settings', { setTab: 'billing' })">Upgrade Plan</button>
           </div>
         </div>
       </div>
@@ -3240,7 +3240,7 @@ function view_adm_dashboard() {
           <div class="grid sm:grid-cols-2 gap-1.5 mb-4">
             ${(() => {
               const items = [];
-              if (renewalDays !== null && renewalDays <= 30) items.push({ icon: 'bell', tone: renewalDays <= 7 ? 'rose' : 'amber', text: `Subscription renews in ${renewalDays}d`, go: "APP.go('adm_settings')" });
+              if (renewalDays !== null && renewalDays <= 30) items.push({ icon: 'bell', tone: renewalDays <= 7 ? 'rose' : 'amber', text: `Subscription renews in ${renewalDays}d`, go: "APP.go('adm_settings', { setTab: 'billing' })" });
               if (pendingLoans > 0) items.push({ icon: 'loan', tone: 'amber', text: `${pendingLoans} loan request${pendingLoans !== 1 ? 's' : ''} awaiting decision`, go: "APP.go('fin_lending')" });
               const lowStock = DB.query('inventory', i => i.schoolId === schoolId && i.quantity < i.minStock).length;
               if (lowStock) items.push({ icon: 'package', tone: 'amber', text: `${lowStock} inventory item${lowStock !== 1 ? 's' : ''} low stock`, go: "APP.go('adm_operations',{opsTab:'inventory'})" });
@@ -9863,9 +9863,10 @@ function saveStaffAttendance(date) {
 function view_adm_settings() {
   const tab = APP.params.setTab || 'branding';
   return `
-    ${pageHeader({ title: 'School Settings', subtitle: 'Branding · Academic · Appraisal · Budget · Calendar · Notifications · Roles · AI · Payments · Backup' })}
+    ${pageHeader({ title: 'School Settings', subtitle: 'Branding · Billing · Academic · Appraisal · Budget · Calendar · Notifications · Roles · AI · Payments · Backup' })}
     ${tabs([
       { key: 'branding',     label: 'Branding' },
+      { key: 'billing',      label: 'Billing & Plan' },
       { key: 'academic',     label: 'Academic' },
       { key: 'appraisal',    label: 'Appraisal' },
       { key: 'budget',       label: 'Budget Categories' },
@@ -9878,7 +9879,8 @@ function view_adm_settings() {
       { key: 'backup',       label: 'Data Backup' }
     ], tab, k => { APP.params.setTab = k; APP.render(); })}
     <div class="pt-4">
-      ${tab === 'academic' ? renderAcademicStructure() :
+      ${tab === 'billing' ? (typeof renderBillingSettings === 'function' ? renderBillingSettings() : '') :
+        tab === 'academic' ? renderAcademicStructure() :
         tab === 'appraisal' ? renderAppraisalSettings() :
         tab === 'budget' ? renderBudgetCategoriesSettings() :
         tab === 'lists'  ? renderCustomListsSettings() :
