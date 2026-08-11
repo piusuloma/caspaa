@@ -27,6 +27,7 @@ const APP_SCRIPTS = [
   '/js/modules/inventory.js',
   '/js/modules/ledger.js',
   '/js/modules/entitlements.js',
+  '/js/modules/billing.js',
   '/js/modules/group.js',
   '/js/app.js',
 ]
