@@ -1707,7 +1707,10 @@ function newTicketModal() {
         <div><label class="input-label" for="tkt_school">School</label>
           <select id="tkt_school" class="input">${schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
         </div>
-        <div><label class="input-label" for="tkt_requester">Requester (name)</label><input id="tkt_requester" class="input" placeholder="e.g. Mr. Olusegun Adebayo" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="input-label" for="tkt_requester">Requester (name)</label><input id="tkt_requester" class="input" placeholder="e.g. Mr. Olusegun Adebayo" /></div>
+          <div><label class="input-label" for="tkt_email">Requester email</label><input id="tkt_email" type="email" class="input" placeholder="you@school.ng" /></div>
+        </div>
         <div><label class="input-label" for="tkt_subject">Subject</label><input id="tkt_subject" class="input" /></div>
         <div><label class="input-label" for="tkt_desc">Description</label><textarea id="tkt_desc" rows="3" class="input"></textarea></div>
         <div class="grid grid-cols-3 gap-3">
@@ -1729,10 +1732,13 @@ function newTicketModal() {
 function saveNewTicket() {
   const subject = document.getElementById('tkt_subject').value.trim();
   if (!subject) { toast('Subject required', 'danger'); return; }
+  const email = document.getElementById('tkt_email').value.trim();
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Enter a valid email address', 'danger'); return; }
   DB.insert('supportTickets', {
     id: 'tkt_' + Date.now().toString(36).slice(-4),
     schoolId: document.getElementById('tkt_school').value,
     requester: document.getElementById('tkt_requester').value.trim() || '—',
+    requesterEmail: email,
     subject,
     description: document.getElementById('tkt_desc').value.trim(),
     priority: document.getElementById('tkt_priority').value,
