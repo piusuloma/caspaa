@@ -403,9 +403,12 @@ function renderLogin() {
   return `
     <div class="login-bg min-h-screen flex">
 
-      <!-- Hero panel (left) — image only; the wordmark now sits above the form heading. -->
+      <!-- Hero panel (left) — looping brand video; the wordmark sits above the form heading. -->
       <div id="loginHero" class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col items-center justify-start p-10 xl:p-12" style="background-image:url('logo/hero-default.jpg')">
-        ${displayName === 'CASPAA' ? '' : `<div class="relative text-white text-center">
+        <video class="login-hero-video" autoplay muted loop playsinline poster="logo/hero-default.jpg">
+          <source src="media/hero-default_2.mp4" type="video/mp4" />
+        </video>
+        ${displayName === 'CASPAA' ? '' : `<div class="relative z-10 text-white text-center">
           <h1 class="text-xl font-extrabold tracking-tight leading-tight">${displayName}</h1>
           <p class="text-white/70 text-xs">Powered by CASPAA</p>
         </div>`}
@@ -894,7 +897,10 @@ function showOTPScreen(account) {
 
       <!-- Hero panel (left) — deep CASPAA Green -->
       <div class="login-hero hidden lg:flex lg:w-[42%] xl:w-[38%] relative overflow-hidden shrink-0 flex-col justify-center p-10 xl:p-12" style="background-image:url('logo/hero-default.jpg')">
-        <!-- Deep-teal scrim: the photograph runs dark and busy, so the mark and
+        <video class="login-hero-video" autoplay muted loop playsinline poster="logo/hero-default.jpg">
+          <source src="media/hero-default_2.mp4" type="video/mp4" />
+        </video>
+        <!-- Deep-teal scrim: the video runs dark and busy, so the mark and
              copy need a brand-coloured wash under them to stay legible. -->
         <div class="absolute inset-0" style="background: linear-gradient(180deg, rgba(10,132,145,0.62) 0%, rgba(5,63,70,0.86) 100%)"></div>
         <div class="relative text-white">
