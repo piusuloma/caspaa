@@ -90,7 +90,7 @@ function view_adm_student_transfers() {
               ? `<tr><td colspan="6" class="text-center text-slate-500 py-8">No transfer-in students recorded yet</td></tr>`
               : transfersIn.map(s => {
                   const cls = DB.find('classes', s.classId);
-                  return `<tr onclick="viewStudentProfile('${s.id}')" class="cursor-pointer hover:bg-slate-50">
+                  return `<tr onclick="viewStudent('${s.id}')" class="cursor-pointer hover:bg-slate-50">
                     <td><div class="flex items-center gap-2">${avatar(s.name,'sm')}<div><div class="font-medium text-sm">${s.name}</div><div class="text-xs text-slate-500">${s.admissionNo || ''}</div></div></div></td>
                     <td class="text-sm">${cls ? cls.name : '—'}</td>
                     <td class="text-sm">${s.transferFromSchool || '—'}</td>
@@ -159,7 +159,7 @@ function view_adm_student_suspensions() {
               ${shown.map(sus => {
                 const stu = DB.find('students', sus.studentId);
                 const cls = stu ? DB.find('classes', stu.classId) : null;
-                return `<tr onclick="${stu ? `viewStudentProfile('${stu.id}')` : ''}" class="${stu ? 'cursor-pointer hover:bg-slate-50' : ''}">
+                return `<tr onclick="${stu ? `viewStudent('${stu.id}')` : ''}" class="${stu ? 'cursor-pointer hover:bg-slate-50' : ''}">
                   <td><div class="flex items-center gap-2">${avatar(stu ? stu.name : '?','sm')}<div><div class="font-medium text-sm">${stu ? stu.name : '—'}</div><div class="text-xs text-slate-500">${stu ? (stu.admissionNo || '') : ''}</div></div></div></td>
                   <td class="text-sm">${cls ? cls.name : '—'}</td>
                   <td class="text-sm">${sus.reason || '—'}</td>
@@ -3650,9 +3650,12 @@ function calcAge(dob) {
   return Math.floor(a);
 }
 
-function viewStudent(id, activeTab) {
-  const s = DB.find('students', id);
-  if (!s) return;
+// Student record — a full routable page (was a modal). Reached via
+// viewStudent(id), which navigates to APP.view 'adm_student'.
+function view_adm_student() {
+  const id = APP.params.studentId;
+  const s = id ? DB.find('students', id) : null;
+  if (!s) return emptyState({ title: 'Student not found', body: 'Select a student from the list.', icon: 'students' });
   const cls = DB.find('classes', s.classId);
   const parent = DB.find('parents', s.parentId);
   const inv = COMPUTE.studentInvoice(s.id);
@@ -3661,7 +3664,7 @@ function viewStudent(id, activeTab) {
   const results = allResults;
   const avg = results.length ? Math.round(results.reduce((sum, r) => sum + r.total, 0) / results.length) : 0;
   const subjects = DB.get('subjects');
-  const tab = activeTab || 'profile';
+  const tab = APP.params.studentTab || 'profile';
 
   // ─── Tab bar ────────────────────────────────────────────────────────────────
   const tabs = [
@@ -3675,7 +3678,7 @@ function viewStudent(id, activeTab) {
     { k: 'wallet',     l: 'Wallet' },
   ];
   const tabBar = `<div class="flex gap-0.5 mb-4 border-b border-slate-200 overflow-x-auto -mx-1 px-1">
-    ${tabs.map(t => `<button onclick="viewStudent('${id}','${t.k}')" class="whitespace-nowrap px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab===t.k?'border-brand-600 text-brand-700':'border-transparent text-slate-500 hover:text-slate-700'}">${t.l}</button>`).join('')}
+    ${tabs.map(t => `<button onclick="APP.params.studentTab='${t.k}'; APP.render()" class="whitespace-nowrap px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab===t.k?'border-brand-600 text-brand-700':'border-transparent text-slate-500 hover:text-slate-700'}">${t.l}</button>`).join('')}
   </div>`;
 
   // ─── Header (always shown) ───────────────────────────────────────────────────
@@ -4018,18 +4021,27 @@ function viewStudent(id, activeTab) {
     : tab === 'wallet' ? renderStudentWallet(s.id, s.schoolId)
     : profileTab();
 
-  modal({
-    title: 'Student Record',
-    size: 'lg',
-    body: header + tabBar + `<div class="min-h-40">${bodyContent}</div>`,
-    footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
-      <button class="btn btn-secondary" onclick="printStudentID('${s.id}')">${icon('download','w-4 h-4')} Print ID</button>
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>studentLifecycleModal('${s.id}'),50)">${icon('settings','w-4 h-4')} Actions</button>
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>editStudent('${s.id}'),50)">${icon('edit','w-4 h-4')} Edit</button>
-      <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop')?.click(); viewAsParent('${s.parentId}')">View as Parent</button>
-    `
-  });
+  return `
+    <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+      <button class="btn btn-ghost !px-2" onclick="APP.go('adm_people', { peopleTab: 'students' })">${icon('arrow_left','w-4 h-4')} Back to Students</button>
+      <div class="flex gap-2 flex-wrap">
+        <button class="btn btn-secondary" onclick="printStudentID('${s.id}')">${icon('download','w-4 h-4')} Print ID</button>
+        <button class="btn btn-secondary" onclick="studentLifecycleModal('${s.id}')">${icon('settings','w-4 h-4')} Actions</button>
+        <button class="btn btn-secondary" onclick="editStudent('${s.id}')">${icon('edit','w-4 h-4')} Edit</button>
+        <button class="btn btn-primary" onclick="viewAsParent('${s.parentId}')">View as Parent</button>
+      </div>
+    </div>
+    <div class="card p-5 sm:p-6">
+      ${header}
+      ${tabBar}
+      <div class="min-h-40">${bodyContent}</div>
+    </div>
+  `;
+}
+
+// Navigator: open a student's record as a full page (was a modal).
+function viewStudent(id, tab) {
+  APP.go('adm_student', { studentId: id, studentTab: tab || 'profile' });
 }
 
 function printStudentID(studentId) {
