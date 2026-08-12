@@ -298,6 +298,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0; }
 .range-reset { color: #e11d48; }
 .range-reset:hover { color: #be123c; background: #fff5f5; }
 
+/* Grid / list view toggle — segmented pill */
+.view-toggle { display: inline-flex; align-items: center; gap: 2px; background: var(--line-soft); border-radius: 10px; padding: 3px; }
+.view-toggle button { display: grid; place-items: center; width: 32px; height: 30px; border-radius: 8px; color: var(--muted); cursor: pointer; transition: background 0.15s, color 0.15s; }
+.view-toggle button:hover { color: #0a8491; }
+.view-toggle button.active { background: #fff; color: #086c77; box-shadow: 0 1px 3px rgba(8,84,119,0.15); }
+
 /* Date picker (flatpickr) — brand themed */
 .flatpickr-day.selected, .flatpickr-day.selected:hover, .flatpickr-day.startRange, .flatpickr-day.endRange { background: var(--brand-600); border-color: var(--brand-600); }
 .flatpickr-day.today { border-color: var(--brand-400); }

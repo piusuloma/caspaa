@@ -244,6 +244,13 @@ function view_sa_schools() {
   const schools = DB.get('schools');
   const statusF = APP.params.schoolStatus || 'all';
   const filtered = statusF === 'all' ? schools : schools.filter(s => s.status === statusF);
+  const view = APP.params.schoolView || 'grid';
+  const renewInfo = s => {
+    const days = s.nextRenewal ? Math.ceil((new Date(s.nextRenewal) - new Date()) / 86400000) : null;
+    const cls = days === null ? 'text-slate-500' : (days <= 0 ? 'text-rose-700 font-bold' : days <= 7 ? 'text-amber-700 font-semibold' : 'text-slate-500');
+    const label = days === null ? '—' : (days <= 0 ? `Overdue ${Math.abs(days)}d` : `In ${days}d`);
+    return { cls, label };
+  };
   return `
     ${pageHeader({
       title: 'Schools',
@@ -253,16 +260,59 @@ function view_sa_schools() {
         <button class="btn btn-primary" onclick="onboardSchoolModal()">${icon('plus','w-4 h-4')} Onboard School</button>
       `
     })}
-    <div class="flex gap-2 mb-4 flex-wrap">
-      <button class="chip ${statusF==='all'?'active':''}" onclick="APP.go('sa_schools', { schoolStatus: 'all' })">All ${schools.length}</button>
-      <button class="chip ${statusF==='active'?'active':''}" onclick="APP.go('sa_schools', { schoolStatus: 'active' })">Active ${schools.filter(s=>s.status==='active').length}</button>
-      <button class="chip ${statusF==='trial'?'active':''}" onclick="APP.go('sa_schools', { schoolStatus: 'trial' })">Trial ${schools.filter(s=>s.status==='trial').length}</button>
-      <button class="chip ${statusF==='suspended'?'active':''}" onclick="APP.go('sa_schools', { schoolStatus: 'suspended' })">Suspended ${schools.filter(s=>s.status==='suspended').length}</button>
+    <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+      <div class="flex gap-2 flex-wrap">
+        <button class="chip ${statusF==='all'?'active':''}" onclick="APP.go('sa_schools', { schoolStatus: 'all', schoolView: '${view}' })">All ${schools.length}</button>
+        <button class="chip ${statusF==='active'?'active':''}" onclick="APP.go('sa_schools', { schoolStatus: 'active', schoolView: '${view}' })">Active ${schools.filter(s=>s.status==='active').length}</button>
+        <button class="chip ${statusF==='trial'?'active':''}" onclick="APP.go('sa_schools', { schoolStatus: 'trial', schoolView: '${view}' })">Trial ${schools.filter(s=>s.status==='trial').length}</button>
+        <button class="chip ${statusF==='suspended'?'active':''}" onclick="APP.go('sa_schools', { schoolStatus: 'suspended', schoolView: '${view}' })">Suspended ${schools.filter(s=>s.status==='suspended').length}</button>
+      </div>
+      <!-- Grid / list view toggle -->
+      <div class="view-toggle">
+        <button class="${view==='grid'?'active':''}" title="Grid view" aria-label="Grid view" onclick="APP.params.schoolView='grid'; APP.render()">${icon('dashboard','w-4 h-4')}</button>
+        <button class="${view==='list'?'active':''}" title="List view" aria-label="List view" onclick="APP.params.schoolView='list'; APP.render()">${icon('menu','w-4 h-4')}</button>
+      </div>
     </div>
+    ${view === 'list' ? `
+      <div class="card overflow-hidden">
+        <table class="tbl w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-100">
+              <th class="px-4 py-3 font-semibold">School</th>
+              <th class="px-4 py-3 font-semibold">Proprietor</th>
+              <th class="px-4 py-3 font-semibold">Students</th>
+              <th class="px-4 py-3 font-semibold">Plan</th>
+              <th class="px-4 py-3 font-semibold">MRR</th>
+              <th class="px-4 py-3 font-semibold">Renewal</th>
+              <th class="px-4 py-3 font-semibold">Status</th>
+              <th class="px-4 py-3 font-semibold text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(s => { const r = renewInfo(s); return `
+            <tr class="border-b border-slate-50 hover:bg-slate-50">
+              <td class="px-4 py-2.5"><div class="flex items-center gap-2.5">${avatar(s.name, 'sm')}<span class="font-semibold text-slate-900">${s.name}</span></div></td>
+              <td class="px-4 py-2.5 text-slate-600">${s.proprietor}</td>
+              <td class="px-4 py-2.5 font-semibold">${s.students}</td>
+              <td class="px-4 py-2.5">${s.subscriptionPlan}</td>
+              <td class="px-4 py-2.5 font-mono">${money(s.monthlyFee)}</td>
+              <td class="px-4 py-2.5 ${r.cls}">${r.label}</td>
+              <td class="px-4 py-2.5">${statusBadge(s.status)}</td>
+              <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                <button class="btn btn-secondary !py-1 !px-2.5 text-xs" onclick="viewSchoolDetail('${s.id}')">View</button>
+                ${s.status === 'suspended' ?
+                  `<button class="btn btn-primary !py-1 !px-2.5 text-xs ml-1" onclick="toggleSchoolStatus('${s.id}', 'active')">Reactivate</button>` :
+                  `<button class="btn btn-danger !py-1 !px-2.5 text-xs ml-1" onclick="toggleSchoolStatus('${s.id}', 'suspended')">Suspend</button>`}
+              </td>
+            </tr>`; }).join('')}
+          </tbody>
+        </table>
+        ${filtered.length === 0 ? `<div class="px-4 py-10 text-center text-sm text-slate-400">No schools match this filter.</div>` : ''}
+      </div>
+    ` : `
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
       ${filtered.map(s => {
-        const days = s.nextRenewal ? Math.ceil((new Date(s.nextRenewal) - new Date()) / 86400000) : null;
-        const renewClass = days === null ? 'text-slate-500' : (days <= 0 ? 'text-rose-700 font-bold' : days <= 7 ? 'text-amber-700 font-semibold' : 'text-slate-500');
+        const r = renewInfo(s);
         return `<div class="card p-5">
         <div class="flex items-start justify-between mb-3">
           ${avatar(s.name, 'lg')}
@@ -278,7 +328,7 @@ function view_sa_schools() {
           <div><div class="text-xs text-slate-500">Students</div><div class="font-bold">${s.students}</div></div>
           <div><div class="text-xs text-slate-500">Plan</div><div class="font-bold">${s.subscriptionPlan}</div></div>
           <div><div class="text-xs text-slate-500">MRR</div><div class="font-bold font-mono">${money(s.monthlyFee)}</div></div>
-          <div><div class="text-xs text-slate-500">Renewal</div><div class="${renewClass} text-sm">${days === null ? '—' : (days <= 0 ? `Overdue ${Math.abs(days)}d` : `In ${days}d`)}</div></div>
+          <div><div class="text-xs text-slate-500">Renewal</div><div class="${r.cls} text-sm">${r.label}</div></div>
         </div>
         <div class="grid grid-cols-2 gap-1.5 mt-3">
           <button class="btn btn-secondary !py-1.5 text-xs" onclick="viewSchoolDetail('${s.id}')">View</button>
@@ -289,6 +339,7 @@ function view_sa_schools() {
       </div>`;
       }).join('')}
     </div>
+    `}
   `;
 }
 
