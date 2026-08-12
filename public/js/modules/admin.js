@@ -3737,36 +3737,63 @@ function view_adm_student() {
     })();
     const docs = s.documents || {};
     const presentDocs = _docTypes.filter(d => docs[d.key]);
+    const house = s.houseId ? DB.find('houses', s.houseId) : null;
+    const infoRow = (l, v) => `<div class="grid grid-cols-[130px_1fr] gap-3 px-4 py-2.5">
+        <div class="text-sm text-slate-500">${l}</div>
+        <div class="text-sm font-semibold text-slate-900 break-words">${(v === 0 || v) ? v : '—'}</div>
+      </div>`;
     return `
-      <div class="grid grid-cols-2 gap-3 text-sm mb-4">
-        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Date of Birth</div><div>${fdate(s.dob, { long: true })}</div></div>
-        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Blood Group</div><div>${s.bloodGroup || '—'}${s.allergies && s.allergies !== 'None' ? ` <span class="badge badge-warn text-xs">${s.allergies}</span>` : ''}</div></div>
-        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Parent / Guardian</div><div>${parent ? parent.name : '—'}</div></div>
-        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Parent Phone</div><div>${parent ? parent.phone : '—'}</div></div>
-        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Admission Date</div><div>${fdate(s.admissionDate, { long: true })}</div></div>
-        <div><div class="text-xs text-slate-500 font-semibold uppercase mb-0.5">Admission Type</div><div>${s.admissionType === 'transfer' ? 'Transfer-in' : 'New Admission'}</div></div>
-        ${s.admissionType === 'transfer' && s.transferFromSchool ? `
-        <div class="col-span-2 bg-brand-50 rounded-xl p-3">
-          <div class="text-xs text-brand-700 font-semibold uppercase mb-1">Transfer Origin</div>
-          <div class="font-semibold text-slate-900">${s.transferFromSchool}</div>
-          ${s.transferFromClass ? `<div class="text-xs text-slate-500">Last class: ${s.transferFromClass}</div>` : ''}
-          ${s.transferInDate ? `<div class="text-xs text-slate-500">Transfer date: ${fdate(s.transferInDate, { long: true })}</div>` : ''}
-          ${s.transferInReason ? `<div class="text-xs text-slate-500 mt-0.5">Reason: ${s.transferInReason}</div>` : ''}
-        </div>` : ''}
-        ${s.status === 'transferred' ? `
-        <div class="col-span-2 bg-amber-50 rounded-xl p-3">
-          <div class="text-xs text-amber-700 font-semibold uppercase mb-1">Transferred Out</div>
-          <div class="font-semibold text-slate-900">${s.transferDest || '—'}</div>
-          ${s.transferReason ? `<div class="text-xs text-slate-500">${s.transferReason}</div>` : ''}
-          ${s.transferredAt ? `<div class="text-xs text-slate-500">Date: ${fdate(s.transferredAt, { long: true })}</div>` : ''}
-        </div>` : ''}
-        ${s.status === 'withdrawn' ? `
-        <div class="col-span-2 bg-rose-50 rounded-xl p-3">
-          <div class="text-xs text-rose-700 font-semibold uppercase mb-1">Withdrawn</div>
-          <div class="font-semibold text-slate-900">${s.withdrawReason || '—'}</div>
-          ${s.withdrawnAt ? `<div class="text-xs text-slate-500">Date: ${fdate(s.withdrawnAt, { long: true })}</div>` : ''}
-        </div>` : ''}
+      <!-- My Information — photo + labelled details -->
+      <div class="grid md:grid-cols-[200px_1fr] gap-5 mb-5">
+        <div class="flex flex-col items-center">
+          <div class="w-40 h-40 rounded-2xl overflow-hidden bg-brand-50 ring-1 ring-brand-100 flex items-center justify-center">
+            ${s.photo ? `<img src="${s.photo}" alt="${s.name}" class="w-full h-full object-cover" />` : `<span class="text-5xl font-extrabold text-brand-400">${(s.name || '?').trim().slice(0, 1).toUpperCase()}</span>`}
+          </div>
+          <div class="flex items-center gap-1 mt-3">
+            <button class="btn btn-secondary !p-2" title="Edit" onclick="editStudent('${s.id}')">${icon('edit','w-4 h-4')}</button>
+            <button class="btn btn-secondary !p-2" title="Print ID card" onclick="printStudentID('${s.id}')">${icon('reports','w-4 h-4')}</button>
+            <button class="btn btn-secondary !p-2" title="Download ID card" onclick="printStudentID('${s.id}')">${icon('download','w-4 h-4')}</button>
+            <button class="btn btn-secondary !p-2" title="Copy reference" onclick="navigator.clipboard&&navigator.clipboard.writeText('${s.name} · ${s.admissionNo || ''}'); toast('Student reference copied')">${icon('send','w-4 h-4')}</button>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-slate-100 divide-y divide-slate-100">
+          ${infoRow('Name', s.name)}
+          ${infoRow('Gender', s.gender === 'M' ? 'Male' : s.gender === 'F' ? 'Female' : '—')}
+          ${infoRow(parent && parent.relationship ? parent.relationship + ' name' : 'Parent / Guardian', parent ? parent.name : '—')}
+          ${parent && parent.occupation ? infoRow('Occupation', parent.occupation) : ''}
+          ${infoRow('Date of birth', fdate(s.dob, { long: true }))}
+          ${infoRow('Blood group', `${s.bloodGroup || '—'}${s.allergies && s.allergies !== 'None' ? ` · ${s.allergies}` : ''}`)}
+          ${infoRow('E-mail', (parent && parent.email) || s.email)}
+          ${infoRow('Phone', (parent && parent.phone) || s.phone)}
+          ${infoRow('Address', (parent && parent.address) || s.address)}
+          ${infoRow('Admission no.', s.admissionNo)}
+          ${infoRow('Admission date', fdate(s.admissionDate, { long: true }))}
+          ${infoRow('Class', cls ? cls.name : '—')}
+          ${infoRow('House', house ? house.name : '—')}
+        </div>
       </div>
+
+      ${s.admissionType === 'transfer' && s.transferFromSchool ? `
+      <div class="bg-brand-50 rounded-xl p-3 mb-4">
+        <div class="text-xs text-brand-700 font-semibold uppercase mb-1">Transfer Origin</div>
+        <div class="font-semibold text-slate-900">${s.transferFromSchool}</div>
+        ${s.transferFromClass ? `<div class="text-xs text-slate-500">Last class: ${s.transferFromClass}</div>` : ''}
+        ${s.transferInDate ? `<div class="text-xs text-slate-500">Transfer date: ${fdate(s.transferInDate, { long: true })}</div>` : ''}
+        ${s.transferInReason ? `<div class="text-xs text-slate-500 mt-0.5">Reason: ${s.transferInReason}</div>` : ''}
+      </div>` : ''}
+      ${s.status === 'transferred' ? `
+      <div class="bg-amber-50 rounded-xl p-3 mb-4">
+        <div class="text-xs text-amber-700 font-semibold uppercase mb-1">Transferred Out</div>
+        <div class="font-semibold text-slate-900">${s.transferDest || '—'}</div>
+        ${s.transferReason ? `<div class="text-xs text-slate-500">${s.transferReason}</div>` : ''}
+        ${s.transferredAt ? `<div class="text-xs text-slate-500">Date: ${fdate(s.transferredAt, { long: true })}</div>` : ''}
+      </div>` : ''}
+      ${s.status === 'withdrawn' ? `
+      <div class="bg-rose-50 rounded-xl p-3 mb-4">
+        <div class="text-xs text-rose-700 font-semibold uppercase mb-1">Withdrawn</div>
+        <div class="font-semibold text-slate-900">${s.withdrawReason || '—'}</div>
+        ${s.withdrawnAt ? `<div class="text-xs text-slate-500">Date: ${fdate(s.withdrawnAt, { long: true })}</div>` : ''}
+      </div>` : ''}
 
       ${presentDocs.length ? `<div class="mb-4">
         <div class="text-xs uppercase text-slate-500 font-semibold mb-2">Documents on File</div>
