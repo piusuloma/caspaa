@@ -94,7 +94,7 @@ body { min-height: 100vh; font-size: 1rem; line-height: 1.5; -webkit-font-smooth
 .btn-gold:hover { background: var(--gold-600); color: var(--navy-900); }
 
 /* Inputs */
-.input { width: 100%; padding: var(--s-2) 12px; border: 1.5px solid var(--line); border-radius: var(--r-sm); background: #fff; font-size: 0.9rem; font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s; }
+.input { width: 100%; padding: var(--s-2) 12px; border: 1.5px solid var(--line); border-radius: var(--r-sm); background: #fff; color: var(--ink); font-size: 0.9rem; font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s; }
 .input:focus { outline: none; border-color: var(--brand-500); box-shadow: 0 0 0 3px var(--brand-ring); }
 .input-label { display: block; font-size: 0.8rem; font-weight: 600; color: #334155; margin-bottom: var(--s-1); }
 
