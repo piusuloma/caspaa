@@ -6517,9 +6517,12 @@ function adm_confirmRehire(staffId) {
   toast(t.name + ' re-hired and active', 'success');
 }
 
-function viewStaff(id, activeTab) {
-  const t = DB.find('teachers', id);
-  if (!t) return;
+// Teacher / staff record — a full routable page (was a modal). Reached via
+// viewStaff(id), which navigates to APP.view 'adm_teacher'.
+function view_adm_teacher() {
+  const id = APP.params.teacherId;
+  const t = id ? DB.find('teachers', id) : null;
+  if (!t) return emptyState({ title: 'Teacher not found', body: 'Select a teacher from the list.', icon: 'teacher' });
   const allClasses = DB.get('classes');
   const allSubjects = DB.get('subjects');
   const classes = allClasses.filter(c => (t.classes || []).includes(c.id));
@@ -6532,7 +6535,7 @@ function viewStaff(id, activeTab) {
   const myAssignments = DB.query('assignments', a => a.teacherId === t.id);
   const docs = t.documents || {};
   const presentDocs = _staffDocTypes.filter(d => docs[d.key]);
-  const tab = activeTab || 'profile';
+  const tab = APP.params.teacherTab || 'profile';
 
   const tabs = [
     { k: 'profile',    l: 'Profile' },
@@ -6542,7 +6545,7 @@ function viewStaff(id, activeTab) {
     { k: 'hr',         l: 'HR Actions' },
   ];
   const tabBar = `<div class="flex gap-0.5 mb-4 border-b border-slate-200 overflow-x-auto -mx-1 px-1">
-    ${tabs.map(tb => `<button onclick="viewStaff('${id}','${tb.k}')" class="whitespace-nowrap px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab===tb.k?'border-brand-600 text-brand-700':'border-transparent text-slate-500 hover:text-slate-700'}">${tb.l}</button>`).join('')}
+    ${tabs.map(tb => `<button onclick="APP.params.teacherTab='${tb.k}'; APP.render()" class="whitespace-nowrap px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab===tb.k?'border-brand-600 text-brand-700':'border-transparent text-slate-500 hover:text-slate-700'}">${tb.l}</button>`).join('')}
   </div>`;
 
   const suspensions = DB.query('staffDiscipline', d => d.staffId === id).sort((a,b) => b.date.localeCompare(a.date));
@@ -6764,20 +6767,27 @@ function viewStaff(id, activeTab) {
     : tab === 'hr'         ? hrTab()
     : profileTab();
 
-  modal({
-    title: 'Staff Record',
-    size: 'lg',
-    body: header + tabBar + `<div class="min-h-40">${bodyContent}</div>`,
-    footer: `
-      <button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Close</button>
-      ${!isTerminated ? `
+  return `
+    <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+      <button class="btn btn-ghost !px-2" onclick="APP.go('adm_staff')">${icon('arrow_left','w-4 h-4')} Back to Teachers</button>
+      ${!isTerminated ? `<div class="flex gap-2 flex-wrap">
         ${isSuspended
-          ? `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>reinstateStaffModal('${id}'),50)">${icon('check_circle','w-4 h-4')} Reinstate</button>`
-          : `<button class="btn btn-warn" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>suspendStaffModal('${id}'),50)">${icon('pause_circle','w-4 h-4')} Suspend</button>`}
-        <button class="btn btn-danger" onclick="document.getElementById('modalBackdrop')?.click(); setTimeout(()=>terminateStaffModal('${id}'),50)">${icon('logout','w-4 h-4')} Offboard</button>
-      ` : ''}
-    `
-  });
+          ? `<button class="btn btn-secondary" onclick="reinstateStaffModal('${id}')">${icon('check','w-4 h-4')} Reinstate</button>`
+          : `<button class="btn btn-warn" onclick="suspendStaffModal('${id}')">${icon('x','w-4 h-4')} Suspend</button>`}
+        <button class="btn btn-danger" onclick="terminateStaffModal('${id}')">${icon('logout','w-4 h-4')} Offboard</button>
+      </div>` : ''}
+    </div>
+    <div class="card p-5 sm:p-6">
+      ${header}
+      ${tabBar}
+      <div class="min-h-40">${bodyContent}</div>
+    </div>
+  `;
+}
+
+// Navigator: open a teacher's record as a full page (was a modal).
+function viewStaff(id, tab) {
+  APP.go('adm_teacher', { teacherId: id, teacherTab: tab || 'profile' });
 }
 
 // ─── Staff HR Action Modals ───────────────────────────────────────────────────
