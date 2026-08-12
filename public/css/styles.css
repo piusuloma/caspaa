@@ -280,6 +280,24 @@ input:focus-visible, select:focus-visible, textarea:focus-visible,
 .fp-alt:focus { border-color: var(--brand-500); box-shadow: 0 0 0 3px var(--brand-ring); }
 input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0; }
 
+/* Date-range picker — unified pill (teal chip + From→To) and segmented presets.
+   The flatpickr alt inputs sit borderless inside the pill so the two dates read
+   as one control instead of two boxy fields. */
+.range-pill { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 5px 12px 5px 6px; box-shadow: 0 1px 2px rgba(15,23,42,0.05); transition: border-color 0.15s, box-shadow 0.15s; }
+.range-pill:focus-within { border-color: #0a8491; box-shadow: 0 0 0 3px rgba(10,132,145,0.14); }
+.range-pill-ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; background: #eef6f7; color: #0a8491; flex-shrink: 0; }
+.range-field { display: flex; flex-direction: column; line-height: 1.1; }
+.range-field label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; padding-left: 3px; }
+.range-pill-arrow { color: #94a3b8; font-weight: 700; align-self: flex-end; padding-bottom: 3px; }
+.range-pill .fp-alt, .range-pill input[type="date"] { border: none !important; box-shadow: none !important; background: transparent !important; background-image: none !important; padding: 1px 3px !important; width: 104px !important; min-height: 0 !important; font-weight: 600; font-size: 0.85rem; color: var(--ink); cursor: pointer; }
+.range-pill .fp-alt:focus, .range-pill input[type="date"]:focus { outline: none !important; box-shadow: none !important; }
+.range-presets { display: inline-flex; align-items: center; gap: 2px; background: var(--line-soft); border-radius: 11px; padding: 3px; }
+.range-preset { font-size: 0.75rem; font-weight: 600; color: var(--muted); padding: 6px 11px; border-radius: 8px; cursor: pointer; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+.range-preset:hover { color: #0a8491; }
+.range-preset.active { background: #fff; color: #086c77; box-shadow: 0 1px 3px rgba(8,84,119,0.15); }
+.range-reset { color: #e11d48; }
+.range-reset:hover { color: #be123c; background: #fff5f5; }
+
 /* Date picker (flatpickr) — brand themed */
 .flatpickr-day.selected, .flatpickr-day.selected:hover, .flatpickr-day.startRange, .flatpickr-day.endRange { background: var(--brand-600); border-color: var(--brand-600); }
 .flatpickr-day.today { border-color: var(--brand-400); }

@@ -1180,22 +1180,30 @@ function view_sa_analytics() {
     ], tab, k => { APP.params.anaTab = k; APP.render(); })}
 
     <!-- Date range filter -->
-    <div class="flex flex-wrap items-center gap-3 mt-4 mb-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-      <span class="text-sm font-semibold text-slate-700">${icon('calendar','w-4 h-4 inline mr-1')} Date range:</span>
-      <div class="flex items-center gap-2 flex-1 flex-wrap">
-        <input type="date" class="input !w-40 text-sm" value="${dateFrom}" max="${dateTo}" onchange="APP.params.anaFrom = this.value; APP.render()" />
-        <span class="text-slate-500 text-sm">to</span>
-        <input type="date" class="input !w-40 text-sm" value="${dateTo}" min="${dateFrom}" max="${today()}" onchange="APP.params.anaTo = this.value; APP.render()" />
+    <div class="flex flex-wrap items-center justify-between gap-3 mt-4 mb-2">
+      <!-- Unified range pill: teal calendar chip + labelled From → To fields -->
+      <div class="range-pill">
+        <span class="range-pill-ico">${icon('calendar','w-4 h-4')}</span>
+        <div class="range-field">
+          <label>From</label>
+          <input type="date" value="${dateFrom}" max="${dateTo}" onchange="APP.params.anaFrom = this.value; APP.render()" />
+        </div>
+        <span class="range-pill-arrow">&rarr;</span>
+        <div class="range-field">
+          <label>To</label>
+          <input type="date" value="${dateTo}" min="${dateFrom}" max="${today()}" onchange="APP.params.anaTo = this.value; APP.render()" />
+        </div>
       </div>
-      <div class="flex gap-1 flex-wrap">
-        ${[['7d','Last 7 days',7],['30d','Last 30 days',30],['90d','Last 90 days',90],['term','This term',null]].map(([k,label,n]) => {
+      <!-- Preset segmented control -->
+      <div class="range-presets">
+        ${[['7d','7 days',7],['30d','30 days',30],['90d','90 days',90],['term','This term',null]].map(([k,label,n]) => {
           const isActive = n ? (dateFrom === daysAgo(n) && dateTo === today()) : (dateFrom <= daysAgo(60));
-          return `<button class="btn btn-ghost !py-1 !px-2 text-xs ${isActive?'bg-brand-100 text-brand-700':''}" onclick="APP.params.anaFrom='${n?daysAgo(n):daysAgo(90)}'; APP.params.anaTo='${today()}'; APP.render()">${label}</button>`;
+          return `<button class="range-preset ${isActive?'active':''}" onclick="APP.params.anaFrom='${n?daysAgo(n):daysAgo(90)}'; APP.params.anaTo='${today()}'; APP.render()">${label}</button>`;
         }).join('')}
-        <button class="btn btn-ghost !py-1 !px-2 text-xs text-rose-600" onclick="APP.params.anaFrom=null; APP.params.anaTo=null; APP.render()">Reset</button>
+        <button class="range-preset range-reset" onclick="APP.params.anaFrom=null; APP.params.anaTo=null; APP.render()">Reset</button>
       </div>
     </div>
-    <p class="text-xs text-slate-500 mb-4">Showing data from <strong>${fdate(dateFrom, { long: true })}</strong> to <strong>${fdate(dateTo, { long: true })}</strong></p>
+    <p class="text-xs text-slate-500 mb-4">Showing <strong>${fdate(dateFrom, { long: true })}</strong> &ndash; <strong>${fdate(dateTo, { long: true })}</strong></p>
 
     <div>
       ${tab === 'usage' ? renderUsageTab(dateFrom, dateTo) :
