@@ -343,9 +343,12 @@ function view_sa_schools() {
   `;
 }
 
-function viewSchoolDetail(schoolId) {
-  const s = DB.find('schools', schoolId);
-  if (!s) return;
+// School detail — a full routable page (was a modal). Reached via
+// viewSchoolDetail(id), which navigates to APP.view 'sa_school'.
+function view_sa_school() {
+  const schoolId = APP.params.schoolId;
+  const s = schoolId ? DB.find('schools', schoolId) : null;
+  if (!s) return emptyState({ title: 'School not found', body: 'Select a school from the list.', icon: 'building' });
   const tab = APP.params.schoolTab || 'profile';
   const days = s.nextRenewal ? Math.ceil((new Date(s.nextRenewal) - new Date()) / 86400000) : null;
   const features = s.features || {};
@@ -467,10 +470,20 @@ function viewSchoolDetail(schoolId) {
     </div>
   `;
 
-  modal({
-    title: s.name,
-    size: 'lg',
-    body: `
+  return `
+    <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+      <button class="btn btn-ghost !px-2" onclick="APP.go('sa_schools')">${icon('arrow_left','w-4 h-4')} Back to Schools</button>
+      <div class="flex gap-2 flex-wrap">
+        ${s.verification && s.verification.status === 'pending'
+          ? `<button class="btn btn-danger" onclick="rejectSchoolVerification('${s.id}')">Reject</button>
+             <button class="btn btn-primary" onclick="approveSchoolVerification('${s.id}')">${icon('check','w-4 h-4')} Approve &amp; Verify</button>`
+          : ''}
+        ${s.status === 'suspended'
+          ? `<button class="btn btn-primary" onclick="toggleSchoolStatus('${s.id}', 'active')">Reactivate</button>`
+          : `<button class="btn btn-danger" onclick="toggleSchoolStatus('${s.id}', 'suspended')">Suspend</button>`}
+      </div>
+    </div>
+    <div class="card p-5 sm:p-6">
       <div class="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
         ${avatar(s.name, 'xl')}
         <div class="flex-1">
@@ -484,21 +497,18 @@ function viewSchoolDetail(schoolId) {
         { key: 'profile', label: 'Profile' },
         { key: 'subscription', label: 'Subscription' },
         { key: 'features', label: 'Features' }
-      ], tab, (k) => { APP.params.schoolTab = k; viewSchoolDetail(schoolId); })}
+      ], tab, (k) => { APP.params.schoolTab = k; APP.render(); })}
 
       <div class="pt-4">
         ${tab === 'subscription' ? subscriptionTab : tab === 'features' ? featuresTab : profileTab}
       </div>
-    `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop').click(); APP.params.schoolTab=null">Close</button>
-             ${s.verification && s.verification.status === 'pending'
-               ? `<button class="btn btn-danger" onclick="rejectSchoolVerification('${s.id}')">Reject</button>
-                  <button class="btn btn-primary" onclick="approveSchoolVerification('${s.id}')">${icon('check','w-4 h-4')} Approve &amp; Verify</button>`
-               : ''}
-             ${s.status === 'suspended'
-               ? `<button class="btn btn-primary" onclick="toggleSchoolStatus('${s.id}', 'active'); document.getElementById('modalBackdrop').click(); APP.params.schoolTab=null">Reactivate</button>`
-               : `<button class="btn btn-danger" onclick="toggleSchoolStatus('${s.id}', 'suspended'); document.getElementById('modalBackdrop').click(); APP.params.schoolTab=null">Suspend</button>`}`
-  });
+    </div>
+  `;
+}
+
+// Navigator: open a school's record as a full page (was a modal).
+function viewSchoolDetail(schoolId) {
+  APP.go('sa_school', { schoolId, schoolTab: 'profile' });
 }
 
 function changeSchoolPlan(schoolId, newPlan) {
