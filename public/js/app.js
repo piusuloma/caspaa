@@ -171,7 +171,6 @@ const APP = {
     if (role === 'schooladmin' && typeof hasFeature === 'function' && hasFeature('multibranch', ownSid)) {
       items = [
         { key: 'grp_overview', label: 'Group Overview', icon: 'building' },
-        { key: 'grp_branches', label: 'Branches',       icon: 'building' },
         ...items
       ];
     }
