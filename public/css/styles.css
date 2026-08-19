@@ -300,6 +300,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0; }
 .range-reset { color: #e11d48; }
 .range-reset:hover { color: #be123c; background: #fff5f5; }
 
+/* Settings — left category nav (icon chip + label, active highlight) */
+.settings-cat { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; border-radius: 10px; font-size: 0.9rem; font-weight: 500; color: #334155; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.settings-cat:hover { background: #f1f5f9; }
+.settings-cat.active { background: #f1f5f9; color: #0a2540; font-weight: 600; }
+.settings-cat-ico { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: #eef6f7; color: #0a8491; flex-shrink: 0; }
+.settings-cat.active .settings-cat-ico { background: #0a8491; color: #fff; }
+
 /* Grid / list view toggle — segmented pill */
 .view-toggle { display: inline-flex; align-items: center; gap: 2px; background: var(--line-soft); border-radius: 10px; padding: 3px; }
 .view-toggle button { display: grid; place-items: center; width: 32px; height: 30px; border-radius: 8px; color: var(--muted); cursor: pointer; transition: background 0.15s, color 0.15s; }

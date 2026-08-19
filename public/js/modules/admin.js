@@ -9888,35 +9888,62 @@ function saveStaffAttendance(date) {
 /* ---------- School Settings (Branding, Academic Structure, Calendar) ---------- */
 function view_adm_settings() {
   const tab = APP.params.setTab || 'branding';
+  // Category list — icon + label for the left nav, title + subtitle for the panel header.
+  const CATS = [
+    { key: 'branding',      label: 'Branding',            icon: 'building',  title: 'Branding',            sub: 'Your school logo, colours and identity.' },
+    { key: 'billing',       label: 'Billing & Plan',      icon: 'fees',      title: 'Billing & Plan',      sub: 'Your subscription, invoices and payment method.' },
+    { key: 'academic',      label: 'Academic',            icon: 'classes',   title: 'Academic Structure',  sub: 'Classes, subjects, grading and terms.' },
+    { key: 'appraisal',     label: 'Appraisal',           icon: 'reports',   title: 'Staff Appraisal',     sub: 'Appraisal cycles and criteria.' },
+    { key: 'budget',        label: 'Budget Categories',   icon: 'wallet',    title: 'Budget Categories',   sub: 'Categories used across finance and expenses.' },
+    { key: 'lists',         label: 'Lists & Options',     icon: 'edit',      title: 'Lists & Options',     sub: 'Custom dropdown options used in forms.' },
+    { key: 'calendar',      label: 'Calendar',            icon: 'calendar',  title: 'Academic Calendar',   sub: 'Term dates, holidays and events.' },
+    { key: 'roles',         label: 'Roles & Permissions', icon: 'shield',    title: 'Roles & Permissions', sub: 'Staff roles and what each can access.' },
+    { key: 'notifications', label: 'Notifications',       icon: 'bell',      title: 'Notifications',       sub: 'How and when the school is notified.' },
+    { key: 'ai',            label: 'AI Assistant',        icon: 'ai',        title: 'AI Assistant',        sub: 'Configure the built-in learning assistant.' },
+    { key: 'payments',      label: 'Payment Gateway',     icon: 'naira',     title: 'Payment Gateway',     sub: 'Connect the gateway used to collect fees.' },
+    { key: 'backup',        label: 'Data Backup',         icon: 'download',  title: 'Data Backup',         sub: 'Export and restore your school data.' }
+  ];
+  const active = CATS.find(c => c.key === tab) || CATS[0];
+  const content =
+    tab === 'billing' ? (typeof renderBillingSettings === 'function' ? renderBillingSettings() : '') :
+    tab === 'academic' ? renderAcademicStructure() :
+    tab === 'appraisal' ? renderAppraisalSettings() :
+    tab === 'budget' ? renderBudgetCategoriesSettings() :
+    tab === 'lists'  ? renderCustomListsSettings() :
+    tab === 'calendar' ? renderAcademicCalendar() :
+    tab === 'roles' ? renderRolesSettings() :
+    tab === 'notifications' ? renderNotificationSettings() :
+    tab === 'ai' ? renderAISettings() :
+    tab === 'payments' ? renderPaymentSettings() :
+    tab === 'backup' ? renderBackupSettings() :
+    renderBrandingSettings();
   return `
-    ${pageHeader({ title: 'School Settings', subtitle: 'Branding · Billing · Academic · Appraisal · Budget · Calendar · Notifications · Roles · AI · Payments · Backup' })}
-    ${tabs([
-      { key: 'branding',     label: 'Branding' },
-      { key: 'billing',      label: 'Billing & Plan' },
-      { key: 'academic',     label: 'Academic' },
-      { key: 'appraisal',    label: 'Appraisal' },
-      { key: 'budget',       label: 'Budget Categories' },
-      { key: 'lists',        label: 'Lists & Options' },
-      { key: 'calendar',     label: 'Calendar' },
-      { key: 'roles',        label: 'Roles & Permissions' },
-      { key: 'notifications',label: 'Notifications' },
-      { key: 'ai',           label: 'AI Assistant' },
-      { key: 'payments',     label: 'Payment Gateway' },
-      { key: 'backup',       label: 'Data Backup' }
-    ], tab, k => { APP.params.setTab = k; APP.render(); })}
-    <div class="pt-4">
-      ${tab === 'billing' ? (typeof renderBillingSettings === 'function' ? renderBillingSettings() : '') :
-        tab === 'academic' ? renderAcademicStructure() :
-        tab === 'appraisal' ? renderAppraisalSettings() :
-        tab === 'budget' ? renderBudgetCategoriesSettings() :
-        tab === 'lists'  ? renderCustomListsSettings() :
-        tab === 'calendar' ? renderAcademicCalendar() :
-        tab === 'roles' ? renderRolesSettings() :
-        tab === 'notifications' ? renderNotificationSettings() :
-        tab === 'ai' ? renderAISettings() :
-        tab === 'payments' ? renderPaymentSettings() :
-        tab === 'backup' ? renderBackupSettings() :
-        renderBrandingSettings()}
+    <div class="grid lg:grid-cols-[264px_1fr] gap-6 lg:gap-8">
+      <!-- Category nav -->
+      <aside>
+        <div class="mb-4">
+          <h1 class="text-xl font-bold text-slate-900">Settings</h1>
+          <p class="text-sm text-slate-500">Choose between categories.</p>
+        </div>
+        <nav class="space-y-0.5">
+          ${CATS.map(c => `<button class="settings-cat ${tab === c.key ? 'active' : ''}" onclick="APP.params.setTab='${c.key}'; APP.render()">
+            <span class="settings-cat-ico">${icon(c.icon, 'w-4 h-4')}</span>
+            <span class="flex-1 text-left">${c.label}</span>
+            ${tab === c.key ? icon('arrow_left', 'w-4 h-4 rotate-180 opacity-50') : ''}
+          </button>`).join('')}
+        </nav>
+      </aside>
+      <!-- Content panel -->
+      <section class="min-w-0">
+        <div class="flex items-start gap-3 mb-6 pb-5 border-b border-slate-100">
+          <span class="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 flex-shrink-0">${icon(active.icon, 'w-5 h-5')}</span>
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">${active.title}</h2>
+            <p class="text-sm text-slate-500">${active.sub}</p>
+          </div>
+        </div>
+        <div>${content}</div>
+      </section>
     </div>
   `;
 }
