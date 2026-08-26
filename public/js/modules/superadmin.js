@@ -257,7 +257,7 @@ function view_sa_schools() {
       subtitle: 'Manage onboarded schools across the platform',
       actions: `
         <button class="btn btn-secondary" onclick="exportSchoolsCSV()">${icon('download','w-4 h-4')} CSV</button>
-        <button class="btn btn-primary" onclick="onboardSchoolModal()">${icon('plus','w-4 h-4')} Onboard School</button>
+        <button class="btn btn-primary" onclick="startOnboard()">${icon('plus','w-4 h-4')} Onboard School</button>
       `
     })}
     <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
@@ -629,6 +629,93 @@ function confirmRejectVerification(schoolId) {
   toast(`${s.name} verification rejected`, 'warn');
 }
 
+/* ---------- Onboard flow — Step 1: required verification documents ---------- */
+// Documents collected before the school account is created. Held in memory
+// (filenames only — no base64, to stay within localStorage limits) until the
+// details step saves them onto the school record.
+let _onbDocs = {};
+const ONBOARD_DOCS = [
+  { cat: 'Proof of Legal Existence', icon: 'shield', items: [
+    { key: 'cac',            label: 'School Registration Certificate',          desc: 'e.g. CAC certificate (Nigeria)' },
+    { key: 'moe_license',    label: 'Ministry of Education Operational License', desc: 'or official approval letter' }
+  ]},
+  { cat: 'Proof of Identity', icon: 'user', items: [
+    { key: 'gov_id',         label: 'Valid Government-Issued ID',                desc: 'Passport, Driver’s License, or NIN' },
+    { key: 'passport_photo', label: 'Digital Passport Photograph',              desc: 'of the owner or administrator' }
+  ]},
+  { cat: 'Proof of Address & Branding', icon: 'building', items: [
+    { key: 'utility_bill',   label: 'Recent Utility Bill',                       desc: 'bearing the school’s name & physical address' },
+    { key: 'logo',           label: 'High-Resolution School Logo',              desc: 'for portal and receipt customization' }
+  ]}
+];
+
+function startOnboard() { _onbDocs = {}; APP.go('sa_onboard'); }
+
+function onbDocSlot(it) {
+  const doc = _onbDocs[it.key];
+  return `<div class="rounded-xl border ${doc ? 'border-brand-300 bg-brand-50' : 'border-slate-200 border-dashed'} p-3">
+    <div class="flex items-start justify-between gap-2">
+      <div class="min-w-0">
+        <div class="text-sm font-semibold text-slate-900">${it.label}</div>
+        <div class="text-xs text-slate-500">${it.desc}</div>
+      </div>
+      ${doc ? `<span class="text-brand-600 flex-shrink-0">${icon('check','w-5 h-5')}</span>` : ''}
+    </div>
+    ${doc
+      ? `<div class="mt-2 flex items-center gap-2 text-xs"><span class="truncate font-medium text-brand-800">${doc.name}</span><button class="text-rose-600 ml-auto font-semibold" onclick="onbDocRemove('${it.key}')">Remove</button></div>`
+      : `<label class="mt-2 flex items-center justify-center gap-2 py-2 rounded-lg bg-white border border-slate-200 text-sm font-semibold text-slate-600 cursor-pointer hover:border-brand-400 hover:text-brand-700">
+          ${icon('upload','w-4 h-4')} Upload
+          <input type="file" accept="image/*,application/pdf" class="hidden" onchange="onbDocPick('${it.key}', this)" />
+        </label>`}
+  </div>`;
+}
+
+function view_sa_onboard() {
+  const all = ONBOARD_DOCS.flatMap(c => c.items);
+  const uploaded = all.filter(it => _onbDocs[it.key]).length;
+  return `
+    ${pageHeader({ title: 'Onboard a New School', subtitle: 'Step 1 of 2 · Required verification documents' })}
+    <div class="max-w-3xl">
+      <div class="flex items-center justify-between gap-3 mb-5">
+        <p class="text-sm text-slate-500">Collect the school's verification documents before creating the account.</p>
+        <span class="badge ${uploaded === all.length ? 'badge-success' : 'badge-neutral'} flex-shrink-0">${uploaded}/${all.length} uploaded</span>
+      </div>
+      ${ONBOARD_DOCS.map((cat, i) => `
+        <div class="card p-5 mb-4">
+          <div class="flex items-center gap-2.5 mb-4">
+            <span class="w-9 h-9 rounded-xl bg-brand-50 text-brand-700 grid place-items-center flex-shrink-0">${icon(cat.icon,'w-5 h-5')}</span>
+            <div>
+              <div class="text-xs text-slate-400 font-semibold">${i + 1}</div>
+              <h3 class="font-bold text-slate-900 leading-tight">${cat.cat}</h3>
+            </div>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-3">
+            ${cat.items.map(onbDocSlot).join('')}
+          </div>
+        </div>
+      `).join('')}
+      <div class="flex items-center justify-between gap-3 mt-6">
+        <button class="btn btn-ghost" onclick="APP.go('sa_schools')">Cancel</button>
+        <button class="btn btn-primary" onclick="onboardContinue()">Continue to school details ${icon('arrow_left','w-4 h-4 rotate-180')}</button>
+      </div>
+    </div>
+  `;
+}
+
+function onbDocPick(key, input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  _onbDocs[key] = { name: f.name };
+  APP.render();
+}
+function onbDocRemove(key) { delete _onbDocs[key]; APP.render(); }
+
+function onboardContinue() {
+  const missing = ONBOARD_DOCS.flatMap(c => c.items).filter(it => !_onbDocs[it.key]);
+  if (missing.length) { toast(`${missing.length} document${missing.length > 1 ? 's' : ''} still required`, 'danger'); return; }
+  onboardSchoolModal();
+}
+
 function onboardSchoolModal() {
   modal({
     title: 'Onboard New School',
@@ -664,10 +751,7 @@ function onboardSchoolModal() {
           <div><label class="input-label" for="ns_nin">Owner NIN</label><input id="ns_nin" class="input" placeholder="11-digit NIN" /></div>
         </div>
         <div><label class="input-label" for="ns_accred">Accreditation Body</label><input id="ns_accred" class="input" placeholder="e.g. Lagos State Ministry of Education" /></div>
-        <label class="flex items-center gap-2 text-sm">
-          <input type="checkbox" id="ns_cac" checked />
-          <span>CAC document uploaded (simulated)</span>
-        </label>
+        <div class="bg-brand-50 rounded-lg p-2.5 text-xs text-brand-800 flex items-center gap-2">${icon('check','w-4 h-4 flex-shrink-0')} ${Object.keys(_onbDocs).length} verification document${Object.keys(_onbDocs).length === 1 ? '' : 's'} attached from Step 1.</div>
         <label class="flex items-center gap-2 text-sm">
           <input type="checkbox" id="ns_autorenew" checked />
           <span>Enable auto-renewal at month-end</span>
@@ -700,13 +784,15 @@ function saveNewSchool() {
     kyc: {
       regNumber: document.getElementById('ns_reg').value.trim() || 'Pending',
       ownerNIN: document.getElementById('ns_nin').value.trim() || '',
-      cacUploaded: document.getElementById('ns_cac').checked,
-      accreditation: document.getElementById('ns_accred').value.trim() || 'Pending'
+      cacUploaded: !!_onbDocs.cac,
+      accreditation: document.getElementById('ns_accred').value.trim() || 'Pending',
+      documents: { ..._onbDocs }
     }
   });
   DB.insert('auditLog', { id: uid('aud'), schoolId: 'platform', actor: AUTH.current.id, action: 'onboarded_school', target: name, timestamp: now() });
+  _onbDocs = {};
   document.getElementById('modalBackdrop').click();
-  APP.render();
+  APP.go('sa_schools');
   toast(`${name} onboarded on ${plan} — 14-day free trial started`);
 }
 
