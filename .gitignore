@@ -9,7 +9,6 @@
 # OS / editor
 .DS_Store
 Thumbs.db
-.vscode/
 .idea/
 
 # Next.js build output
@@ -20,11 +19,10 @@ out/
 node_modules/
 
 # Env files
-.env
-.env.local
 .env.*.local
 
 .vercel
 
 # Landing-page image originals — huge, kept local; only the processed slots ship
 public/images/all/
+config.bat
