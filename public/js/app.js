@@ -117,11 +117,32 @@ const APP = {
         { key: 'stu_wallet',     label: 'My Wallet',       icon: 'fees' }
       ]
     };
-    return menus[role] || [];
+    let items = menus[role] || [];
+    // Multi-branch is a gated entitlement. Gate on the OWNER's school (stable while
+    // they're switched into a branch, whose own currentSchoolId differs).
+    const ownSid = AUTH.current && (AUTH.current.schoolId || AUTH.current.id);
+    if (role === 'schooladmin' && typeof hasFeature === 'function' && hasFeature('multibranch', ownSid)) {
+      items = [
+        { key: 'grp_overview', label: 'Group Overview', icon: 'building' },
+        { key: 'grp_branches', label: 'Branches',       icon: 'building' },
+        ...items
+      ];
+    }
+    // Hide nav items for features this (branch) school isn't entitled to.
+    if (typeof hasFeature === 'function' && typeof featureForNav === 'function') {
+      items = items.filter(n => {
+        const f = featureForNav(n.key);
+        if (!f || f === 'multibranch') return true;   // multibranch already decided above
+        return hasFeature(f);
+      });
+    }
+    return items;
   },
 
   /* ---------- Default view per role ---------- */
   defaultView(role) {
+    // A group owner with no branch selected lands on the consolidated overview.
+    if (role === 'schooladmin' && typeof isGroupOwner === 'function' && isGroupOwner() && !this._activeBranchId) return 'grp_overview';
     const map = {
       superadmin: 'sa_dashboard',
       schooladmin: 'adm_dashboard',
@@ -249,6 +270,8 @@ const APP = {
             </div>
           ` : ''}
 
+          ${typeof branchSwitcherBar === 'function' ? branchSwitcherBar() : ''}
+
           <!-- Topbar -->
           <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
             <div class="flex items-center justify-between px-4 lg:px-6 h-14 gap-3">
@@ -314,6 +337,11 @@ const APP = {
   /* ---------- View dispatcher ---------- */
   renderView() {
     try {
+      // Entitlement guard: a gated view opened directly (deep link) shows the upgrade screen.
+      const gate = (typeof featureForNav === 'function') ? featureForNav(this.view) : null;
+      if (gate && typeof hasFeature === 'function' && !hasFeature(gate) && typeof lockedFeatureView === 'function') {
+        return lockedFeatureView(gate);
+      }
       const fn = window['view_' + this.view];
       if (typeof fn === 'function') return fn(this.params);
       return emptyState({ title: 'Coming soon', body: `View "${this.view}" is under construction.`, icon: 'package' });

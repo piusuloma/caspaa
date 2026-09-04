@@ -396,14 +396,14 @@ function viewSchoolDetail(schoolId) {
   const featuresTab = `
     <p class="text-sm text-slate-500 mb-3">Enable or disable specific platform capabilities for this school.</p>
     <div class="space-y-2">
-      ${[
+      ${(typeof FEATURE_CATALOG !== 'undefined' ? FEATURE_CATALOG.map(f => ({ key: f.key, label: f.label, desc: `${f.desc}${f.minPlan ? ' · included from ' + f.minPlan : ''}` })) : [
         { key: 'whatsapp', label: 'WhatsApp Integration', desc: 'Send absence and announcement alerts via WhatsApp' },
         { key: 'lending',  label: 'Lending Engine',       desc: 'Parents in this school can apply for fee loans' },
         { key: 'ai',       label: 'AI Assistant',         desc: 'AI-generated report comments and recommendations' },
         { key: 'offline',  label: 'Offline Mode',         desc: 'Teachers can mark attendance without internet' },
         { key: 'transport',label: 'Transport Module',     desc: 'Pickup / drop tracking (Beta)' },
         { key: 'payroll',  label: 'Payroll',              desc: 'Staff salary management and payslips' }
-      ].map(f => `<label class="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
+      ]).map(f => `<label class="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
         <div>
           <div class="font-semibold text-sm">${f.label}</div>
           <div class="text-xs text-slate-500">${f.desc}</div>

@@ -183,6 +183,26 @@ function seedDatabase() {
     }
   });
 
+  // Student account adjustments & opening balances (itemised ledger — see modules/ledger.js).
+  // Seeded so a fresh install demonstrates an opening balance carried forward.
+  const walletLedger = [
+    { id: uid('wl'), schoolId, studentId: 'stu_003', category: 'opening', type: 'credit', amount: 15000, description: 'Opening credit b/f — 2024/25 session', createdBy: schoolId, createdAt: daysAgo(40) }
+  ];
+  // Demo: a Sibling Discount on Tobi Okafor's bill so a discount credit line shows in the ledger.
+  (() => {
+    const tInv = invoices.find(i => i.studentId === 'stu_002');
+    if (tInv && !tInv.lineItems.some(l => l.amount < 0)) {
+      const tuition = (tInv.lineItems.find(l => /tuition/i.test(l.name)) || {}).amount || 0;
+      const disc = Math.round(tuition * 0.1);
+      if (disc > 0) {
+        tInv.lineItems.push({ name: 'Sibling Discount', amount: -disc, type: 'discount' });
+        tInv.total = tInv.lineItems.reduce((sum, l) => sum + l.amount, 0);
+        tInv.balance = Math.max(0, tInv.total - tInv.paid);
+        tInv.status = tInv.balance === 0 ? 'paid' : (tInv.paid > 0 ? 'partial' : 'outstanding');
+      }
+    }
+  })();
+
   // Attendance — last 14 days for all students
   const attendance = [];
   for (let d = 13; d >= 0; d--) {
@@ -524,7 +544,8 @@ function seedDatabase() {
         ai: sch.subscriptionPlan === 'Enterprise',
         offline: true,
         transport: false,
-        payroll: sch.subscriptionPlan !== 'Essential'
+        payroll: sch.subscriptionPlan !== 'Essential',
+        multibranch: sch.subscriptionPlan === 'Enterprise'
       };
     }
   });
@@ -1310,9 +1331,64 @@ function seedDatabase() {
     { id: uid('sp'), schoolId, studentId: 'stu_009', itemId: 'item_008', qty: 1, sellingPrice: 4500,  costPrice: 2800,  purchasedAt: daysAgo(24), paidStatus: 'paid',   notes: '' }
   ];
 
+  // ============ Multi-branch (Model A): a school GROUP owning two branches ============
+  // The existing Bright Lights school becomes branch #1 of a group; a second branch
+  // (Ikeja) is seeded so the Group Overview aggregates real numbers across branches.
+  const schoolGroups = [
+    { id: 'grp_brightlights', name: 'Bright Lights Education Group', ownerId: 'sch_brightlights', ownerName: 'Mr. Olusegun Adebayo', ownerEmail: 'admin@brightlights.ng', createdAt: daysAgo(200) }
+  ];
+  (() => {
+    const bl = schools.find(s => s.id === 'sch_brightlights');
+    if (bl) {
+      bl.groupId = 'grp_brightlights';
+      // Multi-branch and Transport are add-ons here (Bright Lights is on Professional):
+      // per-school overrides demonstrate custom entitlements beyond the plan default.
+      if (bl.features) { bl.features.multibranch = true; bl.features.transport = true; }
+    }
+    const bId = 'sch_brightlights_ikeja';
+    schools.push({
+      id: bId, groupId: 'grp_brightlights', name: 'Bright Lights Academy — Ikeja', proprietor: 'Mr. Olusegun Adebayo',
+      email: 'ikeja@brightlights.ng', phone: '+234 802 555 0011', address: '24 Allen Avenue, Ikeja, Lagos',
+      students: 4, teachers: 1, subscriptionPlan: 'Professional', monthlyFee: 75000, status: 'active', joinedAt: daysAgo(120),
+      kyc: { regNumber: 'RC-228492', ownerNIN: '12345678901', cacUploaded: true, accreditation: 'Lagos State Ministry of Education' },
+      nextRenewal: daysAhead(28), autoRenew: true,
+      features: { whatsapp: true, lending: true, ai: false, offline: true, transport: false, payroll: true, multibranch: false },
+      branding: { primaryColor: '#00b386', logoText: 'BLI', motto: 'Light the way to knowledge', logoImage: null }
+    });
+    classes.push(
+      { id: 'cls_ik_pry1', schoolId: bId, name: 'Primary 1', level: 'Primary', teacherId: 'tch_ik1' },
+      { id: 'cls_ik_jss1', schoolId: bId, name: 'JSS 1', level: 'Secondary', teacherId: 'tch_ik1' }
+    );
+    teachers.push({ id: 'tch_ik1', schoolId: bId, name: 'Mrs. Grace Nwosu', email: 'grace.ikeja@brightlights.ng', phone: '08012345631', staffType: 'Academic', subjects: ['sub_math', 'sub_eng'], classes: ['cls_ik_pry1', 'cls_ik_jss1'], hireDate: '2024-09-01', salary: 190000, role: 'teacher', bank: { name: 'GTBank', account: '0123456731' }, dob: '1991-02-18' });
+    parents.push({ id: 'par_ik1', schoolId: bId, name: 'Mr. Emeka Obi', email: 'emeka.obi@demo.ng', phone: '08099999031', occupation: 'Entrepreneur', monthlyIncome: 560000, address: '24 Allen Avenue, Ikeja' });
+    const bStu = [
+      { id: 'stu_ik1', schoolId: bId, name: 'Chidi Obi',   admissionNo: 'BLI/2024/001', classId: 'cls_ik_pry1', dob: '2017-05-10', gender: 'M', parentId: 'par_ik1', photo: null, admissionDate: '2024-09-01', bloodGroup: 'O+', allergies: 'None', status: 'active' },
+      { id: 'stu_ik2', schoolId: bId, name: 'Ada Obi',     admissionNo: 'BLI/2024/002', classId: 'cls_ik_jss1', dob: '2013-03-22', gender: 'F', parentId: 'par_ik1', photo: null, admissionDate: '2024-09-01', bloodGroup: 'O+', allergies: 'None', status: 'active' },
+      { id: 'stu_ik3', schoolId: bId, name: 'Musa Bello',  admissionNo: 'BLI/2024/003', classId: 'cls_ik_pry1', dob: '2017-08-15', gender: 'M', parentId: 'par_ik1', photo: null, admissionDate: '2024-09-01', bloodGroup: 'A+', allergies: 'None', status: 'active' },
+      { id: 'stu_ik4', schoolId: bId, name: 'Ngozi Ade',   admissionNo: 'BLI/2024/004', classId: 'cls_ik_jss1', dob: '2013-11-02', gender: 'F', parentId: 'par_ik1', photo: null, admissionDate: '2024-09-01', bloodGroup: 'B+', allergies: 'None', status: 'active' }
+    ];
+    bStu.forEach(st => students.push(st));
+    const bFees = [
+      { id: uid('fee'), schoolId: bId, classId: 'cls_ik_pry1', term: '1st Term 2025/26', tuition: 180000, books: 25000, uniform: 18000, pta: 6000, dueDate: daysAhead(15) },
+      { id: uid('fee'), schoolId: bId, classId: 'cls_ik_jss1', term: '1st Term 2025/26', tuition: 250000, books: 35000, uniform: 22000, pta: 7000, dueDate: daysAhead(15) }
+    ];
+    bFees.forEach(f => feeStructures.push(f));
+    bStu.forEach((st, i) => {
+      const fs = bFees.find(f => f.classId === st.classId);
+      const total = fs.tuition + fs.books + fs.uniform + fs.pta;
+      const status = i % 3 === 0 ? 'paid' : (i % 3 === 1 ? 'partial' : 'outstanding');
+      const paid = status === 'paid' ? total : (status === 'partial' ? Math.round(total * 0.5) : 0);
+      const invId = uid('inv');
+      invoices.push({ id: invId, schoolId: bId, studentId: st.id, term: fs.term,
+        lineItems: [ { name: 'Tuition Fee', amount: fs.tuition }, { name: 'Books & Materials', amount: fs.books }, { name: 'Uniform', amount: fs.uniform }, { name: 'PTA Levy', amount: fs.pta } ],
+        total, paid, balance: total - paid, status, dueDate: fs.dueDate, createdAt: daysAgo(28) });
+      if (paid > 0) transactions.push({ id: uid('txn'), schoolId: bId, invoiceId: invId, studentId: st.id, amount: paid, method: 'transfer', reference: 'CSP-IK' + (1000 + i), status: 'successful', gateway: 'Paystack', timestamp: daysAgo(20 - i), reconciled: true });
+    });
+  })();
+
   return {
-    schools, classes, subjects, teachers, parents, students,
-    feeStructures, invoices, transactions, attendance, results,
+    schools, schoolGroups, classes, subjects, teachers, parents, students,
+    feeStructures, invoices, transactions, walletLedger, attendance, results,
     assignments, conversations, announcements, inventory,
     discipline, loans, timetable, lessonPlans, expenses,
     auditLog, notifications, leaveRequests, staffAttendance,
