@@ -3454,7 +3454,10 @@ function view_adm_students() {
   const genderF = APP.params.gender || 'all';
   const payF = APP.params.payment || 'all';
   const attF = APP.params.attendance || 'all';
-  const statusF = APP.params.studentStatus || 'all';
+  // Status is the primary dimension and defaults to who is actually on the roll.
+  const statusF = APP.params.studentStatus || 'enrolled';
+  const reasonF = APP.params.exitReasonFilter || 'all';
+  const sessionF = APP.params.sessionFilter || 'all';
   const scholarF = APP.params.scholarship || 'all';
   const enrollmentView = APP.params.enrollmentView || 'all';
   const currentYear = new Date().getFullYear().toString();
@@ -3474,7 +3477,19 @@ function view_adm_students() {
       if (!s.name.toLowerCase().includes(q) && !s.admissionNo.toLowerCase().includes(q)) return false;
     }
     if (genderF !== 'all' && s.gender !== genderF) return false;
-    if (statusF !== 'all' && s.status !== statusF) return false;
+
+    // Enrolment state and the reason someone left are different dimensions, so
+    // they are different controls. Reason only narrows students who have left.
+    const former = typeof isFormerStudent === 'function' ? isFormerStudent(s) : ['withdrawn','transferred','alumni','deceased'].indexOf(s.status) !== -1;
+    if (statusF === 'enrolled' && !(s.status === 'active' || s.status === 'suspended')) return false;
+    if (statusF === 'suspended' && s.status !== 'suspended') return false;
+    if (statusF === 'former' && !former) return false;
+    if (reasonF !== 'all') {
+      if (!former) return false;
+      if (reasonF === 'unrecorded') { if (s.exitReasonId) return false; }
+      else if (s.exitReasonId !== reasonF) return false;
+    }
+    if (sessionF !== 'all' && (s.enrollmentSession || '') !== sessionF) return false;
     if (payF !== 'all') {
       const inv = COMPUTE.studentInvoice(s.id);
       if (!inv || inv.status !== payF) return false;
@@ -3554,13 +3569,49 @@ function view_adm_students() {
         <option value="concern" ${attF==='concern'?'selected':''}>Concern (&lt;85%)</option>
       </select>
     </div>
-    ${genderF!=='all'||payF!=='all'||attF!=='all'||statusF!=='all'||scholarF!=='all' || filter!=='all' ? `<div class="flex items-center gap-2 flex-wrap mb-3 text-xs">
+
+    <!-- Status first, because it decides which population is on screen. Reason
+         appears only when it has meaning; a session filter keeps former-student
+         lists from growing without bound. -->
+    <div class="flex flex-col sm:flex-row gap-2 mb-3">
+      <select class="input text-sm !w-auto" onchange="APP.params.studentStatus = this.value; APP.params.exitReasonFilter='all'; APP.render()">
+        <option value="enrolled" ${statusF==='enrolled'?'selected':''}>Enrolled</option>
+        <option value="suspended" ${statusF==='suspended'?'selected':''}>Suspended</option>
+        <option value="former" ${statusF==='former'?'selected':''}>Former students</option>
+        <option value="all" ${statusF==='all'?'selected':''}>All records</option>
+      </select>
+
+      ${(statusF === 'former' || statusF === 'all') ? `
+      <select class="input text-sm !w-auto" onchange="APP.params.exitReasonFilter = this.value; APP.render()">
+        <option value="all" ${reasonF==='all'?'selected':''}>Any reason for leaving</option>
+        ${(typeof exitReasons === 'function' ? exitReasons() : []).map(r => `<option value="${r.id}" ${reasonF===r.id?'selected':''}>${r.label}</option>`).join('')}
+        <option value="unrecorded" ${reasonF==='unrecorded'?'selected':''}>No reason recorded</option>
+      </select>` : ''}
+
+      <select class="input text-sm !w-auto" onchange="APP.params.classFilter = this.value; APP.render()">
+        <option value="all" ${filter==='all'?'selected':''}>All classes</option>
+        ${classes.map(c => `<option value="${c.id}" ${filter===c.id?'selected':''}>${c.name}</option>`).join('')}
+      </select>
+
+      ${(() => {
+        const sessions = [...new Set(students.map(x => x.enrollmentSession).filter(Boolean))].sort();
+        if (!sessions.length) return '';
+        return `<select class="input text-sm !w-auto" onchange="APP.params.sessionFilter = this.value; APP.render()">
+          <option value="all" ${sessionF==='all'?'selected':''}>All sessions</option>
+          ${sessions.map(x => `<option value="${x}" ${sessionF===x?'selected':''}>${x}</option>`).join('')}
+        </select>`;
+      })()}
+    </div>
+    ${genderF!=='all'||payF!=='all'||attF!=='all'||statusF!=='enrolled'||scholarF!=='all'||filter!=='all'||reasonF!=='all'||sessionF!=='all' ? `<div class="flex items-center gap-2 flex-wrap mb-3 text-xs">
       <span class="text-slate-500">Active filters:</span>
       ${filter!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.classFilter='all'; APP.render()">${classes.find(c=>c.id===filter)?.name} ✕</button>` : ''}
       ${genderF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.gender='all'; APP.render()">${genderF==='M'?'Boys':'Girls'} ✕</button>` : ''}
       ${payF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.payment='all'; APP.render()">${payF} ✕</button>` : ''}
       ${attF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.attendance='all'; APP.render()">Attendance: ${attF} ✕</button>` : ''}
-      <button class="text-rose-600 font-semibold underline ml-1" onclick="APP.params.classFilter=APP.params.gender=APP.params.payment=APP.params.attendance=APP.params.studentStatus=APP.params.scholarship=APP.params.search='all'; APP.render()">Clear all</button>
+      ${statusF!=='enrolled' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.studentStatus='enrolled'; APP.params.exitReasonFilter='all'; APP.render()">${statusF==='former'?'Former students':statusF==='all'?'All records':'Suspended'} ✕</button>` : ''}
+      ${reasonF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.exitReasonFilter='all'; APP.render()">${reasonF==='unrecorded' ? 'No reason recorded' : ((typeof exitReason==='function' && exitReason(reasonF)) ? exitReason(reasonF).label : reasonF)} ✕</button>` : ''}
+      ${sessionF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.sessionFilter='all'; APP.render()">${sessionF} ✕</button>` : ''}
+      <button class="text-rose-600 font-semibold underline ml-1" onclick="APP.params.classFilter=APP.params.gender=APP.params.payment=APP.params.attendance=APP.params.scholarship=APP.params.search='all'; APP.params.studentStatus='enrolled'; APP.params.exitReasonFilter='all'; APP.params.sessionFilter='all'; APP.render()">Clear all</button>
     </div>` : ''}
 
     <div class="card overflow-hidden">
@@ -10792,6 +10843,7 @@ function renderCustomListsSettings() {
   const s = DB.settings();
   return `
     <div class="space-y-4">
+      ${typeof renderExitReasonSettings === 'function' ? renderExitReasonSettings() : ''}
       <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} Every dropdown below is used across the system. Add, rename, or remove items to match your school's terminology. Changes take effect immediately on new entries.
       </div>
