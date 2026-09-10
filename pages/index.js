@@ -34,6 +34,7 @@ const APP_SCRIPTS = [
   '/js/modules/attendance.js',
   '/js/modules/staffprofile.js',
   '/js/modules/bellschedule.js',
+  '/js/modules/studentlifecycle.js',
   '/js/modules/timetableupload.js',
   '/js/app.js',
 ]
