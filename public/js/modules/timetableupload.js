@@ -1,7 +1,7 @@
 /* ============================================================
    Bulk Timetable Upload — UI
    ------------------------------------------------------------
-   Implements the flow in CASPAA_Bulk_Timetable_Upload_PRD.docx:
+   Implements the flow in CASPAA_Timetable_Setup_and_Bulk_Upload_PRD.docx:
 
      Step 1  pick a term, download the grid template, upload a file
      Step 2  validate into a STAGED result held in memory
