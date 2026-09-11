@@ -10,7 +10,10 @@ const AUTH = {
   current: null,
 
   init() {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    // Persistent (not session-only) storage: a login survives closing the
+    // tab or browser, matching a real mobile/web session that stays signed
+    // in until the user logs out or a password change revokes it.
+    const raw = localStorage.getItem(SESSION_KEY);
     if (raw) {
       try { this.current = JSON.parse(raw); }
       catch (e) { this.current = null; }
@@ -19,7 +22,7 @@ const AUTH = {
 
   login(user) {
     this.current = user;
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
     // Seed a fresh history entry for this session
     try {
       const v = typeof APP !== 'undefined' ? APP.defaultView(user.role) : 'dashboard';
@@ -30,7 +33,7 @@ const AUTH = {
 
   logout() {
     this.current = null;
-    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
     APP.render();
   },
 
@@ -507,11 +510,42 @@ function resolveLogin(email, pwd) {
     return { ok, user: { id: parent.id, role: 'parent', name: parent.name, email: parent.email || '', schoolId: parent.schoolId, firstLogin: !!parent.firstLogin } };
   }
 
-  // 4. School proprietor — sign in with the school's contact email
-  const school = DB.get('schools').find(s => (s.email || '').toLowerCase() === e);
+  // 4. School proprietor — sign in with the school's contact email, or (once
+  // invited via the same activation flow as staff) their invitation username.
+  const school = DB.get('schools').find(s =>
+    (s.email || '').toLowerCase() === e ||
+    (s.invitation && (s.invitation.username || '').toLowerCase() === e));
   if (school) {
-    const ok = pwd === 'demo1234' || !!(school.password && pwd === school.password);
-    return { ok, user: { id: school.id, role: 'schooladmin', name: school.proprietor || school.name, email: school.email || '', schoolId: school.id } };
+    const ok = pwd === 'demo1234' || !!(school.password && pwd === school.password) ||
+      !!(school.invitation && pwd === school.invitation.tempPassword);
+    return {
+      ok,
+      user: { id: school.id, role: 'schooladmin', name: school.proprietor || school.name, email: school.email || '', schoolId: school.id },
+      acceptInvite: () => {
+        if (school.invitation && !school.invitation.accepted) {
+          DB.update('schools', school.id, { invitation: { ...school.invitation, accepted: true, acceptedAt: now() } });
+        }
+      }
+    };
+  }
+
+  // 5. Students who have activated their account — once a student sets a
+  // password (via the PIN activation step), they sign in with it instead of
+  // DOB from then on, same as every other role. Matched by admission number.
+  const activatedStudent = DB.get('students').find(s =>
+    s.passwordChanged && s.admissionNo && s.admissionNo.toLowerCase() === e);
+  if (activatedStudent) {
+    const cls = DB.get('classes').find(c => c.id === activatedStudent.classId);
+    const schoolName = DB.settings().schoolName || 'School';
+    const ok = pwd === 'demo1234' || !!(activatedStudent.tempPassword && pwd === activatedStudent.tempPassword);
+    return {
+      ok,
+      user: {
+        id: activatedStudent.id, role: 'student', name: activatedStudent.name,
+        email: activatedStudent.email || '', title: 'Student',
+        subtitle: `${cls ? cls.name : ''} — ${schoolName}`, schoolId: activatedStudent.schoolId
+      }
+    };
   }
 
   return { user: null, ok: false };
