@@ -276,6 +276,7 @@ function statusBadge(status) {
     transferred: { cls: 'badge-neutral', label: 'Transferred' },
     withdrawn: { cls: 'badge-neutral', label: 'Withdrawn' },
     alumni: { cls: 'badge-info', label: 'Alumni' },
+    deceased: { cls: 'badge-neutral', label: 'Deceased' },
     visit_scheduled: { cls: 'badge-info', label: 'Visit Scheduled' },
     visit_confirmed: { cls: 'badge-success', label: 'Visit Confirmed' }
   };

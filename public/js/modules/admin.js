@@ -3399,7 +3399,10 @@ function view_adm_students() {
   const genderF = APP.params.gender || 'all';
   const payF = APP.params.payment || 'all';
   const attF = APP.params.attendance || 'all';
-  const statusF = APP.params.studentStatus || 'all';
+  // Status is the primary dimension and defaults to who is actually on the roll.
+  const statusF = APP.params.studentStatus || 'enrolled';
+  const reasonF = APP.params.exitReasonFilter || 'all';
+  const sessionF = APP.params.sessionFilter || 'all';
   const scholarF = APP.params.scholarship || 'all';
   const enrollmentView = APP.params.enrollmentView || 'all';
   const currentYear = new Date().getFullYear().toString();
@@ -3419,7 +3422,19 @@ function view_adm_students() {
       if (!s.name.toLowerCase().includes(q) && !s.admissionNo.toLowerCase().includes(q)) return false;
     }
     if (genderF !== 'all' && s.gender !== genderF) return false;
-    if (statusF !== 'all' && s.status !== statusF) return false;
+
+    // Enrolment state and the reason someone left are different dimensions, so
+    // they are different controls. Reason only narrows students who have left.
+    const former = isFormerStudent(s);
+    if (statusF === 'enrolled' && !(s.status === 'active' || s.status === 'suspended')) return false;
+    if (statusF === 'suspended' && s.status !== 'suspended') return false;
+    if (statusF === 'former' && !former) return false;
+    if (reasonF !== 'all') {
+      if (!former) return false;
+      if (reasonF === 'unrecorded') { if (s.exitReasonId) return false; }
+      else if (s.exitReasonId !== reasonF) return false;
+    }
+    if (sessionF !== 'all' && (s.enrollmentSession || '') !== sessionF) return false;
     if (payF !== 'all') {
       const inv = COMPUTE.studentInvoice(s.id);
       if (!inv || inv.status !== payF) return false;
@@ -3495,13 +3510,44 @@ function view_adm_students() {
         <option value="concern" ${attF==='concern'?'selected':''}>Concern (&lt;85%)</option>
       </select>
     </div>
-    ${genderF!=='all'||payF!=='all'||attF!=='all'||statusF!=='all'||scholarF!=='all' || filter!=='all' ? `<div class="flex items-center gap-2 flex-wrap mb-3 text-xs">
+
+    <!-- Status first, because it decides which population is on screen. Reason
+         appears only when it has meaning; a session filter keeps former-student
+         lists from growing without bound. -->
+    <div class="flex flex-col sm:flex-row gap-2 mb-3">
+      <select class="input text-sm !w-auto" onchange="APP.params.studentStatus = this.value; APP.params.exitReasonFilter='all'; APP.render()">
+        <option value="enrolled" ${statusF==='enrolled'?'selected':''}>Enrolled</option>
+        <option value="suspended" ${statusF==='suspended'?'selected':''}>Suspended</option>
+        <option value="former" ${statusF==='former'?'selected':''}>Former students</option>
+        <option value="all" ${statusF==='all'?'selected':''}>All records</option>
+      </select>
+
+      ${(statusF === 'former' || statusF === 'all') ? `
+      <select class="input text-sm !w-auto" onchange="APP.params.exitReasonFilter = this.value; APP.render()">
+        <option value="all" ${reasonF==='all'?'selected':''}>Any reason for leaving</option>
+        ${exitReasons().map(r => `<option value="${r.id}" ${reasonF===r.id?'selected':''}>${r.label}</option>`).join('')}
+        <option value="unrecorded" ${reasonF==='unrecorded'?'selected':''}>No reason recorded</option>
+      </select>` : ''}
+
+      ${(() => {
+        const sessions = [...new Set(students.map(x => x.enrollmentSession).filter(Boolean))].sort();
+        if (!sessions.length) return '';
+        return `<select class="input text-sm !w-auto" onchange="APP.params.sessionFilter = this.value; APP.render()">
+          <option value="all" ${sessionF==='all'?'selected':''}>All sessions</option>
+          ${sessions.map(x => `<option value="${x}" ${sessionF===x?'selected':''}>${x}</option>`).join('')}
+        </select>`;
+      })()}
+    </div>
+    ${genderF!=='all'||payF!=='all'||attF!=='all'||statusF!=='enrolled'||scholarF!=='all'||filter!=='all'||reasonF!=='all'||sessionF!=='all' ? `<div class="flex items-center gap-2 flex-wrap mb-3 text-xs">
       <span class="text-slate-500">Active filters:</span>
       ${filter!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.classFilter='all'; APP.render()">${classes.find(c=>c.id===filter)?.name} ✕</button>` : ''}
       ${genderF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.gender='all'; APP.render()">${genderF==='M'?'Boys':'Girls'} ✕</button>` : ''}
       ${payF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.payment='all'; APP.render()">${payF} ✕</button>` : ''}
       ${attF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.attendance='all'; APP.render()">Attendance: ${attF} ✕</button>` : ''}
-      <button class="text-rose-600 font-semibold underline ml-1" onclick="APP.params.classFilter=APP.params.gender=APP.params.payment=APP.params.attendance=APP.params.studentStatus=APP.params.scholarship=APP.params.search='all'; APP.render()">Clear all</button>
+      ${statusF!=='enrolled' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.studentStatus='enrolled'; APP.params.exitReasonFilter='all'; APP.render()">${statusF==='former'?'Former students':statusF==='all'?'All records':'Suspended'} ✕</button>` : ''}
+      ${reasonF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.exitReasonFilter='all'; APP.render()">${reasonF==='unrecorded' ? 'No reason recorded' : ((exitReason(reasonF)) ? exitReason(reasonF).label : reasonF)} ✕</button>` : ''}
+      ${sessionF!=='all' ? `<button class="badge badge-info hover:bg-brand-200 cursor-pointer" onclick="APP.params.sessionFilter='all'; APP.render()">${sessionF} ✕</button>` : ''}
+      <button class="text-rose-600 font-semibold underline ml-1" onclick="APP.params.classFilter=APP.params.gender=APP.params.payment=APP.params.attendance=APP.params.scholarship=APP.params.search='all'; APP.params.studentStatus='enrolled'; APP.params.exitReasonFilter='all'; APP.params.sessionFilter='all'; APP.render()">Clear all</button>
     </div>` : ''}
 
     <div class="card overflow-hidden">
@@ -3544,10 +3590,15 @@ function view_adm_students() {
                       </div>
                     </td>
                     <td class="text-right whitespace-nowrap" onclick="event.stopPropagation()">
+                      ${isFormerStudent(s) ? `
+                      <button class="btn btn-ghost !p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg" title="Re-admit student" onclick="event.stopPropagation(); readmitStudentModal('${s.id}')">${icon('check','w-4 h-4')}</button>
+                      ` : `
                       <button class="btn btn-ghost !p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg" title="Promote to next class" onclick="event.stopPropagation(); promoteStudentModal('${s.id}')">${icon('trending_up','w-4 h-4')}</button>
-                      <button class="btn btn-ghost !p-1.5 text-brand-700 hover:bg-brand-50 rounded-lg" title="Transfer to another school" onclick="event.stopPropagation(); transferStudentModal('${s.id}')">${icon('arrow_left','w-4 h-4')}</button>
-                      <button class="btn btn-ghost !p-1.5 text-amber-700 hover:bg-amber-50 rounded-lg" title="Suspend student" onclick="event.stopPropagation(); suspendStudentModal('${s.id}')">${icon('bell','w-4 h-4')}</button>
-                      <button class="btn btn-ghost !p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" title="Withdraw student" onclick="event.stopPropagation(); withdrawStudentModal('${s.id}')">${icon('logout','w-4 h-4')}</button>
+                      ${s.status === 'suspended'
+                        ? `<button class="btn btn-ghost !p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg" title="Reinstate student" onclick="event.stopPropagation(); reinstateStudentModal('${s.id}')">${icon('check','w-4 h-4')}</button>`
+                        : `<button class="btn btn-ghost !p-1.5 text-amber-700 hover:bg-amber-50 rounded-lg" title="Suspend student" onclick="event.stopPropagation(); suspendStudentModal('${s.id}')">${icon('bell','w-4 h-4')}</button>`}
+                      <button class="btn btn-ghost !p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" title="Exit the school" onclick="event.stopPropagation(); exitStudentModal('${s.id}')">${icon('logout','w-4 h-4')}</button>
+                      `}
                       <button class="btn btn-ghost !p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg" title="Edit student details" onclick="event.stopPropagation(); editStudent('${s.id}')">${icon('edit','w-4 h-4')}</button>
                     </td>
                   </tr>
@@ -3695,19 +3746,18 @@ function viewStudent(id, activeTab) {
           ${s.transferInDate ? `<div class="text-xs text-slate-500">Transfer date: ${fdate(s.transferInDate, { long: true })}</div>` : ''}
           ${s.transferInReason ? `<div class="text-xs text-slate-500 mt-0.5">Reason: ${s.transferInReason}</div>` : ''}
         </div>` : ''}
-        ${s.status === 'transferred' ? `
-        <div class="col-span-2 bg-amber-50 rounded-xl p-3">
-          <div class="text-xs text-amber-700 font-semibold uppercase mb-1">Transferred Out</div>
-          <div class="font-semibold text-slate-900">${s.transferDest || '—'}</div>
-          ${s.transferReason ? `<div class="text-xs text-slate-500">${s.transferReason}</div>` : ''}
-          ${s.transferredAt ? `<div class="text-xs text-slate-500">Date: ${fdate(s.transferredAt, { long: true })}</div>` : ''}
-        </div>` : ''}
-        ${s.status === 'withdrawn' ? `
-        <div class="col-span-2 bg-rose-50 rounded-xl p-3">
-          <div class="text-xs text-rose-700 font-semibold uppercase mb-1">Withdrawn</div>
-          <div class="font-semibold text-slate-900">${s.withdrawReason || '—'}</div>
-          ${s.withdrawnAt ? `<div class="text-xs text-slate-500">Date: ${fdate(s.withdrawnAt, { long: true })}</div>` : ''}
-        </div>` : ''}
+        ${isFormerStudent(s) ? (() => {
+          const exitDate = s.exitDate || s.withdrawnAt || s.transferredAt || s.graduatedAt;
+          const reason = s.exitReason || s.withdrawReason || s.transferReason || '';
+          return `
+        <div class="col-span-2 bg-slate-100 rounded-xl p-3">
+          <div class="text-xs text-slate-500 font-semibold uppercase mb-1">${statusBadge(s.status)}</div>
+          <div class="font-semibold text-slate-900">${reason || '—'}</div>
+          ${s.exitDestSchool ? `<div class="text-xs text-slate-500">To: ${s.exitDestSchool}</div>` : ''}
+          ${exitDate ? `<div class="text-xs text-slate-500">Date: ${fdate(exitDate, { long: true })}</div>` : ''}
+          ${s.exitNotes ? `<div class="text-xs text-slate-500 mt-0.5">${s.exitNotes}</div>` : ''}
+        </div>`;
+        })() : ''}
       </div>
 
       ${presentDocs.length ? `<div class="mb-4">
@@ -3916,7 +3966,8 @@ function viewStudent(id, activeTab) {
       promoted_student: 'Promoted', bulk_promoted: 'Bulk promoted', bulk_graduated: 'Bulk graduated',
       graduated_student: 'Graduated', transferred_student: 'Transferred out', withdrew_student: 'Withdrew',
       suspended_student: 'Suspended', changed_status: 'Status changed', deferred_promotion: 'Promotion deferred',
-      issued_refund: 'Refund issued'
+      issued_refund: 'Refund issued', student_exited: 'Exited', student_readmitted: 'Re-admitted',
+      reinstated_student: 'Reinstated'
     };
     const ACTION_COLOR = {
       student_login: 'bg-brand-100 text-brand-700', added_student: 'bg-emerald-100 text-emerald-700',
@@ -3925,7 +3976,8 @@ function viewStudent(id, activeTab) {
       graduated_student: 'bg-amber-100 text-amber-700', transferred_student: 'bg-orange-100 text-orange-700',
       withdrew_student: 'bg-red-100 text-red-700', suspended_student: 'bg-red-100 text-red-700',
       changed_status: 'bg-slate-100 text-slate-600', deferred_promotion: 'bg-orange-100 text-orange-700',
-      issued_refund: 'bg-pink-100 text-pink-700'
+      issued_refund: 'bg-pink-100 text-pink-700', student_exited: 'bg-red-100 text-red-700',
+      student_readmitted: 'bg-emerald-100 text-emerald-700', reinstated_student: 'bg-emerald-100 text-emerald-700'
     };
     const logs = DB.query('auditLog', l => l.schoolId === s.schoolId && (l.actor === s.id || (l.target && l.target.includes(s.name))))
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -4752,10 +4804,102 @@ function editStudent(id) {
 }
 
 /* ---------- Student Lifecycle ---------- */
+/* ============================================================
+   Student Lifecycle — exit and re-admission
+   ------------------------------------------------------------
+   A student record is permanent. Enrolment is an episode. Leaving
+   ends an enrolment; returning opens a new one on the same record,
+   keeping the admission number and the history. Nothing here
+   deletes, archives or is irreversible.
+
+   EXIT REASONS are layered, which is what lets one dropdown do
+   the whole job: the outcome is fixed (behaviour hangs off it —
+   a transfer can carry a destination school and print a
+   certificate, a graduation creates an alumnus, a death is
+   excluded from fee chasing), while the label is the school's
+   own words and is free to add, rename and retire under Settings.
+   ============================================================ */
+const EXIT_OUTCOMES = [
+  { key: 'transferred', label: 'Transferred out', status: 'transferred',
+    hint: 'Moved to another school. A transfer certificate can be issued.' },
+  { key: 'graduated',   label: 'Graduated',       status: 'alumni',
+    hint: 'Completed the final class. Becomes an alumnus.' },
+  { key: 'withdrawn',   label: 'Withdrawn',       status: 'withdrawn',
+    hint: 'Left the school for any other reason.' },
+  { key: 'deceased',    label: 'Deceased',        status: 'deceased',
+    hint: 'Record closed. Excluded from fee chasing, messaging and bulk actions.' }
+];
+
+function defaultExitReasons() {
+  return [
+    { id: 'exr_transfer',  label: 'Transferred to another school', outcome: 'transferred', system: true },
+    { id: 'exr_graduate',  label: 'Graduated',                     outcome: 'graduated',   system: true },
+    { id: 'exr_withdrawn', label: 'Withdrawn by parent',           outcome: 'withdrawn',   system: true },
+    { id: 'exr_deceased',  label: 'Deceased',                      outcome: 'deceased',    system: true },
+    { id: 'exr_relocated', label: 'Family relocated',              outcome: 'withdrawn',   system: false },
+    { id: 'exr_fees',      label: 'Non-payment of fees',           outcome: 'withdrawn',   system: false },
+    { id: 'exr_discipline',label: 'Disciplinary',                  outcome: 'withdrawn',   system: false },
+    { id: 'exr_health',    label: 'Health reasons',                outcome: 'withdrawn',   system: false }
+  ];
+}
+
+function exitReasons() {
+  const stored = DB.settings().exitReasons;
+  return Array.isArray(stored) && stored.length ? stored : defaultExitReasons();
+}
+function exitReason(id) { return exitReasons().find(r => r.id === id); }
+function exitOutcome(key) { return EXIT_OUTCOMES.find(o => o.key === key) || EXIT_OUTCOMES[2]; }
+
+/* Every status that means "no longer on the roll". */
+const SLC_FORMER = ['withdrawn', 'transferred', 'alumni', 'deceased'];
+function isFormerStudent(s) { return !!s && SLC_FORMER.indexOf(s.status) !== -1; }
+function isEnrolled(s) { return !!s && (s.status === 'active' || s.status === 'suspended'); }
+
+/* Enrolment episodes. A record created before this existed has none, so the
+   first one is inferred from the admission date rather than invented. */
+function enrolmentPeriods(s) {
+  if (Array.isArray(s.enrolments) && s.enrolments.length) return s.enrolments;
+  return [{
+    id: 'enr_initial',
+    startDate: s.admissionDate || '',
+    endDate: isFormerStudent(s) ? (s.exitDate || (s.withdrawnAt || s.transferredAt || s.graduatedAt || '').slice(0, 10) || '') : '',
+    classId: s.classId,
+    session: s.enrollmentSession || DB.settings().currentSession || '',
+    reason: s.exitReason || s.withdrawReason || s.transferReason || '',
+    outcome: isFormerStudent(s) ? (s.exitOutcome || s.status) : ''
+  }];
+}
+
+function outstandingBalance(studentId) {
+  return DB.query('invoices', i => i.studentId === studentId)
+    .reduce((sum, i) => sum + (Number(i.balance) || 0), 0);
+}
+
+/* Offers the same pro-rata refund prompt as a plain withdrawal, whatever the
+   exit reason — leaving is leaving. Mirrors the calc confirmWithdraw used to do. */
+function offerExitRefundIfDue(studentId) {
+  const inv = COMPUTE.studentInvoice(studentId);
+  if (!inv || inv.paid <= 0) return;
+  const termDays = 90;
+  const elapsed = Math.min(termDays, Math.max(0, Math.ceil((new Date() - new Date(inv.createdAt)) / 86400000)));
+  const usedRatio = elapsed / termDays;
+  const consumed = Math.round(inv.paid * usedRatio);
+  const refundable = Math.max(0, inv.paid - consumed);
+  if (refundable > 0) setTimeout(() => offerRefundModal(studentId, refundable, inv.paid, Math.round(usedRatio * 100)), 200);
+}
+
+/* ============================================================
+   LIFECYCLE MENU
+   ============================================================ */
 function studentLifecycleModal(studentId) {
   const s = DB.find('students', studentId);
+  if (!s) return;
   const cls = DB.find('classes', s.classId);
   document.getElementById('modalBackdrop')?.click();
+
+  const former = isFormerStudent(s);
+  const periods = enrolmentPeriods(s);
+
   setTimeout(() => {
     modal({
       title: s.name + ' — Lifecycle Actions',
@@ -4769,22 +4913,39 @@ function studentLifecycleModal(studentId) {
             </div>
           </div>
 
+          ${former ? `
+          <div class="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+            Left on <strong>${fdate(s.exitDate || s.withdrawnAt || s.transferredAt || s.graduatedAt, { long: true })}</strong>${s.exitReason ? ` · ${s.exitReason}` : ''}.
+            The record is intact — results, attendance and fees are all still here.
+          </div>
+
+          <button class="w-full p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-left transition" onclick="readmitStudentModal('${studentId}')">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-200 text-emerald-700 flex items-center justify-center">${icon('check','w-5 h-5')}</div>
+              <div class="flex-1">
+                <div class="font-bold text-emerald-900">Re-admit</div>
+                <div class="text-xs text-emerald-700">Return to an active class, keeping this admission number and history</div>
+              </div>
+            </div>
+          </button>
+
+          ${s.exitOutcome === 'transferred' ? `
+          <button class="w-full p-3 bg-brand-50 hover:bg-brand-100 rounded-xl text-left transition" onclick="printTransferCertificate('${studentId}', '${(s.exitDestSchool || '').replace(/'/g, "\\'")}', '${(s.exitReason || '').replace(/'/g, "\\'")}')">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-brand-200 text-brand-700 flex items-center justify-center">${icon('download','w-5 h-5')}</div>
+              <div class="flex-1">
+                <div class="font-bold text-brand-900">Transfer certificate</div>
+                <div class="text-xs text-brand-700">Reissue the certificate for this exit</div>
+              </div>
+            </div>
+          </button>` : ''}
+          ` : `
           <button class="w-full p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-left transition" onclick="promoteStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-emerald-200 text-emerald-700 flex items-center justify-center">${icon('trending_up','w-5 h-5')}</div>
               <div class="flex-1">
                 <div class="font-bold text-emerald-900">Promote to next class</div>
                 <div class="text-xs text-emerald-700">Move to a higher class for the new session</div>
-              </div>
-            </div>
-          </button>
-
-          <button class="w-full p-3 bg-brand-50 hover:bg-brand-100 rounded-xl text-left transition" onclick="transferStudentModal('${studentId}')">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-brand-200 text-brand-700 flex items-center justify-center">${icon('arrow_left','w-5 h-5')}</div>
-              <div class="flex-1">
-                <div class="font-bold text-brand-900">Transfer to another school</div>
-                <div class="text-xs text-brand-700">Issue a transfer certificate and archive locally</div>
               </div>
             </div>
           </button>
@@ -4812,25 +4973,30 @@ function studentLifecycleModal(studentId) {
             </div>
           </button>`}
 
-          <button class="w-full p-3 bg-rose-50 hover:bg-rose-100 rounded-xl text-left transition" onclick="withdrawStudentModal('${studentId}')">
+          <button class="w-full p-3 bg-rose-50 hover:bg-rose-100 rounded-xl text-left transition" onclick="exitStudentModal('${studentId}')">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-rose-200 text-rose-700 flex items-center justify-center">${icon('logout','w-5 h-5')}</div>
               <div class="flex-1">
-                <div class="font-bold text-rose-900">Withdraw</div>
-                <div class="text-xs text-rose-700">Archive student record (irreversible)</div>
+                <div class="font-bold text-rose-900">Exit the school</div>
+                <div class="text-xs text-rose-700">Record that the student has left, and why. Reversible — they can be re-admitted</div>
               </div>
             </div>
           </button>
+          `}
 
-          <button class="w-full p-3 bg-brand-50 hover:bg-brand-100 rounded-xl text-left transition" onclick="graduateStudentModal('${studentId}')">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-brand-200 text-brand-700 flex items-center justify-center">${icon('check','w-5 h-5')}</div>
-              <div class="flex-1">
-                <div class="font-bold text-brand-900">Graduate to Alumni</div>
-                <div class="text-xs text-brand-700">Mark as graduated, keep records accessible</div>
-              </div>
+          ${periods.length > 1 ? `
+          <div class="pt-1">
+            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5">Enrolment history</div>
+            <div class="space-y-1.5">
+              ${periods.map(p => {
+                const c = DB.find('classes', p.classId);
+                return `<div class="text-xs text-slate-600 border-l-2 border-slate-200 pl-2.5">
+                  ${fdate(p.startDate, { long: true })} → ${p.endDate ? fdate(p.endDate, { long: true }) : '<span class="text-emerald-700 font-semibold">present</span>'}
+                  ${c ? ' · ' + c.name : ''}${p.reason ? ' · ' + p.reason : ''}
+                </div>`;
+              }).join('')}
             </div>
-          </button>
+          </div>` : ''}
         </div>
       `,
       footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>`
@@ -4983,7 +5149,7 @@ function confirmPromotion(studentId) {
 
   if (newClassId === '__graduate__') {
     document.getElementById('modalBackdrop')?.click();
-    setTimeout(() => graduateStudentModal(studentId), 50);
+    setTimeout(() => exitStudentModal(studentId, 'exr_graduate'), 50);
     return;
   }
 
@@ -4997,37 +5163,217 @@ function confirmPromotion(studentId) {
   toast(`${s.name} promoted to ${newCls.name}`, 'success');
 }
 
-function transferStudentModal(studentId) {
+/* ============================================================
+   EXIT — one action, one reason
+   ============================================================ */
+function exitStudentModal(studentId, presetReasonId) {
   const s = DB.find('students', studentId);
+  if (!s) return;
+  const owed = outstandingBalance(studentId);
+  const reasons = exitReasons();
   document.getElementById('modalBackdrop')?.click();
+
+  setTimeout(() => {
+    modal({
+      title: `Exit — ${s.name}`,
+      body: `
+        <div class="space-y-3">
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label class="input-label" for="ex_reason">Reason</label>
+              <select id="ex_reason" class="input" onchange="exitReasonChanged()">
+                ${reasons.map(r => `<option value="${r.id}" ${presetReasonId===r.id?'selected':''}>${r.label}</option>`).join('')}
+              </select>
+              <p id="ex_hint" class="text-xs text-slate-500 mt-1"></p>
+            </div>
+            <div>
+              <label class="input-label" for="ex_date">Date of leaving</label>
+              <input id="ex_date" type="date" class="input" value="${today()}" />
+            </div>
+          </div>
+
+          <div id="ex_dest_wrap" class="hidden">
+            <label class="input-label" for="ex_dest">Destination school <span class="font-normal text-slate-400">(optional)</span></label>
+            <input id="ex_dest" class="input" placeholder="e.g. Greenfield International School" />
+          </div>
+
+          ${owed > 0 ? `<div class="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <strong>${money(owed)} still outstanding.</strong>
+            The debt stays on this record and keeps appearing in fee reporting — leaving does not clear it.
+          </div>` : ''}
+
+          <div>
+            <label class="input-label" for="ex_notes">Notes <span class="font-normal text-slate-400">(optional)</span></label>
+            <textarea id="ex_notes" rows="2" class="input" placeholder="e.g. moving to Abuja, may return next session"></textarea>
+          </div>
+
+          <p class="text-xs text-slate-500">
+            Nothing is deleted. Results, attendance, fees and documents stay on the record, and the
+            student can be re-admitted at any time with the same admission number.
+          </p>
+        </div>`,
+      footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
+               <button class="btn btn-primary" onclick="confirmExitStudent('${studentId}')">${icon('check','w-4 h-4')} Record exit</button>`
+    });
+    exitReasonChanged();
+  }, 50);
+}
+
+function exitReasonChanged() {
+  const sel = document.getElementById('ex_reason');
+  const hint = document.getElementById('ex_hint');
+  const destWrap = document.getElementById('ex_dest_wrap');
+  if (!sel || !hint) return;
+  const r = exitReason(sel.value);
+  const outcome = r ? exitOutcome(r.outcome) : null;
+  hint.textContent = outcome ? outcome.hint : '';
+  if (destWrap) destWrap.classList.toggle('hidden', !(outcome && outcome.key === 'transferred'));
+}
+
+function confirmExitStudent(studentId) {
+  const s = DB.find('students', studentId);
+  if (!s) return;
+  const r = exitReason(document.getElementById('ex_reason').value);
+  const date = document.getElementById('ex_date').value;
+  const notes = (document.getElementById('ex_notes').value || '').trim();
+  const destSchool = ((document.getElementById('ex_dest') || {}).value || '').trim();
+  if (!r) { toast('Pick a reason', 'danger'); return; }
+  if (!date) { toast('A date of leaving is required', 'danger'); return; }
+
+  const periods = enrolmentPeriods(s);
+  if (date && periods[0].startDate && date < periods[0].startDate) {
+    toast('The date of leaving cannot be before the student joined', 'danger');
+    return;
+  }
+
+  const outcome = exitOutcome(r.outcome);
+  const open = periods.slice();
+  const last = open[open.length - 1];
+  if (last && !last.endDate) {
+    open[open.length - 1] = Object.assign({}, last, { endDate: date, reasonId: r.id, reason: r.label, outcome: r.outcome });
+  }
+
+  DB.update('students', studentId, {
+    status: outcome.status,
+    exitReasonId: r.id, exitReason: r.label, exitOutcome: r.outcome,
+    exitDate: date, exitNotes: notes, exitDestSchool: outcome.key === 'transferred' ? destSchool : '',
+    exitedAt: now(), exitedBy: AUTH.current ? AUTH.current.id : 'system',
+    enrolments: open
+  });
+
+  DB.insert('auditLog', {
+    id: uid('aud'), schoolId: s.schoolId,
+    actor: AUTH.current ? AUTH.current.id : 'system',
+    action: 'student_exited',
+    target: `${s.name} · ${r.label} · left ${fdate(date, { long: true })}${notes ? ' · "' + notes + '"' : ''}`,
+    timestamp: now()
+  });
+
+  document.getElementById('modalBackdrop')?.click();
+  APP.render();
+  toast(`${s.name} recorded as ${outcome.label.toLowerCase()} — the record is kept and can be re-admitted`, 'success');
+  offerExitRefundIfDue(studentId);
+}
+
+/* ============================================================
+   RE-ADMIT
+   ============================================================ */
+function readmitStudentModal(studentId) {
+  const s = DB.find('students', studentId);
+  if (!s) return;
+  const sid = currentSchoolId();
+  const classes = DB.query('classes', c => c.schoolId === sid);
+  const sessions = DB.query('academicSessions', x => x.schoolId === sid);
+  const currentSession = (sessions.find(x => x.current) || {}).name || DB.settings().currentSession || '';
+  const owed = outstandingBalance(studentId);
+  document.getElementById('modalBackdrop')?.click();
+
   setTimeout(() => modal({
-    title: 'Transfer ' + s.name,
+    title: `Re-admit — ${s.name}`,
     body: `
       <div class="space-y-3">
-        <div><label class="input-label">Destination School</label><input id="tr_school" class="input" placeholder="e.g. Greenfield International School" /></div>
-        <div><label class="input-label">Reason</label><textarea id="tr_reason" rows="3" class="input" placeholder="e.g. Family relocation to Abuja"></textarea></div>
-        <div class="bg-amber-50 rounded-xl p-3 text-sm text-amber-900">
-          A transfer certificate will be issued. The student's record will be marked Transferred and archived locally.
+        <div class="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          Returning on the same record. Admission number <strong>${s.admissionNo || '—'}</strong> is kept,
+          and every result, register and receipt from before stays attached.
         </div>
-      </div>
-    `,
+
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="input-label" for="ra_class">Class</label>
+            <select id="ra_class" class="input">
+              ${classes.map(c => `<option value="${c.id}" ${c.id === s.classId ? 'selected' : ''}>${c.name}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="input-label" for="ra_session">Session</label>
+            <select id="ra_session" class="input">
+              ${sessions.length
+                ? sessions.map(x => `<option value="${x.name}" ${x.name === currentSession ? 'selected' : ''}>${x.name}</option>`).join('')
+                : `<option value="${currentSession}">${currentSession}</option>`}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="input-label" for="ra_date">Date of return</label>
+          <input id="ra_date" type="date" class="input sm:max-w-xs" value="${today()}" />
+        </div>
+
+        ${owed > 0 ? `<div class="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <strong>${money(owed)} outstanding from before.</strong>
+          It comes back with them and stays on the ledger.
+        </div>` : ''}
+
+        <div>
+          <label class="input-label" for="ra_notes">Notes <span class="font-normal text-slate-400">(optional)</span></label>
+          <textarea id="ra_notes" rows="2" class="input" placeholder="e.g. returned after a year in Kano"></textarea>
+        </div>
+      </div>`,
     footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
-             <button class="btn btn-primary" onclick="confirmTransfer('${studentId}')">Generate Transfer Certificate</button>`
+             <button class="btn btn-primary" onclick="confirmReadmitStudent('${studentId}')">${icon('check','w-4 h-4')} Re-admit</button>`
   }), 50);
 }
 
-function confirmTransfer(studentId) {
-  const destSchool = document.getElementById('tr_school').value.trim();
-  const reason = document.getElementById('tr_reason').value.trim();
-  if (!destSchool) { toast('Destination school required', 'danger'); return; }
+function confirmReadmitStudent(studentId) {
   const s = DB.find('students', studentId);
-  DB.update('students', studentId, { status: 'transferred', transferDest: destSchool, transferReason: reason, transferredAt: now() });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'transferred_student', target: `${s.name} → ${destSchool}`, timestamp: now() });
+  if (!s) return;
+  const classId = document.getElementById('ra_class').value;
+  const session = document.getElementById('ra_session').value;
+  const date = document.getElementById('ra_date').value;
+  const notes = (document.getElementById('ra_notes').value || '').trim();
+  if (!isFormerStudent(s)) { toast(`${s.name} is already enrolled`, 'warn'); return; }
+  if (!classId) { toast('Pick a class', 'danger'); return; }
+  if (!date) { toast('A date of return is required', 'danger'); return; }
+
+  const periods = enrolmentPeriods(s).slice();
+  const last = periods[periods.length - 1];
+  if (last && last.endDate && date < last.endDate) {
+    toast('The date of return cannot be before the date they left', 'danger');
+    return;
+  }
+  periods.push({ id: uid('enr'), startDate: date, endDate: '', classId, session, reason: '', outcome: '', notes });
+
+  DB.update('students', studentId, {
+    status: 'active', classId,
+    enrollmentSession: session,
+    readmittedAt: now(), readmittedBy: AUTH.current ? AUTH.current.id : 'system',
+    // The exit stays in the enrolment history; it is no longer the current state.
+    exitReasonId: null, exitReason: null, exitOutcome: null, exitDate: null, exitNotes: null, exitDestSchool: null,
+    enrolments: periods
+  });
+
+  const cls = DB.find('classes', classId);
+  DB.insert('auditLog', {
+    id: uid('aud'), schoolId: s.schoolId,
+    actor: AUTH.current ? AUTH.current.id : 'system',
+    action: 'student_readmitted',
+    target: `${s.name} · ${cls ? cls.name : classId} · ${session} · returned ${fdate(date, { long: true })}`,
+    timestamp: now()
+  });
+
   document.getElementById('modalBackdrop')?.click();
-  // Print certificate
-  printTransferCertificate(studentId, destSchool, reason);
   APP.render();
-  toast(`${s.name} transferred. Certificate generated.`, 'success');
+  toast(`${s.name} re-admitted to ${cls ? cls.name : 'class'} — ${periods.length} enrolment periods on record`, 'success');
 }
 
 function printTransferCertificate(studentId, destSchool, reason) {
@@ -5051,59 +5397,6 @@ function printTransferCertificate(studentId, destSchool, reason) {
     </div>
   `;
   printElement(html);
-}
-
-function withdrawStudentModal(studentId) {
-  const s = DB.find('students', studentId);
-  document.getElementById('modalBackdrop')?.click();
-  setTimeout(() => modal({
-    title: 'Withdraw ' + s.name,
-    body: `
-      <div class="space-y-3">
-        <div class="bg-rose-50 rounded-xl p-3 text-sm text-rose-900">
-          <strong>Warning:</strong> Withdrawal archives the student record. Fees, results, and attendance history are preserved but the student becomes inactive. This action is logged in the audit trail.
-        </div>
-        <div><label class="input-label">Reason</label>
-          <select id="wd_reason" class="input">
-            <option>Voluntary withdrawal by parent</option>
-            <option>Non-payment of fees</option>
-            <option>Disciplinary action</option>
-            <option>Health reasons</option>
-            <option>Other</option>
-          </select>
-        </div>
-        <div><label class="input-label">Notes (optional)</label><textarea id="wd_notes" rows="2" class="input" placeholder="e.g. Will rejoin next term"></textarea></div>
-      </div>
-    `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
-             <button class="btn btn-danger" onclick="confirmWithdraw('${studentId}')">${icon('logout','w-4 h-4')} Confirm Withdrawal</button>`
-  }), 50);
-}
-
-function confirmWithdraw(studentId) {
-  const s = DB.find('students', studentId);
-  const reason = document.getElementById('wd_reason').value;
-  const notes = document.getElementById('wd_notes').value.trim();
-  DB.update('students', studentId, { status: 'withdrawn', withdrawReason: reason, withdrawNotes: notes, withdrawnAt: now() });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'withdrew_student', target: `${s.name} (${reason})`, timestamp: now() });
-  document.getElementById('modalBackdrop')?.click();
-
-  // Check if there's a refund-eligible balance
-  const inv = COMPUTE.studentInvoice(studentId);
-  if (inv && inv.paid > 0) {
-    // Compute pro-rata refund: assume remaining proportion of term
-    const termDays = 90;
-    const elapsed = Math.min(termDays, Math.max(0, Math.ceil((new Date() - new Date(inv.createdAt)) / 86400000)));
-    const usedRatio = elapsed / termDays;
-    const consumed = Math.round(inv.paid * usedRatio);
-    const refundable = Math.max(0, inv.paid - consumed);
-    if (refundable > 0) {
-      setTimeout(() => offerRefundModal(studentId, refundable, inv.paid, Math.round(usedRatio * 100)), 200);
-      return;
-    }
-  }
-  APP.render();
-  toast(`${s.name} withdrawn`, 'info');
 }
 
 function offerRefundModal(studentId, suggested, totalPaid, usedPct) {
@@ -5174,63 +5467,6 @@ function processRefund(studentId) {
   toast(`Refund of ${money(amount)} issued · parent notified`, 'success');
 }
 
-function graduateStudentModal(studentId) {
-  const s = DB.find('students', studentId);
-  document.getElementById('modalBackdrop')?.click();
-  setTimeout(() => modal({
-    title: 'Graduate ' + s.name + ' to Alumni',
-    body: `
-      <div class="space-y-3">
-        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
-          ${s.name} will be marked as Alumni. Their complete academic record is preserved and accessible from the Alumni page.
-        </div>
-        <div><label class="input-label">Graduation Year</label><input id="gr_year" type="number" class="input" value="${new Date().getFullYear()}" /></div>
-        <div><label class="input-label">Final Class</label><input id="gr_class" class="input" value="${(DB.find('classes', s.classId) || {}).name || ''}" /></div>
-        <div><label class="input-label">Awards / Honours (optional)</label><textarea id="gr_awards" rows="2" class="input" placeholder="e.g. Valedictorian, Best in Mathematics"></textarea></div>
-        <div>
-          <label class="input-label">Examination Type</label>
-          <select id="gr_exam" class="input">
-            <option value="">— Select if applicable —</option>
-            <option value="WAEC">WAEC (West Africa Senior School Certificate)</option>
-            <option value="NECO">NECO</option>
-            <option value="BECE">BECE (Basic Education Certificate)</option>
-            <option value="NABTEB">NABTEB</option>
-            <option value="Other">Other</option>
-            <option value="None">None (Junior school leaving)</option>
-          </select>
-        </div>
-        <div>
-          <label class="input-label">Examination Index Number</label>
-          <input id="gr_index" class="input" placeholder="e.g. 4240101001">
-        </div>
-        <div>
-          <label class="input-label">Leaving Certificate Issued?</label>
-          <select id="gr_cert" class="input">
-            <option value="yes">Yes — certificate issued</option>
-            <option value="no">No — pending</option>
-          </select>
-        </div>
-      </div>
-    `,
-    footer: `<button class="btn btn-secondary" onclick="document.getElementById('modalBackdrop')?.click()">Cancel</button>
-             <button class="btn btn-primary" onclick="confirmGraduation('${studentId}')">${icon('check','w-4 h-4')} Graduate</button>`
-  }), 50);
-}
-
-function confirmGraduation(studentId) {
-  const year = parseInt(document.getElementById('gr_year').value) || new Date().getFullYear();
-  const finalClass = document.getElementById('gr_class').value.trim();
-  const awards = document.getElementById('gr_awards').value.trim();
-  const examType = (document.getElementById('gr_exam') || {}).value;
-  const examIndex = (document.getElementById('gr_index') || {}).value.trim();
-  const certIssued = (document.getElementById('gr_cert') || {}).value === 'yes';
-  const s = DB.find('students', studentId);
-  DB.update('students', studentId, { status: 'alumni', graduationYear: year, finalClass, awards, examType, examIndex, certIssued, graduatedAt: now() });
-  DB.insert('auditLog', { id: uid('aud'), schoolId: s.schoolId, actor: AUTH.current.id, action: 'graduated_student', target: `${s.name} (Class of ${year})`, timestamp: now() });
-  document.getElementById('modalBackdrop')?.click();
-  APP.render();
-  toast(`${s.name} graduated to alumni 🎓`, 'success');
-}
 
 function suspendStudentModal(studentId) {
   const s = DB.find('students', studentId);
@@ -10700,10 +10936,72 @@ const _CLIST_DEFS = {
   disciplineReasons: { title: 'Suspension Reasons',  desc: 'Selectable reasons when suspending a student.', defaults: ['Fighting / Physical Violence','Gross Insubordination','Bullying or Harassment','Damage to School Property','Academic Dishonesty / Exam Malpractice','Possession of Prohibited Item','Persistent Unexplained Absences','Pending Disciplinary Investigation','Other'] }
 };
 
+function renderExitReasonSettings() {
+  const reasons = exitReasons();
+  return `
+    <div class="card p-5">
+      <div class="flex items-start justify-between gap-3 mb-1">
+        <h4 class="font-bold text-slate-900">Reasons for leaving</h4>
+        <button class="btn btn-secondary text-sm" onclick="addExitReason()">${icon('plus','w-4 h-4')} Add reason</button>
+      </div>
+      <p class="text-xs text-slate-500 mb-3">
+        Offered when a student leaves. The four the system acts on cannot be removed — a transfer issues
+        a certificate, a graduation creates an alumnus, and a death is excluded from fee chasing.
+      </p>
+      <div class="space-y-2">
+        ${reasons.map((r, i) => `
+          <div class="flex items-center gap-2">
+            <input class="input flex-1 !py-1 text-sm" value="${r.label}" ${r.system ? 'readonly' : ''}
+                   onchange="setExitReason(${i},'label',this.value)" />
+            <select class="input !w-44 !py-1 text-sm" ${r.system ? 'disabled' : ''} onchange="setExitReason(${i},'outcome',this.value)">
+              ${EXIT_OUTCOMES.map(o => `<option value="${o.key}" ${r.outcome === o.key ? 'selected' : ''}>${o.label}</option>`).join('')}
+            </select>
+            ${r.system
+              ? `<span class="badge badge-neutral flex-shrink-0">System</span>`
+              : `<button class="btn btn-ghost !p-1.5 text-slate-400 hover:text-rose-600 flex-shrink-0" aria-label="Remove" title="Remove"
+                         onclick="removeExitReason(${i})">${icon('x','w-4 h-4')}</button>`}
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function _saveExitReasons(list) { DB.settings({ exitReasons: list }); }
+
+function setExitReason(i, field, value) {
+  const list = exitReasons().map(r => Object.assign({}, r));
+  if (!list[i] || list[i].system) return;
+  list[i][field] = field === 'label' ? String(value).trim() : value;
+  if (field === 'label' && !list[i].label) { toast('A reason needs a name', 'danger'); return; }
+  _saveExitReasons(list);
+}
+
+function addExitReason() {
+  const list = exitReasons().map(r => Object.assign({}, r));
+  list.push({ id: uid('exr'), label: 'New reason', outcome: 'withdrawn', system: false });
+  _saveExitReasons(list);
+  APP.render();
+}
+
+function removeExitReason(i) {
+  const list = exitReasons().map(r => Object.assign({}, r));
+  const r = list[i];
+  if (!r || r.system) return;
+  // Re-admission clears the current exit, so the history has to be checked too —
+  // otherwise a reason silently becomes deletable the moment a student returns.
+  const used = DB.query('students', s => s.exitReasonId === r.id ||
+    (Array.isArray(s.enrolments) && s.enrolments.some(e => e.reasonId === r.id))).length;
+  if (used) { toast(`"${r.label}" is on ${used} student record${used === 1 ? '' : 's'} — rename it instead of removing it`, 'danger'); return; }
+  list.splice(i, 1);
+  _saveExitReasons(list);
+  APP.render();
+  toast('Reason removed', 'info');
+}
+
 function renderCustomListsSettings() {
   const s = DB.settings();
   return `
     <div class="space-y-4">
+      ${renderExitReasonSettings()}
       <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">
         ${icon('info','w-4 h-4 inline mr-1')} Every dropdown below is used across the system. Add, rename, or remove items to match your school's terminology. Changes take effect immediately on new entries.
       </div>
