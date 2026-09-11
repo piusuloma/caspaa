@@ -608,6 +608,14 @@ function routeLoginIdentifier(identifier) {
 // Module-level state carried between step 1 and step 2
 let _loginRoute = null;
 
+// "Mrs. Funke Adeyemi" → "Funke" — skips a titular prefix so it doesn't get
+// greeted as if "Mrs." were a first name.
+function firstName(fullName) {
+  const parts = (fullName || '').trim().split(/\s+/);
+  const titles = new Set(['mr.', 'mrs.', 'miss', 'ms.', 'dr.', 'prof.', 'mr', 'mrs', 'dr', 'prof']);
+  return (parts.length > 1 && titles.has(parts[0].toLowerCase()) ? parts[1] : parts[0]) || fullName || '';
+}
+
 const EYE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>`;
 
 function bindLoginHandlers() {
@@ -788,7 +796,7 @@ function bindLoginHandlers() {
   const finishActivation = (user) => {
     AUTH.login(user);
     APP.render();
-    toast(`Welcome, ${user.name.split(' ')[0]}! Your account is now active.`, 'success');
+    toast(`Welcome, ${firstName(user.name)}! Your account is now active.`, 'success');
     showWelcomeOverlay(user);
   };
 
@@ -1092,7 +1100,7 @@ function showWelcomeOverlay(user) {
     body: `
       <div class="text-center space-y-3 py-2">
         <div class="w-14 h-14 mx-auto rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center">${icon('check', 'w-7 h-7')}</div>
-        <h3 class="text-lg font-bold text-slate-900">Welcome to ${schoolName} Portal, ${user.name.split(' ')[0]}!</h3>
+        <h3 class="text-lg font-bold text-slate-900">Welcome to ${schoolName} Portal, ${firstName(user.name)}!</h3>
         <p class="text-sm text-slate-500">Your account is now active. Take a quick look around — help is always in the menu.</p>
       </div>`,
     footer: `<button class="btn btn-primary w-full" onclick="document.getElementById('modalBackdrop')?.click()">Let's go</button>`
