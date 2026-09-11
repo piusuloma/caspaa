@@ -12,7 +12,7 @@ const SESSION_KEY = 'caspaa_session_v1';
    the key is absent. Bump this when seedDatabase() gains something an existing
    database should also get, and add the matching step in DB._migrate(). Data the
    user entered is never touched: migrations only ADD what is missing. */
-const SEED_VERSION = 6;
+const SEED_VERSION = 7;
 
 /* ---------- Utility ---------- */
 const uid = (prefix = 'id') => `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
@@ -69,6 +69,8 @@ function seedDatabase() {
     { id: 'stf_recep',      schoolId, name: 'Miss Sade Adekoya',    email: 'reception@brightlights.ng', phone: '08012345620', staffType: 'Administration', role: 'Receptionist',           classes: [], subjects: [], hireDate: '2022-04-01', salary: 110000, bank: { name: 'Wema',       account: '0123456720' }, dob: '1996-07-14' },
     { id: 'stf_counsl',     schoolId, name: 'Mrs. Adaobi Nnamdi',   email: 'counsellor@brightlights.ng', phone: '08012345621', staffType: 'Administration', role: 'School Counsellor',      classes: [], subjects: [], hireDate: '2021-09-01', salary: 195000, bank: { name: 'Stanbic',    account: '0123456721' }, dob: '1980-10-03' }
   ];
+  // Invited, not yet activated — demos the PENDING-adult step of the login flow.
+  teachers.push({ id: 'tch_pending', schoolId, name: 'Mrs. Funmi Adisa', email: 'funmi.adisa@brightlights.ng', phone: '08012345699', staffType: 'Academic', role: 'teacher', subjects: ['sub_eng'], classes: [], hireDate: daysAgo(2), salary: 175000, bank: null, dob: '1993-02-18', invitation: { username: 'funmi.adisa@brightlights.ng', tempPassword: 'Caspaa7421', sentAt: daysAgo(2), accepted: false, channels: ['email'] } });
 
   const parents = [
     { id: 'par_okafor', schoolId, name: 'Mr. Tunde Okafor',    email: 'parent@demo.ng',         phone: '08099999001', occupation: 'Software Engineer', monthlyIncome: 850000, address: '12 Admiralty Way, Lekki' },
@@ -77,6 +79,8 @@ function seedDatabase() {
     { id: 'par_musa',   schoolId, name: 'Mrs. Hauwa Musa',     email: 'hauwa.m@outlook.com',    phone: '08099999004', occupation: 'Civil Servant', monthlyIncome: 320000, address: '22 Adeniyi Jones, Ikeja' },
     { id: 'par_lawal',  schoolId, name: 'Mr. Kunle Lawal',     email: 'klawal@gmail.com',       phone: '08099999005', occupation: 'Banker', monthlyIncome: 780000, address: '7 Banana Island' }
   ];
+  // Credentials issued on admission, not yet activated — demos the PENDING-adult step.
+  parents.push({ id: 'par_pending', schoolId, name: 'Mr. Segun Alabi', email: 'segun.alabi@gmail.com', phone: '08099999009', occupation: 'Architect', monthlyIncome: 650000, address: '3 Chevron Drive, Lekki', credentials: { username: '08099999009', tempPassword: 'Caspaa3390', createdAt: daysAgo(2) }, firstLogin: true });
 
   const students = [
     { id: 'stu_001', schoolId, name: 'Chiamaka Okafor', admissionNo: 'BL/2024/001', classId: 'cls_pry3', dob: '2016-04-12', gender: 'F', parentId: 'par_okafor', photo: null, admissionDate: '2024-09-01', bloodGroup: 'O+', allergies: 'None', status: 'active', houseId: 'house_red' },
@@ -103,6 +107,10 @@ function seedDatabase() {
     { id: 'stu_tr1', schoolId, name: 'Kemi Adeyinka',         admissionNo: 'BL/2024/011', classId: 'cls_pry2', dob: '2017-02-14', gender: 'F', parentId: 'par_musa',   photo: null, admissionDate: '2024-01-15', bloodGroup: 'A+',  status: 'transferred', transferDest: 'Lekki British International School', transferReason: 'Family relocated to Lagos Island', transferredAt: daysAgo(45) },
     { id: 'stu_wd1', schoolId, name: 'Toluwa Adebayo',        admissionNo: 'BL/2023/088', classId: 'cls_jss1', dob: '2012-06-05', gender: 'M', parentId: 'par_bello',  photo: null, admissionDate: '2023-09-01', bloodGroup: 'B+',  status: 'withdrawn',    withdrawReason: 'Non-payment of fees', withdrawNotes: 'Parent relocated overseas',                  withdrawnAt: daysAgo(120) }
   ];
+  // Freshly admitted, never activated — demos the PENDING-student PIN step
+  // (secondary level, since the app only asks younger students' parents to
+  // manage passwords, not the child directly).
+  students.push({ id: 'stu_pending', schoolId, name: 'Damilola Alabi', admissionNo: 'BL/2025/011', classId: 'cls_jss1', dob: '2012-09-14', gender: 'M', parentId: 'par_pending', photo: null, admissionDate: daysAgo(2), bloodGroup: 'O+', allergies: 'None', status: 'active', houseId: 'house_blue', activated: false, tempPin: '4821' });
 
   // Fee structure per class (yearly, NGN)
   const feeStructures = [
@@ -1468,6 +1476,26 @@ function seedMigration6(d) {
   return true;
 }
 
+// v7 — three pending-activation demo accounts (one invited teacher, one
+// parent with unclaimed credentials, one newly admitted student) so the
+// unified activation/login flow has something to show on an already-stored
+// database too, without anyone first inviting staff or admitting a student.
+function seedMigration7(d) {
+  const NEW_IDS = new Set(['tch_pending', 'par_pending', 'stu_pending']);
+  const fresh = seedDatabase();
+  let added = false;
+  ['teachers', 'parents', 'students'].forEach(table => {
+    if (!Array.isArray(d[table])) d[table] = [];
+    const have = new Set(d[table].map(r => r && r.id));
+    (fresh[table] || []).forEach(row => {
+      if (!row || !NEW_IDS.has(row.id) || have.has(row.id)) return;
+      d[table].push(row);
+      added = true;
+    });
+  });
+  return added;
+}
+
 /* ---------- DB Interface ---------- */
 const DB = {
   _data: null,
@@ -1494,6 +1522,7 @@ const DB = {
     if (from >= SEED_VERSION) return false;
     try {
       if (from < 6) seedMigration6(d);
+      if (from < 7) seedMigration7(d);
     } catch (e) {
       console.error('Seed migration failed; leaving the stored database untouched.', e);
       return false;
