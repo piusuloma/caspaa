@@ -552,24 +552,63 @@ function resolveLogin(email, pwd) {
 }
 
 /* ---------- Route a step-1 identifier ----------
-   Decides which credential step 1 should lead to, without asking the
-   user to declare their type. An admission number that matches an
-   active student → date-of-birth step; anything that matches a known
-   account (email or phone username) → password step; else unknown. */
+   Decides which credential step 1 should lead to, without asking the user
+   to declare their type: an ACTIVE account goes to its usual credential
+   step (password, or DOB for a student who has never activated), while an
+   account still PENDING activation is gated to the activation screen
+   instead — even though its temp credential would otherwise log it
+   straight in. */
 function routeLoginIdentifier(identifier) {
   const id = (identifier || '').trim();
   if (!id) return { kind: 'empty' };
+  const idLower = id.toLowerCase();
+
   // Student — matched by admission number (case-insensitive)
   const student = DB.get('students').find(s =>
     s.admissionNo && s.admissionNo.toUpperCase() === id.toUpperCase() && s.status === 'active');
-  if (student) return { kind: 'student', student, label: student.admissionNo };
-  // Any credentialled account (staff, parent, admin, school proprietor)
+  if (student) {
+    if (student.activated === false) return { kind: 'pending-student', student, label: student.admissionNo };
+    // Once activated, a student signs in with a password like everyone else.
+    if (student.passwordChanged) return { kind: 'password', identifier: student.admissionNo, label: student.admissionNo };
+    return { kind: 'student', student, label: student.admissionNo };
+  }
+
+  // Staff — invited via onboarding. Login = email OR invitation username.
+  const staff = DB.get('teachers').find(t =>
+    (t.email || '').toLowerCase() === idLower ||
+    (t.invitation && (t.invitation.username || '').toLowerCase() === idLower));
+  if (staff) {
+    if (staff.invitation && !staff.invitation.accepted) return { kind: 'pending-adult', collection: 'teachers', record: staff, identifier: id, label: id };
+    return { kind: 'password', identifier: id, label: id };
+  }
+
+  // Parents — credentials issued when their child is enrolled.
+  const parent = DB.get('parents').find(p =>
+    (p.email || '').toLowerCase() === idLower ||
+    (p.credentials && (p.credentials.username || '').toLowerCase() === idLower));
+  if (parent) {
+    if (parent.credentials && !parent.passwordChanged) return { kind: 'pending-adult', collection: 'parents', record: parent, identifier: id, label: id };
+    return { kind: 'password', identifier: id, label: id };
+  }
+
+  // School proprietor — invited the same way as staff.
+  const school = DB.get('schools').find(s =>
+    (s.email || '').toLowerCase() === idLower ||
+    (s.invitation && (s.invitation.username || '').toLowerCase() === idLower));
+  if (school) {
+    if (school.invitation && !school.invitation.accepted) return { kind: 'pending-adult', collection: 'schools', record: school, identifier: id, label: id };
+    return { kind: 'password', identifier: id, label: id };
+  }
+
+  // Anything else credentialled (demo personas) → password step.
   if (resolveLogin(id, '').user) return { kind: 'password', identifier: id, label: id };
   return { kind: 'unknown' };
 }
 
 // Module-level state carried between step 1 and step 2
 let _loginRoute = null;
+
+const EYE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>`;
 
 function bindLoginHandlers() {
   const step1 = document.getElementById('loginStep1');
@@ -578,6 +617,7 @@ function bindLoginHandlers() {
 
   const goToStep1 = () => {
     _loginRoute = null;
+    clearInterval(_resendTimer);
     step2.classList.add('hidden');
     step1.classList.remove('hidden');
     document.getElementById('loginStep2Body').innerHTML = '';
@@ -600,6 +640,31 @@ function bindLoginHandlers() {
           <input type="date" class="input" id="loginDob" />
         </div>
         <button class="btn btn-primary w-full" id="loginSubmitBtn">Sign in as Student</button>`;
+    } else if (route.kind === 'pending-adult') {
+      body.innerHTML = `
+        <div class="rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-900">
+          An activation link was sent to your registered email address. Please click the link in your email to set your permanent password.
+        </div>
+        <button type="button" class="btn btn-secondary w-full" id="loginResendBtn">Resend Activation Email</button>
+        <p class="text-xs text-slate-400 text-center">
+          Prototype — no real inbox here:
+          <button type="button" class="text-brand-700 font-semibold underline" id="loginSimulateLinkBtn">simulate opening the emailed link</button>
+        </p>`;
+    } else if (route.kind === 'pending-student') {
+      body.innerHTML = `
+        <p class="text-sm text-slate-500">Enter your date of birth or the temporary PIN from your welcome message, then choose a password.</p>
+        <div>
+          <label class="input-label">Date of Birth / Temporary PIN</label>
+          <input type="text" class="input" id="actDobPin" placeholder="YYYY-MM-DD or PIN" />
+        </div>
+        <div>
+          <label class="input-label">Create Password</label>
+          <div class="relative">
+            <input type="password" class="input pr-10" id="actPwNew" placeholder="Minimum 8 characters" />
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('actPwNew', this)" tabindex="-1">${EYE_ICON_SVG}</button>
+          </div>
+        </div>
+        <button class="btn btn-primary w-full" id="loginSubmitBtn">Activate Account</button>`;
     } else {
       body.innerHTML = `
         <div>
@@ -621,18 +686,116 @@ function bindLoginHandlers() {
 
     step1.classList.add('hidden');
     step2.classList.remove('hidden');
+
+    if (route.kind === 'pending-adult') {
+      document.getElementById('loginResendBtn').onclick = () => resendActivation(route);
+      document.getElementById('loginSimulateLinkBtn').onclick = () => showAdultActivationForm(route);
+      return;
+    }
+
     const submit = document.getElementById('loginSubmitBtn');
-    submit.onclick = doSubmit;
-    const focusEl = document.getElementById(route.kind === 'student' ? 'loginDob' : 'loginPassword');
+    if (submit) submit.onclick = doSubmit;
+    const focusEl = document.getElementById(route.kind === 'student' ? 'loginDob' : route.kind === 'pending-student' ? 'actDobPin' : 'loginPassword');
     if (focusEl) {
       setTimeout(() => focusEl.focus(), 0);
       focusEl.addEventListener('keydown', e => { if (e.key === 'Enter') doSubmit(); });
     }
   };
 
+  let _resendTimer = null;
+  const resendActivation = (route) => {
+    const field = route.record.invitation ? 'invitation' : 'credentials';
+    DB.update(route.collection, route.record.id, { [field]: { ...(route.record[field] || {}), sentAt: now() } });
+    toast('Activation email resent', 'success');
+    const btn = document.getElementById('loginResendBtn');
+    if (!btn) return;
+    let secs = 60;
+    btn.disabled = true;
+    btn.textContent = `Resend link again in ${secs}s…`;
+    clearInterval(_resendTimer);
+    _resendTimer = setInterval(() => {
+      secs -= 1;
+      if (secs <= 0) {
+        clearInterval(_resendTimer);
+        btn.disabled = false;
+        btn.textContent = 'Resend Activation Email';
+      } else {
+        btn.textContent = `Resend link again in ${secs}s…`;
+      }
+    }, 1000);
+  };
+
+  // Stands in for the user clicking the link in their activation email —
+  // there's no real inbox to send to in this prototype.
+  const showAdultActivationForm = (route) => {
+    clearInterval(_resendTimer);
+    const body = document.getElementById('loginStep2Body');
+    body.innerHTML = `
+      <p class="text-sm text-slate-500">Set a permanent password for your account.</p>
+      <div>
+        <label class="input-label">New Password</label>
+        <div class="relative">
+          <input type="password" class="input pr-10" id="actPwNew" placeholder="Minimum 8 characters" />
+          <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('actPwNew', this)" tabindex="-1">${EYE_ICON_SVG}</button>
+        </div>
+      </div>
+      <div>
+        <label class="input-label">Confirm Password</label>
+        <div class="relative">
+          <input type="password" class="input pr-10" id="actPwConfirm" placeholder="Repeat password" />
+          <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onclick="togglePwVisibility('actPwConfirm', this)" tabindex="-1">${EYE_ICON_SVG}</button>
+        </div>
+      </div>
+      <button class="btn btn-primary w-full" id="loginSubmitBtn">Activate Account</button>`;
+    document.getElementById('loginSubmitBtn').onclick = () => confirmActivateAdult(route);
+    setTimeout(() => document.getElementById('actPwNew').focus(), 0);
+  };
+
+  const confirmActivateAdult = (route) => {
+    const pw = document.getElementById('actPwNew').value;
+    const confirmPw = document.getElementById('actPwConfirm').value;
+    if (pw.length < 8) { toast('Password must be at least 8 characters', 'danger'); return; }
+    if (pw !== confirmPw) { toast('Passwords do not match', 'danger'); return; }
+
+    const { collection, record } = route;
+    const field = record.invitation ? 'invitation' : 'credentials';
+    const patch = { [field]: { ...(record[field] || {}), tempPassword: pw, accepted: true, acceptedAt: now() }, passwordChanged: true, firstLogin: false };
+    DB.update(collection, record.id, patch);
+
+    const res = resolveLogin(route.identifier, pw);
+    if (!res.user) { toast('Something went wrong activating this account', 'danger'); return; }
+    finishActivation(res.user);
+  };
+
+  const confirmActivateStudent = (route) => {
+    const dobPin = (document.getElementById('actDobPin').value || '').trim();
+    const pw = document.getElementById('actPwNew').value;
+    const student = route.student;
+    if (!dobPin) { toast('Enter your date of birth or temporary PIN', 'danger'); return; }
+    const matches = (student.dob && dobPin === student.dob) || (student.tempPin && dobPin === student.tempPin);
+    if (!matches) { toast("That doesn't match our records", 'danger'); return; }
+    if (pw.length < 8) { toast('Password must be at least 8 characters', 'danger'); return; }
+
+    DB.update('students', student.id, { activated: true, passwordChanged: true, tempPassword: pw, tempPin: null, activatedAt: now() });
+    DB.insert('auditLog', { id: uid('aud'), schoolId: student.schoolId, actor: student.id, action: 'student_activated', target: student.name, timestamp: now() });
+    const res = resolveLogin(student.admissionNo, pw);
+    if (!res.user) { toast('Something went wrong activating this account', 'danger'); return; }
+    finishActivation(res.user);
+  };
+
+  // Shared by both activation paths: account is now ACTIVE, log straight in
+  // and show the one-time welcome (Story 5) — no re-entering credentials.
+  const finishActivation = (user) => {
+    AUTH.login(user);
+    APP.render();
+    toast(`Welcome, ${user.name.split(' ')[0]}! Your account is now active.`, 'success');
+    showWelcomeOverlay(user);
+  };
+
   const doSubmit = () => {
     if (!_loginRoute) return;
     if (_loginRoute.kind === 'student') return studentSignIn(_loginRoute.student);
+    if (_loginRoute.kind === 'pending-student') return confirmActivateStudent(_loginRoute);
     return passwordSignIn(_loginRoute.identifier);
   };
 
@@ -917,6 +1080,23 @@ function saveFirstLoginPassword(accountId) {
   document.getElementById('modalBackdrop')?.click();
   toast('Password updated — welcome to CASPAA!', 'success');
   APP.render();
+}
+
+/* One-time, friendly overlay right after an account activates — account
+   creation only transitions PENDING → ACTIVE once, so this is naturally
+   shown exactly the first time the dashboard loads for that account. */
+function showWelcomeOverlay(user) {
+  const schoolName = DB.settings().schoolName || 'CASPAA';
+  setTimeout(() => modal({
+    title: 'Welcome!',
+    body: `
+      <div class="text-center space-y-3 py-2">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center">${icon('check', 'w-7 h-7')}</div>
+        <h3 class="text-lg font-bold text-slate-900">Welcome to ${schoolName} Portal, ${user.name.split(' ')[0]}!</h3>
+        <p class="text-sm text-slate-500">Your account is now active. Take a quick look around — help is always in the menu.</p>
+      </div>`,
+    footer: `<button class="btn btn-primary w-full" onclick="document.getElementById('modalBackdrop')?.click()">Let's go</button>`
+  }), 400);
 }
 
 function showOTPScreen(account) {
