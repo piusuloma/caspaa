@@ -26,13 +26,6 @@ function pmDaysBetween(a, b) { return Math.floor((new Date(b) - new Date(a)) / 8
 // Paying = active. Trials haven't paid yet; suspended schools have stopped.
 function pmIsPaying(s) { return s.status === 'active'; }
 
-// A payment a parent made online through CASPAA's Paystack integration. Cash and
-// bank deposits a bursar records by hand (CASH-/MAN- references) and refunds don't count.
-function pmIsOnlinePayment(t) {
-  return t.status === 'successful' && t.amount > 0 && t.method !== 'cash'
-    && !/^(CASH|MAN)-/.test(String(t.reference || ''));
-}
-
 // Keep one MRR snapshot per month (per-school fee + status), overwritten while the
 // month is open. Next month's movement, growth and trial conversion compare against it.
 function pmRecordSnapshot(month, schools, mrr) {
@@ -139,23 +132,8 @@ function platformMetrics() {
   const renewalsDue = renewing.filter(s => { const d = pmDaysBetween(todayD, s.nextRenewal); return d >= 0 && d <= 30; });
   const renewalsLapsed = renewing.filter(s => pmDaysBetween(todayD, s.nextRenewal) < 0);
 
-  /* ---- Customers ---- */
+  // Size of paying schools as entered at onboarding (not a live student count).
   const studentsPaying = paying.reduce((s, x) => s + (x.students || 0), 0);
-  const revenuePerStudent = studentsPaying ? mrr / studentsPaying : 0;
-
-  /* ---- Usage: school fees parents paid online through CASPAA (not CASPAA revenue) ---- */
-  const txns = DB.query('transactions', pmIsOnlinePayment);
-  const txThis = txns.filter(t => pmMonthKey(t.timestamp) === thisMonth);
-  const txPrev = txns.filter(t => pmMonthKey(t.timestamp) === prevMonth);
-  const payingIds = new Set(paying.map(s => s.id));
-  const schoolsUsingPayments = new Set(txThis.filter(t => payingIds.has(t.schoolId)).map(t => t.schoolId)).size;
-  const payments = {
-    volume: txThis.reduce((s, t) => s + t.amount, 0),
-    count: txThis.length,
-    prevVolume: txPrev.reduce((s, t) => s + t.amount, 0),
-    schoolsUsing: schoolsUsingPayments,
-    adoptionPct: paying.length ? (schoolsUsingPayments / paying.length) * 100 : 0
-  };
 
   /* ---- Support ---- */
   const open = DB.query('supportTickets', t => t.status !== 'resolved');
@@ -169,8 +147,7 @@ function platformMetrics() {
     revenue: { series, invoicedThisMonth: current.invoiced, collectedThisMonth: current.collected, periodLabel: current.period },
     overdue: { invoices: overdueInvs, amount: overdueAmount, ageing },
     renewalsDue, renewalsLapsed,
-    studentsPaying, revenuePerStudent,
-    payments,
+    studentsPaying,
     support: { open: open.length, pastSla: pastSla.length, nearSla: nearSla.length }
   };
 }
@@ -290,9 +267,9 @@ function view_sa_dashboard() {
 
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         ${statCard({ label: 'ARR', value: money(M.arr), icon: 'trending_up', color: 'brand', tooltip: 'Annual recurring revenue: MRR × 12.' })}
-        ${statCard({ label: 'Revenue per Student', value: money(Math.round(M.revenuePerStudent)), icon: 'students', color: 'brand', trend: { direction: 'up', label: 'per month' }, tooltip: 'MRR ÷ students at paying schools.' })}
+        ${statCard({ label: 'Logo Churn', value: mv && mv.churnRate !== null ? fmtPct(mv.churnRate) : '—', icon: 'trending_down', color: mv && mv.churnedCount ? 'rose' : 'brand', trend: mv ? (mv.churnedCount ? { direction: 'down', label: `${plural(mv.churnedCount, 'school')} lost · −${money(mv.churned)} MRR` } : { direction: 'up', label: 'No schools lost this month' }) : { direction: 'up', label: 'Shows from next month' }, tooltip: 'Paying schools lost this month ÷ paying schools at the start of the month.' })}
         ${statCard({ label: 'Overdue Invoices', value: money(M.overdue.amount), icon: 'fees', color: M.overdue.invoices.length ? 'rose' : 'brand', trend: M.overdue.invoices.length ? { direction: 'down', label: plural(M.overdue.invoices.length, 'invoice') + ' unpaid' } : { direction: 'up', label: 'All paid' }, tooltip: 'Subscription invoices to schools that are past their due date and unpaid.' })}
-        ${statCard({ label: 'Fees Paid via CASPAA', value: money(M.payments.volume), icon: 'fees', color: 'slate', trend: { direction: M.payments.volume >= M.payments.prevVolume ? 'up' : 'down', label: `${M.payments.schoolsUsing}/${M.paying.length} schools · ${monthName}` }, tooltip: 'School fees parents paid online through Paystack this month. This settles straight to each school — it is usage, not CASPAA revenue.' })}
+        ${statCard({ label: 'Renewals Due', value: M.renewalsDue.length, icon: 'calendar', color: M.renewalsLapsed.length ? 'amber' : 'brand', trend: M.renewalsLapsed.length ? { direction: 'down', label: `${M.renewalsLapsed.length} already lapsed` } : { direction: 'up', label: 'Next 30 days' }, tooltip: 'Schools whose subscription renews in the next 30 days — follow up before the date.' })}
       </div>
 
       <!-- Revenue chart + Action queue -->
@@ -345,7 +322,6 @@ function view_sa_dashboard() {
           <h3 class="font-bold text-slate-900">Customers</h3>
           <p class="text-xs text-slate-500 mb-2">Retention and conversion</p>
           ${row('Paying schools', M.paying.length)}
-          ${row('Students at paying schools', M.studentsPaying.toLocaleString())}
           ${row('Logo churn (this month)', mv ? fmtPct(mv.churnRate) : '—', mv && mv.churnRate ? 'text-rose-700' : '')}
           ${row('Trial conversion (this month)', M.trialConversion ? (M.trialConversion.ended ? `${fmtPct(M.trialConversion.rate)} <span class="text-slate-500 font-normal">(${M.trialConversion.converted}/${M.trialConversion.ended})</span>` : 'No trials ended') : '—')}
           ${row('Trials ending in 7 days', M.trialsEndingSoon.length, M.trialsEndingSoon.length ? 'text-amber-700' : '')}
@@ -358,7 +334,6 @@ function view_sa_dashboard() {
           ${row('1–30 days', `${money(M.overdue.ageing.d30.amount)} <span class="text-slate-500 font-normal">(${M.overdue.ageing.d30.count})</span>`)}
           ${row('31–60 days', `${money(M.overdue.ageing.d60.amount)} <span class="text-slate-500 font-normal">(${M.overdue.ageing.d60.count})</span>`, M.overdue.ageing.d60.count ? 'text-amber-700' : '')}
           ${row('60+ days', `${money(M.overdue.ageing.d60plus.amount)} <span class="text-slate-500 font-normal">(${M.overdue.ageing.d60plus.count})</span>`, M.overdue.ageing.d60plus.count ? 'text-rose-700' : '')}
-          ${row('Renewals due in 30 days', M.renewalsDue.length)}
           <div class="border-t border-slate-200 mt-1 pt-1">
             ${row('Open support tickets', M.support.open)}
             ${row('Past SLA', M.support.pastSla, M.support.pastSla ? 'text-rose-700' : '')}
@@ -731,7 +706,7 @@ function approveSchoolVerification(schoolId) {
   document.getElementById('modalBackdrop')?.click();
   APP.params.schoolTab = null;
   APP.render();
-  toast(`${s.name} verified — payments & financing unlocked`, 'success');
+  toast(`${s.name} verified — online payments unlocked`, 'success');
 }
 
 function rejectSchoolVerification(schoolId) {
