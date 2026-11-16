@@ -118,6 +118,11 @@ const APP = {
       ]
     };
     let items = menus[role] || [];
+    // CASPAA doesn't offer lending yet; the operator's Lending console stays hidden
+    // until it's switched on in Platform Settings.
+    if (role === 'superadmin' && typeof platformLendingEnabled === 'function' && !platformLendingEnabled()) {
+      items = items.filter(n => n.key !== 'sa_lending');
+    }
     // Multi-branch is a gated entitlement. Gate on the OWNER's school (stable while
     // they're switched into a branch, whose own currentSchoolId differs).
     const ownSid = AUTH.current && (AUTH.current.schoolId || AUTH.current.id);

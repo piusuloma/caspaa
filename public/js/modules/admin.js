@@ -2964,7 +2964,7 @@ function startVerificationModal() {
     size: 'lg',
     body: `
       <div class="space-y-3">
-        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">Verification unlocks parent payments, remittances and fee financing. Your details are reviewed by the CASPAA team.</div>
+        <div class="bg-brand-50 rounded-xl p-3 text-sm text-brand-900">Verification unlocks online fee payments, settled straight to your school's bank account. Your details are reviewed by the CASPAA team.</div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="input-label" for="vf_reg">CAC Registration No. *</label><input id="vf_reg" class="input" value="${k.regNumber && k.regNumber !== 'Pending' ? k.regNumber : ''}" placeholder="e.g. RC-228491" /></div>
           <div><label class="input-label" for="vf_nin">Proprietor NIN *</label><input id="vf_nin" class="input" value="${k.ownerNIN || ''}" placeholder="11-digit NIN" /></div>

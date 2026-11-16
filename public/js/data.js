@@ -12,7 +12,7 @@ const SESSION_KEY = 'caspaa_session_v1';
    the key is absent. Bump this when seedDatabase() gains something an existing
    database should also get, and add the matching step in DB._migrate(). Data the
    user entered is never touched: migrations only ADD what is missing. */
-const SEED_VERSION = 7;
+const SEED_VERSION = 8;
 
 /* ---------- Utility ---------- */
 const uid = (prefix = 'id') => `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
@@ -547,15 +547,6 @@ function seedDatabase() {
     { id: 'tkt_010', schoolId: 'sch_excellence',   requester: 'Mrs. Olusegun (PTA Head)',     subject: 'Parents are not getting WhatsApp absence alerts',description: 'Three parents reported they never received the absence alert when their kids missed school yesterday.', priority: 'high',   status: 'in_progress', channel: 'whatsapp', assignedTo: 'team_sup', createdAt: daysAgo(1), slaHours: 4,  notes: [{ by: 'team_sup', text: 'Confirmed templates exist. Checking delivery logs', timestamp: daysAgo(0), internal: true }] }
   ];
 
-  // Operator-side schools' remittance status
-  const remittances = [
-    { id: uid('rem'), schoolId: 'sch_brightlights', period: 'May 2026', amount: 1695200, status: 'completed', remittedAt: daysAgo(3) },
-    { id: uid('rem'), schoolId: 'sch_horizon',      period: 'May 2026', amount: 8420000, status: 'pending' },
-    { id: uid('rem'), schoolId: 'sch_excellence',   period: 'May 2026', amount: 3950000, status: 'completed', remittedAt: daysAgo(7) },
-    { id: uid('rem'), schoolId: 'sch_montessori',   period: 'May 2026', amount: 1180000, status: 'pending' },
-    { id: uid('rem'), schoolId: 'sch_anchor',       period: 'May 2026', amount: 12300000, status: 'completed', remittedAt: daysAgo(2) }
-  ];
-
   // Default feature flags for each school (toggled by platform operator)
   schools.forEach(sch => {
     if (!sch.features) {
@@ -574,12 +565,12 @@ function seedDatabase() {
   // Subscription invoices CASPAA sends to schools
   const schoolInvoices = [];
   schools.forEach(sch => {
-    if (sch.status === 'suspended') return;
-    // Last 3 months
+    // Only paying schools are invoiced: a trial is free, a suspended school has stopped.
+    if (sch.status !== 'active') return;
+    // Last 3 months. Schools without auto-renew still owe this month's invoice.
     for (let m = 2; m >= 0; m--) {
       const dueDate = new Date(); dueDate.setMonth(dueDate.getMonth() - m, 5);
-      const status = m === 0 ? (sch.status === 'trial' ? 'pending' : 'paid')
-                   : m === 1 ? 'paid' : 'paid';
+      const status = m === 0 && !sch.autoRenew ? 'pending' : 'paid';
       schoolInvoices.push({
         id: uid('sinv'),
         schoolId: sch.id,
@@ -593,21 +584,6 @@ function seedDatabase() {
       });
     }
   });
-
-  // Commissions earned by CASPAA
-  const commissions = [];
-  // Payment fee commissions (1.5% on each successful transaction)
-  transactions.filter(t => t.status === 'successful').forEach(t => {
-    commissions.push({ id: uid('cm'), schoolId: t.schoolId, type: 'payment', source: 'Paystack transaction', refId: t.id, amount: Math.round(t.amount * 0.015), timestamp: t.timestamp });
-  });
-  // Lending commissions (interest on active loans, distributed)
-  loans.filter(l => l.status === 'active').forEach(l => {
-    const interest = l.totalRepayment - l.amount;
-    commissions.push({ id: uid('cm'), schoolId: l.schoolId, type: 'lending', source: `Loan ${l.id.slice(-6)}`, refId: l.id, amount: interest, timestamp: l.approvedAt || now() });
-  });
-  // A couple of referral commissions to demonstrate
-  commissions.push({ id: uid('cm'), schoolId: 'sch_brightlights', type: 'referral', source: 'Referred Horizon International', refId: 'sch_horizon', amount: 50000, timestamp: daysAgo(60) });
-  commissions.push({ id: uid('cm'), schoolId: 'sch_horizon',      type: 'referral', source: 'Referred Excellence Group',     refId: 'sch_excellence', amount: 75000, timestamp: daysAgo(45) });
 
   // Usage events (for Platform Usage Analytics)
   const usageEvents = [];
@@ -769,7 +745,7 @@ function seedDatabase() {
   const platformTeam = [
     { id: 'sa_001',   role: 'Super Admin',     name: 'Tayo Adesola',     email: 'super@caspaa.com',         permissions: ['*'],                                                          createdAt: daysAgo(400), lastActive: now() },
     { id: 'team_ops', role: 'Operations',      name: 'Adaeze Okeke',     email: 'ops@caspaa.com',           permissions: ['schools', 'support', 'audit'],                                createdAt: daysAgo(300), lastActive: daysAgo(0) },
-    { id: 'team_fin', role: 'Finance',         name: 'Mohammed Bello',   email: 'finance@caspaa.com',       permissions: ['revenue', 'invoices', 'commissions'],                          createdAt: daysAgo(280), lastActive: daysAgo(0) },
+    { id: 'team_fin', role: 'Finance',         name: 'Mohammed Bello',   email: 'finance@caspaa.com',       permissions: ['revenue', 'invoices'],                          createdAt: daysAgo(280), lastActive: daysAgo(0) },
     { id: 'team_cre', role: 'Credit',          name: 'Chinwe Nwosu',     email: 'credit@caspaa.com',        permissions: ['lending', 'disbursement'],                                     createdAt: daysAgo(220), lastActive: daysAgo(1) },
     { id: 'team_rsk', role: 'Risk',            name: 'Funke Ayodeji',    email: 'risk@caspaa.com',          permissions: ['lending', 'audit', 'analytics'],                               createdAt: daysAgo(200), lastActive: daysAgo(0) },
     { id: 'team_sup', role: 'Support',         name: 'Tunde Adekunle',   email: 'support@caspaa.com',       permissions: ['support', 'schools'],                                          createdAt: daysAgo(150), lastActive: daysAgo(0) },
@@ -1414,8 +1390,8 @@ function seedDatabase() {
     assignments, conversations, announcements, inventory,
     discipline, loans, timetable, lessonPlans, expenses,
     auditLog, notifications, leaveRequests, staffAttendance,
-    supportTickets, remittances,
-    schoolInvoices, commissions, usageEvents, errorLogs, systemMetrics,
+    supportTickets,
+    schoolInvoices, usageEvents, errorLogs, systemMetrics,
     disbursements,
     academicSessions, academicTerms, arms, academicCalendar, platformTeam, schoolRoles, payrollRuns,
     schemesOfWork,
@@ -1504,6 +1480,15 @@ function seedMigration7(d) {
   return changed;
 }
 
+// v8: subscriptions are CASPAA's only revenue. Parent payments settle straight to each
+// school through Paystack (nothing to remit), and there are no payment, lending or
+// referral commissions — drop the demo rows that implied otherwise.
+function seedMigration8(d) {
+  let changed = false;
+  ['remittances', 'commissions'].forEach(k => { if (k in d) { delete d[k]; changed = true; } });
+  return changed;
+}
+
 /* ---------- DB Interface ---------- */
 const DB = {
   _data: null,
@@ -1533,6 +1518,7 @@ const DB = {
     try {
       if (from < 6) changed = seedMigration6(d) || changed;
       if (from < 7) changed = seedMigration7(d) || changed;
+      if (from < 8) changed = seedMigration8(d) || changed;
     } catch (e) {
       console.error('Seed migration failed; leaving the stored database untouched.', e);
       return false;

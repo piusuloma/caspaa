@@ -2,55 +2,206 @@
    SUPER ADMIN MODULE (CASPAA Platform Operator)
    ============================================================ */
 
-function view_sa_dashboard() {
+/* ---------- Platform metrics: the single source for Overview + Revenue ----------
+   CASPAA's only revenue today is school subscriptions.
+   - Parent fee payments settle through Paystack straight into each school's own
+     bank account. CASPAA never holds that money and takes no cut, so payment
+     volume is a USAGE signal, never revenue. (The fees shown in a school's
+     Payment Gateway settings are Paystack's charges, not CASPAA's.)
+   - Lending is not offered; its screens stay hidden unless the platform flag is on.
+   - No referral programme exists.
+   Both screens call platformMetrics() so they can never disagree again. */
+
+function platformLendingEnabled() { return !!((DB.settings() || {}).platformLending); }
+
+function pmMonthKey(d) {
+  const x = d ? new Date(d) : new Date();
+  return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0');
+}
+// School invoices store their period as a label ("November 2026").
+function pmPeriodLabel(d) { return new Date(d).toLocaleString('en-GB', { month: 'long', year: 'numeric' }); }
+function pmMonthStart(offset) { const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); d.setMonth(d.getMonth() + offset); return d; }
+function pmDaysBetween(a, b) { return Math.floor((new Date(b) - new Date(a)) / 86400000); }
+
+// Paying = active. Trials haven't paid yet; suspended schools have stopped.
+function pmIsPaying(s) { return s.status === 'active'; }
+
+// A payment a parent made online through CASPAA's Paystack integration. Cash and
+// bank deposits a bursar records by hand (CASH-/MAN- references) and refunds don't count.
+function pmIsOnlinePayment(t) {
+  return t.status === 'successful' && t.amount > 0 && t.method !== 'cash'
+    && !/^(CASH|MAN)-/.test(String(t.reference || ''));
+}
+
+// Keep one MRR snapshot per month (per-school fee + status), overwritten while the
+// month is open. Next month's movement, growth and trial conversion compare against it.
+function pmRecordSnapshot(month, schools, mrr) {
+  const schoolMap = {};
+  schools.forEach(s => { schoolMap[s.id] = { fee: s.monthlyFee || 0, status: s.status }; });
+  const id = 'mrr_' + month;
+  const existing = DB.find('mrrSnapshots', id);
+  if (existing && existing.mrr === mrr && JSON.stringify(existing.schools) === JSON.stringify(schoolMap)) return;
+  const row = { id, month, mrr, schools: schoolMap, recordedAt: now() };
+  if (existing) DB.update('mrrSnapshots', id, row); else DB.insert('mrrSnapshots', row);
+}
+
+function platformMetrics() {
   const schools = DB.get('schools');
-  const active = schools.filter(s => s.status === 'active');
-  const inactive = schools.filter(s => s.status === 'suspended');
+  const paying = schools.filter(pmIsPaying);
   const trial = schools.filter(s => s.status === 'trial');
-  const totalStudents = schools.reduce((s, x) => s + x.students, 0);
-  const mrr = active.reduce((s, x) => s + x.monthlyFee, 0);
+  const suspended = schools.filter(s => s.status === 'suspended');
+  const todayD = new Date();
+
+  /* ---- MRR / ARR ---- */
+  const mrr = paying.reduce((s, x) => s + (x.monthlyFee || 0), 0);
   const arr = mrr * 12;
+  const thisMonth = pmMonthKey();
+  const prevMonth = pmMonthKey(pmMonthStart(-1));
+  pmRecordSnapshot(thisMonth, schools, mrr);
 
-  const allTxns = DB.query('transactions', t => t.status === 'successful');
-  const platformFees = allTxns.reduce((s, t) => s + Math.round(t.amount * 0.015), 0); // 1.5% transaction fee
+  /* ---- MRR movement vs last month ----
+     Baseline: last month's snapshot. Before snapshots existed, fall back to who was
+     invoiced last month. With neither, movement is unknown rather than guessed. */
+  let baseline = null, baselineSource = null;
+  const prevSnap = DB.find('mrrSnapshots', 'mrr_' + prevMonth);
+  if (prevSnap) {
+    baseline = {};
+    Object.entries(prevSnap.schools || {}).forEach(([id, v]) => { if (v.status === 'active') baseline[id] = v.fee; });
+    baselineSource = 'snapshot';
+  } else {
+    // A school still on trial today can't have been paying last month, even if an
+    // older version of the app invoiced it.
+    const onTrial = new Set(trial.map(s => s.id));
+    const prevInvs = DB.query('schoolInvoices', i => i.period === pmPeriodLabel(pmMonthStart(-1)) && !onTrial.has(i.schoolId));
+    if (prevInvs.length) {
+      baseline = {};
+      prevInvs.forEach(i => { baseline[i.schoolId] = (baseline[i.schoolId] || 0) + i.amount; });
+      baselineSource = 'invoices';
+    }
+  }
+  let movement = null;
+  if (baseline) {
+    const cur = {}; paying.forEach(s => { cur[s.id] = s.monthlyFee || 0; });
+    const m = { newMrr: 0, newCount: 0, expansion: 0, expansionCount: 0, contraction: 0, contractionCount: 0, churned: 0, churnedCount: 0 };
+    Object.entries(cur).forEach(([id, fee]) => {
+      if (!(id in baseline)) { m.newMrr += fee; m.newCount++; }
+      else if (fee > baseline[id]) { m.expansion += fee - baseline[id]; m.expansionCount++; }
+      else if (fee < baseline[id]) { m.contraction += baseline[id] - fee; m.contractionCount++; }
+    });
+    Object.entries(baseline).forEach(([id, fee]) => { if (!(id in cur)) { m.churned += fee; m.churnedCount++; } });
+    m.net = m.newMrr + m.expansion - m.contraction - m.churned;
+    m.prevMrr = Object.values(baseline).reduce((s, v) => s + v, 0);
+    m.prevCount = Object.keys(baseline).length;
+    m.growthPct = m.prevMrr ? ((mrr - m.prevMrr) / m.prevMrr) * 100 : null;
+    m.churnRate = m.prevCount ? (m.churnedCount / m.prevCount) * 100 : null;
+    m.source = baselineSource;
+    movement = m;
+  }
 
-  const allLoans = DB.get('loans');
-  const activeLoans = allLoans.filter(l => l.status === 'active');
-  const pendingLoans = allLoans.filter(l => l.status === 'pending');
-  const loanBook = activeLoans.reduce((s, l) => s + l.amount, 0);
-  const interestRev = activeLoans.reduce((s, l) => s + (l.totalRepayment - l.amount), 0);
-  const totalRepaid = activeLoans.reduce((s, l) => s + l.repayments.filter(r => r.paid).reduce((x, r) => x + r.amount, 0), 0);
-  const outstandingLoans = loanBook - totalRepaid;
-  // PAR: % of portfolio with at least one overdue repayment
-  const defaultingLoans = activeLoans.filter(l => l.repayments.some(r => !r.paid && new Date(r.dueDate) < new Date()));
-  const par = loanBook ? Math.round((defaultingLoans.reduce((s, l) => s + l.amount, 0) / loanBook) * 100) : 0;
-  const studentsOnLoan = activeLoans.reduce((s, l) => s + (l.studentIds || []).length, 0);
+  /* ---- Trial conversion: needs last month's snapshot to know who was on trial ---- */
+  let trialConversion = null;
+  if (prevSnap) {
+    const wasTrial = Object.entries(prevSnap.schools || {}).filter(([, v]) => v.status === 'trial').map(([id]) => id);
+    const ended = wasTrial.filter(id => { const s = schools.find(x => x.id === id); return !s || s.status !== 'trial'; });
+    const converted = ended.filter(id => { const s = schools.find(x => x.id === id); return s && s.status === 'active'; });
+    trialConversion = { ended: ended.length, converted: converted.length, rate: ended.length ? (converted.length / ended.length) * 100 : null };
+  }
+  const trialsEndingSoon = trial.filter(s => s.nextRenewal && pmDaysBetween(todayD, s.nextRenewal) <= 7);
 
-  // Remittance metrics
-  const remits = DB.get('remittances');
-  const remittedTotal = remits.filter(r => r.status === 'completed').reduce((s, r) => s + r.amount, 0);
-  const pendingRemits = remits.filter(r => r.status === 'pending');
-  const pendingRemitAmount = pendingRemits.reduce((s, r) => s + r.amount, 0);
+  /* ---- Subscription revenue: what CASPAA invoiced schools, and what it collected ---- */
+  const invoices = DB.get('schoolInvoices');
+  const series = [];
+  for (let k = -5; k <= 0; k++) {
+    const d = pmMonthStart(k);
+    const label = pmPeriodLabel(d);
+    const inMonth = invoices.filter(i => i.period === label);
+    series.push({
+      label: d.toLocaleString('en-GB', { month: 'short' }),
+      period: label,
+      invoiced: inMonth.reduce((s, i) => s + i.amount, 0),
+      collected: inMonth.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0)
+    });
+  }
+  const current = series[series.length - 1];
 
-  // Top schools
-  const topByVolume = schools.slice().sort((a, b) => b.students - a.students).slice(0, 10);
-  const topByValue = schools.slice().sort((a, b) => b.monthlyFee * 12 - a.monthlyFee * 12).slice(0, 10);
+  /* ---- Collections: unpaid school invoices by age ---- */
+  const overdueInvs = invoices.filter(i => i.status === 'pending' && new Date(i.dueDate) < todayD);
+  const ageing = { d30: { count: 0, amount: 0 }, d60: { count: 0, amount: 0 }, d60plus: { count: 0, amount: 0 } };
+  overdueInvs.forEach(i => {
+    const age = pmDaysBetween(i.dueDate, todayD);
+    const b = age <= 30 ? ageing.d30 : age <= 60 ? ageing.d60 : ageing.d60plus;
+    b.count++; b.amount += i.amount;
+  });
+  const overdueAmount = overdueInvs.reduce((s, i) => s + i.amount, 0);
+
+  /* ---- Renewals ---- */
+  const renewing = schools.filter(s => s.status !== 'suspended' && s.nextRenewal);
+  const renewalsDue = renewing.filter(s => { const d = pmDaysBetween(todayD, s.nextRenewal); return d >= 0 && d <= 30; });
+  const renewalsLapsed = renewing.filter(s => pmDaysBetween(todayD, s.nextRenewal) < 0);
+
+  /* ---- Customers ---- */
+  const studentsPaying = paying.reduce((s, x) => s + (x.students || 0), 0);
+  const revenuePerStudent = studentsPaying ? mrr / studentsPaying : 0;
+
+  /* ---- Usage: school fees parents paid online through CASPAA (not CASPAA revenue) ---- */
+  const txns = DB.query('transactions', pmIsOnlinePayment);
+  const txThis = txns.filter(t => pmMonthKey(t.timestamp) === thisMonth);
+  const txPrev = txns.filter(t => pmMonthKey(t.timestamp) === prevMonth);
+  const payingIds = new Set(paying.map(s => s.id));
+  const schoolsUsingPayments = new Set(txThis.filter(t => payingIds.has(t.schoolId)).map(t => t.schoolId)).size;
+  const payments = {
+    volume: txThis.reduce((s, t) => s + t.amount, 0),
+    count: txThis.length,
+    prevVolume: txPrev.reduce((s, t) => s + t.amount, 0),
+    schoolsUsing: schoolsUsingPayments,
+    adoptionPct: paying.length ? (schoolsUsingPayments / paying.length) * 100 : 0
+  };
+
+  /* ---- Support ---- */
+  const open = DB.query('supportTickets', t => t.status !== 'resolved');
+  const ageHours = t => (todayD - new Date(t.createdAt)) / 3600000;
+  const pastSla = open.filter(t => ageHours(t) > t.slaHours);
+  const nearSla = open.filter(t => ageHours(t) <= t.slaHours && ageHours(t) > t.slaHours * 0.8);
+
+  return {
+    schools, paying, trial, suspended, trialsEndingSoon,
+    mrr, arr, movement, trialConversion, firstSnapshotMonth: thisMonth,
+    revenue: { series, invoicedThisMonth: current.invoiced, collectedThisMonth: current.collected, periodLabel: current.period },
+    overdue: { invoices: overdueInvs, amount: overdueAmount, ageing },
+    renewalsDue, renewalsLapsed,
+    studentsPaying, revenuePerStudent,
+    payments,
+    support: { open: open.length, pastSla: pastSla.length, nearSla: nearSla.length }
+  };
+}
+
+function pmPct(n) { return (n >= 0 ? '+' : '') + n.toFixed(1) + '%'; }
+
+function view_sa_dashboard() {
+  const M = platformMetrics();
+  const schools = M.schools;
+  const lending = platformLendingEnabled();
 
   window.afterRender = () => {
     const ctx1 = document.getElementById('saChart1');
     if (ctx1) {
       new Chart(ctx1, {
-        type: 'line',
+        type: 'bar',
         data: {
-          labels: ['Jul','Aug','Sep','Oct','Nov','Dec'],
-          datasets: [{
-            label: 'MRR',
-            data: [1500000, 1800000, 2100000, 2500000, 2900000, mrr],
-            borderColor: '#00b386', backgroundColor: 'rgba(16,185,129,0.12)',
-            tension: 0.35, fill: true, borderWidth: 3
-          }]
+          labels: M.revenue.series.map(x => x.label),
+          datasets: [
+            { label: 'Invoiced',  data: M.revenue.series.map(x => x.invoiced),  backgroundColor: 'rgba(148,163,184,0.45)', borderRadius: 6, maxBarThickness: 28 },
+            { label: 'Collected', data: M.revenue.series.map(x => x.collected), backgroundColor: '#00b386', borderRadius: 6, maxBarThickness: 28 }
+          ]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => '₦' + (v/1000000).toFixed(1) + 'M' } } } }
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'bottom', labels: { boxWidth: 10, usePointStyle: true } },
+            tooltip: { callbacks: { label: c => `${c.dataset.label}: ${money(c.raw)}` } }
+          },
+          scales: { y: { beginAtZero: true, ticks: { callback: v => '₦' + (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : Math.round(v / 1e3) + 'k') } } }
+        }
       });
     }
   };
@@ -88,57 +239,70 @@ function view_sa_dashboard() {
   };
 
   // Build action queue
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
   const needsAttention = [];
-  if (trial.length) needsAttention.push({ count: trial.length, label: `${trial.length} schools on trial`, sub: 'Convert before expiry', view: 'sa_schools', params: { schoolStatus: 'trial' }, tone: 'amber' });
-  if (pendingRemits.length) needsAttention.push({ count: pendingRemits.length, label: `${pendingRemits.length} schools haven't remitted`, sub: `${money(pendingRemitAmount)} pending`, view: 'sa_revenue', params: { revTab: 'subscriptions' }, tone: 'amber' });
-  if (pendingLoans.length) needsAttention.push({ count: pendingLoans.length, label: `${pendingLoans.length} loan${pendingLoans.length !== 1 ? 's' : ''} awaiting review`, sub: 'Credit team decision needed', view: 'sa_lending', params: {}, tone: 'rose' });
-  const slaBreaching = DB.query('supportTickets', t => t.status !== 'resolved').filter(t => ((new Date() - new Date(t.createdAt)) / 3600000) > t.slaHours * 0.8).length;
-  if (slaBreaching) needsAttention.push({ count: slaBreaching, label: `${slaBreaching} tickets at SLA risk`, sub: 'Escalate or reassign', view: 'sa_support', params: {}, tone: 'rose' });
+  if (M.trial.length) needsAttention.push({ count: M.trial.length, label: `${plural(M.trial.length, 'school')} on trial`, sub: M.trialsEndingSoon.length ? `${M.trialsEndingSoon.length} ending within 7 days` : 'Convert before expiry', view: 'sa_schools', params: { schoolStatus: 'trial' }, tone: 'amber' });
+  if (M.overdue.invoices.length) needsAttention.push({ count: M.overdue.invoices.length, label: `${plural(M.overdue.invoices.length, 'subscription invoice')} overdue`, sub: `${money(M.overdue.amount)} unpaid`, view: 'sa_revenue', params: { revTab: 'invoices', invFilter: 'pending' }, tone: 'rose' });
+  if (M.renewalsLapsed.length) needsAttention.push({ count: M.renewalsLapsed.length, label: `${plural(M.renewalsLapsed.length, 'renewal')} lapsed`, sub: 'Renewal date has passed', view: 'sa_revenue', params: { revTab: 'subscriptions' }, tone: 'amber' });
+  if (lending) {
+    const pendingLoans = DB.query('loans', l => l.status === 'pending');
+    if (pendingLoans.length) needsAttention.push({ count: pendingLoans.length, label: `${plural(pendingLoans.length, 'loan')} awaiting review`, sub: 'Credit team decision needed', view: 'sa_lending', params: {}, tone: 'rose' });
+  }
+  if (M.support.pastSla) needsAttention.push({ count: M.support.pastSla, label: `${plural(M.support.pastSla, 'ticket')} past SLA`, sub: 'Escalate or reassign', view: 'sa_support', params: {}, tone: 'rose' });
+  else if (M.support.nearSla) needsAttention.push({ count: M.support.nearSla, label: `${plural(M.support.nearSla, 'ticket')} close to SLA`, sub: 'Respond before the deadline', view: 'sa_support', params: {}, tone: 'amber' });
   const kycPending = schools.filter(s => s.kyc && !s.kyc.cacUploaded).length;
-  if (kycPending) needsAttention.push({ count: kycPending, label: `${kycPending} schools missing KYC docs`, sub: 'CAC certificate pending', view: 'sa_schools', params: {}, tone: 'amber' });
+  if (kycPending) needsAttention.push({ count: kycPending, label: `${plural(kycPending, 'school')} missing KYC docs`, sub: 'CAC certificate pending', view: 'sa_schools', params: {}, tone: 'amber' });
   const pendingVerif = schools.filter(s => s.verification && s.verification.status === 'pending').length;
-  if (pendingVerif) needsAttention.push({ count: pendingVerif, label: `${pendingVerif} school${pendingVerif !== 1 ? 's' : ''} awaiting verification`, sub: 'Review KYC and approve to unlock payments', view: 'sa_schools', params: {}, tone: 'amber' });
+  if (pendingVerif) needsAttention.push({ count: pendingVerif, label: `${plural(pendingVerif, 'school')} awaiting verification`, sub: 'Review KYC and approve to unlock payments', view: 'sa_schools', params: {}, tone: 'amber' });
 
-  const platformRevenue = mrr + platformFees + interestRev;
+  const mv = M.movement;
+  const monthName = new Date().toLocaleString('en-GB', { month: 'long' });
+  const growthLine = mv && mv.growthPct !== null
+    ? `<div class="${mv.growthPct >= 0 ? 'text-emerald-300' : 'text-rose-300'} text-xs mt-0.5">${mv.growthPct >= 0 ? '↑' : '↓'} ${pmPct(mv.growthPct)} vs last month</div>`
+    : `<div class="text-brand-200 text-xs mt-0.5">Growth shows from next month</div>`;
+  const row = (label, value, cls = '') => `<div class="flex items-center justify-between py-1.5 text-sm"><span class="text-slate-600">${label}</span><span class="font-semibold ${cls}">${value}</span></div>`;
+  const fmtPct = v => v === null || v === undefined ? '—' : v.toFixed(0) + '%';
 
   return `
     <div class="space-y-5">
-      <!-- HERO: single big metric, everything else secondary -->
+      <!-- HERO: paying schools + subscription revenue (CASPAA's only revenue stream) -->
       <div class="bg-gradient-to-br from-slate-900 to-brand-900 rounded-2xl p-6 lg:p-8 text-white">
         <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
             <p class="text-brand-200 text-sm">Welcome back, ${AUTH.current.name.split(' ')[0]}</p>
-            <h1 class="text-3xl lg:text-5xl font-extrabold tracking-tight mt-1">${active.length} <span class="text-brand-300 text-2xl lg:text-3xl">active schools</span></h1>
-            <p class="text-brand-100 text-sm mt-2">${totalStudents.toLocaleString()} students · ${trial.length} on trial · ${inactive.length} suspended</p>
+            <h1 class="text-3xl lg:text-5xl font-extrabold tracking-tight mt-1">${M.paying.length} <span class="text-brand-300 text-2xl lg:text-3xl">paying schools</span></h1>
+            <p class="text-brand-100 text-sm mt-2">${M.studentsPaying.toLocaleString()} students at paying schools · ${M.trial.length} on trial · ${M.suspended.length} suspended</p>
           </div>
           <div class="grid grid-cols-2 gap-3 lg:gap-4">
             <div>
               <div class="text-brand-200 text-xs uppercase font-semibold">MRR</div>
-              <div class="text-2xl font-extrabold">${money(mrr)}</div>
-              <div class="text-emerald-300 text-xs mt-0.5">↑ 22% MoM</div>
+              <div class="text-2xl font-extrabold">${money(M.mrr)}</div>
+              ${growthLine}
             </div>
             <div>
-              <div class="text-brand-200 text-xs uppercase font-semibold">Platform Revenue</div>
-              <div class="text-2xl font-extrabold">${money(platformRevenue)}</div>
-              <div class="text-brand-200 text-xs mt-0.5">SaaS + fees + interest</div>
+              <div class="text-brand-200 text-xs uppercase font-semibold">Revenue · ${monthName}</div>
+              <div class="text-2xl font-extrabold">${money(M.revenue.invoicedThisMonth)}</div>
+              <div class="text-brand-200 text-xs mt-0.5">${money(M.revenue.collectedThisMonth)} collected</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 4 KPI cards (was 8+) -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        ${statCard({ label: 'ARR', value: money(arr), icon: 'trending_up', color: 'brand' })}
-        ${statCard({ label: 'Payment Volume', value: money(allTxns.reduce((s,t)=>s+t.amount,0)), icon: 'fees', color: 'blue' })}
-        ${statCard({ label: 'Loan Book', value: money(loanBook), icon: 'loan', color: 'gold', trend: par > 10 ? { direction: 'down', label: `PAR ${par}%` } : { direction: 'up', label: `PAR ${par}%` } })}
-        ${statCard({ label: 'Open Tickets', value: DB.query('supportTickets', t => t.status !== 'resolved').length, icon: 'chat', color: slaBreaching ? 'rose' : 'brand', trend: slaBreaching ? { direction: 'down', label: `${slaBreaching} at risk` } : null })}
+        ${statCard({ label: 'ARR', value: money(M.arr), icon: 'trending_up', color: 'brand', tooltip: 'Annual recurring revenue: MRR × 12.' })}
+        ${statCard({ label: 'Revenue per Student', value: money(Math.round(M.revenuePerStudent)), icon: 'students', color: 'brand', trend: { direction: 'up', label: 'per month' }, tooltip: 'MRR ÷ students at paying schools.' })}
+        ${statCard({ label: 'Overdue Invoices', value: money(M.overdue.amount), icon: 'fees', color: M.overdue.invoices.length ? 'rose' : 'brand', trend: M.overdue.invoices.length ? { direction: 'down', label: plural(M.overdue.invoices.length, 'invoice') + ' unpaid' } : { direction: 'up', label: 'All paid' }, tooltip: 'Subscription invoices to schools that are past their due date and unpaid.' })}
+        ${statCard({ label: 'Fees Paid via CASPAA', value: money(M.payments.volume), icon: 'fees', color: 'slate', trend: { direction: M.payments.volume >= M.payments.prevVolume ? 'up' : 'down', label: `${M.payments.schoolsUsing}/${M.paying.length} schools · ${monthName}` }, tooltip: 'School fees parents paid online through Paystack this month. This settles straight to each school — it is usage, not CASPAA revenue.' })}
       </div>
 
-      <!-- Main chart + Action queue -->
+      <!-- Revenue chart + Action queue -->
       <div class="grid lg:grid-cols-3 gap-4">
         <div class="card p-5 lg:col-span-2">
           <div class="flex items-center justify-between mb-3">
-            <h3 class="font-bold text-slate-900">MRR Growth (6 months)</h3>
+            <div>
+              <h3 class="font-bold text-slate-900">Subscription Revenue (6 months)</h3>
+              <p class="text-xs text-slate-500">Invoiced to schools vs collected, by billing month</p>
+            </div>
             <button class="text-sm text-brand-700 font-semibold" onclick="APP.go('sa_revenue')">Revenue details →</button>
           </div>
           <div style="height: 240px;"><canvas id="saChart1"></canvas></div>
@@ -159,6 +323,46 @@ function view_sa_dashboard() {
               </button>`).join('')}
             </div>
           `}
+        </div>
+      </div>
+
+      <!-- MRR movement · Customers · Collections -->
+      <div class="grid lg:grid-cols-3 gap-4">
+        <div class="card p-5">
+          <h3 class="font-bold text-slate-900">MRR Movement</h3>
+          <p class="text-xs text-slate-500 mb-2">Why MRR changed since last month</p>
+          ${mv ? `
+            ${row(`New <span class="text-slate-500">(${mv.newCount})</span>`, '+' + money(mv.newMrr), 'text-emerald-700')}
+            ${row(`Expansion <span class="text-slate-500">(${mv.expansionCount})</span>`, '+' + money(mv.expansion), 'text-emerald-700')}
+            ${row(`Contraction <span class="text-slate-500">(${mv.contractionCount})</span>`, '−' + money(mv.contraction), 'text-rose-700')}
+            ${row(`Churned <span class="text-slate-500">(${mv.churnedCount})</span>`, '−' + money(mv.churned), 'text-rose-700')}
+            <div class="border-t border-slate-200 mt-1 pt-1">${row('<span class="font-semibold text-slate-900">Net new MRR</span>', (mv.net >= 0 ? '+' : '−') + money(Math.abs(mv.net)), mv.net >= 0 ? 'text-emerald-700' : 'text-rose-700')}</div>
+            ${mv.source === 'invoices' ? '<p class="text-xs text-slate-500 mt-2">Last month is read from subscription invoices; monthly snapshots take over from next month.</p>' : ''}
+          ` : `<div class="text-sm text-slate-500 bg-slate-50 rounded-xl p-3">No previous month to compare against yet. MRR is being recorded from ${monthName}; movement appears next month.</div>`}
+        </div>
+
+        <div class="card p-5">
+          <h3 class="font-bold text-slate-900">Customers</h3>
+          <p class="text-xs text-slate-500 mb-2">Retention and conversion</p>
+          ${row('Paying schools', M.paying.length)}
+          ${row('Students at paying schools', M.studentsPaying.toLocaleString())}
+          ${row('Logo churn (this month)', mv ? fmtPct(mv.churnRate) : '—', mv && mv.churnRate ? 'text-rose-700' : '')}
+          ${row('Trial conversion (this month)', M.trialConversion ? (M.trialConversion.ended ? `${fmtPct(M.trialConversion.rate)} <span class="text-slate-500 font-normal">(${M.trialConversion.converted}/${M.trialConversion.ended})</span>` : 'No trials ended') : '—')}
+          ${row('Trials ending in 7 days', M.trialsEndingSoon.length, M.trialsEndingSoon.length ? 'text-amber-700' : '')}
+          ${!M.trialConversion ? '<p class="text-xs text-slate-500 mt-2">Trial conversion needs last month’s snapshot; it shows from next month.</p>' : ''}
+        </div>
+
+        <div class="card p-5">
+          <h3 class="font-bold text-slate-900">Collections &amp; Support</h3>
+          <p class="text-xs text-slate-500 mb-2">Overdue subscription invoices by age</p>
+          ${row('1–30 days', `${money(M.overdue.ageing.d30.amount)} <span class="text-slate-500 font-normal">(${M.overdue.ageing.d30.count})</span>`)}
+          ${row('31–60 days', `${money(M.overdue.ageing.d60.amount)} <span class="text-slate-500 font-normal">(${M.overdue.ageing.d60.count})</span>`, M.overdue.ageing.d60.count ? 'text-amber-700' : '')}
+          ${row('60+ days', `${money(M.overdue.ageing.d60plus.amount)} <span class="text-slate-500 font-normal">(${M.overdue.ageing.d60plus.count})</span>`, M.overdue.ageing.d60plus.count ? 'text-rose-700' : '')}
+          ${row('Renewals due in 30 days', M.renewalsDue.length)}
+          <div class="border-t border-slate-200 mt-1 pt-1">
+            ${row('Open support tickets', M.support.open)}
+            ${row('Past SLA', M.support.pastSla, M.support.pastSla ? 'text-rose-700' : '')}
+          </div>
         </div>
       </div>
 
@@ -205,16 +409,6 @@ function view_sa_dashboard() {
 }
 
 /* ---------- CSV exporters used by Overview ---------- */
-function exportRemittancesCSV() {
-  const remits = DB.get('remittances');
-  const headers = ['School', 'Period', 'Amount', 'Status', 'Remitted At'];
-  const rows = remits.map(r => {
-    const sch = DB.find('schools', r.schoolId);
-    return [sch ? sch.name : '', r.period, r.amount, r.status, r.remittedAt || ''];
-  });
-  downloadCSVDated(headers, rows, 'caspaa_remittances');
-}
-
 function exportTopSchoolsCSV(mode) {
   const schools = DB.get('schools').slice();
   schools.sort((a, b) => mode === 'value' ? (b.monthlyFee * 12) - (a.monthlyFee * 12) : b.students - a.students);
@@ -382,7 +576,7 @@ function viewSchoolDetail(schoolId) {
       <div class="pt-3 border-t border-slate-100">
         <h4 class="text-xs uppercase font-semibold text-slate-500 mb-2">Recent Invoices</h4>
         <table class="tbl">
-          <th scope="col"ead><tr><th scope="col">Period</th><th scope="col">Amount</th><th scope="col">Due</th><th scope="col">Status</th></tr></thead>
+          <thead><tr><th scope="col">Period</th><th scope="col">Amount</th><th scope="col">Due</th><th scope="col">Status</th></tr></thead>
           <tbody>
             ${schoolInvs.slice(0, 6).map(i => `<tr>
               <td>${i.period}</td>
@@ -651,36 +845,30 @@ function saveNewSchool() {
 
 /* ---------- Revenue (tabbed) ---------- */
 function view_sa_revenue() {
-  const tab = APP.params.revTab || 'subscriptions';
-  const schools = DB.get('schools');
-  const activeSchools = schools.filter(s => s.status === 'active');
-  const mrr = activeSchools.reduce((s, x) => s + x.monthlyFee, 0);
-  const commissions = DB.get('commissions');
-  const paymentComm = commissions.filter(c => c.type === 'payment').reduce((s, c) => s + c.amount, 0);
-  const lendingComm = commissions.filter(c => c.type === 'lending').reduce((s, c) => s + c.amount, 0);
-  const referralComm = commissions.filter(c => c.type === 'referral').reduce((s, c) => s + c.amount, 0);
+  // 'commissions' was a tab before subscriptions became the only revenue stream.
+  const tab = APP.params.revTab === 'invoices' ? 'invoices' : 'subscriptions';
+  const M = platformMetrics();
+  const monthName = new Date().toLocaleString('en-GB', { month: 'long' });
+  const collectedPct = M.revenue.invoicedThisMonth ? Math.round((M.revenue.collectedThisMonth / M.revenue.invoicedThisMonth) * 100) : 0;
   const schoolInvs = DB.get('schoolInvoices');
 
   return `
-    ${pageHeader({ title: 'Revenue', subtitle: 'Subscription / Payment / Lending / Referral streams' })}
+    ${pageHeader({ title: 'Revenue', subtitle: 'School subscriptions — CASPAA’s revenue stream' })}
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-      ${statCard({ label: 'SaaS MRR', value: money(mrr), icon: 'fees', color: 'brand' })}
-      ${statCard({ label: 'Payment Fees', value: money(paymentComm), icon: 'fees', color: 'gold' })}
-      ${statCard({ label: 'Lending Interest', value: money(lendingComm), icon: 'loan', color: 'blue' })}
-      ${statCard({ label: 'Referral Fees', value: money(referralComm), icon: 'trending_up', color: 'purple' })}
+      ${statCard({ label: 'MRR', value: money(M.mrr), icon: 'fees', color: 'brand', trend: M.movement && M.movement.growthPct !== null ? { direction: M.movement.growthPct >= 0 ? 'up' : 'down', label: pmPct(M.movement.growthPct) + ' vs last month' } : null, tooltip: 'Monthly recurring revenue: the monthly fee of every paying (active) school. Trial and suspended schools are excluded.' })}
+      ${statCard({ label: 'ARR', value: money(M.arr), icon: 'trending_up', color: 'brand', tooltip: 'Annual recurring revenue: MRR × 12.' })}
+      ${statCard({ label: `Invoiced · ${monthName}`, value: money(M.revenue.invoicedThisMonth), icon: 'fees', color: 'brand', trend: M.revenue.invoicedThisMonth ? { direction: 'up', label: `${money(M.revenue.collectedThisMonth)} collected (${collectedPct}%)` } : { direction: 'down', label: 'Not invoiced yet' }, tooltip: 'Subscription invoices issued to schools for this month, and how much of that has been paid.' })}
+      ${statCard({ label: 'Overdue', value: money(M.overdue.amount), icon: 'bell', color: M.overdue.invoices.length ? 'rose' : 'brand', trend: M.overdue.invoices.length ? { direction: 'down', label: `${M.overdue.invoices.length} invoice${M.overdue.invoices.length === 1 ? '' : 's'} · ${money(M.overdue.ageing.d60plus.amount)} over 60 days` } : { direction: 'up', label: 'All paid' }, tooltip: 'Subscription invoices past their due date and still unpaid.' })}
     </div>
 
     ${tabs([
-      { key: 'subscriptions', label: 'Subscription Revenue' },
-      { key: 'invoices', label: 'School Invoices', badge: schoolInvs.filter(i => i.status === 'pending').length || null },
-      { key: 'commissions', label: 'Commissions' }
+      { key: 'subscriptions', label: 'Subscriptions' },
+      { key: 'invoices', label: 'School Invoices', badge: schoolInvs.filter(i => i.status === 'pending').length || null }
     ], tab, k => { APP.params.revTab = k; APP.render(); })}
 
     <div class="pt-4">
-      ${tab === 'invoices' ? view_sa_revenue_invoices() :
-        tab === 'commissions' ? view_sa_revenue_commissions() :
-        view_sa_revenue_subscriptions()}
+      ${tab === 'invoices' ? view_sa_revenue_invoices() : view_sa_revenue_subscriptions()}
     </div>
   `;
 }
@@ -690,7 +878,7 @@ function view_sa_revenue_subscriptions() {
   return `
     <div class="card overflow-hidden">
       <table class="tbl">
-        <th scope="col"ead><tr><th scope="col">School</th><th scope="col">Plan</th><th scope="col">Students</th><th scope="col">Monthly Fee</th><th scope="col">ARR</th><th scope="col">Next Renewal</th><th scope="col">Status</th></tr></thead>
+        <thead><tr><th scope="col">School</th><th scope="col">Plan</th><th scope="col">Students</th><th scope="col">Monthly Fee</th><th scope="col">ARR</th><th scope="col">Next Renewal</th><th scope="col">Status</th></tr></thead>
         <tbody>
           ${schools.map(s => {
             const days = s.nextRenewal ? Math.ceil((new Date(s.nextRenewal) - new Date()) / 86400000) : null;
@@ -699,7 +887,7 @@ function view_sa_revenue_subscriptions() {
               <td><span class="badge ${s.subscriptionPlan==='Enterprise'?'badge-success':s.subscriptionPlan==='Professional'?'badge-info':'badge-neutral'}">${s.subscriptionPlan}</span></td>
               <td>${s.students}</td>
               <td class="font-mono">${money(s.monthlyFee)}</td>
-              <td class="font-mono font-bold">${money(s.monthlyFee * 12)}</td>
+              <td class="font-mono font-bold">${pmIsPaying(s) ? money(s.monthlyFee * 12) : '<span class="text-slate-400 font-normal">—</span>'}</td>
               <td class="text-sm ${days === null ? 'text-slate-500' : days <= 0 ? 'text-rose-700 font-bold' : days <= 7 ? 'text-amber-700 font-semibold' : 'text-slate-500'}">${days === null ? '—' : days <= 0 ? `Overdue ${Math.abs(days)}d` : `${days}d`}</td>
               <td>${statusBadge(s.status)}</td>
             </tr>`;
@@ -730,7 +918,7 @@ function view_sa_revenue_invoices() {
     </div>
     <div class="card overflow-hidden">
       <table class="tbl">
-        <th scope="col"ead><tr><th scope="col">Invoice</th><th scope="col">School</th><th scope="col">Period</th><th scope="col">Plan</th><th scope="col">Amount</th><th scope="col">Due</th><th scope="col">Status</th><th scope="col">Reminders</th><th scope="col"></th></tr></thead>
+        <thead><tr><th scope="col">Invoice</th><th scope="col">School</th><th scope="col">Period</th><th scope="col">Plan</th><th scope="col">Amount</th><th scope="col">Due</th><th scope="col">Status</th><th scope="col">Reminders</th><th scope="col"></th></tr></thead>
         <tbody>
           ${filtered.map(inv => {
             const s = DB.find('schools', inv.schoolId);
@@ -757,43 +945,9 @@ function view_sa_revenue_invoices() {
   `;
 }
 
-function view_sa_revenue_commissions() {
-  const commissions = DB.get('commissions');
-  const subFilter = APP.params.cmFilter || 'all';
-  const filtered = subFilter === 'all' ? commissions : commissions.filter(c => c.type === subFilter);
-  const total = filtered.reduce((s, c) => s + c.amount, 0);
-  return `
-    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-      <div class="flex gap-2">
-        <button class="chip ${subFilter==='all'?'active':''}" onclick="APP.params.cmFilter='all'; APP.render()">All</button>
-        <button class="chip ${subFilter==='payment'?'active':''}" onclick="APP.params.cmFilter='payment'; APP.render()">Payment fees</button>
-        <button class="chip ${subFilter==='lending'?'active':''}" onclick="APP.params.cmFilter='lending'; APP.render()">Lending interest</button>
-        <button class="chip ${subFilter==='referral'?'active':''}" onclick="APP.params.cmFilter='referral'; APP.render()">Referrals</button>
-      </div>
-      <div class="text-sm font-semibold text-slate-700">Total: <span class="font-mono text-brand-700">${money(total)}</span></div>
-    </div>
-    <div class="card overflow-hidden">
-      <table class="tbl">
-        <th scope="col"ead><tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col">School</th><th scope="col">Source</th><th scope="col">Amount</th></tr></thead>
-        <tbody>
-          ${filtered.sort((a,b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 50).map(c => {
-            const s = DB.find('schools', c.schoolId);
-            return `<tr>
-              <td class="text-sm text-slate-500">${fdate(c.timestamp, { short: true })}</td>
-              <td><span class="badge ${c.type==='payment'?'badge-info':c.type==='lending'?'badge-success':'badge-warn'}">${c.type}</span></td>
-              <td class="text-sm">${s ? s.name : '—'}</td>
-              <td class="text-sm">${c.source}</td>
-              <td class="font-mono font-semibold text-emerald-700">${money(c.amount)}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
 function generateSubscriptionInvoices() {
-  const schools = DB.get('schools').filter(s => s.status !== 'suspended');
+  // Trials are free and suspended schools have stopped: only paying schools are billed.
+  const schools = DB.get('schools').filter(pmIsPaying);
   const period = new Date().toLocaleString('en-GB', { month: 'long', year: 'numeric' });
   let count = 0;
   schools.forEach(s => {
@@ -877,6 +1031,13 @@ function exportSchoolInvoicesCSV() {
 
 /* ---------- Lending Book (tabbed) ---------- */
 function view_sa_lending() {
+  if (!platformLendingEnabled()) {
+    return `
+      ${pageHeader({ title: 'Lending', subtitle: 'Not offered yet' })}
+      ${emptyState({ icon: 'loan', title: 'Lending is switched off', body: 'CASPAA doesn’t offer fee financing yet, so the loan book and disbursement console are hidden. Turn on “Lending Engine” in Platform Settings when it launches.',
+        action: `<button class="btn btn-primary" onclick="APP.go('sa_settings')">Open Platform Settings</button>` })}
+    `;
+  }
   const tab = APP.params.lendTab || 'book';
   const loans = DB.get('loans');
   const active = loans.filter(l => l.status === 'active');
@@ -916,7 +1077,7 @@ function renderLoanBookTab() {
     </div>
     <div class="card overflow-hidden">
       <table class="tbl">
-        <th scope="col"ead><tr><th scope="col">Loan ID</th><th scope="col">School</th><th scope="col">Parent</th><th scope="col">Amount</th><th scope="col">Term</th><th scope="col">Score</th><th scope="col">Status</th></tr></thead>
+        <thead><tr><th scope="col">Loan ID</th><th scope="col">School</th><th scope="col">Parent</th><th scope="col">Amount</th><th scope="col">Term</th><th scope="col">Score</th><th scope="col">Status</th></tr></thead>
         <tbody>
           ${loans.map(l => {
             const p = DB.find('parents', l.parentId);
@@ -978,7 +1139,7 @@ function renderDisbursementTab() {
     </div>
     <div class="card overflow-hidden">
       <table class="tbl">
-        <th scope="col"ead><tr><th scope="col">Reference</th><th scope="col">Recipient (School)</th><th scope="col">Account</th><th scope="col">Amount</th><th scope="col">Method</th><th scope="col">Status</th><th scope="col">Completed</th></tr></thead>
+        <thead><tr><th scope="col">Reference</th><th scope="col">Recipient (School)</th><th scope="col">Account</th><th scope="col">Amount</th><th scope="col">Method</th><th scope="col">Status</th><th scope="col">Completed</th></tr></thead>
         <tbody>
           ${disbursements.map(d => `<tr>
             <td><code class="text-xs">${d.reference}</code></td>
@@ -1125,7 +1286,7 @@ function renderLoanAnalyticsTab() {
         <button class="btn btn-secondary text-sm" onclick="sendDelinquencyReminders()">${icon('bell','w-3.5 h-3.5')} Send reminders</button>
       </div>
       <table class="tbl">
-        <th scope="col"ead><tr><th scope="col">Loan</th><th scope="col">Parent</th><th scope="col">Amount Due</th><th scope="col">Days Overdue</th></tr></thead>
+        <thead><tr><th scope="col">Loan</th><th scope="col">Parent</th><th scope="col">Amount Due</th><th scope="col">Days Overdue</th></tr></thead>
         <tbody>
           ${overdueRepayments.map(o => {
             const p = DB.find('parents', o.loan.parentId);
@@ -1344,7 +1505,7 @@ function renderUsageTab(dateFrom, dateTo) {
     <div class="card p-5">
       <h3 class="font-bold text-slate-900 mb-3">School Login Frequency (last 14 days)</h3>
       <table class="tbl">
-        <th scope="col"ead><tr><th scope="col">School</th><th scope="col">Active Days</th><th scope="col">Engagement</th></tr></thead>
+        <thead><tr><th scope="col">School</th><th scope="col">Active Days</th><th scope="col">Engagement</th></tr></thead>
         <tbody>
           ${schoolFreq.map(({ school, active }) => `<tr>
             <td><div class="flex items-center gap-2">${avatar(school.name, 'sm')}<span class="font-medium">${school.name}</span></div></td>
@@ -1488,7 +1649,7 @@ function view_sa_support() {
 
     <div class="card overflow-hidden">
       <table class="tbl">
-        <th scope="col"ead><tr><th scope="col">Ticket</th><th scope="col">School</th><th scope="col">Subject</th><th scope="col">Priority</th><th scope="col">Channel</th><th scope="col">SLA</th><th scope="col">Status</th><th scope="col">Assigned</th><th scope="col"></th></tr></thead>
+        <thead><tr><th scope="col">Ticket</th><th scope="col">School</th><th scope="col">Subject</th><th scope="col">Priority</th><th scope="col">Channel</th><th scope="col">SLA</th><th scope="col">Status</th><th scope="col">Assigned</th><th scope="col"></th></tr></thead>
         <tbody>
           ${filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(t => {
             const sch = DB.find('schools', t.schoolId);
@@ -1696,7 +1857,6 @@ function view_sa_team() {
     { key: 'schools',     label: 'Schools Management' },
     { key: 'revenue',     label: 'Revenue & MRR' },
     { key: 'invoices',    label: 'School Invoices' },
-    { key: 'commissions', label: 'Commissions' },
     { key: 'lending',     label: 'Lending Book' },
     { key: 'disbursement',label: 'Disbursement Console' },
     { key: 'support',     label: 'Support Desk' },
@@ -1714,7 +1874,7 @@ function view_sa_team() {
 
     <div class="card overflow-hidden">
       <table class="tbl">
-        <th scope="col"ead><tr><th scope="col">Member</th><th scope="col">Role</th><th scope="col">Email</th><th scope="col">Permissions</th><th scope="col">Last Active</th><th scope="col"></th></tr></thead>
+        <thead><tr><th scope="col">Member</th><th scope="col">Role</th><th scope="col">Email</th><th scope="col">Permissions</th><th scope="col">Last Active</th><th scope="col"></th></tr></thead>
         <tbody>
           ${team.map(m => `<tr>
             <td><div class="flex items-center gap-2">${avatar(m.name, 'sm')}<div><div class="font-semibold text-sm">${m.name}</div><div class="text-xs text-slate-500">Joined ${fdate(m.createdAt, { short: true })}</div></div></div></td>
@@ -1759,7 +1919,6 @@ function editTeamMember(memberId) {
     { key: 'schools',     label: 'Schools Management' },
     { key: 'revenue',     label: 'Revenue & MRR' },
     { key: 'invoices',    label: 'School Invoices' },
-    { key: 'commissions', label: 'Commissions' },
     { key: 'lending',     label: 'Lending Book' },
     { key: 'disbursement',label: 'Disbursement Console' },
     { key: 'support',     label: 'Support Desk' },
@@ -1853,7 +2012,7 @@ function saveTeamMember() {
   if (!name || !email) { toast('Name and email required', 'danger'); return; }
   const rolePerms = {
     'Operations':     ['schools', 'support', 'audit'],
-    'Finance':        ['revenue', 'invoices', 'commissions'],
+    'Finance':        ['revenue', 'invoices'],
     'Credit':         ['lending', 'disbursement'],
     'Risk':           ['lending', 'audit', 'analytics'],
     'Support':        ['support', 'schools'],
@@ -1879,7 +2038,7 @@ function view_sa_audit() {
     ${pageHeader({ title: 'Audit Log', subtitle: 'Every action tracked across the platform' })}
     <div class="card overflow-hidden">
       <table class="tbl">
-        <th scope="col"ead><tr><th scope="col">When</th><th scope="col">Actor</th><th scope="col">Action</th><th scope="col">Target</th></tr></thead>
+        <thead><tr><th scope="col">When</th><th scope="col">Actor</th><th scope="col">Action</th><th scope="col">Target</th></tr></thead>
         <tbody>
           ${logs.map(l => `<tr>
             <td class="text-sm text-slate-500">${fdate(l.timestamp, { time: true })}</td>
@@ -1894,6 +2053,13 @@ function view_sa_audit() {
 }
 
 /* ---------- Settings ---------- */
+function setPlatformLending(on) {
+  DB.settings({ platformLending: !!on });
+  DB.insert('auditLog', { id: uid('aud'), schoolId: 'platform', actor: AUTH.current.id, action: on ? 'enabled_lending' : 'disabled_lending', target: 'Lending Engine', timestamp: now() });
+  toast(`Lending ${on ? 'switched on' : 'switched off'}`, 'success');
+  APP.render();
+}
+
 function view_sa_settings() {
   return `
     ${pageHeader({ title: 'Platform Settings', subtitle: 'Feature flags, security, and global config' })}
@@ -1903,16 +2069,17 @@ function view_sa_settings() {
         <div class="space-y-3">
           ${[
             { key: 'whatsapp', label: 'WhatsApp Integration', on: true },
-            { key: 'lending', label: 'Lending Engine', on: true },
+            { key: 'lending', label: 'Lending Engine', on: platformLendingEnabled(), hint: 'Shows the loan book and disbursement console. Off while CASPAA doesn’t offer lending.', onchange: 'setPlatformLending(this.checked)' },
             { key: 'ai_comments', label: 'AI Report Comments', on: true },
             { key: 'offline', label: 'Offline Mode', on: true },
             { key: 'transport', label: 'Transport Module', on: false, badge: 'Beta' }
-          ].map(f => `<label class="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
+          ].map(f => `<label class="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer">
             <div>
               <div class="font-semibold text-sm">${f.label}</div>
+              ${f.hint ? `<div class="text-xs text-slate-500">${f.hint}</div>` : ''}
               ${f.badge ? `<span class="badge badge-warn">${f.badge}</span>` : ''}
             </div>
-            <input type="checkbox" ${f.on ? 'checked' : ''} class="w-5 h-5 accent-brand-600" />
+            <input type="checkbox" ${f.on ? 'checked' : ''} ${f.onchange ? `onchange="${f.onchange}"` : ''} class="w-5 h-5 accent-brand-600 flex-shrink-0" />
           </label>`).join('')}
         </div>
       </div>
